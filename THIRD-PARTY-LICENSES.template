@@ -1,0 +1,54 @@
+# Third-Party Licenses Template
+
+## Purpose
+
+Per Eregen's patent-protection strategy, all core business logic, communication
+protocols, and AI algorithms are proprietary and closed-source. However, the
+project uses various open-source dependencies. This template documents how to
+maintain the THIRD-PARTY-LICENSES file for each subproject.
+
+## License Policy
+
+- ALLOWED: MIT, BSD-3-Clause, Apache-2.0, ISC
+- PROHIBITED: GPL, AGPL, LGPL (copyleft licenses that would force your code
+  to be open-sourced, affecting patent protection)
+
+## Maintenance Procedure
+
+Each subproject directory MUST contain a file named `THIRD-PARTY-LICENSES`
+with the following format:
+
+```
+=== <Library Name> ===
+Version: <semver>
+License: <license type, e.g. MIT>
+Copyright: <original copyright notice>
+Source: <URL to repository>
+```
+
+## How to Generate
+
+1. Run the dependency scanner for your build system (e.g., `go list -m all`,
+   `npm list --json`, `flutter pub deps`, `pio pkg show`).
+2. For each dependency, check its license against the allowed list.
+3. If a dependency uses a prohibited license, REMOVE IT and find an alternative.
+4. Record each allowed dependency in the format above.
+5. Commit the THIRD-PARTY-LICENSES file alongside the source code.
+
+## Example Entry
+
+```
+=== github.com/gin-gonic/gin ===
+Version: v1.9.1
+License: MIT
+Copyright: Copyright (c) 2015 Manu MA
+Source: https://github.com/gin-gonic/gin
+```
+
+## Notes
+
+- Update THIRD-PARTY-LICENSES whenever dependencies change.
+- CI should fail if a prohibited license is detected.
+- Keep the most recent version of each license file for audit purposes.
+© 2026 Eregen (颐贞). All rights reserved.
+```

@@ -1,0 +1,97 @@
+# Build artifacts
+*.o
+*.obj
+*.bin
+*.elf
+*.hex
+*.map
+*.a
+*.lib
+*.so
+*.dylib
+*.ilk
+*.pdb
+
+# IDE files
+.project
+.cproject
+.settings/
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.iml
+
+# Docker files
+docker-compose.override.yml
+*.pid
+*.seed
+*.bak
+*.sql
+
+# Cloud config
+certs/
+keys/
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+keystore/
+
+# Node
+node_modules/
+dist/
+.nuxt/
+.output/
+
+# Dart/Flutter
+.dart_tool/
+pubspec.lock
+.packages
+*.dill
+*.coverage
+flutter_app/
+
+# Go
+vendor/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Data (InfluxDB data, etc.)
+data/
+
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Hugo
+public/
+resources/
+hugo_cache/
+
+# Static builds
+static/
+
+# Theme node modules
+themes/*/node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+tmp/
+temp/
+*.tmp
