@@ -95,3 +95,10 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+
+# UI prototypes (interface design files)
+apps/ui-prototypes/
+*.png
+
+# Documentation (specs, plans)
+docs/superpowers/
