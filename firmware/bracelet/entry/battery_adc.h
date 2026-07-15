@@ -71,4 +71,9 @@ uint8_t battery_calculate_percent(uint16_t voltage_mv);
  */
 battery_status_t battery_get_status(void);
 
+/* Test-mode helpers */
+#ifdef TEST_MODE
+void battery_set_mock_adc_value(uint16_t adc_val);
+#endif
+
 #endif /* BATTERY_ADC_H */

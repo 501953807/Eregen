@@ -6,6 +6,78 @@
  */
 
 #include "battery_adc.h"
+
+#ifdef TEST_MODE
+#include <string.h>
+
+/* In test mode, mock ADC state is set by the test harness */
+static uint16_t s_mock_adc_value = 2048;  /* Default: mid-range */
+static bool s_mock_adc_read_ok = true;
+
+/* Mock ADC read — returns averaged mock value */
+static uint16_t adc_read_single(uint8_t channel)
+{
+    (void)channel;
+    return s_mock_adc_value;
+}
+
+/* Test-mode implementations of public API */
+bool battery_init(void)
+{
+    return true;
+}
+
+uint16_t battery_read_voltage_mv(void)
+{
+    /* Average the mock ADC value through the divider */
+    uint32_t avg_adc = (uint32_t)s_mock_adc_value;
+    uint32_t voltage_mv = avg_adc * BATT_ADC_REF_VOLTAGE * 1000U /
+                          BATT_ADC_RESOLUTION * (uint32_t)BATT_DIVIDER_RATIO;
+    return (uint16_t)voltage_mv;
+}
+
+uint16_t battery_adc_to_mv(uint16_t adc_value)
+{
+    uint32_t mv = (uint32_t)adc_value * BATT_ADC_REF_VOLTAGE * 1000U /
+                  BATT_ADC_RESOLUTION * (uint32_t)BATT_DIVIDER_RATIO;
+    return (uint16_t)mv;
+}
+
+uint8_t battery_calculate_percent(uint16_t voltage_mv)
+{
+    uint16_t empty_mv = (uint16_t)(BATT_VOLTAGE_EMPTY * 1000.0f);
+    uint16_t full_mv = (uint16_t)(BATT_VOLTAGE_FULL * 1000.0f);
+
+    if (voltage_mv <= empty_mv) {
+        return 0U;
+    }
+    if (voltage_mv >= full_mv) {
+        return 100U;
+    }
+
+    uint16_t range = full_mv - empty_mv;
+    uint16_t above_empty = voltage_mv - empty_mv;
+    uint8_t percent = (uint8_t)((above_empty * 100U) / range);
+
+    return percent;
+}
+
+battery_status_t battery_get_status(void)
+{
+    battery_status_t status;
+    status.voltage_mv = battery_read_voltage_mv();
+    status.percent = battery_calculate_percent(status.voltage_mv);
+    status.charging = false;
+    status.critical = (status.voltage_mv < (uint16_t)(BATT_VOLTAGE_EMPTY * 1000.0f * 0.95f));
+    return status;
+}
+
+void battery_set_mock_adc_value(uint16_t adc_val)
+{
+    s_mock_adc_value = adc_val;
+}
+
+#else
 #include "gd32e230_adc.h"
 #include "gd32e230_rcu.h"
 #include "gd32e230_gpio.h"
@@ -148,3 +220,5 @@ battery_status_t battery_get_status(void)
 
     return status;
 }
+
+#endif /* TEST_MODE */
