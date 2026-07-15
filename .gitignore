@@ -100,5 +100,5 @@ temp/
 apps/ui-prototypes/
 *.png
 
-# Documentation (specs, plans)
-docs/superpowers/
+# Documentation (entire docs directory)
+docs/
