@@ -48,6 +48,12 @@ set(APP_SOURCES
     battery_adc.c
     sos_button.c
     free_rtos_tasks.c
+    ../common/crc16.c
+    ../common/ring_buffer.c
+    ../common/log.c
+    ../protocol/message_encode.c
+    ../protocol/message_decode.c
+    ../protocol/heartbeat.c
 )
 
 # Linker script
@@ -69,6 +75,8 @@ target_include_directories(${PROJECT_NAME}.elf PRIVATE
     ${FREERTOS_PATH}/portable/GCC/ARM_CM4F
     ${GD32_LIB}/include
     ${GD32_LIB}/device
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common
+    ${CMAKE_CURRENT_SOURCE_DIR}/../protocol
 )
 
 # Define device type macro

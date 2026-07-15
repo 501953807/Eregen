@@ -20,13 +20,18 @@
 #include "battery_adc.h"
 #include "sos_button.h"
 #include "free_rtos_tasks.h"
+#include "../common/crc16.h"
+#include "../common/ring_buffer.h"
+#include "../common/log.h"
+#include "../protocol/message_encode.h"
+#include "../protocol/heartbeat.h"
 
 /* Device ID: BR-XXXX format */
 #define DEVICE_ID_PREFIX          "BR-"
 #define DEVICE_ID_SERIAL_LEN      4U
 
 /* Global device serial number (set once at boot) */
-static char s_device_id[16];
+char s_device_id[17];
 
 /* Step counter for health data */
 static uint32_t s_step_count = 0;
@@ -42,6 +47,24 @@ static void vCommTask(void *pvParameters);
 static void vDisplayTask(void *pvParameters);
 static void vSOSTask(void *pvParameters);
 static void generate_device_id(void);
+static void uart_tx(const uint8_t *data, uint16_t len);
+
+/*
+ * UART transmit callback for the logging subsystem.
+ * Writes bytes to USART0 (debug console).
+ */
+static void uart_tx(const uint8_t *data, uint16_t len)
+{
+    if (!data || len == 0) {
+        return;
+    }
+    for (uint16_t i = 0; i < len; i++) {
+        while (usart_flag_get(USART0, USART_FLAG_TC) == RESET) {
+            /* Wait for transmit register empty */
+        }
+        usart_data_transmit(USART0, data[i]);
+    }
+}
 
 /*
  * Generate a pseudo-unique device ID in BR-XXXX format.
@@ -56,6 +79,7 @@ static void generate_device_id(void)
     snprintf(s_device_id, sizeof(s_device_id),
              "%s%04X", DEVICE_ID_PREFIX,
              (uint16_t)(uid_low ^ uid_mid));
+    s_device_id[sizeof(s_device_id) - 1] = '\0';
 }
 
 /*
@@ -68,9 +92,23 @@ int main(void)
     board_init_all();
     generate_device_id();
 
-    printf("Eregen Bracelet Firmware v1.0\n");
-    printf("Device ID: %s\n", s_device_id);
-    printf("Target: GD32E230C8T3 (Cortex-M4)\n\n");
+    /* Initialize logging system with UART callback */
+    log_init();
+    log_register_uart_tx(uart_tx);
+    log_set_level(LOG_INFO);
+
+    log_info("Eregen Bracelet Firmware v1.0");
+    log_info("Device ID: %s", s_device_id);
+    log_info("Target: GD32E230C8T3 (Cortex-M4)\n");
+
+    /* Verify CRC16 with known test vector */
+    const uint8_t crc_test[] = "123456789";
+    uint16_t crc_result = crc16_calc(crc_test, sizeof(crc_test) - 1);
+    if (crc_result != 0x29B1) {
+        log_error("CRC16 verification failed! got 0x%04X", crc_result);
+    } else {
+        log_debug("CRC16 verification passed (0x%04X)", crc_result);
+    }
 
     /* Initialize message queues */
     tasks_init();
@@ -117,6 +155,9 @@ int main(void)
                 TASK_SOS_PRIORITY,
                 NULL);
 
+    /* Start heartbeat publisher (after all tasks are created) */
+    heartbeat_start();
+
     /* Start the scheduler */
     vTaskStartScheduler();
 
@@ -135,24 +176,24 @@ static void vSensorTask(void *pvParameters)
 
     /* Initialize PPG sensor */
     if (!ppg_init()) {
-        printf("ERROR: PPG sensor initialization failed\n");
+        log_error("PPG sensor initialization failed");
         /* Blink LED blue to indicate error */
         for (;;) {
             gpio_bit_toggle(GPIOA, GPIO_PIN_1);
             vTaskDelay(pdMS_TO_TICKS(500));
         }
     }
-    printf("PPG sensor initialized\n");
+    log_info("PPG sensor initialized");
 
     /* Initialize IMU sensor */
     if (!imu_init()) {
-        printf("ERROR: IMU sensor initialization failed\n");
+        log_error("IMU sensor initialization failed");
         for (;;) {
             gpio_bit_toggle(GPIOA, GPIO_PIN_1);
             vTaskDelay(pdMS_TO_TICKS(500));
         }
     }
-    printf("IMU sensor initialized\n");
+    log_info("IMU sensor initialized");
 
     /* Initialize battery ADC */
     battery_init();
@@ -183,7 +224,7 @@ static void vSensorTask(void *pvParameters)
             msg.step_count = step_count;
 
             if (tasks_send_health(&msg, pdMS_TO_TICKS(100))) {
-                printf("HEALTH: HR=%u, SpO2=%u, Steps=%lu\n",
+                log_info("HEALTH: HR=%u, SpO2=%u, Steps=%lu",
                        (unsigned)health.hr, (unsigned)health.spo2,
                        (unsigned long)step_count);
             }
@@ -195,7 +236,7 @@ static void vSensorTask(void *pvParameters)
         if (++batt_tick >= 100) {  /* Every ~10 seconds */
             batt_tick = 0;
             battery_status_t batt = battery_get_status();
-            printf("BATTERY: %umV, %u%%\n",
+            log_info("BATTERY: %umV, %u%%",
                    (unsigned)batt.voltage_mv, (unsigned)batt.percent);
         }
 
@@ -214,7 +255,7 @@ static void vGPSTask(void *pvParameters)
 
     /* Initialize GPS parser */
     gps_init();
-    printf("GPS NMEA parser initialized\n");
+    log_info("GPS NMEA parser initialized");
 
     for (;;) {
         /* Read characters from GPS UART and feed to parser.
@@ -237,7 +278,7 @@ static void vGPSTask(void *pvParameters)
             msg.timestamp = s_gps_timestamp++;
 
             if (tasks_send_location(&msg, pdMS_TO_TICKS(100))) {
-                printf("LOCATION: lat=%.6f, lon=%.6f, sats=%u, acc=%um\n",
+                log_info("LOCATION: lat=%.6f, lon=%.6f, sats=%u, acc=%um",
                        fix.lat, fix.lon,
                        (unsigned)fix.satellites,
                        (unsigned)fix.accuracy);
@@ -259,17 +300,17 @@ static void vCommTask(void *pvParameters)
 
     /* Initialize Cat1 module */
     if (!cat1_init()) {
-        printf("ERROR: Cat1 module not responding\n");
+        log_error("Cat1 module not responding");
         /* Continue running but log errors */
     } else {
-        printf("Cat1 module initialized\n");
+        log_info("Cat1 module initialized");
     }
 
     /* Connect to APN */
     if (!cat1_connect_apn(CAT1_DEFAULT_APN)) {
-        printf("WARNING: APN connection failed, will retry\n");
+        log_warn("APN connection failed, will retry");
     } else {
-        printf("APN connected: %s\n", CAT1_DEFAULT_APN);
+        log_info("APN connected: %s", CAT1_DEFAULT_APN);
     }
 
     /* Heartbeat interval */
@@ -283,7 +324,7 @@ static void vCommTask(void *pvParameters)
             /* Read battery for heartbeat */
             battery_status_t batt = battery_get_status();
 
-            printf("HEARTBEAT: dev_id=%s, bat=%u\n",
+            log_info("HEARTBEAT: dev_id=%s, bat=%u",
                    s_device_id, (unsigned)batt.percent);
             /* TODO: Publish heartbeat JSON to MQTT broker
              * {"type":"heartbeat","dev_id":"BR-XXXX","bat":85}
@@ -295,7 +336,7 @@ static void vCommTask(void *pvParameters)
         if (++rssi_counter >= 10) {
             rssi_counter = 0;
             int16_t rssi = cat1_get_signal_strength();
-            printf("RSSI: %ddBm\n", (int)rssi);
+            log_info("RSSI: %ddBm", (int)rssi);
         }
 
         /* Process incoming health data from queue (placeholder) */
@@ -325,13 +366,13 @@ static void vDisplayTask(void *pvParameters)
 
     /* Initialize display */
     if (!display_init()) {
-        printf("ERROR: Display initialization failed\n");
+        log_error("Display initialization failed");
         for (;;) {
             gpio_bit_toggle(GPIOA, GPIO_PIN_0);
             vTaskDelay(pdMS_TO_TICKS(500));
         }
     }
-    printf("Display initialized\n");
+    log_info("Display initialized");
 
     /* Initial screen: show device ID */
     display_clear(DISPLAY_COLOR_BLACK);
@@ -396,7 +437,7 @@ static void vSOSTask(void *pvParameters)
     (void)pvParameters;
 
     sos_init();
-    printf("SOS button monitoring started\n");
+    log_info("SOS button monitoring started");
 
     /* Blink green LED to indicate system is alive */
     for (;;) {
@@ -405,7 +446,7 @@ static void vSOSTask(void *pvParameters)
 
         /* Check for long press (3 seconds) */
         if (sos_is_long_press()) {
-            printf("SOS ALERT TRIGGERED!\n");
+            log_error("SOS ALERT TRIGGERED!");
 
             /* Get current GPS position */
             gps_fix_t fix;
@@ -423,7 +464,7 @@ static void vSOSTask(void *pvParameters)
             alert.timestamp = s_gps_timestamp;
 
             if (tasks_send_sos(&alert, pdMS_TO_TICKS(500))) {
-                printf("SOS alert sent to comm task\n");
+                log_info("SOS alert sent to comm task");
             }
 
             /* Flash all LEDs red */

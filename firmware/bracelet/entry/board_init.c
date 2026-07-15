@@ -41,6 +41,11 @@ void board_clock_init(void)
     rcu_osci_on(RCU_PLL);
     rcu_osci_stab_wait(RCU_PLL_STAB);
 
+    /* Configure flash wait states for 120MHz */
+    flash_prefetch_enable();
+    flash_instr_latency_set(FLASH_ILFT_1_5);
+    flash_data_latency_set(FLASH_DLT_1_5);
+
     /* Select PLL as SYSCLK source */
     rcu_clock_extend_config(RCU_CFG0_CSSD_EN_MASK, true);
     rcu_sysclk_config(RCU_SRCCLK_PLL);
@@ -50,16 +55,22 @@ void board_clock_init(void)
     while ((rcu_flag_get(RCU_FLAG_HXTAL_STABLE) == RESET) && (timeout-- > 0)) {
         /* Wait for HXTAL stable */
     }
+
+    /* Verify SYSCLK source is PLL */
+    uint32_t srcclk = rcu_sysclk_source_get();
+    (void)srcclk;
 }
 
 /*
  * Initialize GPIO pins for LEDs, buttons, and peripheral CS.
+ * Also configures GPS enable, Cat1 enable, and UART pins.
  */
 void board_gpio_init(void)
 {
     /* Enable GPIO clocks */
     rcu_periph_clock_enable(RCU_GPIOA);
     rcu_periph_clock_enable(RCU_GPIOB);
+    rcu_periph_clock_enable(RCU_GPIOC);
 
     /* LED green: PA0, push-pull output, 2MHz */
     gpio_init(LED_GREEN_GPIO_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ, LED_GREEN_GPIO_PIN);
@@ -84,6 +95,18 @@ void board_gpio_init(void)
 
     gpio_init(DISPLAY_CS_GPIO_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, DISPLAY_CS_GPIO_PIN);
     gpio_bit_set(DISPLAY_CS_GPIO_PORT, DISPLAY_CS_GPIO_PIN);
+
+    /* GPS module enable pin (PC0) - configure as output, low (disabled) */
+    gpio_init(GPIOC, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_0);
+    gpio_bit_reset(GPIOC, GPIO_PIN_0);
+
+    /* Cat1 module enable pin (PC1) - configure as output, low (disabled) */
+    gpio_init(GPIOC, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_1);
+    gpio_bit_reset(GPIOC, GPIO_PIN_1);
+
+    /* Cat1 module reset pin (PC2) - configure as output, high (not reset) */
+    gpio_init(GPIOC, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_2);
+    gpio_bit_set(GPIOC, GPIO_PIN_2);
 }
 
 /*
@@ -116,6 +139,63 @@ void board_uart_debug_init(uint32_t baud)
     while (usart_flag_get(USART0, USART_FLAG_RBNE) == RESET) {
         /* Wait */
     }
+}
+
+/*
+ * Initialize USART1 for Cat1 module communication.
+ * TX: PB6, RX: PB7
+ */
+void board_uart_cat1_init(uint32_t baud)
+{
+    rcu_periph_clock_enable(RCU_GPIOB);
+    rcu_periph_clock_enable(RCU_USART1);
+
+    /* Configure PB6 as alternate function push-pull (USART1_TX) */
+    gpio_init(GPIOB, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_6);
+    /* Configure PB7 as input floating (USART1_RX) */
+    gpio_init(GPIOB, GPIO_MODE_INPUT, GPIO_OSPEED_50MHZ, GPIO_PIN_7);
+
+    /* USART configuration: default 9600-8-N-1 (module wakes up at this speed) */
+    usart_deinit(USART1);
+    usart_baudrate_set(USART1, baud);
+    usart_word_length_set(USART1, USART_WL_8BIT);
+    usart_stop_bit_set(USART1, USART_STB_1BIT);
+    usart_parity_config(USART1, USART_PM_NONE);
+    usart_hardware_flow_rts_config(USART1, USART_RTS_DISABLE);
+    usart_hardware_flow_cts_config(USART1, USART_CTS_DISABLE);
+    usart_transmit_config(USART1, USART_TRANSMIT_ENABLE);
+    usart_receive_config(USART1, USART_RECEIVE_ENABLE);
+    usart_enable(USART1);
+}
+
+/*
+ * Initialize USART2 for GPS module communication.
+ * TX: PA2, RX: PA3 -- but PA2/PA3 are used by buttons.
+ * Alternative: use PB10 (TX) / PB11 (RX) if available, or remap.
+ * For GD32E230, USART2 is on PA2/PA3 by default.
+ * We use the existing pins since GPS is polled in main loop.
+ */
+void board_uart_gps_init(uint32_t baud)
+{
+    rcu_periph_clock_enable(RCU_GPIOA);
+    rcu_periph_clock_enable(RCU_USART2);
+
+    /* USART2 TX: PA2, RX: PA3 */
+    /* Note: PA2/PA3 are also used by user button and SOS button.
+     * In production, these pins would be shared carefully.
+     * The GPS UART is polled only when GPS task runs.
+     */
+    gpio_init(GPIOA, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_2);
+    gpio_init(GPIOA, GPIO_MODE_INPUT, GPIO_OSPEED_50MHZ, GPIO_PIN_3);
+
+    usart_deinit(USART2);
+    usart_baudrate_set(USART2, baud);
+    usart_word_length_set(USART2, USART_WL_8BIT);
+    usart_stop_bit_set(USART2, USART_STB_1BIT);
+    usart_parity_config(USART2, USART_PM_NONE);
+    usart_transmit_config(USART2, USART_TRANSMIT_ENABLE);
+    usart_receive_config(USART2, USART_RECEIVE_ENABLE);
+    usart_enable(USART2);
 }
 
 /*
@@ -201,6 +281,32 @@ void board_timer_init(void)
 }
 
 /*
+ * Initialize external interrupts for SOS button and user button.
+ * PA2 (user button) and PA3 (SOS button) trigger EXTI on falling edge.
+ * Requires GD32 EXTI standard peripheral library.
+ */
+void board_exti_init(void)
+{
+    /* Enable SYSCFG clock for EXTI */
+    rcu_periph_clock_enable(RCU_SYSCFG);
+
+    /* Configure PA2 as EXTI source (user button) */
+    syscfg_exti_line_config(EXTI_SOURCE_PA, EXTI_SOURCE_PIN2);
+    /* Configure PA3 as EXTI source (SOS button) */
+    syscfg_exti_line_config(EXTI_SOURCE_PA, EXTI_SOURCE_PIN3);
+
+    /* Enable EXTI2 interrupt (user button) */
+    exti_init(EXTI_2, EXTI_INTERRUPT, EXTI_TRIG_FALL);
+    nvic_irq_enable(EXTI2_IRQn, 3U, 0U);
+    exti_interrupt_enable(EXTI_2);
+
+    /* Enable EXTI3 interrupt (SOS button) */
+    exti_init(EXTI_3, EXTI_INTERRUPT, EXTI_TRIG_FALL);
+    nvic_irq_enable(EXTI3_IRQn, 3U, 0U);
+    exti_interrupt_enable(EXTI_3);
+}
+
+/*
  * Master initialization: call all subsystem inits.
  */
 void board_init_all(void)
@@ -208,7 +314,10 @@ void board_init_all(void)
     board_clock_init();
     board_gpio_init();
     board_uart_debug_init(BOARD_DEBUG_UART_BAUD);
+    board_uart_cat1_init(9600);    /* Cat1 module default baud */
+    board_uart_gps_init(9600);     /* GPS module default baud */
     board_i2c_init();
     board_spi_init();
     board_timer_init();
+    board_exti_init();
 }

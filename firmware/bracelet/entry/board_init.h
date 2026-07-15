@@ -61,9 +61,12 @@
 void board_clock_init(void);
 void board_gpio_init(void);
 void board_uart_debug_init(uint32_t baud);
+void board_uart_cat1_init(uint32_t baud);
+void board_uart_gps_init(uint32_t baud);
 void board_i2c_init(void);
 void board_spi_init(void);
 void board_timer_init(void);
+void board_exti_init(void);
 void board_init_all(void);
 
 #endif /* BOARD_INIT_H */
