@@ -359,13 +359,75 @@ uint8_t ppg_calculate_spo2(void)
 
 /*
  * Get combined health data from PPG sensor.
+ * Returns ppg_data_t with hr, spo2, and validity flag (legacy).
  */
 ppg_data_t ppg_get_data(void)
 {
     ppg_data_t data;
     data.hr = ppg_calculate_hr();
     data.spo2 = ppg_calculate_spo2();
-    data.valid = (data.hr >= PPG_HR_MIN && data.hr <= PPG_HR_MAX &&
-                  data.spo2 >= PPG_SPO2_MIN && data.spo2 <= PPG_SPO2_MAX);
+    data.quality = ppg_estimate_quality();
     return data;
+}
+
+/*
+ * Read combined PPG health data: HR, SpO2, and signal quality.
+ * @param data Pointer to ppg_data_t to populate.
+ * @return true if sensor was reachable and data is fresh.
+ */
+bool ppg_read(ppg_data_t *data)
+{
+    if (!data) {
+        return false;
+    }
+
+    /* Ensure we have fresh raw samples */
+    uint16_t raw_r = 0, raw_ir = 0;
+    if (!ppg_read_raw(&raw_r, &raw_ir)) {
+        data->hr = 0;
+        data->spo2 = 0;
+        data->quality = 0;
+        return false;
+    }
+
+    data->hr = ppg_calculate_hr();
+    data->spo2 = ppg_calculate_spo2();
+    data->quality = ppg_estimate_quality();
+    return true;
+}
+
+/*
+ * Estimate signal quality based on perfusion index consistency.
+ * Returns 0-100 quality indicator.
+ */
+uint8_t ppg_estimate_quality(void)
+{
+    if (!s_data_ready || s_raw_r == 0 || s_raw_ir == 0) {
+        return 0;
+    }
+
+    /* Perfusion Index proxy: ratio of AC to DC components */
+    uint32_t ratio = (uint32_t)s_raw_r * 1000U / (uint32_t)s_raw_ir;
+
+    /* Quality decreases as ratio moves outside optimal range [300, 600] */
+    if (ratio >= 300U && ratio <= 600U) {
+        /* Optimal range: score 80-100 based on centrality */
+        uint16_t center = 450U;
+        uint16_t dist = (ratio > center) ? (ratio - center) : (center - ratio);
+        return (uint8_t)(100U - (dist * 20U / 150U));
+    }
+
+    if (ratio < 300U) {
+        /* Low ratio: weak IR signal */
+        if (ratio > 200U) {
+            return PPG_QUALITY_FAIR;
+        }
+        return (uint8_t)(ratio / 4U);
+    }
+
+    /* High ratio: weak RED signal */
+    if (ratio < 800U) {
+        return (uint8_t)(PPG_QUALITY_FAIR * (800U - ratio) / 200U);
+    }
+    return 0;
 }

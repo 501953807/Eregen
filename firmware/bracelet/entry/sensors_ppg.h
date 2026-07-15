@@ -40,12 +40,29 @@
 /* Maximum I2C retry count */
 #define PPG_I2C_RETRY_MAX        3U
 
+/* Signal quality thresholds */
+#define PPG_QUALITY_GOOD         75U
+#define PPG_QUALITY_FAIR         50U
+
+/*
+ * Estimate signal quality based on perfusion index consistency.
+ * Returns 0-100 quality indicator.
+ */
+uint8_t ppg_estimate_quality(void);
+
 /* PPG health data output structure */
 typedef struct {
     uint16_t hr;       /* Heart rate in BPM, 0 if invalid */
     uint8_t  spo2;     /* SpO2 percentage, 0 if invalid */
-    bool     valid;    /* true if both HR and SpO2 are within valid range */
+    uint8_t  quality;  /* 0-100 signal quality indicator */
 } ppg_data_t;
+
+/*
+ * Read combined PPG health data (HR + SpO2 + quality).
+ * @param data Pointer to ppg_data_t to populate.
+ * @return true if sensor was reachable and data is fresh.
+ */
+bool ppg_read(ppg_data_t *data);
 
 /*
  * Initialize the PPG sensor over I2C.
@@ -72,11 +89,5 @@ uint16_t ppg_calculate_hr(void);
  * @return SpO2 percentage, clamped to [PPG_SPO2_MIN, PPG_SPO2_MAX], or 0 if invalid.
  */
 uint8_t ppg_calculate_spo2(void);
-
-/*
- * Get combined PPG health data.
- * @return ppg_data_t with hr, spo2, and validity flag.
- */
-ppg_data_t ppg_get_data(void);
 
 #endif /* SENSORS_PPG_H */
