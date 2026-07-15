@@ -36,9 +36,18 @@ set(GD32_SOURCES
     ${GD32_LIB}/source/gd32e230_adc.c
 )
 
-# Application sources
+# Application sources - all driver files
 set(APP_SOURCES
     main.c
+    board_init.c
+    sensors_ppg.c
+    sensors_imu.c
+    gps_nmea.c
+    cat1_at.c
+    display_st7789.c
+    battery_adc.c
+    sos_button.c
+    free_rtos_tasks.c
 )
 
 # Linker script
@@ -55,11 +64,16 @@ target_link_options(${PROJECT_NAME}.elf PRIVATE
 )
 
 target_include_directories(${PROJECT_NAME}.elf PRIVATE
-    ${CMAKE_SOURCE_DIR}/../../..
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${FREERTOS_PATH}/include
     ${FREERTOS_PATH}/portable/GCC/ARM_CM4F
     ${GD32_LIB}/include
     ${GD32_LIB}/device
+)
+
+# Define device type macro
+target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
+    -DDEVICE_TYPE_BRACELET_ENTRY
 )
 
 # Generate binary and hex

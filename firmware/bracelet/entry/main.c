@@ -7,37 +7,56 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "FreeRTOS.h"
 #include "task.h"
-#include "gpio.h"
-#include "usart.h"
-#include "timer.h"
+#include "queue.h"
+#include "board_init.h"
+#include "sensors_ppg.h"
+#include "sensors_imu.h"
+#include "gps_nmea.h"
+#include "cat1_at.h"
+#include "display_st7789.h"
+#include "battery_adc.h"
+#include "sos_button.h"
+#include "free_rtos_tasks.h"
 
-/* Task priorities */
-#define SENSOR_TASK_PRIORITY      (tskIDLE_PRIORITY + 3)
-#define GPS_TASK_PRIORITY         (tskIDLE_PRIORITY + 2)
-#define COMM_TASK_PRIORITY        (tskIDLE_PRIORITY + 4)
-#define DISPLAY_TASK_PRIORITY     (tskIDLE_PRIORITY + 1)
-
-/* Task stack sizes (words) */
-#define SENSOR_TASK_STACK_SIZE    configMINIMAL_STACK_SIZE * 4
-#define GPS_TASK_STACK_SIZE       configMINIMAL_STACK_SIZE * 4
-#define COMM_TASK_STACK_SIZE      configMINIMAL_STACK_SIZE * 8
-#define DISPLAY_TASK_STACK_SIZE   configMINIMAL_STACK_SIZE * 2
-
-/* Device ID prefix: BR-XXXX */
+/* Device ID: BR-XXXX format */
 #define DEVICE_ID_PREFIX          "BR-"
+#define DEVICE_ID_SERIAL_LEN      4U
 
-/* UART baud rate for debug output */
-#define DEBUG_BAUD_RATE           115200
+/* Global device serial number (set once at boot) */
+static char s_device_id[16];
+
+/* Step counter for health data */
+static uint32_t s_step_count = 0;
+static float s_last_accel_mag = 0.0f;
+
+/* GPS timestamp monotonically increasing counter */
+static uint32_t s_gps_timestamp = 0;
 
 /* Forward declarations */
-void vSensorTask(void *pvParameters);
-void vGPSTask(void *pvParameters);
-void vCommTask(void *pvParameters);
-void vDisplayTask(void *pvParameters);
-void board_init(void);
-void vApplicationHeapStats(char *pcWriteBuffer, size_t xBufferLen);
+static void vSensorTask(void *pvParameters);
+static void vGPSTask(void *pvParameters);
+static void vCommTask(void *pvParameters);
+static void vDisplayTask(void *pvParameters);
+static void vSOSTask(void *pvParameters);
+static void generate_device_id(void);
+
+/*
+ * Generate a pseudo-unique device ID in BR-XXXX format.
+ * Uses factory-calibrated UID from GD32.
+ */
+static void generate_device_id(void)
+{
+    /* Use GD32 unique 96-bit UID as device serial */
+    /* Format: BR-ABCD where ABCD is derived from UID */
+    uint32_t uid_low = *(volatile uint32_t*)(0x1FFFF7E8UL);
+    uint32_t uid_mid = *(volatile uint32_t*)(0x1FFFF7ECUL);
+    snprintf(s_device_id, sizeof(s_device_id),
+             "%s%04X", DEVICE_ID_PREFIX,
+             (uint16_t)(uid_low ^ uid_mid));
+}
 
 /*
  * Main entry point.
@@ -46,38 +65,56 @@ void vApplicationHeapStats(char *pcWriteBuffer, size_t xBufferLen);
 int main(void)
 {
     /* Initialize hardware */
-    board_init();
+    board_init_all();
+    generate_device_id();
+
+    printf("Eregen Bracelet Firmware v1.0\n");
+    printf("Device ID: %s\n", s_device_id);
+    printf("Target: GD32E230C8T3 (Cortex-M4)\n\n");
+
+    /* Initialize message queues */
+    tasks_init();
 
     /* Create sensor sampling task */
     xTaskCreate(vSensorTask,
                 "Sensor",
-                SENSOR_TASK_STACK_SIZE,
+                TASK_SENSOR_STACK,
                 NULL,
-                SENSOR_TASK_PRIORITY,
+                TASK_SENSOR_PRIORITY,
                 NULL);
 
     /* Create GPS positioning task */
     xTaskCreate(vGPSTask,
                 "GPS",
-                GPS_TASK_STACK_SIZE,
+                TASK_GPS_STACK,
                 NULL,
-                GPS_TASK_PRIORITY,
+                TASK_GPS_PRIORITY,
                 NULL);
 
     /* Create communication task (MQTT/Cat1) */
+    TaskHandle_t comm_handle = NULL;
     xTaskCreate(vCommTask,
                 "Comm",
-                COMM_TASK_STACK_SIZE,
+                TASK_COMM_STACK,
                 NULL,
-                COMM_TASK_PRIORITY,
-                NULL);
+                TASK_COMM_PRIORITY,
+                &comm_handle);
+    tasks_set_comm_handle(comm_handle);
 
-    /* Create display task (OLED) */
+    /* Create display task */
     xTaskCreate(vDisplayTask,
                 "Display",
-                DISPLAY_TASK_STACK_SIZE,
+                TASK_DISPLAY_STACK,
                 NULL,
-                DISPLAY_TASK_PRIORITY,
+                TASK_DISPLAY_PRIORITY,
+                NULL);
+
+    /* Create SOS monitoring task */
+    xTaskCreate(vSOSTask,
+                "SOS",
+                TASK_SOS_STACK,
+                NULL,
+                TASK_SOS_PRIORITY,
                 NULL);
 
     /* Start the scheduler */
@@ -89,18 +126,78 @@ int main(void)
 
 /*
  * Sensor Task
- * Reads heart rate (PPG), SpO2, and accelerometer (ICM-42670-P).
+ * Reads heart rate (PPG GT320), SpO2, and accelerometer (ICM-42670-P).
  * Publishes health data via message queue to Comm task.
  */
-void vSensorTask(void *pvParameters)
+static void vSensorTask(void *pvParameters)
 {
     (void)pvParameters;
 
+    /* Initialize PPG sensor */
+    if (!ppg_init()) {
+        printf("ERROR: PPG sensor initialization failed\n");
+        /* Blink LED blue to indicate error */
+        for (;;) {
+            gpio_bit_toggle(GPIOA, GPIO_PIN_1);
+            vTaskDelay(pdMS_TO_TICKS(500));
+        }
+    }
+    printf("PPG sensor initialized\n");
+
+    /* Initialize IMU sensor */
+    if (!imu_init()) {
+        printf("ERROR: IMU sensor initialization failed\n");
+        for (;;) {
+            gpio_bit_toggle(GPIOA, GPIO_PIN_1);
+            vTaskDelay(pdMS_TO_TICKS(500));
+        }
+    }
+    printf("IMU sensor initialized\n");
+
+    /* Initialize battery ADC */
+    battery_init();
+
+    uint32_t step_count = 0;
+    uint32_t last_step_count = 0;
+
     for (;;) {
-        /* TODO: Initialize PPG sensor (GT320) */
-        /* TODO: Initialize IMU sensor (ICM-42670-P) */
-        /* TODO: Read heart rate, SpO2, step count */
-        /* TODO: Send data to comm queue */
+        /* Read PPG data */
+        ppg_data_t health = ppg_get_data();
+
+        /* Read IMU for step detection */
+        imu_data_t imu = imu_get_data();
+        float accel_mag = imu_accel_magnitude(&imu);
+
+        /* Simple step detection: detect peaks in acceleration magnitude */
+        float threshold = 0.2f;  /* g change threshold */
+        if ((accel_mag - s_last_accel_mag) > threshold) {
+            step_count++;
+        }
+        s_last_accel_mag = accel_mag;
+
+        /* Send health data via queue every ~1 second */
+        if (step_count != last_step_count) {
+            health_data_t msg;
+            msg.hr = health.hr;
+            msg.spo2 = health.spo2;
+            msg.step_count = step_count;
+
+            if (tasks_send_health(&msg, pdMS_TO_TICKS(100))) {
+                printf("HEALTH: HR=%u, SpO2=%u, Steps=%lu\n",
+                       (unsigned)health.hr, (unsigned)health.spo2,
+                       (unsigned long)step_count);
+            }
+            last_step_count = step_count;
+        }
+
+        /* Send battery status periodically */
+        static uint32_t batt_tick = 0;
+        if (++batt_tick >= 100) {  /* Every ~10 seconds */
+            batt_tick = 0;
+            battery_status_t batt = battery_get_status();
+            printf("BATTERY: %umV, %u%%\n",
+                   (unsigned)batt.voltage_mv, (unsigned)batt.percent);
+        }
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
@@ -109,16 +206,43 @@ void vSensorTask(void *pvParameters)
 /*
  * GPS Task
  * Reads location from GPS module (u-blox NEO-M9N or UGN-7345).
- * Publishes location data via message queue to Comm task.
+ * Parses NMEA sentences and publishes location data via message queue.
  */
-void vGPSTask(void *pvParameters)
+static void vGPSTask(void *pvParameters)
 {
     (void)pvParameters;
 
+    /* Initialize GPS parser */
+    gps_init();
+    printf("GPS NMEA parser initialized\n");
+
     for (;;) {
-        /* TODO: Initialize GPS module */
-        /* TODO: Read latitude, longitude, accuracy */
-        /* TODO: Send data to comm queue */
+        /* Read characters from GPS UART and feed to parser.
+         * In production, this would be driven by UART RX interrupt.
+         * For now, poll the USART receive buffer.
+         */
+        while (usart_flag_get(USART2, USART_FLAG_RBNE) != RESET) {
+            char c = (char)usart_data_receive(USART2);
+            gps_parse_char(c);
+        }
+
+        /* Check for valid fix and send location data */
+        if (gps_has_valid_fix()) {
+            gps_fix_t fix = gps_get_fix();
+
+            location_data_t msg;
+            msg.lat = fix.lat;
+            msg.lon = fix.lon;
+            msg.accuracy = fix.accuracy;
+            msg.timestamp = s_gps_timestamp++;
+
+            if (tasks_send_location(&msg, pdMS_TO_TICKS(100))) {
+                printf("LOCATION: lat=%.6f, lon=%.6f, sats=%u, acc=%um\n",
+                       fix.lat, fix.lon,
+                       (unsigned)fix.satellites,
+                       (unsigned)fix.accuracy);
+            }
+        }
 
         vTaskDelay(pdMS_TO_TICKS(5000));
     }
@@ -126,77 +250,203 @@ void vGPSTask(void *pvParameters)
 
 /*
  * Communication Task
- * Handles Cat1 cellular connectivity, MQTT publish/subscribe.
+ * Handles Cat1 cellular connectivity and MQTT publish/subscribe.
  * Receives data from other tasks via queues and publishes to cloud.
- * Subscribes to cloud commands and forwards to appropriate tasks.
  */
-void vCommTask(void *pvParameters)
+static void vCommTask(void *pvParameters)
 {
     (void)pvParameters;
 
-    for (;;) {
-        /* TODO: Initialize Cat1 module (L610-CM) */
-        /* TODO: Connect to EMQX MQTT broker */
-        /* TODO: Subscribe to device command topic */
-        /* TODO: Publish heartbeat, health, location, SOS data */
+    /* Initialize Cat1 module */
+    if (!cat1_init()) {
+        printf("ERROR: Cat1 module not responding\n");
+        /* Continue running but log errors */
+    } else {
+        printf("Cat1 module initialized\n");
+    }
 
-        vTaskDelay(pdMS_TO_TICKS(10000));
+    /* Connect to APN */
+    if (!cat1_connect_apn(CAT1_DEFAULT_APN)) {
+        printf("WARNING: APN connection failed, will retry\n");
+    } else {
+        printf("APN connected: %s\n", CAT1_DEFAULT_APN);
+    }
+
+    /* Heartbeat interval */
+    uint32_t heartbeat_counter = 0;
+
+    for (;;) {
+        /* Send heartbeat every 30 seconds */
+        if (++heartbeat_counter >= 30) {
+            heartbeat_counter = 0;
+
+            /* Read battery for heartbeat */
+            battery_status_t batt = battery_get_status();
+
+            printf("HEARTBEAT: dev_id=%s, bat=%u\n",
+                   s_device_id, (unsigned)batt.percent);
+            /* TODO: Publish heartbeat JSON to MQTT broker
+             * {"type":"heartbeat","dev_id":"BR-XXXX","bat":85}
+             */
+        }
+
+        /* Signal strength check */
+        static uint32_t rssi_counter = 0;
+        if (++rssi_counter >= 10) {
+            rssi_counter = 0;
+            int16_t rssi = cat1_get_signal_strength();
+            printf("RSSI: %ddBm\n", (int)rssi);
+        }
+
+        /* Process incoming health data from queue (placeholder) */
+        health_data_t health_msg;
+        if (xQueueReceive(tasks_get_comm_handle() ?
+                          *(QueueHandle_t*)0 : NULL,
+                          &health_msg, pdMS_TO_TICKS(1)) == pdPASS) {
+            /* Data received from sensor task - publish to MQTT */
+            /* TODO: Implement MQTT publish */
+        }
+
+        /* Process incoming location data from queue (placeholder) */
+        location_data_t loc_msg;
+        /* Similar queue processing for location data */
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
 /*
  * Display Task
- * Controls OLED screen (SSD1306). Shows status, alerts, basic UI.
+ * Controls ST7789 LCD display. Shows status, battery, connection indicator.
  */
-void vDisplayTask(void *pvParameters)
+static void vDisplayTask(void *pvParameters)
 {
     (void)pvParameters;
 
-    for (;;) {
-        /* TODO: Initialize OLED display (SSD1306) */
-        /* TODO: Draw status bar, battery indicator */
-        /* TODO: Render incoming alerts */
+    /* Initialize display */
+    if (!display_init()) {
+        printf("ERROR: Display initialization failed\n");
+        for (;;) {
+            gpio_bit_toggle(GPIOA, GPIO_PIN_0);
+            vTaskDelay(pdMS_TO_TICKS(500));
+        }
+    }
+    printf("Display initialized\n");
 
-        vTaskDelay(pdMS_TO_TICKS(200));
+    /* Initial screen: show device ID */
+    display_clear(DISPLAY_COLOR_BLACK);
+    display_draw_string(10, 10, "Eregen", DISPLAY_COLOR_WHITE, DISPLAY_COLOR_BLACK);
+    display_draw_string(10, 25, s_device_id, DISPLAY_COLOR_GREEN, DISPLAY_COLOR_BLACK);
+    display_update();
+
+    for (;;) {
+        /* Update battery indicator */
+        battery_status_t batt = battery_get_status();
+
+        /* Draw battery icon in top-right corner */
+        uint16_t batt_color = DISPLAY_COLOR_RED;
+        if (batt.percent > 50U) {
+            batt_color = DISPLAY_COLOR_GREEN;
+        } else if (batt.percent > 20U) {
+            batt_color = DISPLAY_COLOR_YELLOW;
+        }
+        display_draw_rect_filled(110, 0, 134, 12, DISPLAY_COLOR_WHITE);
+        display_draw_rect_filled(112, 2,
+                                 (uint16_t)(112 + (20U * batt.percent / 100U)),
+                                 10, batt_color);
+
+        /* Show battery percentage */
+        char batt_str[8];
+        snprintf(batt_str, sizeof(batt_str), "%u%%", (unsigned)batt.percent);
+        display_draw_string(2, 2, batt_str, DISPLAY_COLOR_WHITE, DISPLAY_COLOR_BLACK);
+
+        /* Show signal strength bar */
+        int16_t rssi = cat1_get_signal_strength();
+        uint8_t bars = 0;
+        if (rssi > CAT1_RSSI_GOOD) bars = 4;
+        else if (rssi > CAT1_RSSI_WEAK) bars = 2;
+        else if (rssi > -127) bars = 1;
+
+        for (uint8_t i = 0; i < 4; i++) {
+            uint16_t bx = 20U + i * 4U;
+            uint16_t by = (i < bars) ? 2U : 8U;
+            uint16_t bh = (i < bars) ? 10U : 4U;
+            display_draw_rect_filled(bx, by, bx + 2, by + bh,
+                                     (i < bars) ? DISPLAY_COLOR_GREEN :
+                                                  DISPLAY_COLOR_BLUE);
+        }
+
+        /* Show connection status */
+        bool connected = cat1_is_connected();
+        const char *conn_str = connected ? "CONNECTED" : "DISCONNECTED";
+        uint16_t conn_color = connected ? DISPLAY_COLOR_GREEN : DISPLAY_COLOR_RED;
+        display_draw_string(2, 14, conn_str, conn_color, DISPLAY_COLOR_BLACK);
+
+        display_update();
+        vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }
 
 /*
- * Board initialization
- * Configures GPIO, UART (debug), I2C (sensors/OLED), SPI (GPS).
+ * SOS Monitoring Task
+ * Watches the physical SOS button and triggers alerts on long press.
  */
-void board_init(void)
+static void vSOSTask(void *pvParameters)
 {
-    /* Configure debug UART */
-    uart_init(DEBUG_BAUD_RATE);
-    printf("Eregen Bracelet Firmware starting...\n");
+    (void)pvParameters;
 
-    /* Configure GPIO for LEDs, buttons, SOS */
-    gpio_init();
+    sos_init();
+    printf("SOS button monitoring started\n");
 
-    /* Configure I2C for sensors and display */
-    i2c_init();
+    /* Blink green LED to indicate system is alive */
+    for (;;) {
+        /* Run the SOS state machine */
+        sos_task();
 
-    /* Configure SPI for GPS module */
-    spi_init();
+        /* Check for long press (3 seconds) */
+        if (sos_is_long_press()) {
+            printf("SOS ALERT TRIGGERED!\n");
 
-    /* Configure timers */
-    timer_init();
+            /* Get current GPS position */
+            gps_fix_t fix;
+            double lat = 0.0, lon = 0.0;
+            if (gps_has_valid_fix()) {
+                fix = gps_get_fix();
+                lat = fix.lat;
+                lon = fix.lon;
+            }
 
-    /* Configure interrupt priorities */
-    NVIC_SetPriorityGrouping(4);
+            /* Send SOS alert via queue */
+            sos_alert_t alert;
+            alert.lat = lat;
+            alert.lon = lon;
+            alert.timestamp = s_gps_timestamp;
 
-    printf("Board initialization complete.\n");
-}
+            if (tasks_send_sos(&alert, pdMS_TO_TICKS(500))) {
+                printf("SOS alert sent to comm task\n");
+            }
 
-/*
- * FreeRTOS hook: heap statistics (called from debug task)
- */
-void vApplicationHeapStats(char *pcWriteBuffer, size_t xBufferLen)
-{
-    (void)xBufferLen;
-    /* TODO: Implement heap stats reporting */
-    if (pcWriteBuffer) {
-        snprintf(pcWriteBuffer, xBufferLen, "Heap stats not implemented");
+            /* Flash all LEDs red */
+            for (uint8_t i = 0; i < 5; i++) {
+                gpio_bit_reset(GPIOA, GPIO_PIN_0);
+                gpio_bit_reset(GPIOA, GPIO_PIN_1);
+                vTaskDelay(pdMS_TO_TICKS(200));
+                gpio_bit_set(GPIOA, GPIO_PIN_0);
+                gpio_bit_set(GPIOA, GPIO_PIN_1);
+                vTaskDelay(pdMS_TO_TICKS(200));
+            }
+
+            sos_reset_long_press_flag();
+        }
+
+        /* Brief press indication (single blink of blue LED) */
+        if (sos_is_pressed()) {
+            gpio_bit_reset(GPIOA, GPIO_PIN_1);
+            vTaskDelay(pdMS_TO_TICKS(100));
+            gpio_bit_set(GPIOA, GPIO_PIN_1);
+            sos_reset_pressed_flag();
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(SOS_CHECK_INTERVAL_MS));
     }
 }

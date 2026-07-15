@@ -1,0 +1,11 @@
+package:
+  name: "eregen/pillbox_smart"
+  version: "1.0.0"
+  description: "Eregen Smart pillbox firmware — TTS voice reminder, OLED display, APP linkage"
+  authors:
+    - "Eregen Team <dev@eregen.example>"
+
+dependencies:
+  idf: ">=5.3"
+  esptool_py: "^4.0"
+  driver: "^1.0"

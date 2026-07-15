@@ -1,7 +1,6 @@
 /*
  * Eregen (颐贞) - Pillbox Basic Firmware Entry Point
- * Target: ESP32-C3 (RISC-V)
- * SDK: ESP-IDF v5.3+
+ * Target: ESP32-C3 (RISC-V) | SDK: ESP-IDF v5.3+
  *
  * © 2026 Eregen (颐贞). All rights reserved.
  */
@@ -23,40 +22,40 @@
 #include "driver/ledc.h"
 #include "driver/adc.h"
 
+#include "wifi_station.h"
+#include "led_gpio.h"
+#include "battery_manage.h"
+#include "button_input.h"
+
 /* Task priorities */
 #define MAIN_TASK_PRIORITY          (tskIDLE_PRIORITY + 2)
-#define WIFI_CONNECT_PRIORITY       (tskIDLE_PRIORITY + 1)
 
 /* Task stack sizes (bytes) */
 #define MAIN_TASK_STACK_SIZE        (4096)
-#define WIFI_CONNECT_TASK_STACK_SIZE (2048)
 
 /* Device ID prefix: PX-XXXX */
 #define DEVICE_ID_PREFIX            "PX-"
 
-/* GPIO pin definitions */
-#define PIN_LED_BLUE                GPIO_NUM_8
-#define PIN_BUTTON_ENTER            GPIO_NUM_0
-#define PIN_BUTTON_RIGHT            GPIO_NUM_9
-#define PIN_BATTERY_ADC             ADC1_CHANNEL_0
-
 /* NVS namespace */
 #define NVS_NAMESPACE               "pillbox"
+
+/* Heartbeat interval (seconds) */
+#define HEARTBEAT_INTERVAL_S        30
+
+/* Button scan interval (milliseconds) */
+#define BUTTON_SCAN_INTERVAL_MS     20
+
+/* Battery read interval (seconds) */
+#define BATTERY_READ_INTERVAL_S     120
 
 /* Log tag */
 static const char *TAG = "pillbox_main";
 
 /* Event group for inter-task signaling */
-static EventGroupHandle_t s_main_events;
+#define WIFI_CONNECTED_BIT    BIT0
+#define HEARTBEAT_BIT         BIT1
 
-/* Forward declarations */
-static void app_wifi_init(void);
-static void app_nvs_init(void);
-static void app_led_init(void);
-static void app_button_init(void);
-static void app_battery_monitor_init(void);
-static void vMainTask(void *pvParameter);
-static esp_err_t app_get_device_id(char *buf, size_t len);
+static EventGroupHandle_t s_main_events;
 
 /**
  * Application entry point.
@@ -68,26 +67,71 @@ void app_main(void)
 
     /* Initialize NVS flash storage */
     ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
+        ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         nvs_flash_erase();
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
 
     /* Initialize WiFi */
-    app_wifi_init();
+    ret = wifi_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "WiFi init failed: %s", esp_err_to_name(ret));
+        return;
+    }
 
-    /* Initialize non-volatile storage for device config */
-    app_nvs_init();
+    /* Connect to configured WiFi network */
+    ret = wifi_connect();
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "WiFi connect failed (%s), continuing without network",
+                 esp_err_to_name(ret));
+    }
+
+    /* Initialize NVS device config */
+    {
+        nvs_handle_t handle;
+        ret = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle);
+        if (ret == ESP_OK) {
+            /* Generate device ID from MAC and store in NVS */
+            uint8_t mac[6];
+            esp_read_mac(mac, ESP_MAC_WIFI_STA);
+
+            char device_id[16];
+            snprintf(device_id, sizeof(device_id), "%02X%02X%02X%02X%02X%02X",
+                     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+            size_t len = strlen(device_id) + 1;
+            nvs_set_str(handle, "device_id", device_id);
+            nvs_commit(handle);
+            nvs_close(handle);
+
+            ESP_LOGI(TAG, "Device ID stored: %s", device_id);
+        } else {
+            ESP_LOGE(TAG, "NVS open failed: %s", esp_err_to_name(ret));
+        }
+    }
 
     /* Initialize LED indicator */
-    app_led_init();
+    ret = led_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "LED init failed: %s", esp_err_to_name(ret));
+        return;
+    }
 
     /* Initialize buttons */
-    app_button_init();
+    ret = buttons_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Buttons init failed: %s", esp_err_to_name(ret));
+        return;
+    }
 
     /* Initialize battery ADC monitoring */
-    app_battery_monitor_init();
+    ret = battery_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Battery init failed: %s", esp_err_to_name(ret));
+        return;
+    }
 
     /* Create event group */
     s_main_events = xEventGroupCreate();
@@ -102,160 +146,119 @@ void app_main(void)
 }
 
 /**
- * WiFi initialization
- * Sets ESP32-C3 as WiFi station mode.
- */
-static void app_wifi_init(void)
-{
-    tcpip_adapter_init();
-
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    esp_wifi_init(&cfg);
-
-    esp_event_handler_instance_t instance_any_id;
-    esp_event_handler_instance_t instance_got_ip;
-    esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
-                               &instance_any_id);
-    esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP,
-                               &instance_got_ip);
-
-    wifi_config_t wifi_config = {
-        .sta = {
-            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
-        },
-    };
-
-    esp_wifi_set_mode(WIFI_MODE_STA);
-    esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
-    esp_wifi_start();
-
-    ESP_LOGI(TAG, "WiFi initialized (station mode)");
-}
-
-/**
- * NVS initialization
- * Loads or initializes device configuration from non-volatile storage.
- */
-static void app_nvs_init(void)
-{
-    nvs_handle_t handle;
-    esp_err_t ret = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "NVS open failed: %s", esp_err_to_name(ret));
-        return;
-    }
-
-    /* TODO: Load device config from NVS */
-    /* TODO: Generate and store unique device ID if not present */
-
-    nvs_close(handle);
-}
-
-/**
- * LED initialization
- * Configures blue LED on GPIO8 for status indication.
- */
-static void app_led_init(void)
-{
-    ledc_timer_config_t led_timer = {
-        .duty_resolution = LEDC_TIMER_8_BIT,
-        .freq_hz = 5000,
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .timer_num = LEDC_TIMER_0,
-        .clk_cfg = LEDC_AUTO_CLK,
-    };
-    ledc_timer_config(&led_timer);
-
-    ledc_channel_config_t led_channel = {
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .channel = LEDC_CHANNEL_0,
-        .timer_sel = LEDC_TIMER_0,
-        .intr_type = LEDC_INTR_DISABLE,
-        .gpio_num = PIN_LED_BLUE,
-        .duty = 0,
-        .hpoint = 0,
-    };
-    ledc_channel_config(&led_channel);
-
-    ESP_LOGI(TAG, "Blue LED initialized on GPIO%d", PIN_LED_BLUE);
-}
-
-/**
- * Button initialization
- * Configures Enter and Right buttons with internal pull-up.
- */
-static void app_button_init(void)
-{
-    gpio_config_t btn_cfg = {
-        .pin_bit_mask = (1ULL << PIN_BUTTON_ENTER) | (1ULL << PIN_BUTTON_RIGHT),
-        .mode = GPIO_MODE_INPUT,
-        .pull_up_en = GPIO_PULLUP_ENABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE,
-    };
-    gpio_config(&btn_cfg);
-
-    ESP_LOGI(TAG, "Buttons initialized: Enter=GPIO%d, Right=GPIO%d",
-             PIN_BUTTON_ENTER, PIN_BUTTON_RIGHT);
-}
-
-/**
- * Battery monitoring initialization
- * Configures ADC1 channel for battery voltage reading.
- */
-static void app_battery_monitor_init(void)
-{
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten(PIN_BATTERY_ADC, ADC_ATTEN_DB_11);
-
-    ESP_LOGI(TAG, "Battery ADC initialized on channel %d", PIN_BATTERY_ADC);
-}
-
-/**
- * Main application task loop
- * Handles pillbox logic: timing, reminders, compartment tracking,
- * WiFi/MQTT communication, and LED status indication.
+ * Main application task loop.
+ * Handles heartbeat generation, button polling, battery monitoring,
+ * and LED status indication based on WiFi state.
  */
 static void vMainTask(void *pvParameter)
 {
     (void)pvParameter;
 
     char device_id[16];
-    if (app_get_device_id(device_id, sizeof(device_id)) == ESP_OK) {
-        ESP_LOGI(TAG, "Device ID: %s", device_id);
+    {
+        nvs_handle_t handle;
+        esp_err_t ret = nvs_open(NVS_NAMESPACE, NVS_READONLY, &handle);
+        if (ret == ESP_OK) {
+            size_t len = sizeof(device_id);
+            nvs_get_str(handle, "device_id", device_id, &len);
+            nvs_close(handle);
+        } else {
+            /* Fallback: generate from MAC */
+            uint8_t mac[6];
+            esp_read_mac(mac, ESP_MAC_WIFI_STA);
+            snprintf(device_id, sizeof(device_id), "%02X%02X%02X%02X%02X%02X",
+                     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+        }
     }
+
+    ESP_LOGI(TAG, "Device ID: %s%s", DEVICE_ID_PREFIX, device_id);
+
+    uint32_t heartbeat_counter = 0;
+    uint32_t battery_counter = 0;
 
     for (;;) {
-        /* TODO: Check medication schedule */
-        /* TODO: Trigger voice/LED reminder at scheduled times */
-        /* TODO: Monitor compartment sensors for pill removal */
-        /* TODO: Track taken/not-taken medication status */
-        /* TODO: Read battery level and report if low */
-        /* TODO: Connect to MQTT broker and sync data */
+        bool connected = wifi_is_connected();
 
-        /* Blink blue LED to indicate running */
-        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 255);
-        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
-        vTaskDelay(pdMS_TO_TICKS(500));
-        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
-        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
-        vTaskDelay(pdMS_TO_TICKS(500));
+        /* Update LED based on WiFi state */
+        if (connected) {
+            led_set_color(LED_COLOR_GREEN);   /* Solid green = connected */
+        } else {
+            led_blink(LED_COLOR_BLUE, LED_PATTERN_FAST_BLINK);  /* Blue blink = pairing */
+        }
+
+        /* Poll buttons */
+        button_event_t btn_event = buttons_get_event();
+        if (btn_event != BUTTON_NONE) {
+            ESP_LOGI(TAG, "Button event: %d", (int)btn_event);
+
+            switch (btn_event) {
+            case BUTTON_SHORT_PRESS:
+                /* Flash green briefly as feedback */
+                led_set_color(LED_COLOR_GREEN);
+                vTaskDelay(pdMS_TO_TICKS(200));
+                break;
+
+            case BUTTON_LONG_PRESS:
+                /* Trigger heartbeat immediately */
+                ESP_LOGI(TAG, "Long press: forcing heartbeat");
+                break;
+
+            case BUTTON_DOUBLE_PRESS:
+                /* Reset WiFi connection attempt */
+                ESP_LOGI(TAG, "Double press: resetting WiFi");
+                esp_wifi_disconnect();
+                esp_wifi_connect();
+                break;
+
+            default:
+                break;
+            }
+
+            buttons_clear_event();
+        }
+
+        /* Generate heartbeat every HEARTBEAT_INTERVAL_S seconds */
+        heartbeat_counter++;
+        if (heartbeat_counter >= HEARTBEAT_INTERVAL_S * 1000 / BUTTON_SCAN_INTERVAL_MS) {
+            heartbeat_counter = 0;
+
+            /* Read battery level */
+            float voltage = battery_read_voltage();
+            float percent = battery_calculate_percent(voltage);
+            int bat_int = (int)percent;
+
+            /* Log battery status */
+            ESP_LOGI(TAG, "Battery: %.2fV, %d%%", voltage, bat_int);
+
+            /* Low battery warning */
+            if (percent < (BATTERY_LOW_THRESHOLD * 100.0f)) {
+                ESP_LOGW(TAG, "Low battery warning: %d%%", bat_int);
+                led_blink(LED_COLOR_RED, LED_PATTERN_FAST_BLINK);
+            }
+
+            /* Format and log heartbeat message */
+            char heartbeat_msg[128];
+            snprintf(heartbeat_msg, sizeof(heartbeat_msg),
+                     "{\"type\":\"heartbeat\",\"dev_id\":\"%s%s\",\"bat\":%d}",
+                     DEVICE_ID_PREFIX, device_id, bat_int);
+            ESP_LOGI(TAG, "Heartbeat: %s", heartbeat_msg);
+
+            /* Set LED to solid green after heartbeat (if WiFi connected) */
+            if (connected) {
+                led_set_color(LED_COLOR_GREEN);
+            }
+        }
+
+        /* Full battery read every BATTERY_READ_INTERVAL_S seconds */
+        battery_counter++;
+        if (battery_counter >= BATTERY_READ_INTERVAL_S * 1000 / BUTTON_SCAN_INTERVAL_MS) {
+            battery_counter = 0;
+            float voltage = battery_read_voltage();
+            float percent = battery_calculate_percent(voltage);
+            ESP_LOGI(TAG, "Battery check: %.2fV (%.1f%%)", voltage, percent);
+        }
+
+        /* Delay for button scan interval */
+        vTaskDelay(pdMS_TO_TICKS(BUTTON_SCAN_INTERVAL_MS));
     }
-}
-
-/**
- * Generate or retrieve unique device ID
- * Format: PX-XXXXXXXX (8 hex digits from ESP32 MAC address)
- */
-static esp_err_t app_get_device_id(char *buf, size_t len)
-{
-    uint8_t mac[6];
-    esp_read_mac(mac, ESP_MAC_WIFI_STA);
-
-    int ret = snprintf(buf, len, "%02X%02X%02X%02X%02X%02X",
-                       mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    if (ret < 0 || (size_t)ret >= len) {
-        return ESP_ERR_NO_MEM;
-    }
-    return ESP_OK;
 }

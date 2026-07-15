@@ -1,0 +1,23 @@
+# © 2026 Eregen (颐贞). All rights reserved.
+
+# Eregen MQTT Gateway Configuration
+
+server_port: 8080
+
+mqtt:
+  broker: "tls://localhost:8883"
+  client_id: "gateway-dev"
+  username: "eregen"
+  password: "eregen_password"
+  keep_alive: 60s
+  tls:
+    enabled: false
+    ca_cert: "./config/emqx/certs/ca.crt"
+    cert: ""
+    key: ""
+
+nats:
+  url: "nats://localhost:4222"
+
+auth:
+  secret_key: "dev-secret-key-change-in-production"
