@@ -401,3 +401,22 @@ float imu_accel_magnitude(const imu_data_t *data)
                  data->ay * data->ay +
                  data->az * data->az);
 }
+
+/*
+ * Read a single calibrated IMU sample.
+ * Convenience wrapper around imu_get_data().
+ */
+bool imu_read_sample(imu_sample_t *sample)
+{
+    if (sample == NULL) return false;
+
+    imu_data_t data = imu_get_data();
+    sample->ax = data.ax;
+    sample->ay = data.ay;
+    sample->az = data.az;
+    sample->gx = data.gx;
+    sample->gy = data.gy;
+    sample->gz = data.gz;
+
+    return true;
+}

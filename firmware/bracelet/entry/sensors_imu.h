@@ -67,6 +67,9 @@ typedef struct {
     float gz;  /* Gyro Z, in dps */
 } imu_data_t;
 
+/* Alias for fall-detection algorithm interface */
+typedef imu_data_t imu_sample_t;
+
 /*
  * Initialize the IMU sensor over SPI.
  * Verifies device ID and configures default settings.
@@ -109,6 +112,14 @@ imu_data_t imu_read_gyro(void);
  * @return imu_data_t with all six axes.
  */
 imu_data_t imu_get_data(void);
+
+/*
+ * Read a single calibrated IMU sample.
+ * Convenience wrapper around imu_get_data().
+ * @param sample Out: populated with calibrated accel + gyro data.
+ * @return true on success.
+ */
+bool imu_read_sample(imu_sample_t *sample);
 
 /*
  * Configure accelerometer full-scale range.
