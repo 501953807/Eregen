@@ -103,6 +103,7 @@ void sos_task(void)
         if (s_sos.current_state == true) {
             /* Was pressed, now released */
             s_sos.current_state = false;
+            /* Clear just_pressed on release too -- it's a momentary flag */
             s_sos.just_pressed = false;
         }
         s_sos.stable_count = 0;

@@ -33,14 +33,18 @@ static int g_tests_failed = 0;
            msg, (unsigned long)(b), (unsigned long)(a)); } \
 } while(0)
 
-static void simulate_checks(bool state, uint16_t count)
+/* Simulate N consecutive checks with the given state.
+ * Returns the number of checks actually performed. */
+static uint16_t simulate_checks(bool state, uint16_t count)
 {
     sos_set_mock_state(state);
     for (uint16_t i = 0; i < count; i++) {
         sos_task();
     }
+    return count;
 }
 
+/* Simulate a quick press: hold briefly then release */
 static void simulate_quick_press(void)
 {
     /* Press for 2 checks (below CONSECUTIVE_REQ=3 threshold) */
@@ -48,18 +52,18 @@ static void simulate_quick_press(void)
     simulate_checks(false, 1);
 }
 
+/* Simulate a valid press: hold enough to pass debounce, then release */
 static void simulate_valid_press(void)
 {
-    /* Press for CONSECUTIVE_REQ+2 = 5 checks (exceeds threshold of 3) */
+    /* Hold for CONSECUTIVE_REQ+2 = 5 checks to exceed threshold */
     simulate_checks(true, SOS_CONSECUTIVE_REQ + 2);
-    simulate_checks(false, 1);
 }
 
+/* Simulate a long press: hold for 350 checks (~3470ms) */
 static void simulate_long_press(void)
 {
-    /* Hold for 350 checks -> hold_time = (350-3)*10 = 3470ms (>= 3000ms long press) */
+    /* Hold for 350 checks -> hold_time = (350-3)*10 = 3470ms >= 3000ms */
     simulate_checks(true, 350);
-    simulate_checks(false, 1);
 }
 
 /* ============ Debounce Tests ============ */
@@ -91,15 +95,12 @@ static void test_anti_false_trigger(void)
     sos_init();
 
     /* Press for exactly CONSECUTIVE_REQ times (3) -- NOT enough, need > 3 */
-    sos_set_mock_state(true);
-    for (uint8_t i = 0; i < SOS_CONSECUTIVE_REQ; i++) {
-        sos_task();
-    }
-    sos_set_mock_state(false);
-    sos_task();
-
+    simulate_checks(true, SOS_CONSECUTIVE_REQ);
+    /* Release without reading flag yet */
     TEST_ASSERT(sos_is_pressed() == false,
                 "Press at exact threshold rejected (needs > consecutive)");
+
+    simulate_checks(false, 1);
 
     /* Press exceeding threshold IS valid */
     simulate_valid_press();
@@ -118,6 +119,7 @@ static void test_long_press(void)
     printf("\n--- Long Press Tests ---\n");
     sos_init();
 
+    /* Short valid press (5 checks, ~20ms hold) */
     simulate_valid_press();
     TEST_ASSERT(sos_is_long_press() == false,
                 "Short hold does not trigger long press");
@@ -125,6 +127,7 @@ static void test_long_press(void)
     sos_reset_pressed_flag();
     sos_reset_long_press_flag();
 
+    /* Long press (350 checks, ~3470ms) */
     simulate_long_press();
     TEST_ASSERT(sos_is_long_press() == true,
                 "Long press (>=3s) triggers alert");
@@ -150,14 +153,15 @@ static void test_hold_time(void)
     TEST_ASSERT_EQ(sos_get_hold_time_ms(), 0,
                    "Idle button returns hold time 0");
 
-    simulate_valid_press();
-    uint32_t time_after_press = sos_get_hold_time_ms();
-    /* After a short valid press (5 checks), hold_time = (5-3)*10 = 20ms */
-    TEST_ASSERT(time_after_press > 0,
-                "After valid press, hold time reflects duration");
+    /* Hold for 350 ticks -> hold_time = (350-3)*10 = 3470ms */
+    simulate_long_press();
+    uint32_t hold_time = sos_get_hold_time_ms();
+    TEST_ASSERT(hold_time >= 3000,
+                "After long hold, hold time reflects duration");
 
-    /* Hold time persists after release until explicitly cleared */
-    TEST_ASSERT_EQ(sos_get_hold_time_ms(), time_after_press,
+    /* Release and verify hold_time persists */
+    simulate_checks(false, 1);
+    TEST_ASSERT_EQ(sos_get_hold_time_ms(), hold_time,
                    "Hold time persists after release");
 }
 
@@ -179,6 +183,7 @@ static void test_state_transitions(void)
     TEST_ASSERT(sos_is_long_press() == true, "After long hold: just_long_press is true");
     sos_reset_long_press_flag();
 
+    /* Multiple quick presses should all be ignored */
     for (int i = 0; i < 3; i++) {
         simulate_quick_press();
         TEST_ASSERT(sos_is_pressed() == false, "Cycle repeated quick press ignored");
