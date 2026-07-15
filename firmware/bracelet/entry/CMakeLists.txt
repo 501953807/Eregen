@@ -48,6 +48,8 @@ set(APP_SOURCES
     battery_adc.c
     sos_button.c
     free_rtos_tasks.c
+    location/gps_manager.c
+    location/geofence.c
     ../common/crc16.c
     ../common/ring_buffer.c
     ../common/log.c

@@ -299,7 +299,7 @@ static void vCommTask(void *pvParameters)
     (void)pvParameters;
 
     /* Initialize Cat1 module */
-    if (!cat1_init()) {
+    if (!cat1_init(NULL)) {
         log_error("Cat1 module not responding");
         /* Continue running but log errors */
     } else {
@@ -307,10 +307,10 @@ static void vCommTask(void *pvParameters)
     }
 
     /* Connect to APN */
-    if (!cat1_connect_apn(CAT1_DEFAULT_APN)) {
+    if (!cat1_connect()) {
         log_warn("APN connection failed, will retry");
     } else {
-        log_info("APN connected: %s", CAT1_DEFAULT_APN);
+        log_info("Cat1 connected");
     }
 
     /* Heartbeat interval */

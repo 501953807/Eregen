@@ -28,10 +28,7 @@ typedef struct {
 static gps_fix_t s_mock_fix;
 static bool s_mock_valid = false;
 
-gps_fix_t gps_get_fix(gps_fix_t *fix) {
-    if (fix) *fix = s_mock_fix;
-    return s_mock_fix;
-}
+static gps_fix_t gps_get_fix(void) { return s_mock_fix; }
 
 /* ---- Mock Cat1 AT interface ---- */
 typedef enum { CAT1_OK = 0, CAT1_ERROR, CAT1_TIMEOUT, CAT1_NO_CARRIER } cat1_status_t;
@@ -147,7 +144,7 @@ bool gps_manager_get_location(gps_fix_t *fix)
         *fix = s_last_known_fix;
         return fix->valid;
     }
-    *fix = gps_get_fix(fix);
+    *fix = gps_get_fix();
     return fix->valid;
 }
 
@@ -263,6 +260,11 @@ static void test_location_retrieval(void)
     CHECK(gps_manager_get_location(&fix) == true, "valid fix in NORMAL mode");
     CHECK(fabsf(fix.latitude - 39.9042f) < 0.001f, "latitude matches Beijing");
     CHECK(fabsf(fix.longitude - 116.4074f) < 0.001f, "longitude matches Beijing");
+
+    /* Trigger a GPS query so s_last_known_fix gets populated */
+    for (uint32_t i = 0; i < 300; i++) {
+        gps_manager_tick();
+    }
 
     /* POWER_SAVE mode should return last known */
     gps_manager_set_mode(LOC_POWER_SAVE);

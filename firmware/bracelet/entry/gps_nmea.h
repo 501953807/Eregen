@@ -31,37 +31,49 @@
 #define GPS_ACCURACY_MED   10U
 #define GPS_ACCURACY_POOR  50U
 
-/* GPS fix result structure */
+/**
+ * GPS fix result structure.
+ * Coordinates stored as decimal degrees (float for SRAM efficiency on Cortex-M4).
+ */
 typedef struct {
-    double lat;           /* Latitude in degrees (N positive, S negative) */
-    double lon;           /* Longitude in degrees (E positive, W negative) */
+    float latitude;       /* Latitude in decimal degrees */
+    float longitude;      /* Longitude in decimal degrees */
+    float altitude;       /* Altitude in meters above WGS84 ellipsoid */
     uint8_t satellites;   /* Number of satellites in view */
-    uint8_t accuracy;     /* Horizontal dilution of precision approx in meters */
     uint32_t timestamp;   /* UTC timestamp in seconds since epoch */
-    uint8_t fix_quality;  /* GPS_FIX_GPS or GPS_FIX_DGPS */
     bool valid;           /* true if fix is valid */
 } gps_fix_t;
 
-/*
+/**
  * Initialize the GPS parser state machine.
- * Must be called before gps_parse_char().
+ * Must be called before any GPS parsing function.
  */
 void gps_init(void);
 
-/*
+/**
  * Feed one character from GPS UART into the NMEA parser.
  * Processes complete sentences when recognized.
- * @param c The character received from UART RX
+ * @param c The character received from GPS UART RX.
  */
 void gps_parse_char(char c);
 
-/*
- * Get the latest GPS fix.
+/**
+ * Parse a complete NMEA sentence line.
+ * Convenience wrapper for batch input (e.g., line-buffered UART).
+ * Validates checksum, dispatches to appropriate parser.
+ * @param line A single NMEA sentence (e.g., "$GPGGA,...*cs").
+ * @return true if a valid fix was extracted from this line.
+ */
+bool gps_parse_nmea(const char *line);
+
+/**
+ * Get the latest GPS fix accumulated by the parser.
+ * Returns a copy of the current fix by value.
  * @return gps_fix_t with current position data.
  */
 gps_fix_t gps_get_fix(void);
 
-/*
+/**
  * Check if a valid GPS fix is available.
  * @return true if fix is valid and recent (within last 30 seconds).
  */

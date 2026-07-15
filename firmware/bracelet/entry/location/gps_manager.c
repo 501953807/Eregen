@@ -5,7 +5,7 @@
  * © 2026 Eregen (颐贞). All rights reserved.
  */
 
-#include "location/gps_manager.h"
+#include "gps_manager.h"
 #include "cat1_at.h"
 #include "log.h"
 #include <string.h>
@@ -85,8 +85,8 @@ static void manage_cat1_connection(void)
  */
 static void query_gps(void)
 {
-    gps_fix_t fix;
-    if (gps_get_fix(&fix) && fix.valid) {
+    gps_fix_t fix = gps_get_fix();
+    if (fix.valid) {
         s_last_known_fix = fix;
         s_mgr.last_fix_time = 0; /* Reset stale counter */
         log_debug("GPS fix acquired: lat=%.4f lon=%.4f",
@@ -166,8 +166,8 @@ bool gps_manager_get_location(gps_fix_t *fix)
         return fix->valid;
     }
 
-    /* In NORMAL or ALERT mode, return current parser state */
-    *fix = gps_get_fix(fix);
+    /* In NORMAL or ALERT mode, copy current parser state */
+    *fix = gps_get_fix();
     return fix->valid;
 }
 
