@@ -96,6 +96,11 @@ tmp/
 temp/
 *.tmp
 
+# Tool directories
+.claude/
+.serena/
+.playwright-mcp/
+
 # UI prototypes (interface design files)
 apps/ui-prototypes/
 *.png
