@@ -24,7 +24,7 @@ func GenerateKeyPair() (publicKey ed25519.PublicKey, privateKey ed25519.PrivateK
 	if err != nil {
 		return nil, nil, err
 	}
-	return pub.(ed25519.PublicKey), priv.(ed25519.PrivateKey), nil
+	return pub, priv, nil
 }
 
 // Sign signs a message with the device private key.

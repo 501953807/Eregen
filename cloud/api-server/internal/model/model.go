@@ -93,7 +93,7 @@ type HealthRecord struct {
 	Steps         *int64    `json:"steps,omitempty"`
 	SleepHours    *float64  `json:"sleep_hours,omitempty"`
 	BPSystolic    *int      `json:"bp_systolic,omitempty"`
-	BPDiaastolic  *int      `json:"bp_diastolic,omitempty"`
+	BPDiastolic   *int      `json:"bp_diastolic,omitempty"`
 }
 
 // LocationRecord stores a GPS fix.

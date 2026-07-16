@@ -3,10 +3,7 @@ package main
 import (
 	"context"
 	"os"
-	"time"
 
-	"eregen.dev/b2b-hospital-api/internal/handler"
-	"eregen.dev/b2b-hospital-api/internal/middleware"
 	"eregen.dev/b2b-hospital-api/internal/router"
 	"eregen.dev/b2b-hospital-api/internal/store"
 

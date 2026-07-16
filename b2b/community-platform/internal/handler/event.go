@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 
 	"eregen.dev/b2b-community-platform/internal/model"
 	"eregen.dev/b2b-community-platform/internal/store"
@@ -90,16 +89,4 @@ func (h *EventHandler) GetRegistrations(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": regs})
-}
-
-func parseIntParam(c *gin.Context, key string, defaultVal int) (int, bool) {
-	v := c.Query(key)
-	if v == "" {
-		return defaultVal, false
-	}
-	n, err := strconv.Atoi(v)
-	if err != nil {
-		return defaultVal, false
-	}
-	return n, true
 }

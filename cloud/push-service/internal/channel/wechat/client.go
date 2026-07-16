@@ -101,7 +101,7 @@ func (c *WeChatClient) SendTemplateMessage(openID, templateID string, data map[s
 	json.Unmarshal(result, &resultJSON)
 
 	if resultJSON.ErrCode != 0 {
-		log.Printf("[wechat] send error: %.0f %s", resultJSON.ErrCode, resultJSON.ErrMsg)
+		log.Printf("[wechat] send error: %d %s", resultJSON.ErrCode, resultJSON.ErrMsg)
 		return fmt.Errorf("wechat send error: %s", resultJSON.ErrMsg)
 	}
 

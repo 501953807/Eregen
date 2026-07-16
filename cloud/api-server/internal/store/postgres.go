@@ -274,7 +274,7 @@ func (p *Postgres) CreateHealthRecord(ctx context.Context, r *model.HealthRecord
 		  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 	_, err := p.pool.Exec(ctx, q,
 		r.ID, r.ElderlyID, r.Timestamp, r.HR, r.SPO2, r.Steps,
-		r.SleepHours, r.BPSystolic, r.BPDiaastolic,
+		r.SleepHours, r.BPSystolic, r.BPDiastolic,
 	)
 	return err
 }
@@ -290,7 +290,7 @@ func (p *Postgres) GetHealthSummary(ctx context.Context, elderlyID string, day t
 			GROUP BY elderly_id`
 	err := p.pool.QueryRow(ctx, q, elderlyID, start, end).Scan(
 		&r.ID, &r.ElderlyID, &r.Timestamp, &r.HR, &r.SPO2, &r.Steps,
-		&r.SleepHours, &r.BPSystolic, &r.BPDiaastolic,
+		&r.SleepHours, &r.BPSystolic, &r.BPDiastolic,
 	)
 	if err != nil {
 		return nil, err
@@ -319,7 +319,7 @@ func (p *Postgres) GetHealthHistory(ctx context.Context, elderlyID string, days 
 	for rows.Next() {
 		var r model.HealthRecord
 		if err := rows.Scan(&r.ID, &r.ElderlyID, &r.Timestamp, &r.HR, &r.SPO2, &r.Steps,
-			&r.SleepHours, &r.BPSystolic, &r.BPDiaastolic); err != nil {
+			&r.SleepHours, &r.BPSystolic, &r.BPDiastolic); err != nil {
 			return nil, err
 		}
 		records = append(records, r)
@@ -346,7 +346,7 @@ func (p *Postgres) GetHealthTrend(ctx context.Context, elderlyID, metric string,
 	for rows.Next() {
 		var r model.HealthRecord
 		if err := rows.Scan(&r.ID, &r.ElderlyID, &r.Timestamp, &r.HR, &r.SPO2, &r.Steps,
-			&r.SleepHours, &r.BPSystolic, &r.BPDiaastolic); err != nil {
+			&r.SleepHours, &r.BPSystolic, &r.BPDiastolic); err != nil {
 			return nil, err
 		}
 		records = append(records, r)

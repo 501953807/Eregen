@@ -130,7 +130,7 @@ func (s *Postgres) CreateClaim(ctx context.Context, claim *model.InsuranceClaim)
 	q := `INSERT INTO b2b_claims (id, elderly_id, family_member_id, provider_id, claim_type, status,
 		   incident_date, claim_amount, coverage_limit, description, evidence_files, created_at, updated_at)
 		   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`
-	_, err := s.pool.Exec(ctx, q,
+	_, _ = s.pool.Exec(ctx, q,
 		claim.ID, claim.ElderlyID, claim.FamilyMemberID, claim.ProviderID,
 		claim.ClaimType, claim.Status, claim.IncidentDate, claim.ClaimAmount,
 		claim.CoverageLimit, claim.Description, data, claim.CreatedAt, claim.UpdatedAt,
@@ -188,7 +188,7 @@ func (s *Postgres) GetClaimByID(ctx context.Context, claimID string) (*model.Ins
 	if err != nil {
 		return nil, err
 	}
-	jsonUnmarshal(data, &c.EvidenceFiles)
+	json.Unmarshal(data, &c.EvidenceFiles)
 	return c, nil
 }
 
