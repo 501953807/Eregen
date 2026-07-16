@@ -1,5 +1,6 @@
 // © 2026 Eregen (颐贞). All rights reserved.
 
+// Package nats provides NATS JetStream publishing for device events.
 package nats
 
 import (
@@ -18,51 +19,93 @@ const (
 	subjectPrefix = "eregen.event."
 )
 
-// Client wraps the NATS connection.
+// Client wraps a NATS JetStream connection.
 type Client struct {
 	conn      *natss.Conn
+	js        natss.JetStreamContext
 	gatewayID string
-	mu        sync.Mutex
+	stream    string
 	url       string
+	domain    string
+	mu        sync.Mutex
 }
 
 // Config holds NATS connection parameters.
 type Config struct {
-	URL       string
-	GatewayID string
+	URL             string
+	JetStreamDomain string
+	StreamName      string
+	GatewayID       string
 }
 
-// NewClient creates a NATS client.
+// Event is the canonical envelope published to NATS JetStream.
+type Event struct {
+	Type        string          `json:"type"`
+	DeviceID    string          `json:"dev_id"`
+	Timestamp   int64           `json:"ts"`
+	Payload     json.RawMessage `json:"payload"`
+	Gateway     string          `json:"_gateway"`
+	PublishedAt string          `json:"_published_at"`
+}
+
+// NewClient creates a NATS JetStream client.
 func NewClient(cfg Config) *Client {
 	if cfg.GatewayID == "" {
 		cfg.GatewayID = fmt.Sprintf("gateway-%d", time.Now().Unix())
 	}
+	if cfg.StreamName == "" {
+		cfg.StreamName = "DEVICE_EVENTS"
+	}
 	return &Client{
 		gatewayID: cfg.GatewayID,
+		stream:    cfg.StreamName,
 		url:       cfg.URL,
+		domain:    cfg.JetStreamDomain,
 	}
 }
 
-// Connect establishes the NATS connection.
+// Connect establishes the NATS connection and ensures the JetStream stream exists.
 func (c *Client) Connect() error {
-	conn, err := natss.Connect(c.url,
-		natss.DisconnectErrHandler(func(_ *natss.Conn, err error) {
-			log.Printf("NATS disconnected: %v", err)
-		}),
-		natss.ReconnectHandler(func(_ *natss.Conn) {
-			log.Println("NATS reconnected")
-		}),
-		natss.ClosedHandler(func(_ *natss.Conn) {
-			log.Println("NATS connection closed")
-		}),
-	)
+	conn, err := natss.Connect(c.url)
 	if err != nil {
 		return fmt.Errorf("nats connect: %w", err)
 	}
+
 	c.mu.Lock()
 	c.conn = conn
+	var jsOpts []natss.JSOpt
+	if c.domain != "" {
+		jsOpts = append(jsOpts, natss.Domain(c.domain))
+	}
+	c.js, err = conn.JetStream(jsOpts...)
 	c.mu.Unlock()
-	log.Println("Connected to NATS")
+	if err != nil {
+		conn.Close()
+		return fmt.Errorf("nats jetstream: %w", err)
+	}
+
+	// Ensure the stream exists; create it if missing.
+	_, err = c.js.StreamInfo(c.stream)
+	if err == natss.ErrStreamNotFound {
+		_, err = c.js.AddStream(&natss.StreamConfig{
+			Name:      c.stream,
+			Subjects:  []string{subjectPrefix + "*"},
+			Storage:   natss.FileStorage,
+			Retention: natss.LimitsPolicy,
+			MaxMsgs:   -1,
+			Replicas:  1,
+		})
+		if err != nil {
+			conn.Close()
+			return fmt.Errorf("nats create stream: %w", err)
+		}
+		log.Printf("Created JetStream stream %q", c.stream)
+	} else if err != nil {
+		conn.Close()
+		return fmt.Errorf("nats stream info: %w", err)
+	}
+
+	log.Println("Connected to NATS JetStream")
 	return nil
 }
 
@@ -75,24 +118,16 @@ func (c *Client) Close() {
 	}
 }
 
-// Publish sends an event to NATS with retry logic.
-// eventType maps to subject: eregen.event.{event_type}
-func (c *Client) Publish(eventType string, payload []byte) error {
-	subject := subjectPrefix + eventType
-
-	c.mu.Lock()
-	conn := c.conn
-	c.mu.Unlock()
-
-	if conn == nil || conn.IsClosed() {
-		return fmt.Errorf("nats client not connected")
+// Publish sends a device event to NATS JetStream with retry logic.
+func (c *Client) Publish(ev *Event) error {
+	data, err := json.Marshal(ev)
+	if err != nil {
+		return fmt.Errorf("marshal event: %w", err)
 	}
-
-	data := enrichWithMetadata(payload, c.gatewayID)
 
 	var lastErr error
 	for attempt := 0; attempt < maxRetries; attempt++ {
-		err := conn.Publish(subject, data)
+		_, err = c.js.Publish(subjectPrefix+ev.Type, data)
 		if err == nil {
 			return nil
 		}
@@ -101,26 +136,7 @@ func (c *Client) Publish(eventType string, payload []byte) error {
 			time.Sleep(retryDelay)
 		}
 	}
-
-	log.Printf("ERROR: failed to publish to %s after %d retries: %v",
-		subject, maxRetries, lastErr)
+	log.Printf("ERROR: failed to publish %s for %s after %d retries: %v",
+		ev.Type, ev.DeviceID, maxRetries, lastErr)
 	return fmt.Errorf("publish after retries: %w", lastErr)
-}
-
-// enrichWithMetadata adds gateway metadata to the payload.
-func enrichWithMetadata(payload []byte, gatewayID string) []byte {
-	var fields map[string]interface{}
-	if err := json.Unmarshal(payload, &fields); err != nil {
-		return []byte(fmt.Sprintf(`{"_error":"invalid_payload","gateway":"%s","ts":%d}`,
-			gatewayID, time.Now().Unix()))
-	}
-
-	fields["_gateway"] = gatewayID
-	fields["_published_at"] = time.Now().UTC().Format(time.RFC3339)
-
-	enriched, err := json.Marshal(fields)
-	if err != nil {
-		return payload
-	}
-	return enriched
 }

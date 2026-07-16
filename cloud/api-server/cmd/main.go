@@ -1,0 +1,114 @@
+package main
+
+import (
+	"context"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"eregen.dev/api-server/internal/config"
+	"eregen.dev/api-server/internal/middleware"
+	"eregen.dev/api-server/internal/model"
+	"eregen.dev/api-server/internal/router"
+	"eregen.dev/api-server/internal/service"
+	"eregen.dev/api-server/internal/store"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
+)
+
+func main() {
+	cfg := config.Load()
+
+	log, _ := zap.NewProduction()
+	defer log.Sync()
+
+	// PostgreSQL via pgxpool
+	pgConfig, err := pgxpool.ParseConfig(cfg.DBURL)
+	if err != nil {
+		log.Fatal("invalid postgres URL", zap.Error(err))
+	}
+	pgConfig.MaxConns = 10
+	pgPool, err := pgxpool.NewWithConfig(context.Background(), pgConfig)
+	if err != nil {
+		log.Fatal("failed to connect to postgres", zap.Error(err))
+	}
+	pg := store.NewPostgres(pgPool, log)
+	defer pgPool.Close()
+
+	// Redis
+	rdbOpts, err := redis.ParseURL(cfg.RedisURL)
+	if err != nil {
+		log.Fatal("invalid redis URL", zap.Error(err))
+	}
+	rdb := redis.NewClient(rdbOpts)
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
+		log.Warn("redis not available", zap.Error(err))
+	}
+	redisLayer := store.NewRedis(rdb, log)
+
+	// NATS
+	var natsClient *service.NatsClient
+	natsClient, err = service.NewNatsClient(cfg.NATSURL, log)
+	if err != nil {
+		log.Warn("nats not available", zap.Error(err))
+	} else {
+		defer natsClient.Close()
+
+		eventHandler := service.NewEventHandler(nil, log)
+		eventHandler.SetAlertCallback(func(ctx context.Context, a *model.Alert) error {
+			return pg.CreateAlert(ctx, a)
+		})
+		eventHandler.SetHealthCallback(func(ctx context.Context, r *model.HealthRecord) error {
+			return pg.CreateHealthRecord(ctx, r)
+		})
+		eventHandler.SetLocationCallback(func(ctx context.Context, r *model.LocationRecord) error {
+			return pg.CreateLocationRecord(ctx, r)
+		})
+		eventHandler.SetMedStatusCallback(func(ctx context.Context, r *model.MedStatusRecord) error {
+			return pg.CreateMedStatusRecord(ctx, r)
+		})
+
+		go func() {
+			ctx := context.Background()
+			if err := natsClient.SubscribeDeviceEvents(ctx, eventHandler); err != nil {
+				log.Error("nats subscriber failed", zap.Error(err))
+			}
+		}()
+	}
+
+	sms := service.NewSMSProvider(cfg.SMSSignName, cfg.SMPTemplateID, log)
+	push := service.NewPushProvider(cfg.FCMServerKey, cfg.FCMProjectID, log)
+
+	authMW := middleware.NewJWTAuth(cfg.JWTSecret, time.Duration(cfg.TokenExpiry)*time.Second,
+		time.Duration(cfg.RefreshExpiry)*time.Second, log)
+
+	r := router.New(pg, redisLayer, natsClient, authMW, sms, push, log)
+
+	srv := &http.Server{
+		Addr:    ":" + cfg.Port,
+		Handler: r,
+	}
+
+	go func() {
+		log.Info("starting API server", zap.String("addr", srv.Addr))
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal("server failed", zap.Error(err))
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Info("shutting down server...")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Error("server forced shutdown", zap.Error(err))
+	}
+	log.Info("server exited")
+}

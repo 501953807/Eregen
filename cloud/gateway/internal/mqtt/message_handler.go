@@ -3,31 +3,25 @@
 package mqtt
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
-	"regexp"
-	"sync/atomic"
+	"time"
 
-	"eregen/cloud/gateway/internal/nats"
+	"eregen.dev/gateway/internal/handler"
+	"eregen.dev/gateway/internal/model"
 )
-
-var deviceIDRegex = regexp.MustCompile(`^(BR|PX)-[A-Za-z0-9]+$`)
 
 // ParsedMessage holds a validated incoming MQTT message.
 type ParsedMessage struct {
-	Type string          `json:"type"`
-	Raw  json.RawMessage `json:"-"`
+	Type      model.UpstreamMessageType `json:"type"`
+	DeviceID  string                    `json:"dev_id"`
+	Timestamp int64                     `json:"ts"`
+	Raw       json.RawMessage           `json:"-"`
 }
 
-// eventHandler handles a parsed event for a specific device.
-type eventHandler func(nc *nats.Client, deviceID string, raw json.RawMessage)
-
-// messageCounts tracks per-type message counts for metrics.
-var messageCounts atomic.Int64
-
 // ParseAndValidate parses an MQTT payload and validates required fields.
-// Returns a ParsedMessage if valid, or an error if the message should be dropped.
 func ParseAndValidate(payload []byte) (*ParsedMessage, error) {
 	var generic map[string]interface{}
 	if err := json.Unmarshal(payload, &generic); err != nil {
@@ -44,117 +38,70 @@ func ParseAndValidate(payload []byte) (*ParsedMessage, error) {
 		return nil, fmt.Errorf("missing or invalid 'dev_id' field")
 	}
 
-	if !deviceIDRegex.MatchString(devID) {
-		return nil, fmt.Errorf("invalid device ID format: %s (must match BR-XXXX or PX-XXXX)", devID)
+	if !ValidateDeviceID(devID) {
+		return nil, fmt.Errorf("invalid device ID format: %s", devID)
 	}
 
-	if _, ok := generic["ts"]; !ok {
+	ts, ok := generic["ts"]
+	if !ok {
 		return nil, fmt.Errorf("missing 'ts' (timestamp) field")
+	}
+	tsInt, ok := toInt64(ts)
+	if !ok {
+		return nil, fmt.Errorf("invalid 'ts' type")
 	}
 
 	return &ParsedMessage{
-		Type: typ,
-		Raw:  payload,
+		Type:      model.UpstreamMessageType(typ),
+		DeviceID:  devID,
+		Timestamp: tsInt,
+		Raw:       payload,
 	}, nil
 }
 
-// ForwardToNATS publishes a validated message to NATS.
-func ForwardToNATS(nc *nats.Client, deviceID string, msg *ParsedMessage) {
-	messageCounts.Add(1)
-
-	eventJSON, err := marshalEvent(msg.Type, deviceID, msg.Raw)
-	if err != nil {
-		log.Printf("ERROR: failed to marshal event %s for %s: %v", msg.Type, deviceID, err)
-		return
-	}
-
-	if err := nc.Publish(msg.Type, eventJSON); err != nil {
-		log.Printf("ERROR: failed to publish event %s for %s: %v", msg.Type, deviceID, err)
+func toInt64(v interface{}) (int64, bool) {
+	switch n := v.(type) {
+	case float64:
+		return int64(n), true
+	case int:
+		return int64(n), true
+	case int64:
+		return n, true
+	default:
+		return 0, false
 	}
 }
 
-// marshalEvent adds metadata to the raw payload.
-func marshalEvent(eventType, deviceID string, raw json.RawMessage) ([]byte, error) {
-	var fields map[string]interface{}
-	if err := json.Unmarshal(raw, &fields); err != nil {
-		return nil, fmt.Errorf("re-parse raw: %w", err)
+// ToDeviceMessage converts a ParsedMessage to the model type used by the handler pipeline.
+func (p *ParsedMessage) ToDeviceMessage() *model.DeviceMessage {
+	return &model.DeviceMessage{
+		Type:      p.Type,
+		DeviceID:  p.DeviceID,
+		Timestamp: p.Timestamp,
+		Raw:       p.Raw,
 	}
-	fields["dev_id"] = deviceID
-
-	out, err := json.Marshal(fields)
-	if err != nil {
-		return nil, fmt.Errorf("marshal enriched event: %w", err)
-	}
-	return out, nil
 }
 
-// GetMessageCount returns the total number of messages processed.
-func GetMessageCount() int64 {
-	return messageCounts.Load()
-}
+// OnMessage is the callback invoked by the MQTT client for each received packet.
+func OnMessage(h *handler.Handler) func(topic string, payload []byte) {
+	return func(topic string, payload []byte) {
+		deviceID := DeviceIDFromTopic(topic)
+		if deviceID == "" {
+			log.Printf("WARN: could not extract device ID from topic: %s", topic)
+			return
+		}
 
-// --- Type-specific handlers ---
+		msg, err := ParseAndValidate(payload)
+		if err != nil {
+			log.Printf("WARN: invalid message from %s: %v", deviceID, err)
+			return
+		}
 
-func handleHeartbeat(nc *nats.Client, deviceID string, raw json.RawMessage) {
-	msg, _ := ParseAndValidate(raw)
-	if msg == nil {
-		return
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := h.Handle(ctx, msg.ToDeviceMessage()); err != nil {
+			log.Printf("ERROR: handling message from %s: %v", msg.DeviceID, err)
+		}
 	}
-	ForwardToNATS(nc, deviceID, msg)
-}
-
-func handleLocation(nc *nats.Client, deviceID string, raw json.RawMessage) {
-	msg, _ := ParseAndValidate(raw)
-	if msg == nil {
-		return
-	}
-	ForwardToNATS(nc, deviceID, msg)
-}
-
-func handleHealth(nc *nats.Client, deviceID string, raw json.RawMessage) {
-	msg, _ := ParseAndValidate(raw)
-	if msg == nil {
-		return
-	}
-	ForwardToNATS(nc, deviceID, msg)
-}
-
-func handleSOS(nc *nats.Client, deviceID string, raw json.RawMessage) {
-	msg, _ := ParseAndValidate(raw)
-	if msg == nil {
-		return
-	}
-	ForwardToNATS(nc, deviceID, msg)
-}
-
-func handleFall(nc *nats.Client, deviceID string, raw json.RawMessage) {
-	msg, _ := ParseAndValidate(raw)
-	if msg == nil {
-		return
-	}
-	ForwardToNATS(nc, deviceID, msg)
-}
-
-func handleMedStatus(nc *nats.Client, deviceID string, raw json.RawMessage) {
-	msg, _ := ParseAndValidate(raw)
-	if msg == nil {
-		return
-	}
-	ForwardToNATS(nc, deviceID, msg)
-}
-
-func handleFenceAlert(nc *nats.Client, deviceID string, raw json.RawMessage) {
-	msg, _ := ParseAndValidate(raw)
-	if msg == nil {
-		return
-	}
-	ForwardToNATS(nc, deviceID, msg)
-}
-
-func handleInventoryWarning(nc *nats.Client, deviceID string, raw json.RawMessage) {
-	msg, _ := ParseAndValidate(raw)
-	if msg == nil {
-		return
-	}
-	ForwardToNATS(nc, deviceID, msg)
 }
