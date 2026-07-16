@@ -9,6 +9,7 @@
 #define WIFI_MQTT_BRIDGE_H
 
 #include "esp_err.h"
+#include "device_id.h"
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -17,6 +18,11 @@
 #define MQTT_BROKER_PORT      1883
 #define MQTT_KEEPALIVE_S      60
 #define MQTT_QOS              1
+
+/* Reconnection parameters */
+#define MQTT_MAX_RECONNECT_ATTEMPTS  10
+#define MQTT_RECONNECT_BASE_MS       1000
+#define MQTT_HEARTBEAT_INTERVAL_S    60
 
 /* Topic format: eregen/device/pillbox/{dev_id}/up|down */
 #define TOPIC_BASE            "eregen/device/pillbox"
@@ -73,5 +79,37 @@ esp_err_t bridge_subscribe(const char *topic);
  * @return true if connected, false otherwise
  */
 bool bridge_is_connected(void);
+
+/**
+ * Publish a message to an arbitrary MQTT topic.
+ * Convenience wrapper that returns bool instead of esp_err_t.
+ *
+ * @param topic   MQTT topic string
+ * @param data    Message payload bytes
+ * @param len     Payload length in bytes
+ * @return true on success, false otherwise
+ */
+bool mqtt_publish_topic(const char *topic, const uint8_t *data, uint16_t len);
+
+/**
+ * Subscribe to an MQTT topic with a callback handler.
+ * When a message arrives on this topic, the callback is invoked.
+ *
+ * @param topic    MQTT topic string (supports + wildcard)
+ * @param callback Function called when a matching message arrives.
+ *                 Signature: void (*callback)(const char *payload, uint16_t len)
+ * @return true on success, false otherwise
+ */
+bool mqtt_subscribe_topic(const char *topic, void (*callback)(const char *, uint16_t));
+
+/**
+ * Register the global MQTT message handler.
+ * All incoming MQTT messages are routed to this handler, which then
+ * dispatches to per-topic callbacks registered via mqtt_subscribe_topic().
+ *
+ * @param handler Function called for every incoming MQTT message.
+ *                Signature: void (*handler)(const char *topic, const uint8_t *payload, uint16_t len)
+ */
+void mqtt_on_message(void (*handler)(const char *topic, const uint8_t *payload, uint16_t len));
 
 #endif /* WIFI_MQTT_BRIDGE_H */

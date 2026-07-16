@@ -2,7 +2,9 @@
  * Eregen (颐贞) - Pillbox Basic Firmware Entry Point
  * Target: ESP32-C3 (RISC-V) | SDK: ESP-IDF v5.3+
  *
- * © 2026 Eregen (颐贞). All rights reserved.
+ * Integrates state machine loop with WiFi connection and MQTT heartbeat.
+ *
+ * 2026 Eregen (颐贞). All rights reserved.
  */
 
 #include <stdio.h>
@@ -26,6 +28,9 @@
 #include "led_gpio.h"
 #include "battery_manage.h"
 #include "button_input.h"
+#include "motor_control.h"
+#include "tts_playback.h"
+#include "state_machine.h"
 
 /* Task priorities */
 #define MAIN_TASK_PRIORITY          (tskIDLE_PRIORITY + 2)
@@ -47,6 +52,9 @@
 
 /* Battery read interval (seconds) */
 #define BATTERY_READ_INTERVAL_S     120
+
+/* State machine tick interval (milliseconds) */
+#define STATE_MACHINE_TICK_MS       100
 
 /* Log tag */
 static const char *TAG = "pillbox_main";
@@ -133,6 +141,9 @@ void app_main(void)
         return;
     }
 
+    /* Initialize motor control */
+    motor_control_init();
+
     /* Create event group */
     s_main_events = xEventGroupCreate();
     if (s_main_events == NULL) {
@@ -147,8 +158,8 @@ void app_main(void)
 
 /**
  * Main application task loop.
- * Handles heartbeat generation, button polling, battery monitoring,
- * and LED status indication based on WiFi state.
+ * Handles state machine ticks, heartbeat generation, button polling,
+ * battery monitoring, and LED status indication based on WiFi state.
  */
 static void vMainTask(void *pvParameter)
 {
@@ -175,6 +186,7 @@ static void vMainTask(void *pvParameter)
 
     uint32_t heartbeat_counter = 0;
     uint32_t battery_counter = 0;
+    uint32_t sm_tick_counter = 0;
 
     for (;;) {
         bool connected = wifi_is_connected();
@@ -256,6 +268,21 @@ static void vMainTask(void *pvParameter)
             float voltage = battery_read_voltage();
             float percent = battery_calculate_percent(voltage);
             ESP_LOGI(TAG, "Battery check: %.2fV (%.1f%%)", voltage, percent);
+        }
+
+        /* State machine tick every STATE_MACHINE_TICK_MS */
+        sm_tick_counter++;
+        if (sm_tick_counter >= STATE_MACHINE_TICK_MS / BUTTON_SCAN_INTERVAL_MS) {
+            sm_tick_counter = 0;
+            pillbox_state_t new_state = state_machine_run();
+            ESP_LOGD(TAG, "SM tick: state=%s",
+                     (new_state == STATE_BOOT) ? "BOOT" :
+                     (new_state == STATE_CONNECT) ? "CONNECT" :
+                     (new_state == STATE_IDLE) ? "IDLE" :
+                     (new_state == STATE_REMINDER) ? "REMINDER" :
+                     (new_state == STATE_DISPENSING) ? "DISPENSING" :
+                     (new_state == STATE_DETECT) ? "DETECT" :
+                     (new_state == STATE_REPORT) ? "REPORT" : "ERROR");
         }
 
         /* Delay for button scan interval */
