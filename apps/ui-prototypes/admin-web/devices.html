@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>颐贞 · 管理后台 — 设备管理</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'PingFang SC', sans-serif; background: #f0f2f5; color: #333; }
+.layout { display: flex; min-height: 100vh; }
+.sidebar { width: 220px; background: #001529; color: #fff; position: fixed; top: 0; left: 0; bottom: 0; z-index: 10; }
+.sidebar-logo { height: 64px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; letter-spacing: 2px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.sidebar-logo span { color: #4A90D9; }
+.sidebar-nav { padding: 12px 0; }
+.nav-group-title { padding: 12px 24px 6px; font-size: 10px; text-transform: uppercase; color: rgba(255,255,255,0.35); letter-spacing: 1px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 24px; font-size: 14px; color: rgba(255,255,255,0.65); cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
+.nav-item:hover { color: #fff; background: rgba(255,255,255,0.04); }
+.nav-item.active { color: #fff; background: #1677FF; border-left-color: #fff; }
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-footer { margin-top: auto; padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px; }
+.avatar-sm { width: 32px; height: 32px; border-radius: 50%; background: #4A90D9; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.user-info { font-size: 12px; }
+.user-name { font-weight: 600; }
+.user-role { color: rgba(255,255,255,0.4); }
+.main { margin-left: 220px; flex: 1; }
+.topbar { height: 64px; background: #fff; border-bottom: 1px solid #e8e8e8; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 5; }
+.breadcrumb { font-size: 14px; color: #999; }
+.breadcrumb span { color: #333; font-weight: 600; }
+.content { padding: 24px; }
+.page-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+.page-title { font-size: 22px; font-weight: 700; }
+.btn-primary { background: #1677FF; color: #fff; border: none; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-outline { background: #fff; color: #666; border: 1px solid #d9d9d9; padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; margin-left: 8px; }
+
+/* Stats row */
+.device-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.stat-label { font-size: 12px; color: #999; margin-bottom: 6px; }
+.stat-value { font-size: 22px; font-weight: 800; }
+.stat-sub { font-size: 11px; color: #bbb; margin-top: 2px; }
+
+/* Filters */
+.filter-bar { background: #fff; border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; display: flex; gap: 16px; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.filter-group { display: flex; align-items: center; gap: 8px; }
+.filter-label { font-size: 13px; color: #666; white-space: nowrap; }
+.filter-select { padding: 6px 12px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 13px; background: #fff; color: #333; cursor: pointer; }
+.filter-search { padding: 6px 12px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 13px; width: 200px; outline: none; }
+.filter-search:focus { border-color: #1677FF; }
+.filter-spacer { flex: 1; }
+.search-icon { position: relative; }
+.search-icon input { padding-left: 32px; }
+.search-icon::before { content: '🔍'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; }
+
+/* Table */
+.table-card { background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); overflow: hidden; }
+.table-toolbar { padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
+.table-count { font-size: 13px; color: #999; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 12px; color: #999; font-weight: 500; padding: 12px 16px; background: #fafafa; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+td { font-size: 13px; padding: 12px 16px; border-bottom: 1px solid #f5f5f5; white-space: nowrap; }
+tr:hover td { background: #fafbff; }
+.device-id { font-family: 'SF Mono', monospace; font-size: 12px; color: #4A90D9; }
+.type-badge { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+.type-bracelet { background: #E3F2FD; color: #1565C0; }
+.type-pillbox { background: #E8F5E9; color: #2E7D32; }
+.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.online { background: #52C41A; }
+.offline { background: #D9D9D9; }
+.firmware-tag { font-size: 11px; background: #f5f5f5; padding: 2px 8px; border-radius: 4px; font-family: monospace; }
+.action-link { color: #1677FF; cursor: pointer; font-size: 13px; margin-right: 12px; }
+.action-link.danger { color: #FF4D4F; }
+
+/* Pagination */
+.pagination { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f0f0f0; }
+.page-info { font-size: 13px; color: #999; }
+.page-btns { display: flex; gap: 4px; }
+.page-btn { width: 32px; height: 32px; border: 1px solid #d9d9d9; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; background: #fff; }
+.page-btn.active { background: #1677FF; color: #fff; border-color: #1677FF; }
+
+/* OTA banner */
+.ota-banner { background: linear-gradient(135deg, #FFF7E6, #FFF0B3); border: 1px solid #FFE58F; border-radius: 10px; padding: 14px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+.ota-text { font-size: 13px; color: #AD6800; }
+.ota-text strong { font-size: 14px; }
+.ota-btn { background: #FA8C16; color: #fff; border: none; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-logo"><span>颐贞</span> Eregen</div>
+    <div class="sidebar-nav">
+      <div class="nav-group-title">概览</div>
+      <div class="nav-item"><span class="nav-icon">📊</span>仪表盘</div>
+      <div class="nav-group-title">设备管理</div>
+      <div class="nav-item active"><span class="nav-icon">⌚</span>手环设备</div>
+      <div class="nav-item"><span class="nav-icon">💊</span>药盒设备</div>
+      <div class="nav-item"><span class="nav-icon">📡</span>固件OTA</div>
+      <div class="nav-group-title">用户管理</div>
+      <div class="nav-item"><span class="nav-icon">👥</span>家属用户</div>
+      <div class="nav-item"><span class="nav-icon">👴</span>老人档案</div>
+      <div class="nav-item"><span class="nav-icon">🏥</span>机构管理</div>
+      <div class="nav-group-title">运营</div>
+      <div class="nav-item"><span class="nav-icon">🔔</span>告警中心</div>
+      <div class="nav-item"><span class="nav-icon">📋</span>订阅管理</div>
+      <div class="nav-item"><span class="nav-icon">📈</span>数据分析</div>
+      <div class="nav-group-title">系统</div>
+      <div class="nav-item"><span class="nav-icon">⚙️</span>系统设置</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="avatar-sm">👤</div>
+      <div class="user-info"><div class="user-name">管理员</div><div class="user-role">超级管理员</div></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb">设备管理 / <span>手环设备</span></div>
+      <div style="display:flex;gap:20px;align-items:center;">
+        <span style="font-size:18px;cursor:pointer;">🔍</span>
+        <span style="font-size:18px;cursor:pointer;">🔔<span style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:#FF4D4F;border-radius:50%;font-size:9px;color:#fff;display:flex;align-items:center;justify-content:center;">3</span></span>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div class="page-title">手环设备管理</div>
+        <div>
+          <button class="btn-outline">📥 导出</button>
+          <button class="btn-primary">+ 手动注册</button>
+        </div>
+      </div>
+
+      <!-- OTA update banner -->
+      <div class="ota-banner">
+        <div class="ota-text">
+          <strong>📡 固件更新可用</strong> — Bracelet Pro v2.4.1 已发布，修复了GPS定位漂移问题。当前平均版本 v2.3.8，建议推送升级。
+        </div>
+        <button class="ota-btn">推送升级 →</button>
+      </div>
+
+      <!-- Device stats -->
+      <div class="device-stats">
+        <div class="stat-card">
+          <div class="stat-label">手环总数</div>
+          <div class="stat-value">658</div>
+          <div class="stat-sub">较上月 +12</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">在线</div>
+          <div class="stat-value" style="color:#52C41A;">592</div>
+          <div class="stat-sub">在线率 89.9%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">离线</div>
+          <div class="stat-value" style="color:#D9D9D9;">66</div>
+          <div class="stat-sub">超过24h未上线</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">高端版 (Pro)</div>
+          <div class="stat-value">215</div>
+          <div class="stat-sub">GD32E230C8T3</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">中端版 (Plus)</div>
+          <div class="stat-value">287</div>
+          <div class="stat-sub">GD32E230C8T3</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-bar">
+        <div class="filter-group">
+          <span class="filter-label">型号:</span>
+          <select class="filter-select">
+            <option>全部型号</option>
+            <option>Starter</option>
+            <option>Plus</option>
+            <option>Pro</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">状态:</span>
+          <select class="filter-select">
+            <option>全部状态</option>
+            <option>在线</option>
+            <option>离线</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">固件版本:</span>
+          <select class="filter-select">
+            <option>全部版本</option>
+            <option>v2.4.1</option>
+            <option>v2.3.8</option>
+            <option>v2.3.5</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">机构:</span>
+          <select class="filter-select">
+            <option>全部机构</option>
+            <option>阳光养老院</option>
+            <option>和睦家社区</option>
+          </select>
+        </div>
+        <div class="filter-spacer"></div>
+        <div class="search-icon">
+          <input class="filter-search" placeholder="搜索设备ID / 老人姓名...">
+        </div>
+      </div>
+
+      <!-- Device table -->
+      <div class="table-card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox"></th>
+                <th>设备ID</th>
+                <th>老人姓名</th>
+                <th>型号</th>
+                <th>固件版本</th>
+                <th>状态</th>
+                <th>最后上线</th>
+                <th>电量</th>
+                <th>机构</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="checkbox"></td>
+                <td><span class="device-id">BR-0042</span></td>
+                <td>李秀英</td>
+                <td><span class="type-badge type-bracelet">Pro</span></td>
+                <td><span class="firmware-tag">v2.4.1</span></td>
+                <td><span class="status-dot online"></span>在线</td>
+                <td>2026-07-16 09:39</td>
+                <td>85%</td>
+                <td>阳光养老院</td>
+                <td>
+                  <span class="action-link">配置</span>
+                  <span class="action-link">OTA</span>
+                  <span class="action-link">定位</span>
+                  <span class="action-link danger">注销</span>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"></td>
+                <td><span class="device-id">BR-0128</span></td>
+                <td>王建国</td>
+                <td><span class="type-badge type-bracelet">Plus</span></td>
+                <td><span class="firmware-tag">v2.3.8</span></td>
+                <td><span class="status-dot online"></span>在线</td>
+                <td>2026-07-16 09:42</td>
+                <td>62%</td>
+                <td>和睦家社区</td>
+                <td>
+                  <span class="action-link">配置</span>
+                  <span class="action-link">OTA</span>
+                  <span class="action-link">定位</span>
+                  <span class="action-link danger">注销</span>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"></td>
+                <td><span class="device-id">BR-0201</span></td>
+                <td>赵德柱</td>
+                <td><span class="type-badge type-bracelet">Starter</span></td>
+                <td><span class="firmware-tag">v2.3.5</span></td>
+                <td><span class="status-dot offline"></span>离线</td>
+                <td>2026-07-15 18:20</td>
+                <td>—</td>
+                <td>阳光养老院</td>
+                <td>
+                  <span class="action-link">配置</span>
+                  <span class="action-link">OTA</span>
+                  <span class="action-link danger">注销</span>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"></td>
+                <td><span class="device-id">BR-0089</span></td>
+                <td>陈淑兰</td>
+                <td><span class="type-badge type-bracelet">Pro</span></td>
+                <td><span class="firmware-tag">v2.4.1</span></td>
+                <td><span class="status-dot online"></span>在线</td>
+                <td>2026-07-16 09:40</td>
+                <td>91%</td>
+                <td>和睦家社区</td>
+                <td>
+                  <span class="action-link">配置</span>
+                  <span class="action-link">OTA</span>
+                  <span class="action-link">定位</span>
+                  <span class="action-link danger">注销</span>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"></td>
+                <td><span class="device-id">BR-0315</span></td>
+                <td>孙玉兰</td>
+                <td><span class="type-badge type-bracelet">Plus</span></td>
+                <td><span class="firmware-tag">v2.3.8</span></td>
+                <td><span class="status-dot online"></span>在线</td>
+                <td>2026-07-16 09:38</td>
+                <td>45%</td>
+                <td>个人用户</td>
+                <td>
+                  <span class="action-link">配置</span>
+                  <span class="action-link">OTA</span>
+                  <span class="action-link">定位</span>
+                  <span class="action-link danger">注销</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <div class="page-info">共 658 台设备 · 每页 20 条</div>
+          <div class="page-btns">
+            <div class="page-btn">‹</div>
+            <div class="page-btn active">1</div>
+            <div class="page-btn">2</div>
+            <div class="page-btn">3</div>
+            <div class="page-btn">...</div>
+            <div class="page-btn">33</div>
+            <div class="page-btn">›</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
