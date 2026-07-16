@@ -1,0 +1,14 @@
+/* 品牌色 */
+--primary: #4A90D9;
+--primary-dark: #357ABD;
+--success: #4CAF50;
+--warning: #FFA726;
+--danger: #FF6B6B;
+--info: #42A5F5;
+
+page {
+  background-color: #F5F6FA;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+  font-size: 28rpx;
+  color: #333;
+}

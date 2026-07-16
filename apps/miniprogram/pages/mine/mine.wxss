@@ -1,0 +1,21 @@
+.page { padding: 16rpx; }
+.profile-card {
+  background: linear-gradient(135deg, #4A90D9, #357ABD);
+  border-radius: 32rpx;
+  padding: 48rpx;
+  text-align: center;
+  margin-bottom: 32rpx;
+  color: white;
+}
+.avatar { font-size: 80rpx; margin-bottom: 16rpx; }
+.name { font-size: 36rpx; font-weight: 700; }
+.role { font-size: 24rpx; opacity: 0.8; margin-top: 8rpx; }
+.menu-list { background: white; border-radius: 24rpx; overflow: hidden; }
+.menu-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 32rpx 28rpx;
+  border-bottom: 2rpx solid #F3F4F6;
+  font-size: 28rpx; color: #1F2937;
+}
+.menu-item:last-child { border-bottom: none; }
+.arrow { color: #D1D5DB; font-size: 36rpx; }

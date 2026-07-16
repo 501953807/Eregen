@@ -97,6 +97,7 @@ temp/
 *.tmp
 
 # Tool directories
+.codegraph/
 .claude/
 .serena/
 .playwright-mcp/

@@ -1,0 +1,10 @@
+{
+  "name": "@eregen/miniprogram",
+  "version": "1.0.0",
+  "description": "颐贞微信小程序 — 轻量版家属端",
+  "main": "app.js",
+  "scripts": {
+    "dev": "miniprogram-api-polyfill dev",
+    "build": "miniprogram-svgr"
+  }
+}

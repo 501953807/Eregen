@@ -1,0 +1,9 @@
+{
+  "name": "@eregen/website",
+  "version": "1.0.0",
+  "description": "颐贞品牌官网",
+  "scripts": {
+    "dev": "hugo server -D --port 1313",
+    "build": "hugo --minify"
+  }
+}

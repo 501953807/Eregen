@@ -1,0 +1,15 @@
+<nav class="top-nav">
+    <a class="logo" href="/">
+        <div class="logo-icon">颐</div>
+        <div class="logo-text">Eregen {{ .Site.Params.brandName }}</div>
+    </a>
+    <ul class="nav-links">
+        {{ range .Site.Menus.main }}
+        <li><a href="{{ .URL }}" class="{{ if .Active }}active{{ end }}">{{ .Name }}</a></li>
+        {{ end }}
+    </ul>
+    <div class="nav-actions">
+        <a class="btn btn-outline">登录</a>
+        <a class="btn btn-primary">免费试用</a>
+    </div>
+</nav>

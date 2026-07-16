@@ -1,0 +1,58 @@
+.page { padding: 16rpx; }
+
+/* Adherence Card */
+.adherence-card {
+  background: linear-gradient(135deg, #F0FDF4, #DCFCE7);
+  border-radius: 32rpx;
+  padding: 40rpx;
+  margin-bottom: 32rpx;
+  display: flex; align-items: center; justify-content: space-around;
+}
+.adherence-ring { text-align: center; }
+.adherence-value { font-size: 64rpx; font-weight: 700; color: #16A34A; display: block; }
+.adherence-label { font-size: 22rpx; color: #6B7280; display: block; margin-top: 4rpx; }
+.adherence-stats { display: flex; gap: 32rpx; }
+.as-item { text-align: center; }
+.as-val { font-size: 36rpx; font-weight: 700; color: #1F2937; display: block; }
+.as-lbl { font-size: 20rpx; color: #6B7280; display: block; margin-top: 4rpx; }
+
+/* Section Title */
+.section-title { font-size: 30rpx; font-weight: 700; color: #111827; margin-bottom: 20rpx; }
+
+/* Timeline */
+.timeline { position: relative; padding-left: 40rpx; margin-bottom: 40rpx; }
+.timeline-item { position: relative; padding-bottom: 32rpx; }
+.timeline-item:last-child { padding-bottom: 0; }
+.tl-time {
+  position: absolute; left: -4rpx; top: 0;
+  font-size: 22rpx; color: #6B7280; font-weight: 600; width: 60rpx;
+}
+.tl-line {
+  position: absolute; left: 16rpx; top: 28rpx;
+  width: 4rpx; height: calc(100% - 12rpx);
+  background: #E5E7EB;
+}
+.tl-line.taken { background: #4CAF50; }
+.tl-line.missed { background: #FF6B6B; }
+.tl-dot {
+  position: absolute; left: 4rpx; top: 0;
+  width: 24rpx; height: 24rpx; border-radius: 50%;
+  border: 4rpx solid white;
+}
+.tl-dot.taken { background: #4CAF50; }
+.tl-dot.missed { background: #FF6B6B; }
+.tl-dot.pending { background: #FFA726; }
+.tl-card {
+  margin-left: 40rpx;
+  background: white;
+  border-radius: 20rpx;
+  padding: 24rpx;
+  border: 2rpx solid #E5E7EB;
+}
+.tl-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
+.tl-name { font-size: 26rpx; font-weight: 600; color: #1F2937; }
+.tl-type { font-size: 20rpx; color: #9CA3AF; }
+.tl-status { font-size: 22rpx; }
+.tl-status.taken { color: #4CAF50; }
+.tl-status.missed { color: #FF6B6B; }
+.tl-status.pending { color: #FFA726; }

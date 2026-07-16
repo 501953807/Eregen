@@ -1,0 +1,31 @@
+<view class="page">
+  <!-- Filter Tabs -->
+  <scroll-view scroll-x class="filter-tabs">
+    <view wx:for="{{filters}}" wx:key="*this"
+          class="filter-tab {{filterTab === index ? 'active' : ''}}"
+          data-index="{{index}}" bindtap="switchFilter">
+      {{item}}
+    </view>
+  </scroll-view>
+
+  <!-- Alert Items -->
+  <view class="alert-list">
+    <view wx:for="{{alerts}}" wx:key="id" class="alert-item {{item.status === 'unread' ? 'unread' : ''}}">
+      <view class="alert-icon">{{item.icon}}</view>
+      <view class="alert-body">
+        <view class="alert-header">
+          <text class="alert-title">{{item.title}}</text>
+          <text class="alert-priority P{{item.priority.slice(1)}}">{{item.priority}}</text>
+        </view>
+        <text class="alert-device">{{item.device}}</text>
+        <text class="alert-time">{{item.time}}</text>
+      </view>
+      <view class="alert-actions">
+        <button wx:if="{{item.type === 'sos'}}" class="btn-call" size="mini">立即呼叫</button>
+        <button wx:elif="{{item.type === 'fall' || item.type === 'geofence'}}" class="btn-location" size="mini">查看位置</button>
+        <button wx:else class="btn-mark" size="mini">标记处理</button>
+      </view>
+      <view wx:if="{{item.status === 'unread'}}" class="unread-dot"></view>
+    </view>
+  </view>
+</view>

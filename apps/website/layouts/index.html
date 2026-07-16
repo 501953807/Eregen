@@ -1,0 +1,143 @@
+{{ define "main" }}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-inner">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span>新品</span> 第二代智能手环系列 全新发布
+            </div>
+            <h1 class="hero-title">{{ .Site.Params.heroTitle | safeHTML }}</h1>
+            <p class="hero-subtitle">{{ .Site.Params.heroSubtitle }}</p>
+            <div class="hero-actions">
+                <a href="#products" class="btn btn-primary btn-lg">了解产品</a>
+                <a href="#" class="btn btn-outline btn-lg">观看视频</a>
+            </div>
+            <div class="hero-stats">
+                {{ range .Site.Params.heroStats }}
+                <div class="hero-stat">
+                    <div class="num">{{ .number }}</div>
+                    <div class="lbl">{{ .label }}</div>
+                </div>
+                {{ end }}
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="product-showcase">
+                <div class="product-img-placeholder">⌚</div>
+                <div class="product-name-display">Eregen 智能手环 Pro</div>
+                <div class="product-price-display">¥599 <small>起</small></div>
+            </div>
+            <div class="float-card fc1">
+                <div class="float-icon success">🆘</div>
+                <div><strong>SOS</strong><br><span style="font-size:11px;color:#6B7280;">一键呼救</span></div>
+            </div>
+            <div class="float-card fc2">
+                <div class="float-icon primary">💊</div>
+                <div><strong>用药提醒</strong><br><span style="font-size:11px;color:#6B7280;">智能药盒联动</span></div>
+            </div>
+            <div class="float-card fc3">
+                <div class="float-icon warning">❤️</div>
+                <div><strong>健康数据</strong><br><span style="font-size:11px;color:#6B7280;">心率·血氧·步数</span></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Products Section -->
+<section class="section products-section" id="products">
+    <div class="section-inner">
+        <div class="section-header">
+            <div class="section-tag">产品线</div>
+            <h2 class="section-title">三档产品矩阵</h2>
+            <p class="section-desc">从入门到高端，满足不同需求和预算。每档产品共享同一生态，无缝衔接。</p>
+        </div>
+        <div class="products-grid">
+            {{ range .Site.Params.products }}
+            <div class="product-card">
+                <div class="product-card-visual {{ if eq .icon "⌚" }}brandlet{{ else }}pillbox-vis{{ end }}">
+                    {{ .icon }}
+                    <div class="product-tier-badges">
+                        {{ range .tiers }}
+                        <span class="tier-badge {{ if eq .name "Starter" }}starter{{ else if eq .name "Plus" }}plus{{ else }}pro{{ end }}">{{ .name }} {{ .price }}</span>
+                        {{ end }}
+                    </div>
+                </div>
+                <div class="product-card-body">
+                    <h3 class="product-card-title">{{ .name }}</h3>
+                    <p class="product-card-desc">{{ .desc }}</p>
+                    <div class="product-features">
+                        {{ range .features }}
+                        <span class="feature-tag">{{ . }}</span>
+                        {{ end }}
+                    </div>
+                    <div class="product-card-footer">
+                        <span class="price">{{ (index .tiers 0).price }} <small>起</small></span>
+                        <a class="btn btn-primary" style="padding:8px 18px;font-size:13px;">了解详情</a>
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="section" id="features">
+    <div class="section-inner">
+        <div class="section-header">
+            <div class="section-tag">核心功能</div>
+            <h2 class="section-title">全方位守护</h2>
+            <p class="section-desc">从硬件到云端到应用，为老人健康和家庭安全提供完整解决方案。</p>
+        </div>
+        <div class="features-grid">
+            {{ range .Site.Params.features }}
+            <div class="feature-card">
+                <div class="feature-icon">{{ .icon }}</div>
+                <h3>{{ .title }}</h3>
+                <p>{{ .desc }}</p>
+            </div>
+            {{ end }}
+        </div>
+    </div>
+</section>
+
+<!-- About Section -->
+<section class="section" id="about" style="background:#F9FAFB;">
+    <div class="section-inner">
+        <div class="section-header">
+            <div class="section-tag">关于 Eregen</div>
+            <h2 class="section-title">{{ .Site.Params.slogan }}</h2>
+            <p class="section-desc">Eregen = Ease（轻松）+ Regen（再生）。我们相信科技应该让每个人都能有尊严地老去。</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;text-align:center;">
+            <div>
+                <div style="font-size:36px;margin-bottom:12px;">🔬</div>
+                <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">自研核心技术</h3>
+                <p style="font-size:13px;color:#6B7280;line-height:1.6;">固件、云平台、APP 全栈自研。申请专利保护，掌握核心技术。</p>
+            </div>
+            <div>
+                <div style="font-size:36px;margin-bottom:12px;">🛡️</div>
+                <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">隐私安全保障</h3>
+                <p style="font-size:13px;color:#6B7280;line-height:1.6;">TLS 传输加密 + AES-256 静态加密。数据境内存储，符合 PIPL 合规要求。</p>
+            </div>
+            <div>
+                <div style="font-size:36px;margin-bottom:12px;">🏥</div>
+                <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">医院社区对接</h3>
+                <p style="font-size:13px;color:#6B7280;line-height:1.6;">标准化 API 对接医院 HIS 系统。健康数据互通，助力智慧养老。</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="section cta-section">
+    <div class="section-inner">
+        <h2 class="section-title">开始守护您的家人</h2>
+        <p class="section-desc" style="color:rgba(255,255,255,0.85);">免费注册，绑定设备后即可使用全部基础功能。专业版 ¥29/月起，解锁高级健康分析和告警服务。</p>
+        <div class="cta-actions">
+            <a href="#" class="btn btn-white btn-lg">免费注册试用</a>
+            <a href="#" class="btn btn-ghost btn-lg">联系销售</a>
+        </div>
+    </div>
+</section>
+{{ end }}

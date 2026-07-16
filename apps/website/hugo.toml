@@ -1,0 +1,96 @@
+baseURL = 'https://eregen.com/'
+languageCode = 'zh-CN'
+title = 'Eregen 颐贞 — 让关爱触手可及'
+theme = ''
+
+[params]
+  brandName = "颐贞"
+  brandNameEn = "Eregen"
+  slogan = "颐养正道，贞守安康"
+  description = "完整的老年健康生态系统——智能手环、智能药盒，配合云端监控平台与家属APP，让远方的子女安心，让家中的老人舒心。"
+  heroTitle = "让关爱<em>触手可及</em><br>守护每一位长者"
+  heroSubtitle = "Eregen 颐贞打造完整的老年健康生态系统——智能手环、智能药盒，配合云端监控平台与家属APP，让远方的子女安心，让家中的老人舒心。"
+
+  [[params.heroStats]]
+    number = "3,200+"
+    label = "服务家庭"
+  [[params.heroStats]]
+    number = "94.2%"
+    label = "设备在线率"
+  [[params.heroStats]]
+    number = "24/7"
+    label = "实时监控"
+
+[[params.products.bracelet]]
+  name = "智能手环系列"
+  icon = "⌚"
+  desc = "GD32E230 主控 + Cat1 蜂窝通信，实时定位、健康监测、跌倒检测、SOS 紧急呼叫。IP67 防水，续航 7 天+。"
+  features = ["心率监测", "血氧检测", "GPS 定位", "跌倒检测", "电子围栏", "ECG 心电"]
+  tiers = [
+    { name = "Starter", price = "¥399" },
+    { name = "Plus", price = "¥599" },
+    { name = "Pro", price = "¥899" },
+  ]
+
+[[params.products.pillbox]]
+  name = "智能药盒系列"
+  icon = "💊"
+  desc = "ESP32-C3 主控 + WiFi，语音提醒、自动分药、服药检测、库存预警。与手环数据联动，全面健康管理。"
+  features = ["TTS 语音播报", "自动分药", "光电检测", "库存预警", "远程配置"]
+  tiers = [
+    { name = "基础", price = "¥99" },
+    { name = "智能", price = "¥299" },
+    { name = "自动", price = "¥599" },
+  ]
+
+[[params.features]]
+  icon = "📍"
+  title = "实时定位"
+  desc = "高精度 GPS + 基站定位，实时更新老人位置。支持电子围栏越界告警。"
+
+[[params.features]]
+  icon = "❤️"
+  title = "健康监控"
+  desc = "心率、血氧、步数、睡眠全天候监测。异常数据即时推送给家属。"
+
+[[params.features]]
+  icon = "🆘"
+  title = "SOS 紧急呼叫"
+  desc = "一键触发 SOS，自动通知所有紧急联系人并拨打 120。三级告警机制。"
+
+[[params.features]]
+  icon = "💊"
+  title = "用药管理"
+  desc = "智能提醒、服药检测、远程配置、库存预警。漏服自动通知家属。"
+
+[[params.features]]
+  icon = "👨‍👩‍👧‍👦"
+  title = "家属协同"
+  desc = "多位家属共同监护一位老人。权限分级，信息同步，人人放心。"
+
+[[params.features]]
+  icon = "📊"
+  title = "数据分析"
+  desc = "AI 分析长期健康趋势，生成周/月健康报告。异常模式智能识别。"
+
+[menu]
+  [[menu.main]]
+    name = "首页"
+    identifier = "home"
+    url = "/"
+    weight = 1
+  [[menu.main]]
+    name = "产品"
+    identifier = "products"
+    url = "#products"
+    weight = 2
+  [[menu.main]]
+    name = "功能"
+    identifier = "features"
+    url = "#features"
+    weight = 3
+  [[menu.main]]
+    name = "关于我们"
+    identifier = "about"
+    url = "#about"
+    weight = 4

@@ -1,0 +1,62 @@
+.page { padding: 16rpx; }
+
+/* Filter Tabs */
+.filter-tabs {
+  display: flex;
+  white-space: nowrap;
+  margin-bottom: 20rpx;
+}
+.filter-tab {
+  display: inline-block;
+  padding: 12rpx 28rpx;
+  border-radius: 30rpx;
+  font-size: 24rpx;
+  color: #6B7280;
+  background: white;
+  margin-right: 12rpx;
+  border: 2rpx solid transparent;
+}
+.filter-tab.active {
+  color: #4A90D9;
+  background: #EFF6FF;
+  border-color: #4A90D9;
+  font-weight: 600;
+}
+
+/* Alert List */
+.alert-list { display: flex; flex-direction: column; gap: 16rpx; }
+.alert-item {
+  background: white;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  border-left: 6rpx solid;
+  border-top: 2rpx solid #E5E7EB;
+  border-right: 2rpx solid #E5E7EB;
+  border-bottom: 2rpx solid #E5E7EB;
+  position: relative;
+}
+.alert-item.unread { border-left-color: #FF6B6B; background: #FFF5F5; }
+.alert-item[style*="resolved"] { opacity: 0.6; }
+.alert-icon {
+  width: 56rpx; height: 56rpx; border-radius: 16rpx;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28rpx; background: #F3F4F6;
+}
+.alert-body { flex: 1; }
+.alert-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8rpx; }
+.alert-title { font-size: 26rpx; font-weight: 600; color: #1F2937; }
+.alert-priority { font-size: 20rpx; font-weight: 700; padding: 4rpx 12rpx; border-radius: 8rpx; }
+.alert-priority.P0 { background: #FEF2F2; color: #EF4444; }
+.alert-priority.P1 { background: #FFFBEB; color: #F59E0B; }
+.alert-priority.P2 { background: #EFF6FF; color: #4A90D9; }
+.alert-device { font-size: 22rpx; color: #6B7280; display: block; }
+.alert-time { font-size: 20rpx; color: #9CA3AF; margin-top: 4rpx; display: block; }
+.alert-actions { display: flex; gap: 12rpx; margin-top: 16rpx; }
+.btn-call { background: #EF4444; color: white; border: none; font-size: 22rpx; border-radius: 8rpx; }
+.btn-location { background: #4A90D9; color: white; border: none; font-size: 22rpx; border-radius: 8rpx; }
+.btn-mark { background: #4CAF50; color: white; border: none; font-size: 22rpx; border-radius: 8rpx; }
+.unread-dot {
+  position: absolute; top: 24rpx; right: 24rpx;
+  width: 16rpx; height: 16rpx; border-radius: 50%;
+  background: #FF6B6B;
+}
