@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>颐贞 - 家属端APP · 用药管理</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: #f5f6fa; color: #333; }
+.phone-frame { width: 375px; height: 812px; margin: 40px auto; background: #fff; border-radius: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); overflow: hidden; position: relative; border: 12px solid #1a1a2e; }
+.status-bar { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; font-size: 12px; font-weight: 600; background: #f8f9fd; }
+
+.app-header { padding: 12px 20px; background: #fff; border-bottom: 1px solid #f0f0f5; display: flex; align-items: center; justify-content: space-between; }
+.back-btn { font-size: 22px; cursor: pointer; }
+.page-title { font-size: 18px; font-weight: 700; }
+.header-icon { font-size: 20px; cursor: pointer; }
+
+/* Adherence overview */
+.adherence-card { margin: 16px 20px; background: linear-gradient(135deg, #66BB6A, #43A047); border-radius: 16px; padding: 20px; color: #fff; text-align: center; }
+.adherence-label { font-size: 13px; opacity: 0.9; margin-bottom: 12px; }
+.adherence-ring { width: 110px; height: 110px; margin: 0 auto; position: relative; }
+.adherence-ring svg { transform: rotate(-90deg); }
+.adherence-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+.adherence-number { font-size: 30px; font-weight: 800; line-height: 1; }
+.adherence-unit { font-size: 12px; opacity: 0.8; }
+.adherence-desc { font-size: 12px; opacity: 0.9; margin-top: 10px; }
+
+/* Stats row */
+.med-stats { display: flex; gap: 10px; padding: 0 20px 16px; }
+.med-stat { flex: 1; background: #fff; border-radius: 12px; padding: 12px 8px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.med-stat-val { font-size: 18px; font-weight: 700; }
+.med-stat-label { font-size: 10px; color: #999; margin-top: 2px; }
+.med-stat-sub { font-size: 9px; color: #ccc; margin-top: 1px; }
+
+/* Today schedule */
+.schedule-section { padding: 0 20px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.section-title { font-size: 16px; font-weight: 700; }
+.section-action { font-size: 12px; color: #4A90D9; cursor: pointer; font-weight: 600; }
+
+.time-slot {
+  display: flex; align-items: stretch; gap: 14px; padding: 14px 0;
+  border-bottom: 1px solid #f5f5fa;
+}
+.time-slot:last-child { border-bottom: none; }
+
+.time-label {
+  width: 56px; text-align: center; flex-shrink: 0;
+}
+.time-value { font-size: 16px; font-weight: 700; color: #333; }
+.time-period { font-size: 10px; color: #999; }
+
+.time-connector {
+  width: 2px; flex-shrink: 0; position: relative;
+}
+.connector-dot {
+  width: 14px; height: 14px; border-radius: 50%; border: 3px solid;
+  position: absolute; top: 0; left: -6px;
+}
+.dot-taken { border-color: #4CAF50; background: #E8F5E9; }
+.dot-missed { border-color: #FF6B6B; background: #FFF0F0; }
+.dot-pending { border-color: #FFA726; background: #FFF8E1; }
+.connector-line {
+  position: absolute; top: 14px; left: 4px; width: 2px; height: calc(100% - 14px);
+  background: #f0f0f5;
+}
+.connector-line.done { background: #4CAF50; }
+
+.med-card {
+  flex: 1; background: #fff; border-radius: 12px; padding: 12px 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04); border-left: 3px solid;
+}
+.med-card.taken { border-left-color: #4CAF50; }
+.med-card.missed { border-left-color: #FF6B6B; }
+.med-card.pending { border-left-color: #FFA726; }
+
+.med-names { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.med-dosage { font-size: 11px; color: #888; margin-bottom: 6px; }
+.med-status { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 8px; display: inline-block; }
+.med-taken { background: #E8F5E9; color: #2E7D32; }
+.med-missed { background: #FFEBEE; color: #C62828; }
+.med-pending { background: #FFF3E0; color: #EF6C00; }
+.med-time-note { font-size: 10px; color: #aaa; margin-top: 4px; }
+
+/* Remote config */
+.config-section { padding: 16px 20px; }
+.config-card {
+  background: #fff; border-radius: 14px; padding: 16px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+.config-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid #f5f5fa;
+}
+.config-row:last-child { border-bottom: none; }
+.config-label { font-size: 13px; color: #555; }
+.config-toggle {
+  width: 44px; height: 24px; border-radius: 12px; background: #4CAF50;
+  position: relative; cursor: pointer;
+}
+.config-toggle::after {
+  content: ''; position: absolute; top: 2px; right: 2px;
+  width: 20px; height: 20px; background: #fff; border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.config-toggle.off { background: #ddd; }
+.config-toggle.off::after { right: auto; left: 2px; }
+
+.btn-add-med {
+  width: 100%; padding: 12px; border-radius: 12px; margin-top: 12px;
+  border: 2px dashed #d0d0d0; background: transparent; color: #888;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+
+/* Bottom nav */
+.bottom-nav { position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: #fff; border-top: 1px solid #f0f0f5; display: flex; justify-content: space-around; align-items: flex-start; padding-top: 10px; }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #999; cursor: pointer; flex: 1; }
+.nav-item.active { color: #4A90D9; }
+.nav-icon { font-size: 22px; }
+.home-indicator { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 134px; height: 5px; background: #ddd; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="status-bar">
+    <span style="font-size:15px;font-weight:700;">10:00</span>
+    <div style="display:flex;gap:5px;">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
+  <div class="app-header">
+    <span class="back-btn">‹</span>
+    <span class="page-title">用药管理</span>
+    <span class="header-icon">⚙️</span>
+  </div>
+
+  <!-- Adherence overview -->
+  <div class="adherence-card">
+    <div class="adherence-label">本周服药依从性</div>
+    <div class="adherence-ring">
+      <svg width="110" height="110" viewBox="0 0 110 110">
+        <circle cx="55" cy="55" r="47" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="10"/>
+        <circle cx="55" cy="55" r="47" fill="none" stroke="#fff" stroke-width="10"
+          stroke-dasharray="295" stroke-dashoffset="44" stroke-linecap="round"/>
+      </svg>
+      <div class="adherence-text">
+        <div class="adherence-number">85</div>
+        <div class="adherence-unit">%</div>
+      </div>
+    </div>
+    <div class="adherence-desc">本周已服 21/24 次药 · 连续2天达标</div>
+  </div>
+
+  <!-- Med stats -->
+  <div class="med-stats">
+    <div class="med-stat">
+      <div class="med-stat-val" style="color:#4CAF50;">21</div>
+      <div class="med-stat-label">已服用</div>
+    </div>
+    <div class="med-stat">
+      <div class="med-stat-val" style="color:#FF6B6B;">2</div>
+      <div class="med-stat-label">漏服</div>
+      <div class="med-stat-sub">昨日降压药</div>
+    </div>
+    <div class="med-stat">
+      <div class="med-stat-val" style="color:#FFA726;">1</div>
+      <div class="med-stat-label">迟到</div>
+      <div class="med-stat-sub">迟30分钟</div>
+    </div>
+  </div>
+
+  <!-- Today's schedule -->
+  <div class="schedule-section">
+    <div class="section-header">
+      <span class="section-title">今日用药计划</span>
+      <span class="section-action">+ 添加</span>
+    </div>
+
+    <!-- Morning -->
+    <div class="time-slot">
+      <div class="time-label">
+        <div class="time-value">08:00</div>
+        <div class="time-period">早餐后</div>
+      </div>
+      <div class="time-connector">
+        <div class="connector-dot dot-taken"></div>
+        <div class="connector-line done"></div>
+      </div>
+      <div class="med-card taken">
+        <div class="med-names">降压药 + 阿司匹林</div>
+        <div class="med-dosage">缬沙坦 80mg × 1 | 阿司匹林 100mg × 1</div>
+        <span class="med-status med-taken">✓ 已服用 08:05</span>
+      </div>
+    </div>
+
+    <!-- Noon -->
+    <div class="time-slot">
+      <div class="time-label">
+        <div class="time-value">12:00</div>
+        <div class="time-period">午餐后</div>
+      </div>
+      <div class="time-connector">
+        <div class="connector-dot dot-taken"></div>
+        <div class="connector-line done"></div>
+      </div>
+      <div class="med-card taken">
+        <div class="med-names">降糖药 (二甲双胍)</div>
+        <div class="med-dosage">二甲双胍 500mg × 1</div>
+        <span class="med-status med-taken">✓ 已服用 12:10</span>
+      </div>
+    </div>
+
+    <!-- Evening - missed -->
+    <div class="time-slot">
+      <div class="time-label">
+        <div class="time-value">20:00</div>
+        <div class="time-period">晚餐后</div>
+      </div>
+      <div class="time-connector">
+        <div class="connector-dot dot-missed"></div>
+        <div class="connector-line"></div>
+      </div>
+      <div class="med-card missed">
+        <div class="med-names">维生素D + 钙片</div>
+        <div class="med-dosage">维生素D 400IU × 1 | 碳酸钙 500mg × 1</div>
+        <span class="med-status med-missed">✗ 未服用（已超2小时）</span>
+        <div class="med-time-note">💡 已发送短信提醒</div>
+      </div>
+    </div>
+
+    <!-- Night - pending -->
+    <div class="time-slot">
+      <div class="time-label">
+        <div class="time-value">21:00</div>
+        <div class="time-period">睡前</div>
+      </div>
+      <div class="time-connector">
+        <div class="connector-dot dot-pending"></div>
+      </div>
+      <div class="med-card pending">
+        <div class="med-names">辅酶Q10</div>
+        <div class="med-dosage">辅酶Q10 100mg × 1</div>
+        <span class="med-status med-pending">⏳ 待服用</span>
+        <div class="med-time-note">🔔 智能药盒将语音播报提醒</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Remote configuration -->
+  <div class="config-section">
+    <div class="section-header">
+      <span class="section-title">远程配置</span>
+    </div>
+    <div class="config-card">
+      <div class="config-row">
+        <span class="config-label">📱 APP推送提醒</span>
+        <div class="config-toggle"></div>
+      </div>
+      <div class="config-row">
+        <span class="config-label">🔊 药盒语音播报</span>
+        <div class="config-toggle"></div>
+      </div>
+      <div class="config-row">
+        <span class="config-label">📳 震动提醒</span>
+        <div class="config-toggle off"></div>
+      </div>
+      <div class="config-row">
+        <span class="config-label">📧 每日用药报告邮件</span>
+        <div class="config-toggle off"></div>
+      </div>
+    </div>
+    <button class="btn-add-med">＋ 新增用药规则</button>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item"><div class="nav-icon">🏠</div><span>首页</span></div>
+    <div class="nav-item"><div class="nav-icon">📊</div><span>健康</span></div>
+    <div class="nav-item"><div class="nav-icon">🔔</div><span>告警</span></div>
+    <div class="nav-item active"><div class="nav-icon">💊</div><span>用药</span></div>
+    <div class="nav-item"><div class="nav-icon">👤</div><span>我的</span></div>
+  </div>
+  <div class="home-indicator"></div>
+</div>
+
+</body>
+</html>

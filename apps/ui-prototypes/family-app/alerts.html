@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>颐贞 - 家属端APP · SOS告警中心</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: #f5f6fa; color: #333; }
+.phone-frame { width: 375px; height: 812px; margin: 40px auto; background: #fff; border-radius: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); overflow: hidden; position: relative; border: 12px solid #1a1a2e; }
+.status-bar { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; font-size: 12px; font-weight: 600; background: #f8f9fd; }
+.app-header { padding: 12px 20px; background: #fff; border-bottom: 1px solid #f0f0f5; display: flex; align-items: center; justify-content: space-between; }
+.back-btn { font-size: 22px; cursor: pointer; }
+.page-title { font-size: 18px; font-weight: 700; }
+.header-icon { font-size: 20px; cursor: pointer; }
+
+/* Alert stats */
+.alert-stats { display: flex; gap: 10px; padding: 16px 20px; }
+.stat-card { flex: 1; border-radius: 12px; padding: 14px 10px; text-align: center; }
+.stat-p0 { background: linear-gradient(135deg, #FF6B6B, #EE5A24); color: #fff; }
+.stat-p1 { background: linear-gradient(135deg, #FFA726, #FB8C00); color: #fff; }
+.stat-p2 { background: linear-gradient(135deg, #42A5F5, #1E88E5); color: #fff; }
+.stat-num { font-size: 24px; font-weight: 800; }
+.stat-label { font-size: 10px; opacity: 0.9; margin-top: 2px; }
+
+/* Filter tabs */
+.filter-tabs { display: flex; gap: 0; padding: 0 20px 12px; border-bottom: 1px solid #f0f0f5; }
+.filter-tab { padding: 8px 16px; font-size: 13px; font-weight: 600; color: #888; cursor: pointer; border-bottom: 2px solid transparent; }
+.filter-tab.active { color: #FF6B6B; border-bottom-color: #FF6B6B; }
+
+/* Alert list */
+.alert-list { padding: 0 20px; max-height: 480px; overflow-y: auto; }
+.alert-item {
+  padding: 16px; border-radius: 14px; margin-bottom: 10px;
+  background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border-left: 4px solid; position: relative;
+}
+.alert-item.critical { border-left-color: #FF6B6B; background: linear-gradient(135deg, #FFF5F5, #fff); }
+.alert-item.warning { border-left-color: #FFA726; }
+.alert-item.resolved { border-left-color: #90CAF9; background: #FAFBFE; }
+.alert-item.info { border-left-color: #4A90D9; }
+
+.alert-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.alert-type-badge {
+  padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 700;
+}
+.badge-sos { background: #FFEBEE; color: #C62828; }
+.badge-fall { background: #FFF3E0; color: #E65100; }
+.badge-hr { background: #FCE4EC; color: #AD1457; }
+.badge-geo { background: #FFF8E1; color: #F57F17; }
+.badge-med { background: #E3F2FD; color: #1565C0; }
+
+.priority-badge {
+  padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 700;
+}
+.p0 { background: #FF6B6B; color: #fff; }
+.p1 { background: #FFA726; color: #fff; }
+.p2 { background: #90CAF9; color: #1565C0; }
+
+.alert-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.alert-desc { font-size: 12px; color: #666; line-height: 1.5; margin-bottom: 8px; }
+.alert-meta { display: flex; gap: 16px; font-size: 10px; color: #aaa; }
+.alert-meta span { display: flex; align-items: center; gap: 4px; }
+
+.alert-actions { display: flex; gap: 8px; margin-top: 12px; }
+.alert-action-btn {
+  padding: 6px 14px; border-radius: 8px; font-size: 11px; font-weight: 600;
+  border: none; cursor: pointer;
+}
+.btn-call { background: #FF6B6B; color: #fff; }
+.btn-view { background: #f0f0f5; color: #666; }
+.btn-dismiss { background: #E8F5E9; color: #2E7D32; }
+
+/* Unread indicator */
+.unread-dot {
+  position: absolute; top: 16px; right: 16px; width: 8px; height: 8px;
+  background: #4A90D9; border-radius: 50%;
+}
+
+/* Empty state */
+.empty-state { text-align: center; padding: 40px 20px; color: #ccc; }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-text { font-size: 13px; }
+
+/* Bottom nav */
+.bottom-nav { position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: #fff; border-top: 1px solid #f0f0f5; display: flex; justify-content: space-around; align-items: flex-start; padding-top: 10px; }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #999; cursor: pointer; flex: 1; }
+.nav-item.active { color: #4A90D9; }
+.nav-icon { font-size: 22px; }
+.home-indicator { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 134px; height: 5px; background: #ddd; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="status-bar">
+    <span style="font-size:15px;font-weight:700;">9:50</span>
+    <div style="display:flex;gap:5px;">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
+  <div class="app-header">
+    <span class="back-btn">‹</span>
+    <span class="page-title">告警中心</span>
+    <span class="header-icon">🔍</span>
+  </div>
+
+  <!-- Alert stats -->
+  <div class="alert-stats">
+    <div class="stat-card stat-p0">
+      <div class="stat-num">2</div>
+      <div class="stat-label">P0 紧急</div>
+    </div>
+    <div class="stat-card stat-p1">
+      <div class="stat-num">5</div>
+      <div class="stat-label">P1 重要</div>
+    </div>
+    <div class="stat-card stat-p2">
+      <div class="stat-num">12</div>
+      <div class="stat-label">P2 通知</div>
+    </div>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="filter-tabs">
+    <div class="filter-tab active">全部</div>
+    <div class="filter-tab">未处理</div>
+    <div class="filter-tab">SOS</div>
+    <div class="filter-tab">跌倒</div>
+    <div class="filter-tab">健康</div>
+  </div>
+
+  <!-- Alert list -->
+  <div class="alert-list">
+    <!-- Critical SOS -->
+    <div class="alert-item critical">
+      <div class="unread-dot"></div>
+      <div class="alert-top">
+        <span class="alert-type-badge badge-sos">🆘 SOS</span>
+        <span class="priority-badge p0">P0</span>
+      </div>
+      <div class="alert-title">SOS紧急按钮触发</div>
+      <div class="alert-desc">奶奶在小区花园触发了手环SOS按钮，已自动发送位置信息给所有家属。</div>
+      <div class="alert-meta">
+        <span>📍 陆家嘴环路1000号</span>
+        <span>🕐 今天 08:32</span>
+      </div>
+      <div class="alert-actions">
+        <button class="alert-action-btn btn-call">📞 立即呼叫</button>
+        <button class="alert-action-btn btn-view">📍 查看位置</button>
+        <button class="alert-action-btn btn-dismiss">✓ 标记处理</button>
+      </div>
+    </div>
+
+    <!-- Fall detection -->
+    <div class="alert-item critical">
+      <div class="unread-dot"></div>
+      <div class="alert-top">
+        <span class="alert-type-badge badge-fall">⚠️ 跌倒检测</span>
+        <span class="priority-badge p0">P0</span>
+      </div>
+      <div class="alert-title">检测到跌倒事件</div>
+      <div class="alert-desc">跌倒置信度 95%，设备已自动发送告警并通知家属。请确认奶奶安全。</div>
+      <div class="alert-meta">
+        <span>📍 小区电梯口</span>
+        <span>🕐 今天 07:45</span>
+      </div>
+      <div class="alert-actions">
+        <button class="alert-action-btn btn-call">📞 立即呼叫</button>
+        <button class="alert-action-btn btn-view">📍 查看位置</button>
+      </div>
+    </div>
+
+    <!-- Heart rate warning -->
+    <div class="alert-item warning">
+      <div class="alert-top">
+        <span class="alert-type-badge badge-hr">💓 心率异常</span>
+        <span class="priority-badge p1">P1</span>
+      </div>
+      <div class="alert-title">心率持续偏高</div>
+      <div class="alert-desc">上午心率持续超过100bpm，已自动通知奶奶休息。目前心率已恢复正常。</div>
+      <div class="alert-meta">
+        <span>📊 最高 112 bpm</span>
+        <span>🕐 今天 07:15</span>
+        <span>✅ 已恢复</span>
+      </div>
+      <div class="alert-actions">
+        <button class="alert-action-btn btn-view">查看详情</button>
+      </div>
+    </div>
+
+    <!-- Geofence -->
+    <div class="alert-item resolved">
+      <div class="alert-top">
+        <span class="alert-type-badge badge-geo">📍 电子围栏</span>
+        <span class="priority-badge p1">P1</span>
+      </div>
+      <div class="alert-title">离开安全区域</div>
+      <div class="alert-desc">奶奶走出电子围栏范围（500m），已提醒注意安全。约15分钟后返回。</div>
+      <div class="alert-meta">
+        <span>📍 距围栏 120m</span>
+        <span>🕐 昨天 15:30</span>
+        <span>✅ 已返回</span>
+      </div>
+    </div>
+
+    <!-- Medication -->
+    <div class="alert-item info">
+      <div class="alert-top">
+        <span class="alert-type-badge badge-med">💊 用药提醒</span>
+        <span class="priority-badge p2">P2</span>
+      </div>
+      <div class="alert-title">降压药未按时服用</div>
+      <div class="alert-desc">原计划20:00服用降压药，实际20:30服用，迟了30分钟。</div>
+      <div class="alert-meta">
+        <span>📅 昨天 20:00</span>
+      </div>
+    </div>
+
+    <!-- Old alerts -->
+    <div class="alert-item resolved">
+      <div class="alert-top">
+        <span class="alert-type-badge badge-sos">🆘 SOS</span>
+        <span class="priority-badge p0">P0</span>
+      </div>
+      <div class="alert-title">SOS误触</div>
+      <div class="alert-desc">奶奶表示是误触，正在家中沙发休息，一切正常。</div>
+      <div class="alert-meta">
+        <span>🕐 3天前</span>
+        <span>✅ 已处理</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item"><div class="nav-icon">🏠</div><span>首页</span></div>
+    <div class="nav-item"><div class="nav-icon">📊</div><span>健康</span></div>
+    <div class="nav-item active"><div class="nav-icon">🔔</div><span>告警</span></div>
+    <div class="nav-item"><div class="nav-icon">💊</div><span>用药</span></div>
+    <div class="nav-item"><div class="nav-icon">👤</div><span>我的</span></div>
+  </div>
+  <div class="home-indicator"></div>
+</div>
+
+</body>
+</html>

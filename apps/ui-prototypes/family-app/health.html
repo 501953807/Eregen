@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>颐贞 - 家属端APP · 健康数据看板</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: #f5f6fa; color: #333; }
+.phone-frame { width: 375px; height: 812px; margin: 40px auto; background: #fff; border-radius: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); overflow: hidden; position: relative; border: 12px solid #1a1a2e; }
+.status-bar { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; font-size: 12px; font-weight: 600; background: #f8f9fd; }
+.status-bar .time { font-size: 15px; font-weight: 700; }
+.app-header { padding: 12px 20px; background: #fff; border-bottom: 1px solid #f0f0f5; display: flex; align-items: center; justify-content: space-between; }
+.back-btn { font-size: 22px; cursor: pointer; }
+.page-title { font-size: 18px; font-weight: 700; }
+.header-icon { font-size: 20px; cursor: pointer; }
+
+/* Risk score card */
+.risk-card { margin: 16px 20px; background: linear-gradient(135deg, #4A90D9, #357ABD); border-radius: 16px; padding: 20px; color: #fff; text-align: center; }
+.risk-label { font-size: 13px; opacity: 0.9; margin-bottom: 8px; }
+.risk-score-ring { width: 100px; height: 100px; margin: 0 auto 12px; position: relative; }
+.risk-score-ring svg { transform: rotate(-90deg); }
+.risk-score-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+.risk-number { font-size: 28px; font-weight: 800; line-height: 1; }
+.risk-unit { font-size: 11px; opacity: 0.8; }
+.risk-level { font-size: 13px; font-weight: 600; margin-top: 4px; }
+.risk-desc { font-size: 11px; opacity: 0.85; margin-top: 6px; line-height: 1.5; }
+
+/* Time range selector */
+.time-selector { display: flex; gap: 8px; padding: 0 20px; margin-bottom: 16px; }
+.time-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; background: #f0f0f5; color: #888; }
+.time-btn.active { background: #4A90D9; color: #fff; }
+
+/* Metric cards */
+.metric-section { padding: 0 20px; }
+.metric-card { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.04); border: 1px solid #f5f5fa; }
+.metric-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.metric-name { font-size: 14px; font-weight: 600; }
+.metric-value-row { display: flex; align-items: baseline; gap: 6px; }
+.metric-current { font-size: 24px; font-weight: 800; }
+.metric-unit { font-size: 12px; color: #999; }
+.metric-badge { font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: 600; }
+.badge-normal { background: #E8F5E9; color: #2E7D32; }
+.badge-warning { background: #FFF3E0; color: #EF6C00; }
+.badge-danger { background: #FFEBEE; color: #C62828; }
+
+/* Mini chart bars */
+.mini-chart { display: flex; align-items: flex-end; gap: 3px; height: 40px; margin-top: 10px; }
+.chart-bar { flex: 1; border-radius: 3px 3px 0 0; min-width: 0; transition: height 0.3s; }
+.bar-blue { background: linear-gradient(to top, #4A90D9, #7DB6E8); }
+.bar-green { background: linear-gradient(to top, #4CAF50, #81C784); }
+.bar-orange { background: linear-gradient(to top, #FF9800, #FFB74D); }
+.bar-red { background: linear-gradient(to top, #F44336, #EF9A9A); }
+
+/* Trend indicator */
+.trend-up { color: #F44336; font-size: 11px; }
+.trend-down { color: #4CAF50; font-size: 11px; }
+.trend-stable { color: #999; font-size: 11px; }
+
+/* Steps summary */
+.steps-summary { display: flex; gap: 12px; padding: 0 20px 16px; }
+.step-stat { flex: 1; background: #fff; border-radius: 12px; padding: 14px 10px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.step-stat-icon { font-size: 20px; margin-bottom: 6px; }
+.step-stat-val { font-size: 16px; font-weight: 700; }
+.step-stat-label { font-size: 10px; color: #999; margin-top: 2px; }
+
+/* Bottom nav */
+.bottom-nav { position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: #fff; border-top: 1px solid #f0f0f5; display: flex; justify-content: space-around; align-items: flex-start; padding-top: 10px; }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #999; cursor: pointer; flex: 1; }
+.nav-item.active { color: #4A90D9; }
+.nav-icon { font-size: 22px; }
+.home-indicator { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 134px; height: 5px; background: #ddd; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="status-bar">
+    <span class="time">9:45</span>
+    <div style="display:flex;gap:5px;">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
+  <div class="app-header">
+    <span class="back-btn">‹</span>
+    <span class="page-title">健康数据</span>
+    <span class="header-icon">📤</span>
+  </div>
+
+  <!-- Risk score -->
+  <div class="risk-card">
+    <div class="risk-label">综合健康风险评估</div>
+    <div class="risk-score-ring">
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8"/>
+        <circle cx="50" cy="50" r="42" fill="none" stroke="#4ADE80" stroke-width="8"
+          stroke-dasharray="264" stroke-dashoffset="79" stroke-linecap="round"/>
+      </svg>
+      <div class="risk-score-text">
+        <div class="risk-number">35</div>
+        <div class="risk-unit">/ 100</div>
+      </div>
+    </div>
+    <div class="risk-level">🟢 低风险</div>
+    <div class="risk-desc">各项指标基本正常，步数略低于目标值</div>
+  </div>
+
+  <!-- Time range -->
+  <div class="time-selector">
+    <button class="time-btn">今日</button>
+    <button class="time-btn active">本周</button>
+    <button class="time-btn">本月</button>
+    <button class="time-btn">自定义</button>
+  </div>
+
+  <!-- Heart rate -->
+  <div class="metric-section">
+    <div class="metric-card">
+      <div class="metric-header">
+        <span class="metric-name">❤️ 心率</span>
+        <span class="trend-stable">↔ 稳定</span>
+      </div>
+      <div class="metric-value-row">
+        <span class="metric-current">72</span>
+        <span class="metric-unit">bpm (静息)</span>
+      </div>
+      <div class="mini-chart">
+        <div class="chart-bar bar-blue" style="height:55%"></div>
+        <div class="chart-bar bar-blue" style="height:60%"></div>
+        <div class="chart-bar bar-blue" style="height:45%"></div>
+        <div class="chart-bar bar-blue" style="height:70%"></div>
+        <div class="chart-bar bar-blue" style="height:65%"></div>
+        <div class="chart-bar bar-blue" style="height:50%"></div>
+        <div class="chart-bar bar-blue" style="height:55%"></div>
+        <div class="chart-bar bar-blue" style="height:60%"></div>
+        <div class="chart-bar bar-blue" style="height:75%"></div>
+        <div class="chart-bar bar-blue" style="height:50%"></div>
+        <div class="chart-bar bar-blue" style="height:55%"></div>
+        <div class="chart-bar bar-blue" style="height:60%"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:#bbb;margin-top:4px;">
+        <span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span><span>周日</span>
+      </div>
+    </div>
+
+    <!-- SpO2 -->
+    <div class="metric-card">
+      <div class="metric-header">
+        <span class="metric-name">💨 血氧饱和度</span>
+        <span class="trend-stable">↔ 正常</span>
+      </div>
+      <div class="metric-value-row">
+        <span class="metric-current">97</span>
+        <span class="metric-unit">%</span>
+        <span class="metric-badge badge-normal">正常</span>
+      </div>
+      <div class="mini-chart">
+        <div class="chart-bar bar-green" style="height:90%"></div>
+        <div class="chart-bar bar-green" style="height:92%"></div>
+        <div class="chart-bar bar-green" style="height:88%"></div>
+        <div class="chart-bar bar-green" style="height:95%"></div>
+        <div class="chart-bar bar-green" style="height:90%"></div>
+        <div class="chart-bar bar-green" style="height:92%"></div>
+        <div class="chart-bar bar-green" style="height:88%"></div>
+      </div>
+    </div>
+
+    <!-- BP -->
+    <div class="metric-card">
+      <div class="metric-header">
+        <span class="metric-name">🩺 血压</span>
+        <span class="trend-down">↓ 改善</span>
+      </div>
+      <div class="metric-value-row">
+        <span class="metric-current">128/82</span>
+        <span class="metric-unit">mmHg</span>
+        <span class="metric-badge badge-warning">偏高</span>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <div style="flex:1;background:#FFF3E0;border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:16px;font-weight:700;color:#E65100;">128</div>
+          <div style="font-size:9px;color:#999;">收缩压</div>
+        </div>
+        <div style="flex:1;background:#FFF3E0;border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:16px;font-weight:700;color:#E65100;">82</div>
+          <div style="font-size:9px;color:#999;">舒张压</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sleep -->
+    <div class="metric-card">
+      <div class="metric-header">
+        <span class="metric-name">😴 睡眠质量</span>
+        <span class="trend-down">↓ 改善</span>
+      </div>
+      <div class="metric-value-row">
+        <span class="metric-current">7.2</span>
+        <span class="metric-unit">小时</span>
+        <span class="metric-badge badge-normal">良好</span>
+      </div>
+      <div style="margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#999;margin-bottom:4px;">
+          <span>深睡 2.1h</span><span>浅睡 3.8h</span><span>REM 1.3h</span>
+        </div>
+        <div style="height:8px;border-radius:4px;background:#f0f0f5;overflow:hidden;display:flex;">
+          <div style="width:29%;background:#5C6BC0;border-radius:4px 0 0 4px;"></div>
+          <div style="width:53%;background:#7986CB;"></div>
+          <div style="width:18%;background:#9FA8DA;border-radius:0 4px 4px 0;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Steps summary -->
+  <div class="steps-summary">
+    <div class="step-stat">
+      <div class="step-stat-icon">🚶</div>
+      <div class="step-stat-val">3,456</div>
+      <div class="step-stat-label">今日步数</div>
+    </div>
+    <div class="step-stat">
+      <div class="step-stat-icon">🔥</div>
+      <div class="step-stat-val">186</div>
+      <div class="step-stat-label">千卡消耗</div>
+    </div>
+    <div class="step-stat">
+      <div class="step-stat-icon">⏱️</div>
+      <div class="step-stat-val">42</div>
+      <div class="step-stat-label">活动分钟</div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item"><div class="nav-icon">🏠</div><span>首页</span></div>
+    <div class="nav-item active"><div class="nav-icon">📊</div><span>健康</span></div>
+    <div class="nav-item"><div class="nav-icon">🔔</div><span>告警</span></div>
+    <div class="nav-item"><div class="nav-icon">💊</div><span>用药</span></div>
+    <div class="nav-item"><div class="nav-icon">👤</div><span>我的</span></div>
+  </div>
+  <div class="home-indicator"></div>
+</div>
+
+</body>
+</html>
