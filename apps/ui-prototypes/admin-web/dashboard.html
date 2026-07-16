@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>颐贞 · 管理后台 — 仪表盘总览</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'PingFang SC', sans-serif; background: #f0f2f5; color: #333; }
+
+/* Layout */
+.layout { display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  width: 220px; background: #001529; color: #fff; display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 10;
+}
+.sidebar-logo {
+  height: 64px; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700; letter-spacing: 2px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.sidebar-logo span { color: #4A90D9; }
+.sidebar-nav { padding: 12px 0; }
+.nav-group-title { padding: 12px 24px 6px; font-size: 10px; text-transform: uppercase; color: rgba(255,255,255,0.35); letter-spacing: 1px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 24px;
+  font-size: 14px; color: rgba(255,255,255,0.65); cursor: pointer;
+  transition: all 0.2s; border-left: 3px solid transparent;
+}
+.nav-item:hover { color: #fff; background: rgba(255,255,255,0.04); }
+.nav-item.active {
+  color: #fff; background: #1677FF; border-left-color: #fff;
+}
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-footer {
+  margin-top: auto; padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex; align-items: center; gap: 10px;
+}
+.avatar-sm { width: 32px; height: 32px; border-radius: 50%; background: #4A90D9; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.user-info { font-size: 12px; }
+.user-name { font-weight: 600; }
+.user-role { color: rgba(255,255,255,0.4); }
+
+/* Main content */
+.main { margin-left: 220px; flex: 1; }
+
+/* Top bar */
+.topbar {
+  height: 64px; background: #fff; border-bottom: 1px solid #e8e8e8;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; position: sticky; top: 0; z-index: 5;
+}
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+.breadcrumb { font-size: 14px; color: #999; }
+.breadcrumb span { color: #333; font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 20px; }
+.topbar-icon { font-size: 18px; cursor: pointer; position: relative; }
+.topbar-badge {
+  position: absolute; top: -4px; right: -4px; width: 16px; height: 16px;
+  background: #FF4D4F; border-radius: 50%; font-size: 9px; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Content area */
+.content { padding: 24px; }
+
+/* Page title */
+.page-header { margin-bottom: 20px; }
+.page-title { font-size: 22px; font-weight: 700; }
+.page-subtitle { font-size: 13px; color: #999; margin-top: 4px; }
+
+/* KPI cards */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+.kpi-card {
+  background: #fff; border-radius: 12px; padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.kpi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.kpi-label { font-size: 13px; color: #999; }
+.kpi-icon { font-size: 24px; }
+.kpi-value { font-size: 28px; font-weight: 800; }
+.kpi-change { font-size: 12px; margin-top: 6px; }
+.kpi-up { color: #52C41A; }
+.kpi-down { color: #FF4D4F; }
+
+/* Charts row */
+.charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; }
+.chart-card {
+  background: #fff; border-radius: 12px; padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.chart-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+
+/* Bar chart mockup */
+.bar-chart { display: flex; align-items: flex-end; gap: 12px; height: 160px; padding-top: 10px; }
+.bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.bar-stack { display: flex; flex-direction: column-reverse; gap: 2px; width: 100%; align-items: center; }
+.bar-segment { width: 80%; border-radius: 3px; min-height: 4px; }
+.bar-online { background: linear-gradient(to top, #4A90D9, #7DB6E8); }
+.bar-offline { background: linear-gradient(to top, #FFA726, #FFCC80); }
+.bar-label { font-size: 10px; color: #999; }
+
+/* Device status donut */
+.donut-container { display: flex; align-items: center; gap: 24px; }
+.donut-svg { width: 120px; height: 120px; transform: rotate(-90deg); }
+.donut-center { font-size: 22px; font-weight: 800; fill: #333; }
+.donut-legend { flex: 1; }
+.legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* Alert table */
+.table-card {
+  background: #fff; border-radius: 12px; padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.table-title { font-size: 15px; font-weight: 700; }
+.table-filter { font-size: 12px; color: #4A90D9; cursor: pointer; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 12px; color: #999; font-weight: 500; padding: 8px 12px; border-bottom: 1px solid #f0f0f0; }
+td { font-size: 13px; padding: 12px; border-bottom: 1px solid #f5f5f5; }
+.priority-tag {
+  padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;
+}
+.p0 { background: #FFEBEE; color: #C62828; }
+.p1 { background: #FFF3E0; color: #EF6C00; }
+.p2 { background: #E3F2FD; color: #1565C0; }
+.status-tag { padding: 2px 8px; border-radius: 6px; font-size: 11px; }
+.status-handled { background: #E8F5E9; color: #2E7D32; }
+.status-pending { background: #FFF3E0; color: #EF6C00; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo"><span>颐贞</span> Eregen</div>
+    <div class="sidebar-nav">
+      <div class="nav-group-title">概览</div>
+      <div class="nav-item active"><span class="nav-icon">📊</span>仪表盘</div>
+      <div class="nav-group-title">设备管理</div>
+      <div class="nav-item"><span class="nav-icon">⌚</span>手环设备</div>
+      <div class="nav-item"><span class="nav-icon">💊</span>药盒设备</div>
+      <div class="nav-item"><span class="nav-icon">📡</span>固件OTA</div>
+      <div class="nav-group-title">用户管理</div>
+      <div class="nav-item"><span class="nav-icon">👥</span>家属用户</div>
+      <div class="nav-item"><span class="nav-icon">👴</span>老人档案</div>
+      <div class="nav-item"><span class="nav-icon">🏥</span>机构管理</div>
+      <div class="nav-group-title">运营</div>
+      <div class="nav-item"><span class="nav-icon">🔔</span>告警中心</div>
+      <div class="nav-item"><span class="nav-icon">📋</span>订阅管理</div>
+      <div class="nav-item"><span class="nav-icon">📈</span>数据分析</div>
+      <div class="nav-group-title">系统</div>
+      <div class="nav-item"><span class="nav-icon">⚙️</span>系统设置</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="avatar-sm">👤</div>
+      <div class="user-info">
+        <div class="user-name">管理员</div>
+        <div class="user-role">超级管理员</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="breadcrumb">首页 / <span>仪表盘总览</span></div>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-icon">🔍</div>
+        <div class="topbar-icon">
+          🔔
+          <span class="topbar-badge">3</span>
+        </div>
+        <div class="topbar-icon">🌙</div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <div class="page-header">
+        <div class="page-title">仪表盘总览</div>
+        <div class="page-subtitle">数据更新于 2026-07-16 10:05 · 最近24小时</div>
+      </div>
+
+      <!-- KPI cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">设备总数</span>
+            <span class="kpi-icon">📡</span>
+          </div>
+          <div class="kpi-value">1,284</div>
+          <div class="kpi-change kpi-up">↑ 12% 较上月</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">在线设备</span>
+            <span class="kpi-icon">✅</span>
+          </div>
+          <div class="kpi-value">1,156</div>
+          <div class="kpi-change kpi-up">在线率 90.0%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">活跃用户</span>
+            <span class="kpi-icon">👥</span>
+          </div>
+          <div class="kpi-value">892</div>
+          <div class="kpi-change kpi-up">↑ 8% 较上周</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">待处理告警</span>
+            <span class="kpi-icon">🚨</span>
+          </div>
+          <div class="kpi-value" style="color:#FF4D4F;">7</div>
+          <div class="kpi-change kpi-down">↓ 3 较昨日</div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="charts-row">
+        <!-- Device online rate over time -->
+        <div class="chart-card">
+          <div class="chart-title">设备在线趋势（近7天）</div>
+          <div class="bar-chart">
+            <div class="bar-group">
+              <div class="bar-stack">
+                <div class="bar-segment bar-online" style="height:100px"></div>
+                <div class="bar-segment bar-offline" style="height:15px"></div>
+              </div>
+              <div class="bar-label">周一</div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-stack">
+                <div class="bar-segment bar-online" style="height:105px"></div>
+                <div class="bar-segment bar-offline" style="height:12px"></div>
+              </div>
+              <div class="bar-label">周二</div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-stack">
+                <div class="bar-segment bar-online" style="height:95px"></div>
+                <div class="bar-segment bar-offline" style="height:18px"></div>
+              </div>
+              <div class="bar-label">周三</div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-stack">
+                <div class="bar-segment bar-online" style="height:110px"></div>
+                <div class="bar-segment bar-offline" style="height:10px"></div>
+              </div>
+              <div class="bar-label">周四</div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-stack">
+                <div class="bar-segment bar-online" style="height:108px"></div>
+                <div class="bar-segment bar-offline" style="height:11px"></div>
+              </div>
+              <div class="bar-label">周五</div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-stack">
+                <div class="bar-segment bar-online" style="height:100px"></div>
+                <div class="bar-segment bar-offline" style="height:16px"></div>
+              </div>
+              <div class="bar-label">周六</div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-stack">
+                <div class="bar-segment bar-online" style="height:112px"></div>
+                <div class="bar-segment bar-offline" style="height:8px"></div>
+              </div>
+              <div class="bar-label">周日</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Device type distribution -->
+        <div class="chart-card">
+          <div class="chart-title">设备类型分布</div>
+          <div class="donut-container">
+            <svg class="donut-svg" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="48" fill="none" stroke="#4A90D9" stroke-width="20" stroke-dasharray="200 302" stroke-dashoffset="0"/>
+              <circle cx="60" cy="60" r="48" fill="none" stroke="#4CAF50" stroke-width="20" stroke-dasharray="100 402" stroke-dashoffset="-200"/>
+              <circle cx="60" cy="60" r="48" fill="none" stroke="#FFA726" stroke-width="20" stroke-dasharray="60 442" stroke-dashoffset="-300"/>
+              <text x="60" y="56" text-anchor="middle" class="donut-center">1,284</text>
+              <text x="60" y="70" text-anchor="middle" style="font-size:8px;fill:#999;">total</text>
+            </svg>
+            <div class="doughnut-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:#4A90D9"></div>手环 658 (51%)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#4CAF50"></div>药盒 329 (26%)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#FFA726"></div>其他 297 (23%)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent alerts table -->
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">最新告警事件</div>
+          <div class="table-filter">查看全部 →</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>类型</th>
+              <th>老人</th>
+              <th>设备</th>
+              <th>优先级</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>07-16 08:32</td>
+              <td>SOS按钮</td>
+              <td>李秀英</td>
+              <td>BR-0042</td>
+              <td><span class="priority-tag p0">P0</span></td>
+              <td><span class="status-tag status-handled">已处理</span></td>
+            </tr>
+            <tr>
+              <td>07-16 07:45</td>
+              <td>跌倒检测</td>
+              <td>王建国</td>
+              <td>BR-0128</td>
+              <td><span class="priority-tag p0">P0</span></td>
+              <td><span class="status-tag status-pending">待确认</span></td>
+            </tr>
+            <tr>
+              <td>07-16 07:15</td>
+              <td>心率异常</td>
+              <td>李秀英</td>
+              <td>BR-0042</td>
+              <td><span class="priority-tag p1">P1</span></td>
+              <td><span class="status-tag status-handled">已恢复</span></td>
+            </tr>
+            <tr>
+              <td>07-15 20:00</td>
+              <td>用药漏服</td>
+              <td>张美华</td>
+              <td>PX-0067</td>
+              <td><span class="priority-tag p1">P1</span></td>
+              <td><span class="status-tag status-handled">已通知</span></td>
+            </tr>
+            <tr>
+              <td>07-15 15:30</td>
+              <td>电子围栏</td>
+              <td>王建国</td>
+              <td>BR-0128</td>
+              <td><span class="priority-tag p1">P1</span></td>
+              <td><span class="status-tag status-handled">已返回</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
