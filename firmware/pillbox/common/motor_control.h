@@ -1,80 +1,65 @@
 /*
- * Eregen (颐贞) - Universal Motor Control Interface
+ * Eregen (颐贞) - Pillbox Motor Control Interface
  * Controls 28BYJ-48 stepper motor via ULN2003 driver using ESP32-C3 LEDC/PWM.
  *
- * © 2026 Eregen (颐贞). All rights reserved.
+ * Compatible with ESP-IDF and standalone host compilation (TEST_MODE).
+ *
+ * 28BYJ-48 specs: 64 internal steps x 64:1 gear ratio = 4096 steps/rev.
+ *
+ * 2026 Eregen (颐贞). All rights reserved.
  */
 
 #ifndef MOTOR_CONTROL_H
 #define MOTOR_CONTROL_H
 
-#include "esp_err.h"
 #include <stdint.h>
+#include <stdbool.h>
 
-/* GPIO pin assignments for 28BYJ-48 via ULN2003 on ESP32-C3 */
-#define MOTOR_PIN_IN1       GPIO_NUM_0
-#define MOTOR_PIN_IN2       GPIO_NUM_1
-#define MOTOR_PIN_IN3       GPIO_NUM_2
-#define MOTOR_PIN_IN4       GPIO_NUM_3
+/* Default speed: 10 RPM */
+#define MOTOR_DEFAULT_RPM     10
 
-/* 28BYJ-48 specs: 64 internal steps x 64:1 gear ratio = 4096 steps/rev */
-#define STEPS_PER_REV       4096
-
-/* Speed range: 1-100 RPM */
-#define MOTOR_MIN_RPM       1
-#define MOTOR_MAX_RPM       100
-
-/* Direction enum */
-typedef enum {
-    MOTOR_DIR_CW,   /* Clockwise */
-    MOTOR_DIR_CCW   /* Counter-clockwise */
-} motor_dir_t;
+/* Maximum steps allowed per single call (safety limit) */
+#define MOTOR_MAX_STEPS       16384
 
 /**
  * Initialize the motor control subsystem.
- * Configures GPIO pins for ULN2003 driver.
- *
- * @return ESP_OK on success, error code otherwise
+ * Configures GPIO pins (or mock equivalents under TEST_MODE).
  */
-esp_err_t motor_init(void);
-
-/**
- * Set motor speed in RPM.
- *
- * @param rpm Speed in rotations per minute (1-100)
- * @return ESP_OK on success, ESP_ERR_INVALID_ARG if out of range
- */
-esp_err_t motor_set_speed(uint32_t rpm);
-
-/**
- * Set motor rotation direction.
- *
- * @param dir CW or CCW
- * @return ESP_OK on success
- */
-esp_err_t motor_set_direction(motor_dir_t dir);
+void motor_control_init(void);
 
 /**
  * Move the motor a specified number of steps.
  * Blocks until movement completes.
  *
  * @param steps Number of steps to move (positive = CW, negative = CCW)
- * @return ESP_OK on success, error code if interrupted
+ * @return true if success, false if steps exceed safety limit or motor stuck
  */
-esp_err_t motor_step(int32_t steps);
+bool motor_control_step(uint8_t steps);
 
 /**
- * Stop the motor immediately.
- *
- * @return ESP_OK on success
+ * Reset software position counter to zero (home).
+ * Does not physically move the motor.
  */
-esp_err_t motor_stop(void);
+void motor_control_home(void);
 
 /**
- * Get the current software-tracked position in steps from origin.
+ * Check if the motor is idle (not currently moving).
  *
- * @return Current position in steps (signed, may be negative)
+ * @return true if motor is ready for a new command
  */
-int32_t motor_get_position(void);
+bool motor_control_is_ready(void);
+
+/* ---- Test-mode hooks (only available when compiled with TEST_MODE) ---- */
+
+#ifdef TEST_MODE
+
+/**
+ * Simulate a stuck/busy motor for testing the error path.
+ * When true, motor_control_is_ready() always returns false
+ * and motor_control_step() always returns false.
+ */
+void motor_control_mock_set_stuck(bool stuck);
+
+#endif /* TEST_MODE */
 
 #endif /* MOTOR_CONTROL_H */
