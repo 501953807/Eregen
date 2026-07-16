@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eregen · 颐贞 — 品牌官网首页</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif; color: #333; }
+
+/* Navigation */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 60px; height: 72px;
+}
+.nav-logo { font-size: 24px; font-weight: 800; letter-spacing: 2px; color: #2C3E50; }
+.nav-logo span { color: #4A90D9; }
+.nav-links { display: flex; gap: 32px; }
+.nav-link { font-size: 15px; color: #555; text-decoration: none; font-weight: 500; cursor: pointer; }
+.nav-link:hover { color: #4A90D9; }
+.nav-actions { display: flex; gap: 12px; align-items: center; }
+.btn-primary { background: linear-gradient(135deg, #4A90D9, #357ABD); color: #fff; border: none; padding: 10px 24px; border-radius: 24px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-outline { background: transparent; color: #4A90D9; border: 1.5px solid #4A90D9; padding: 10px 24px; border-radius: 24px; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+/* Hero */
+.hero {
+  height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #E8F4FD 0%, #F0F8FF 50%, #FFF8F0 100%);
+  padding: 0 60px; position: relative; overflow: hidden;
+}
+.hero-bg-circle {
+  position: absolute; width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(74,144,217,0.08) 0%, transparent 70%);
+  top: -100px; right: -100px;
+}
+.hero-content { max-width: 600px; z-index: 1; }
+.hero-badge {
+  display: inline-block; background: rgba(74,144,217,0.1); color: #4A90D9;
+  padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  margin-bottom: 24px; letter-spacing: 1px;
+}
+.hero h1 { font-size: 52px; font-weight: 800; line-height: 1.2; margin-bottom: 20px; color: #2C3E50; }
+.hero h1 .highlight { color: #4A90D9; }
+.hero p { font-size: 18px; color: #666; line-height: 1.8; margin-bottom: 36px; }
+.hero-buttons { display: flex; gap: 16px; }
+.hero-image {
+  position: absolute; right: 100px; top: 50%; transform: translateY(-50%);
+  width: 420px; height: 520px;
+}
+.phone-mockup {
+  width: 260px; height: 520px; background: #fff; border-radius: 36px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.12); margin: 0 auto;
+  border: 8px solid #1a1a2e; position: relative; overflow: hidden;
+}
+.phone-screen {
+  width: 100%; height: 100%; background: linear-gradient(180deg, #4A90D9, #357ABD);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #fff; padding: 20px;
+}
+.phone-screen .screen-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.phone-screen .screen-sub { font-size: 12px; opacity: 0.8; text-align: center; line-height: 1.6; }
+.screen-heart { font-size: 48px; margin-bottom: 16px; }
+
+/* Section common */
+.section { padding: 100px 60px; }
+.section-dark { background: #2C3E50; color: #fff; }
+.section-gray { background: #f8f9fb; }
+.section-title { font-size: 36px; font-weight: 800; text-align: center; margin-bottom: 12px; }
+.section-subtitle { font-size: 16px; text-align: center; color: #888; margin-bottom: 60px; }
+
+/* Features */
+.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; max-width: 1000px; margin: 0 auto; }
+.feature-card { background: #fff; border-radius: 16px; padding: 36px 28px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.04); transition: transform 0.3s; }
+.feature-card:hover { transform: translateY(-4px); }
+.feature-icon { font-size: 40px; margin-bottom: 20px; }
+.feature-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; color: #2C3E50; }
+.feature-desc { font-size: 14px; color: #888; line-height: 1.7; }
+
+/* Products */
+.products-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; max-width: 1000px; margin: 0 auto; }
+.product-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 40px; text-align: center; }
+.product-icon { font-size: 64px; margin-bottom: 20px; }
+.product-name { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+.product-desc { font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.7; margin-bottom: 24px; }
+.product-levels { display: flex; gap: 12px; justify-content: center; margin-bottom: 24px; }
+.level-tag { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; }
+.level-starter { background: rgba(74,144,217,0.2); color: #7DB6E8; }
+.level-plus { background: rgba(76,175,80,0.2); color: #81C784; }
+.level-pro { background: rgba(255,165,0,0.2); color: #FFB74D; }
+.product-price { font-size: 28px; font-weight: 800; color: #FFA500; margin-bottom: 20px; }
+.product-price span { font-size: 14px; font-weight: 400; color: rgba(255,255,255,0.5); }
+
+/* CTA */
+.cta-section { text-align: center; padding: 80px 60px; background: linear-gradient(135deg, #4A90D9, #357ABD); color: #fff; }
+.cta-section h2 { font-size: 36px; font-weight: 800; margin-bottom: 16px; }
+.cta-section p { font-size: 16px; opacity: 0.85; margin-bottom: 32px; }
+.btn-white { background: #fff; color: #4A90D9; border: none; padding: 14px 36px; border-radius: 28px; font-size: 16px; font-weight: 700; cursor: pointer; }
+
+/* Footer */
+.footer { background: #1a1a2e; color: rgba(255,255,255,0.5); padding: 40px 60px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+.footer-links { display: flex; gap: 24px; }
+.footer-link { color: rgba(255,255,255,0.5); text-decoration: none; cursor: pointer; }
+.footer-link:hover { color: #fff; }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+  <div class="nav-logo"><span>Eregen</span> 颐贞</div>
+  <div class="nav-links">
+    <a class="nav-link">产品</a>
+    <a class="nav-link">健康方案</a>
+    <a class="nav-link">关于我们</a>
+    <a class="nav-link">技术支持</a>
+  </div>
+  <div class="nav-actions">
+    <button class="btn-outline">登录</button>
+    <button class="btn-primary">免费下载</button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-bg-circle"></div>
+  <div class="hero-content">
+    <div class="hero-badge">🏥 医疗级健康监测</div>
+    <h1>颐养正道<br><span class="highlight">贞守安康</span></h1>
+    <p>Eregen 颐贞为长者提供全方位的智能健康监测方案。从实时定位到健康数据分析，从用药提醒到紧急救援，让每一位老人都能被温柔以待。</p>
+    <div class="hero-buttons">
+      <button class="btn-primary">立即体验</button>
+      <button class="btn-outline" style="border-color:#ccc;color:#666;">观看视频 ▶</button>
+    </div>
+  </div>
+  <div class="hero-image">
+    <div class="phone-mockup">
+      <div class="phone-screen">
+        <div class="screen-heart">❤️</div>
+        <div class="screen-title">颐贞家属端</div>
+        <div class="screen-sub">奶奶心率正常<br>位置：家中<br>今日步数 3,456</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section section-gray">
+  <div class="section-title">全方位健康守护</div>
+  <div class="section-subtitle">六大核心能力，构建完整的老年健康生态</div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">📍</div>
+      <div class="feature-title">实时定位</div>
+      <div class="feature-desc">GPS + 基站 + WiFi 三重定位，电子围栏自动告警，随时掌握长辈位置安全。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💓</div>
+      <div class="feature-title">健康监测</div>
+      <div class="feature-desc">心率、血氧、血压、睡眠全天候监测，AI异常检测，临床级健康评估。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🆘</div>
+      <div class="feature-title">紧急救援</div>
+      <div class="feature-desc">SOS一键呼救，跌倒自动检测，P0级告警秒级推送至所有家属。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💊</div>
+      <div class="feature-title">用药管理</div>
+      <div class="feature-desc">智能药盒语音提醒，服药依从性追踪，漏服即时通知家属。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🤖</div>
+      <div class="feature-title">AI健康分析</div>
+      <div class="feature-desc">基于临床标准的综合健康评分，趋势预测，为医生诊疗提供参考。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏥</div>
+      <div class="feature-title">医院对接</div>
+      <div class="feature-desc">与三甲医院系统对接，健康数据共享，慢病管理闭环。</div>
+    </div>
+  </div>
+</section>
+
+<!-- Products -->
+<section class="section section-dark">
+  <div class="section-title">硬件产品线</div>
+  <div class="section-subtitle" style="color:rgba(255,255,255,0.5);">三档产品线矩阵，满足不同需求与预算</div>
+  <div class="products-grid">
+    <div class="product-card">
+      <div class="product-icon">⌚</div>
+      <div class="product-name">智能手环</div>
+      <div class="product-desc">GD32E230C8T3 主控，Cat1蜂窝通信，IP67防水。支持心率、血氧、GPS、跌倒检测、SOS紧急按钮。</div>
+      <div class="product-levels">
+        <span class="level-tag level-starter">Starter ¥199</span>
+        <span class="level-tag level-plus">Plus ¥399</span>
+        <span class="level-tag level-pro">Pro ¥699</span>
+      </div>
+      <div class="product-price">BOM ¥80-400</div>
+    </div>
+    <div class="product-card">
+      <div class="product-icon">💊</div>
+      <div class="product-name">智能药盒</div>
+      <div class="product-desc">ESP32-C3 主控，WiFi连接。定时语音提醒，自动分药，光电检测服药状态，库存预警。</div>
+      <div class="product-levels">
+        <span class="level-tag level-starter">Basic ¥79</span>
+        <span class="level-tag level-plus">Smart ¥199</span>
+        <span class="level-tag level-pro">Auto ¥399</span>
+      </div>
+      <div class="product-price">BOM ¥50-230</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2>开始守护家人的健康</h2>
+  <p>下载颐贞家属端APP，或联系机构合作方案</p>
+  <div style="display:flex;gap:16px;justify-content:center;">
+    <button class="btn-white">iOS 下载</button>
+    <button class="btn-outline" style="border-color:rgba(255,255,255,0.4);color:#fff;">Android 下载</button>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div>© 2026 Eregen 颐贞 · 上海 · 保留所有权利</div>
+  <div class="footer-links">
+    <a class="footer-link">隐私政策</a>
+    <a class="footer-link">用户协议</a>
+    <a class="footer-link">联系我们</a>
+    <a class="footer-link">专利声明</a>
+  </div>
+</footer>
+
+</body>
+</html>
