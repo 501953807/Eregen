@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eregen 颐贞 — 管理后台用户管理</title>
+<style>
+  :root {
+    --primary: #2563EB;
+    --primary-light: #DBEAFE;
+    --success: #16A34A;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-400: #9CA3AF;
+    --gray-500: #6B7280;
+    --gray-600: #4B5563;
+    --gray-700: #374151;
+    --gray-800: #1F2937;
+    --gray-900: #111827;
+    --sidebar-w: 220px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    background: var(--gray-100);
+    color: var(--gray-800);
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: linear-gradient(180deg, #1E3A5F 0%, #0F172A 100%);
+    color: white;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+  }
+  .sidebar-brand { padding: 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px; }
+  .brand-logo { width: 36px; height: 36px; background: linear-gradient(135deg, #2563EB, #7C3AED); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; }
+  .brand-text { font-size: 16px; font-weight: 700; }
+  .brand-sub { font-size: 10px; opacity: 0.6; }
+  .sidebar-nav { padding: 12px 0; flex: 1; }
+  .nav-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.35); padding: 16px 20px 6px; font-weight: 600; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 13px; color: rgba(255,255,255,0.65); cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent; text-decoration: none; }
+  .nav-item:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.9); }
+  .nav-item.active { background: rgba(37,99,235,0.15); color: white; border-left-color: var(--primary); }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  /* ===== Main ===== */
+  .main { margin-left: var(--sidebar-w); flex: 1; }
+  .top-header { background: white; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--gray-200); position: sticky; top: 0; z-index: 50; }
+  .breadcrumb { font-size: 13px; color: var(--gray-500); }
+  .breadcrumb span { color: var(--gray-800); font-weight: 600; }
+
+  .content-area { padding: 24px 28px; }
+  .page-title-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .page-title { font-size: 20px; font-weight: 700; color: var(--gray-900); }
+
+  /* User Type Tabs */
+  .user-tabs { display: flex; gap: 0; margin-bottom: 20px; background: white; border-radius: 12px; border: 1px solid var(--gray-200); overflow: hidden; }
+  .user-tab {
+    flex: 1; padding: 14px 0; text-align: center; cursor: pointer;
+    font-size: 13px; font-weight: 600; color: var(--gray-500);
+    border-right: 1px solid var(--gray-200);
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .user-tab:last-child { border-right: none; }
+  .user-tab.active { background: var(--primary); color: white; }
+  .user-tab .count {
+    background: rgba(255,255,255,0.2); padding: 1px 8px; border-radius: 10px; font-size: 11px;
+  }
+  .user-tab:not(.active) .count { background: var(--gray-100); }
+
+  /* Filter Bar */
+  .filter-bar {
+    background: white; border-radius: 12px; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+    border: 1px solid var(--gray-200);
+  }
+  .filter-label { font-size: 13px; font-weight: 600; color: var(--gray-600); white-space: nowrap; }
+  .filter-select { padding: 7px 12px; border: 1px solid var(--gray-200); border-radius: 8px; font-size: 13px; background: var(--gray-50); cursor: pointer; outline: none; }
+  .filter-spacer { flex: 1; }
+  .filter-btn { padding: 7px 16px; border-radius: 8px; border: 1px solid var(--gray-200); font-size: 13px; font-weight: 500; cursor: pointer; background: white; color: var(--gray-600); }
+  .filter-btn.primary { background: var(--primary); color: white; border-color: var(--primary); }
+
+  /* Stats Row */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .stat-card { background: white; border-radius: 10px; padding: 16px 20px; border: 1px solid var(--gray-200); }
+  .stat-card .stat-num { font-size: 24px; font-weight: 700; color: var(--gray-900); }
+  .stat-card .stat-label { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+
+  /* User Cards Grid */
+  .user-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .user-card {
+    background: white; border-radius: 12px; padding: 18px;
+    border: 1px solid var(--gray-200);
+    display: flex; gap: 14px;
+    transition: box-shadow 0.15s;
+  }
+  .user-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+  .user-avatar-lg {
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .user-avatar-lg.elder { background: #FEF3C7; }
+  .user-avatar-lg.family { background: var(--primary-light); }
+  .user-avatar-lg.org { background: #F3E8FF; }
+  .user-card-body { flex: 1; min-width: 0; }
+  .user-card-name { font-size: 14px; font-weight: 700; color: var(--gray-900); display: flex; align-items: center; gap: 6px; }
+  .user-type-tag {
+    font-size: 10px; padding: 1px 6px; border-radius: 6px; font-weight: 600;
+  }
+  .user-type-tag.elder { background: #FEF3C7; color: #92400E; }
+  .user-type-tag.family { background: var(--primary-light); color: var(--primary); }
+  .user-type-tag.org { background: #F3E8FF; color: #7C3AED; }
+  .user-card-info { font-size: 12px; color: var(--gray-500); margin-top: 4px; line-height: 1.5; }
+  .user-card-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .mini-tag {
+    font-size: 10px; padding: 2px 8px; border-radius: 6px;
+    background: var(--gray-100); color: var(--gray-600); font-weight: 500;
+  }
+  .mini-tag.premium { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
+  .user-card-actions { display: flex; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gray-100); }
+  .card-action-btn {
+    padding: 5px 12px; border-radius: 6px; border: 1px solid var(--gray-200);
+    font-size: 11px; cursor: pointer; background: white; color: var(--gray-600); font-weight: 500;
+  }
+  .card-action-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .card-action-btn.danger { color: var(--danger); border-color: #FECACA; }
+
+  /* Pagination */
+  .pagination {
+    padding: 14px 0; display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; color: var(--gray-500);
+  }
+  .page-btns { display: flex; gap: 4px; }
+  .page-btn {
+    width: 32px; height: 32px; border: 1px solid var(--gray-200); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; font-size: 13px;
+    cursor: pointer; background: white; color: var(--gray-600);
+  }
+  .page-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-logo">颐</div>
+    <div><div class="brand-text">Eregen 颐贞</div><div class="brand-sub">运营管理后台</div></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">概览</div>
+    <a class="nav-item"><span class="nav-icon">&#128200;</span> 仪表盘</a>
+    <div class="nav-section-title">运营管理</div>
+    <a class="nav-item"><span class="nav-icon">&#128247;</span> 设备管理</a>
+    <a class="nav-item active"><span class="nav-icon">&#128101;</span> 用户管理</a>
+    <a class="nav-item"><span class="nav-icon">&#128176;</span> 订阅管理</a>
+    <a class="nav-item"><span class="nav-icon">&#9888;</span> 告警监控</a>
+    <div class="nav-section-title">数据分析</div>
+    <a class="nav-item"><span class="nav-icon">&#128202;</span> 健康报告</a>
+    <a class="nav-item"><span class="nav-icon">&#128197;</span> 使用统计</a>
+    <div class="nav-section-title">系统</div>
+    <a class="nav-item"><span class="nav-icon">&#9881;</span> 系统设置</a>
+    <a class="nav-item"><span class="nav-icon">&#128230;</span> OTA 升级</a>
+  </nav>
+  <div class="sidebar-user" style="padding:16px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:10px;">
+    <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;">&#128100;</div>
+    <div style="font-size:12px;"><div style="font-weight:600;">管理员</div><div style="font-size:10px;opacity:0.5;">超级管理员</div></div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="top-header">
+    <div class="breadcrumb">首页 / <span>用户管理</span></div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;background:var(--gray-100);border-radius:8px;padding:8px 14px;font-size:13px;color:var(--gray-400);width:240px;">
+        &#128269; <input placeholder="搜索姓名、手机号..." style="border:none;background:none;outline:none;font-size:13px;flex:1;color:var(--gray-700);">
+      </div>
+    </div>
+  </div>
+
+  <div class="content-area">
+    <div class="page-title-bar">
+      <div class="page-title">用户管理</div>
+      <button class="filter-btn primary">&#43; 手动添加用户</button>
+    </div>
+
+    <!-- User Type Tabs -->
+    <div class="user-tabs">
+      <div class="user-tab active">所有用户 <span class="count">3,247</span></div>
+      <div class="user-tab">老人 <span class="count">1,847</span></div>
+      <div class="user-tab">家属 <span class="count">1,380</span></div>
+      <div class="user-tab">机构 <span class="count">20</span></div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <span class="filter-label">筛选：</span>
+      <select class="filter-select"><option>全部状态</option><option>正常</option><option>禁用</option><option>待验证</option></select>
+      <select class="filter-select"><option>全部地区</option><option>上海市</option><option>北京市</option><option>广州市</option><option>深圳市</option></select>
+      <select class="filter-select"><option>订阅状态</option><option>付费订阅</option><option>免费用户</option><option>已过期</option></select>
+      <span class="filter-spacer"></span>
+      <button class="filter-btn">重置</button>
+      <button class="filter-btn primary">搜索</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num">3,247</div><div class="stat-label">用户总数</div></div>
+      <div class="stat-card"><div class="stat-num">2,891</div><div class="stat-label">本月活跃</div></div>
+      <div class="stat-card"><div class="stat-num">847</div><div class="stat-label">付费订阅</div></div>
+      <div class="stat-card"><div class="stat-num">12</div><div class="stat-label">今日新增</div></div>
+    </div>
+
+    <!-- User Cards -->
+    <div class="user-grid">
+      <!-- Elder User -->
+      <div class="user-card">
+        <div class="user-avatar-lg elder">&#128105;</div>
+        <div class="user-card-body">
+          <div class="user-card-name">张三丰 <span class="user-type-tag elder">老人</span></div>
+          <div class="user-card-info">
+            手机号 138****6789 · 上海浦东新区<br>
+            家属：张明（儿子） · 绑定设备：手环Pro ×1，药盒智能 ×1
+          </div>
+          <div class="user-card-tags">
+            <span class="mini-tag premium">VIP 订阅</span>
+            <span class="mini-tag">68岁</span>
+            <span class="mini-tag">高血压</span>
+          </div>
+          <div class="user-card-actions">
+            <button class="card-action-btn">查看详情</button>
+            <button class="card-action-btn">消息通知</button>
+            <button class="card-action-btn danger">禁用</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Family User -->
+      <div class="user-card">
+        <div class="user-avatar-lg family">&#128100;</div>
+        <div class="user-card-body">
+          <div class="user-card-name">张明 <span class="user-type-tag family">家属</span></div>
+          <div class="user-card-info">
+            手机号 139****1234 · 上海徐汇区<br>
+            监护老人：张三丰（父）、李秀英（母）<br>
+            注册日期：2026-03-15
+          </div>
+          <div class="user-card-tags">
+            <span class="mini-tag premium">VIP 订阅</span>
+            <span class="mini-tag">2位监护人</span>
+          </div>
+          <div class="user-card-actions">
+            <button class="card-action-btn">查看详情</button>
+            <button class="card-action-btn">权限管理</button>
+            <button class="card-action-btn danger">禁用</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Elder User 2 -->
+      <div class="user-card">
+        <div class="user-avatar-lg elder">&#128104;</div>
+        <div class="user-card-body">
+          <div class="user-card-name">李秀英 <span class="user-type-tag elder">老人</span></div>
+          <div class="user-card-info">
+            手机号 137****5678 · 上海浦东新区<br>
+            家属：张敏（女儿） · 绑定设备：手环Plus ×1，药盒基础 ×1
+          </div>
+          <div class="user-card-tags">
+            <span class="mini-tag">免费用户</span>
+            <span class="mini-tag">72岁</span>
+            <span class="mini-tag">糖尿病</span>
+          </div>
+          <div class="user-card-actions">
+            <button class="card-action-btn">查看详情</button>
+            <button class="card-action-btn">推送营销</button>
+            <button class="card-action-btn danger">禁用</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Organization User -->
+      <div class="user-card">
+        <div class="user-avatar-lg org">&#127970;</div>
+        <div class="user-card-body">
+          <div class="user-card-name">和睦家养老机构 <span class="user-type-tag org">机构</span></div>
+          <div class="user-card-info">
+            联系人：王院长 · 136****9999<br>
+            入驻老人：45人 · 设备数：52台<br>
+            合同到期：2027-01-15
+          </div>
+          <div class="user-card-tags">
+            <span class="mini-tag premium">企业版</span>
+            <span class="mini-tag">在签</span>
+          </div>
+          <div class="user-card-actions">
+            <button class="card-action-btn">机构详情</button>
+            <button class="card-action-btn">老人管理</button>
+            <button class="card-action-btn">账单</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Elder User 3 -->
+      <div class="user-card">
+        <div class="user-avatar-lg elder">&#128105;</div>
+        <div class="user-card-body">
+          <div class="user-card-name">王建国 <span class="user-type-tag elder">老人</span></div>
+          <div class="user-card-info">
+            手机号 135****3456 · 北京朝阳区<br>
+            家属：王芳（女儿） · 绑定设备：手环Starter ×1
+          </div>
+          <div class="user-card-tags">
+            <span class="mini-tag">免费用户</span>
+            <span class="mini-tag">78岁</span>
+          </div>
+          <div class="user-card-actions">
+            <button class="card-action-btn">查看详情</button>
+            <button class="card-action-btn">消息通知</button>
+            <button class="card-action-btn danger">禁用</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Family User 2 -->
+      <div class="user-card">
+        <div class="user-avatar-lg family">&#128105;</div>
+        <div class="user-card-body">
+          <div class="user-card-name">赵淑华 <span class="user-type-tag family">家属</span></div>
+          <div class="user-card-info">
+            手机号 133****7890 · 广州天河区<br>
+            监护老人：刘德明（夫）<br>
+            注册日期：2026-05-20
+          </div>
+          <div class="user-card-tags">
+            <span class="mini-tag premium">VIP 订阅</span>
+            <span class="mini-tag">1位监护人</span>
+          </div>
+          <div class="user-card-actions">
+            <button class="card-action-btn">查看详情</button>
+            <button class="card-action-btn">权限管理</button>
+            <button class="card-action-btn danger">禁用</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <span>共 3,247 条记录</span>
+      <div class="page-btns">
+        <button class="page-btn">&#8592;</button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn">2</button>
+        <button class="page-btn">3</button>
+        <button class="page-btn">...</button>
+        <button class="page-btn">163</button>
+        <button class="page-btn">&#8594;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

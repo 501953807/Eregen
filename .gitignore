@@ -102,9 +102,6 @@ temp/
 .serena/
 .playwright-mcp/
 
-# UI prototypes (interface design files)
-apps/ui-prototypes/
-*.png
-
-# Documentation (entire docs directory)
-docs/
+# OS
+.DS_Store
+Thumbs.db
