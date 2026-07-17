@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/bottom_nav_bar.dart';
 import '../home/home_page.dart';
 import '../health/health_page.dart';
 import '../alerts/alerts_page.dart';

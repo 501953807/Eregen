@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../common/theme.dart';
-import '../widgets/bottom_nav_bar.dart';
+import '../../widgets/bottom_nav_bar.dart';
 import '../../api/client.dart';
 import '../../models/medication.dart';
 
@@ -74,17 +74,17 @@ class _MedicationPageState extends State<MedicationPage> {
                     decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF66BB6A), Color(0xFF43A047)]), borderRadius: BorderRadius.circular(16)),
                     padding: const EdgeInsets.all(20),
                     child: Column(children: [
-                      const Text('今日服药进度', style: TextStyle(fontSize: 13, color: Colors.white, opacity: 0.9)),
+                      const Text('今日服药进度', style: TextStyle(fontSize: 13, color: Colors.white)),
                       const SizedBox(height: 12),
                       Stack(alignment: Alignment.center, children: [
-                        SizedBox(width: 110, height: 110, child: CircularProgressIndicator(value: _todayRules.isEmpty ? 0 : _takenIds.length / _todayRules.length.toDouble(), strokeWidth: 10, backgroundColor: Colors.white.withOpacity(0.2), valueColor: const AlwaysStoppedAnimation<Color>(Colors.white))),
+                        SizedBox(width: 110, height: 110, child: CircularProgressIndicator(value: _todayRules.isEmpty ? 0 : _takenIds.length / _todayRules.length.toDouble(), strokeWidth: 10, backgroundColor: Colors.white.withValues(alpha: 0.2), valueColor: const AlwaysStoppedAnimation<Color>(Colors.white))),
                         Column(mainAxisSize: MainAxisSize.min, children: [
                           Text('${_todayRules.isEmpty ? 0 : _takenIds.length}/${_todayRules.length}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white)),
-                          Text('次', style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.8))),
+                          Text('次', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
                         ]),
                       ]),
                       const SizedBox(height: 10),
-                      Text(_todayRules.isEmpty ? '暂无用药规则' : '已服 ${_takenIds.length} / ${_todayRules.length} 次', style: const TextStyle(fontSize: 12, color: Colors.white, opacity: 0.9)),
+                      Text(_todayRules.isEmpty ? '暂无用药规则' : '已服 ${_takenIds.length} / ${_todayRules.length} 次', style: const TextStyle(fontSize: 12, color: Colors.white)),
                     ]),
                   )),
                 ),
@@ -126,11 +126,15 @@ class _MedicationPageState extends State<MedicationPage> {
                   child: Padding(padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 12), child: const Text('远程配置', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
                 ),
                 SliverToBoxAdapter(
-                  child: Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AppTheme.bgCard, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6)]), child: const Column(children: [Text('配置项将在后续版本开放', style: TextStyle(fontSize: 13, color: Color(0xFF999999)))]))),
+                  child: Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AppTheme.bgCard, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 6)]), child: const Column(children: [Text('配置项将在后续版本开放', style: TextStyle(fontSize: 13, color: Color(0xFF999999)))]))),
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
               ]),
-      bottomNavigationBar: BottomNavBar(selectedTab: _selectedIndex, onTabSelected: (i) => setState(() => _selectedIndex = i)),
+      ),
+      bottomNavigationBar: BottomNavBar(
+        selectedTab: _selectedIndex,
+        onTabSelected: (i) => setState(() => _selectedIndex = i),
+      ),
     );
   }
 
@@ -157,15 +161,15 @@ class _MedicationPageState extends State<MedicationPage> {
         if (hasLine) Positioned(top: 14, left: -6, child: Container(width: 2, height: 86, color: lineColor!)),
       ])),
       const SizedBox(width: 14),
-      Expanded(child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppTheme.bgCard, borderRadius: BorderRadius.circular(12), border: Border(left: BorderSide(color: borderColor, width: 3)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4)]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Expanded(child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppTheme.bgCard, borderRadius: BorderRadius.circular(12), border: Border(left: BorderSide(color: borderColor, width: 3)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4)]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(medNames, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
         Text(dosage, style: const TextStyle(fontSize: 11, color: Color(0xFF888888))),
         const SizedBox(height: 6),
         Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: statusBg, borderRadius: BorderRadius.circular(8)), child: Text(status, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: statusColor))),
-        if (note != null) Text(note, style: const TextStyle(fontSize: 10, color: Color(0xFFAAAAAA), marginTop: 4)),
+        if (note != null) Text(note, style: const TextStyle(fontSize: 10, color: Color(0xFFAAAAAA))),
         if (onConfirm != null) ...[
           const SizedBox(height: 8),
-          SizedBox(width: double.infinity, height: 32, child: ElevatedButton(onPressed: onConfirm, style: ElevatedButton.styleFrom(backgroundColor: AppTheme.statusNormal, foregroundColor: Colors.white, padding: EdgeInsets.zero, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: const Text('确认服用', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+          SizedBox(width: double.infinity, height: 32, child: ElevatedButton(onPressed: onConfirm, style: ElevatedButton.styleFrom(backgroundColor: AppTheme.statusNormal, foregroundColor: Colors.white, padding: EdgeInsets.zero, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: const Text('确认服用', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)))),
         ],
       ]))),
     ]));

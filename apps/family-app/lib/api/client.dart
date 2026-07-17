@@ -15,14 +15,14 @@ class ApiClient {
 
   // --- singleton ----------------------------------------------------------
   ApiClient._() {
-    _dio = Dio(BaseOptions(
+    _instance._dio = Dio(BaseOptions(
       baseUrl: _baseUrl,
       contentType: 'application/json',
       receiveTimeout: const Duration(seconds: 15),
       sendTimeout: const Duration(seconds: 15),
     ));
 
-    _dio.interceptors.add(InterceptorsWrapper(
+    _instance._dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
         if (_token != null && _token!.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $_token';
@@ -42,7 +42,7 @@ class ApiClient {
   static final ApiClient _instance = ApiClient._();
   static Future<void> init({String baseUrl = 'http://localhost:8080'}) async {
     _instance._baseUrl = baseUrl;
-    _instance._dio.baseOptions.baseUrl = baseUrl;
+    _instance._dio.options.baseUrl = baseUrl;
     final prefs = await SharedPreferences.getInstance();
     _instance._token = prefs.getString(_tokenKey);
   }

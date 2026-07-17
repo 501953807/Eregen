@@ -3,7 +3,7 @@ import '../../common/theme.dart';
 import '../../api/client.dart';
 import '../login/login_page.dart';
 import '../bind-device/bind_device_page.dart';
-import 'elderly_detail_page.dart' show AddElderlyPage;
+import 'elderly_detail_page.dart';
 
 /// Profile & settings page — account info, elderly management, app settings.
 class SettingsPage extends StatefulWidget {
@@ -36,13 +36,13 @@ class _SettingsPageState extends State<SettingsPage> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const CircleAvatar(radius: 28, backgroundColor: Colors.white.withOpacity(0.3), child: Icon(Icons.person, size: 28, color: Colors.white)),
+                      CircleAvatar(radius: 28, backgroundColor: Colors.white.withValues(alpha: 0.3), child: Icon(Icons.person, size: 28, color: Colors.white)),
                       const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text('张先生', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
-                          Text('138****5678', style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.8))),
+                          Text('138****5678', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
                         ],
                       ),
                       const Spacer(),
@@ -126,7 +126,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     icon: Icons.phone_android,
                     title: '绑定设备',
                     subtitle: '已绑定 2 台设备',
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BindDevicePage())),
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => BindDevicePage(onBound: () {}))),
                   ),
                 ],
               ),
@@ -179,7 +179,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     elevation: 0,
-                    side: BorderSide(color: AppTheme.statusDanger.withOpacity(0.3)),
+                    side: BorderSide(color: AppTheme.statusDanger.withValues(alpha: 0.3)),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),

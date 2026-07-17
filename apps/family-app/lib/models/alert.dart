@@ -22,4 +22,15 @@ class Alert {
     createdAt: DateTime.parse(json['created_at'] as String),
     resolvedAt: json['resolved_at'] != null ? DateTime.parse(json['resolved_at']) : null,
   );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'elderly_id': elderlyId,
+    'alert_type': alertType,
+    'severity': severity,
+    'status': status,
+    'metadata': metadata,
+    'created_at': createdAt.toIso8601String(),
+    if (resolvedAt != null) 'resolved_at': resolvedAt!.toIso8601String(),
+  };
 }

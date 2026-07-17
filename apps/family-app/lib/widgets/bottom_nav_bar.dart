@@ -45,7 +45,7 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final parent = context.findAncestorWidgetOfExactType<BottomNavBar>();
-    final isSelected = parent?.selectedTab == tabs.indexOf(tab);
+    final isSelected = parent?.selectedTab == BottomNavBar.tabs.indexOf(tab);
     final idx = BottomNavBar.tabs.indexOf(tab);
 
     return Expanded(

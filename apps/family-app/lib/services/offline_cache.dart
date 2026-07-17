@@ -1,8 +1,4 @@
 import 'package:hive_flutter/hive_flutter.dart';
-import '../models/alert.dart';
-import '../models/health.dart';
-import '../models/location.dart';
-import '../models/medication.dart';
 
 /// Hive box names used in the app.
 class HiveBoxes {
@@ -51,8 +47,8 @@ class OfflineCache {
     final results = <Map<String, dynamic>>[];
     for (final key in box.keys) {
       if (key is String && key.startsWith(prefix)) {
-        final val = box.get(key);
-        if (val is Map) results.add(val);
+      final val = box.get(key) as Map?;
+        if (val != null) results.add(val.cast<String, dynamic>());
       }
     }
     results.sort((a, b) {
@@ -94,8 +90,8 @@ class OfflineCache {
     final results = <Map<String, dynamic>>[];
     for (final key in box.keys) {
       if (key is String && key.startsWith(prefix)) {
-        final val = box.get(key);
-        if (val is Map) results.add(val);
+      final val = box.get(key) as Map?;
+        if (val != null) results.add(val.cast<String, dynamic>());
       }
     }
     results.sort((a, b) {
@@ -121,8 +117,8 @@ class OfflineCache {
     final results = <Map<String, dynamic>>[];
     for (final key in box.keys) {
       if (key is String && key.startsWith(prefix)) {
-        final val = box.get(key);
-        if (val is Map) results.add(val);
+      final val = box.get(key) as Map?;
+        if (val != null) results.add(val.cast<String, dynamic>());
       }
     }
     results.sort((a, b) {
@@ -149,8 +145,8 @@ class OfflineCache {
     final results = <Map<String, dynamic>>[];
     for (final key in box.keys) {
       if (key is String && key.startsWith(prefix)) {
-        final val = box.get(key);
-        if (val is Map) results.add(val);
+      final val = box.get(key) as Map?;
+        if (val != null) results.add(val.cast<String, dynamic>());
       }
     }
     results.sort((a, b) {

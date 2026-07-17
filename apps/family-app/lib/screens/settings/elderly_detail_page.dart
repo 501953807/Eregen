@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../common/theme.dart';
+import '../../api/client.dart';
 import '../../models/elderly.dart';
 
 /// Elderly person detail screen — health overview, devices, medication rules.
