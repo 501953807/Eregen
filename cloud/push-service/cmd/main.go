@@ -43,8 +43,8 @@ func main() {
 
 	pgStore := store.NewPostgres(db)
 
-	// NATS subscriber for device events from gateway
-	natsSub, err := publisher.NewSubscriber(cfg.NATSURL)
+	// NATS subscriber for device events from gateway — passes pgStore for DB lookups
+	natsSub, err := publisher.NewSubscriber(cfg.NATSURL, pgStore)
 	if err != nil {
 		log.Fatalf("nats connect: %v", err)
 	}
@@ -73,9 +73,9 @@ func main() {
 		WriteTimeout: 5 * time.Second,
 	}
 
-	// Start NATS subscriber in background with DB store
+	// Start NATS subscriber in background
 	go func() {
-		natsSub.Start(rtr, pgStore)
+		natsSub.Start(rtr)
 	}()
 
 	// Graceful shutdown

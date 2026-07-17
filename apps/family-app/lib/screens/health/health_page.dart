@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../common/theme.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../../api/client.dart';
+import '../../app_state.dart';
 import '../../models/health.dart';
+import '../../services/offline_cache.dart';
 
 /// Health dashboard page — fetches live data from GET /health/records and risk score from GET /health/risk-score.
+/// Integrates Hive offline cache for instant display on reload.
 class HealthPage extends StatefulWidget {
   const HealthPage({super.key});
 
@@ -21,10 +25,29 @@ class _HealthPageState extends State<HealthPage> {
   String _riskLevel = '加载中...';
   Color _riskColor = Colors.white;
 
+  String get _elderlyId => context.read<AppState>().elderlyId ?? '';
+
   @override
   void initState() {
     super.initState();
+    // Populate from cache first for instant display
+    _populateFromCache();
     _fetchData();
+  }
+
+  /// Populate records from Hive cache before API fetch completes.
+  void _populateFromCache() {
+    if (_elderlyId.isEmpty) return;
+    try {
+      final cached = OfflineCache.getCachedHealth(_elderlyId);
+      if (cached.isNotEmpty) {
+        final records = cached.map((r) => HealthRecord.fromJson(r)).toList();
+        setState(() {
+          _records = records;
+          _loading = false;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchData() async {
@@ -33,6 +56,13 @@ class _HealthPageState extends State<HealthPage> {
       final healthResp = await ApiClient.instance.get('/health/records', query: {'range': _timeRange});
       final list = (healthResp.data as List);
       final records = list.map((r) => HealthRecord.fromJson(r as Map<String, dynamic>)).toList();
+
+      // Cache fetched records
+      if (_elderlyId.isNotEmpty) {
+        for (final record in records) {
+          OfflineCache.cacheHealth(_elderlyId, record.toJson());
+        }
+      }
 
       // Fetch risk score from API
       double riskScore = 0;
@@ -70,6 +100,7 @@ class _HealthPageState extends State<HealthPage> {
         _riskColor = riskColor;
       });
     } catch (e) {
+      // If API fails but we have cached data, keep it visible
       setState(() => _loading = false);
     }
   }

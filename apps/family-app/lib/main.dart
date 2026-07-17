@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:provider/provider.dart';
+import 'services/offline_cache.dart';
+import 'services/ws_alert.dart';
+import 'app_state.dart';
 import '../common/theme.dart';
 import '../widgets/elderly_selector.dart';
 import '../widgets/map_section.dart';
@@ -10,11 +15,18 @@ import '../api/client.dart';
 import '../screens/login/login_page.dart';
 import '../screens/login/main_tab_screen.dart';
 
-/// Entry point — initializes ApiClient, checks token, shows login or main app.
+/// Entry point — initializes Hive, ApiClient, AppState, checks token, shows login or main app.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  await OfflineCache.init();
   await ApiClient.init();
-  runApp(const EregenFamilyApp());
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => AppState())],
+      child: const EregenFamilyApp(),
+    ),
+  );
 }
 
 class EregenFamilyApp extends StatelessWidget {

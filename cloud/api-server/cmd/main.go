@@ -14,6 +14,7 @@ import (
 	"eregen.dev/api-server/internal/router"
 	"eregen.dev/api-server/internal/service"
 	"eregen.dev/api-server/internal/store"
+	"eregen.dev/api-server/internal/ws"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -50,6 +51,10 @@ func main() {
 	}
 	redisLayer := store.NewRedis(rdb, log)
 
+	// WebSocket Hub for real-time alerts
+	wsHub := ws.NewHub()
+	go wsHub.Run(context.Background())
+
 	// NATS
 	var natsClient *service.NatsClient
 	natsClient, err = service.NewNatsClient(cfg.NATSURL, log)
@@ -60,7 +65,17 @@ func main() {
 
 		eventHandler := service.NewEventHandler(nil, log)
 		eventHandler.SetAlertCallback(func(ctx context.Context, a *model.Alert) error {
-			return pg.CreateAlert(ctx, a)
+			if err := pg.CreateAlert(ctx, a); err != nil {
+				return err
+			}
+			// Broadcast to WebSocket clients
+			wsHub.PublishAlert(ws.AlertBroadcast{
+				ElderlyID: a.ElderlyID,
+				Type:      a.AlertType,
+				Payload:   a.Metadata,
+				Timestamp: a.CreatedAt,
+			})
+			return nil
 		})
 		eventHandler.SetHealthCallback(func(ctx context.Context, r *model.HealthRecord) error {
 			return pg.CreateHealthRecord(ctx, r)
@@ -86,7 +101,7 @@ func main() {
 	authMW := middleware.NewJWTAuth(cfg.JWTSecret, time.Duration(cfg.TokenExpiry)*time.Second,
 		time.Duration(cfg.RefreshExpiry)*time.Second, log)
 
-	r := router.New(pg, redisLayer, natsClient, authMW, sms, push, log)
+	r := router.New(pg, redisLayer, natsClient, authMW, sms, push, log, wsHub)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,

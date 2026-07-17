@@ -16,13 +16,14 @@ import (
 
 // Subscriber connects to NATS and dispatches device events to handlers.
 type Subscriber struct {
-	nc    *nats.Conn
-	js    nats.JetStreamContext
-	alert chan model.AlertPushEvent
+	nc     *nats.Conn
+	js     nats.JetStreamContext
+	alert  chan model.AlertPushEvent
+	pgStore *store.Postgres
 }
 
 // NewSubscriber creates a NATS JetStream consumer for push events.
-func NewSubscriber(natsURL string) (*Subscriber, error) {
+func NewSubscriber(natsURL string, pgStore *store.Postgres) (*Subscriber, error) {
 	nc, err := nats.Connect(natsURL)
 	if err != nil {
 		return nil, fmt.Errorf("connect nats: %w", err)
@@ -35,9 +36,10 @@ func NewSubscriber(natsURL string) (*Subscriber, error) {
 	}
 
 	s := &Subscriber{
-		nc:    nc,
-		js:    js,
-		alert: make(chan model.AlertPushEvent, 128),
+		nc:      nc,
+		js:      js,
+		alert:   make(chan model.AlertPushEvent, 128),
+		pgStore: pgStore,
 	}
 
 	_, err = js.Subscribe("eregen.event.>", s.onMessage,
@@ -65,10 +67,21 @@ func (s *Subscriber) onMessage(msg *nats.Msg) {
 		return
 	}
 
-	// If elderly_id not set in event, derive from device ID
+	// Resolve elderly_id from device if not set
 	elderlyID := envelope.ElderlyID
 	if elderlyID == "" {
-		elderlyID = extractElderlyFromDevice(envelope.DevID)
+		var err error
+		elderlyID, err = s.pgStore.GetElderlyByDeviceID(context.Background(), envelope.DevID)
+		if err != nil {
+			log.Printf("[nats] resolve elderly from device %s failed: %v", envelope.DevID, err)
+			msg.Ack()
+			return
+		}
+		if elderlyID == "" {
+			log.Printf("[nats] no elderly found for device %s", envelope.DevID)
+			msg.Ack()
+			return
+		}
 	}
 
 	switch envelope.Type {
@@ -107,15 +120,6 @@ func (s *Subscriber) onMessage(msg *nats.Msg) {
 	msg.Ack()
 }
 
-// extractElderlyFromDevice derives elderly ID from device ID prefix.
-// Maps BR-XXXX → ELDERLY-XXXX, PX-XXXX → ELDERLY-XXXX.
-func extractElderlyFromDevice(devID string) string {
-	if len(devID) > 3 {
-		return "ELDERLY-" + devID[3:]
-	}
-	return devID
-}
-
 func buildAlertMsg(alertType string, payload map[string]interface{}) string {
 	loc := ""
 	if lat, ok := payload["lat"]; ok {
@@ -134,7 +138,7 @@ func buildAlertMsg(alertType string, payload map[string]interface{}) string {
 }
 
 // Start begins dispatching events to the router. Blocks until Close is called.
-func (s *Subscriber) Start(rtr *router.Router, pgStore *store.Postgres) {
+func (s *Subscriber) Start(rtr *router.Router) {
 	for {
 		select {
 		case ev := <-s.alert:
@@ -142,7 +146,7 @@ func (s *Subscriber) Start(rtr *router.Router, pgStore *store.Postgres) {
 				ev.AlertID, ev.AlertType, ev.Severity, ev.ElderlyID)
 
 			// Fetch family members from database
-			members, err := pgStore.GetFamilyMembers(context.Background(), ev.ElderlyID)
+			members, err := s.pgStore.GetFamilyMembers(context.Background(), ev.ElderlyID)
 			if err != nil {
 				log.Printf("[alert] fetch members failed: %v", err)
 				continue

@@ -50,3 +50,19 @@ func (p *Postgres) GetFamilyMembers(ctx context.Context, elderlyID string) ([]Me
 	}
 	return members, nil
 }
+
+// GetElderlyByDeviceID resolves an elderly profile ID from a device serial (BR-XXXX / PX-XXXX).
+// Joins: devices → elderly_profiles via owner_user_id.
+func (p *Postgres) GetElderlyByDeviceID(ctx context.Context, deviceID string) (string, error) {
+	var elderlyID string
+	err := p.db.QueryRowContext(ctx, `
+		SELECT ep.id
+		FROM devices d
+		JOIN elderly_profiles ep ON ep.user_id = d.owner_user_id
+		WHERE d.device_id = $1
+		LIMIT 1`, deviceID).Scan(&elderlyID)
+	if err != nil {
+		return "", fmt.Errorf("resolve elderly from device %s: %w", deviceID, err)
+	}
+	return elderlyID, nil
+}

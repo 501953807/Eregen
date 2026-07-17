@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../common/theme.dart';
 import '../../api/client.dart';
+import '../../app_state.dart';
 
 /// Phone + OTP login page with 60s countdown and form validation.
 class LoginPage extends StatefulWidget {
@@ -59,10 +63,15 @@ class _LoginPageState extends State<LoginPage> {
     if (!_formKey.currentState!.validate()) return;
     setState(() { _loading = true; _error = null; });
     try {
-      await ApiClient.instance.login(
+      final result = await ApiClient.instance.login(
         phone: _phoneCtrl.text.trim(),
         otp: _otpCtrl.text.trim(),
       );
+      // Store user ID in global app state for WebSocket connection
+      final userId = result['user_id'] as String? ?? result['id'] as String?;
+      if (userId != null && mounted) {
+        context.read<AppState>().setAuth(userId: userId);
+      }
       if (mounted) widget.onLoginSuccess();
     } catch (e) {
       _showError('登录失败，请检查验证码');

@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import '../../common/theme.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../../api/client.dart';
+import '../../app_state.dart';
 import '../../models/alert.dart';
+import '../../services/ws_alert.dart';
+import '../../services/offline_cache.dart';
 
 /// Alerts center page — fetches from GET /alerts, supports POST /alerts/:id/handle and pull-to-refresh.
+/// Integrates real-time WebSocket alerts and Hive offline cache.
 class AlertsPage extends StatefulWidget {
   const AlertsPage({super.key});
 
@@ -19,29 +24,92 @@ class _AlertsPageState extends State<AlertsPage> {
   bool _loading = true;
   List<Alert> _allAlerts = [];
   late RefreshController _refreshController;
+  AlertWebSocket? _ws;
+  bool _wsConnected = false;
+
+  String get _elderlyId => context.read<AppState>().elderlyId ?? '';
+  String get _userId => context.read<AppState>().userId ?? '';
 
   @override
   void initState() {
     super.initState();
     _refreshController = RefreshController();
+    _connectWebSocket();
+    // Populate from cache first for instant display
+    _populateFromCache();
     _fetchData();
   }
 
   @override
   void dispose() {
+    _ws?.disconnect();
     _refreshController.dispose();
     super.dispose();
+  }
+
+  /// Connect to real-time alert WebSocket channel.
+  void _connectWebSocket() {
+    if (_userId.isEmpty) return;
+    final wsUrl = '${ApiClient.instance.baseUrl}/ws/alerts?user_id=$_userId';
+    _ws = AlertWebSocket(
+      wsUrl: wsUrl,
+      onAlert: (alertJson) => _handleRealtimeAlert(alertJson),
+      onDisconnected: () => setState(() => _wsConnected = false),
+    );
+    _ws!.connect();
+    setState(() => _wsConnected = true);
+  }
+
+  /// Handle incoming real-time alert via WebSocket.
+  void _handleRealtimeAlert(Map<String, dynamic> alertJson) {
+    final alert = Alert.fromJson(alertJson);
+    setState(() {
+      // Insert at front of list if not duplicate
+      if (!_allAlerts.any((a) => a.id == alert.id)) {
+        _allAlerts.insert(0, alert);
+      }
+    });
+    // Cache the new alert
+    if (_elderlyId.isNotEmpty) {
+      OfflineCache.cacheAlert(_elderlyId, alert.toJson());
+    }
+    // Show notification
+    if (mounted) {
+      _showToast('新告警: ${alert.alertType}', color: AppTheme.statusDanger);
+    }
+  }
+
+  /// Populate alerts list from Hive cache before API fetch completes.
+  void _populateFromCache() {
+    if (_elderlyId.isEmpty) return;
+    try {
+      final cached = OfflineCache.getCachedAlerts(_elderlyId);
+      if (cached.isNotEmpty) {
+        final alerts = cached.map((a) => Alert.fromJson(a)).toList();
+        setState(() => _allAlerts = alerts);
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchData() async {
     try {
       final resp = await ApiClient.instance.get('/alerts', query: {'limit': 50});
       final list = resp.data as List;
+      final alerts = list.map((a) => Alert.fromJson(a as Map<String, dynamic>)).toList();
+
+      // Cache fetched alerts
+      if (_elderlyId.isNotEmpty) {
+        for (final alert in alerts) {
+          OfflineCache.cacheAlert(_elderlyId, alert.toJson());
+        }
+      }
+
       setState(() {
-        _allAlerts = list.map((a) => Alert.fromJson(a as Map<String, dynamic>)).toList();
+        _allAlerts = alerts;
         _loading = false;
       });
     } catch (e) {
+      // If API fails but we have cached data, keep it visible
       setState(() => _loading = false);
     }
   }
@@ -81,8 +149,10 @@ class _AlertsPageState extends State<AlertsPage> {
   int get _p1Count => _allAlerts.where((a) => a.severity == 'P1' && a.status == 'pending').length;
   int get _p2Count => _allAlerts.where((a) => a.severity == 'P2' && a.status == 'pending').length;
 
-  void _showToast(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 1)));
+  void _showToast(String msg, {Color? color}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), duration: const Duration(seconds: 1), backgroundColor: color),
+    );
   }
 
   @override
@@ -95,7 +165,7 @@ class _AlertsPageState extends State<AlertsPage> {
         onRefresh: _onRefresh,
         enablePullDown: true,
         enablePullUp: false,
-        child: _loading
+        child: _loading && _allAlerts.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : CustomScrollView(slivers: [
                 // Header
@@ -103,7 +173,11 @@ class _AlertsPageState extends State<AlertsPage> {
                   child: Container(padding: const EdgeInsets.fromLTRB(20, 12, 20, 0), color: AppTheme.bgCard, child: Row(children: [
                     IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 18), onPressed: () => Navigator.of(context).pop()),
                     const Expanded(child: Text('告警中心', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700))),
-                    IconButton(icon: const Icon(Icons.search), onPressed: () => _showSearchDialog(context)),
+                    Row(mainAxisSize: MainAxisSize.min, children: [
+                      if (_wsConnected) Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFF4ADE80), shape: BoxShape.circle)),
+                      const SizedBox(width: 8),
+                      IconButton(icon: const Icon(Icons.search), onPressed: () => _showSearchDialog(context)),
+                    ]),
                   ])),
                 ),
 

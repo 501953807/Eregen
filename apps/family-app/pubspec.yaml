@@ -29,6 +29,11 @@ dependencies:
 
   # Local storage
   shared_preferences: ^2.2.2
+  hive: ^2.2.0
+  hive_flutter: ^1.1.0
+
+  # WebSocket
+  web_socket_channel: ^2.4.0
 
   # External links
   url_launcher: ^6.2.4

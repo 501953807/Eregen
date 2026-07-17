@@ -100,8 +100,9 @@ func locationHistory(pg *store.Postgres) gin.HandlerFunc {
 	}
 }
 
-func geofenceSet() gin.HandlerFunc {
+func geofenceSet(pg *store.Postgres) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		elderlyID := c.Param("elderly_id")
 		var req struct {
 			Lat          float64 `json:"lat" binding:"required"`
 			Lon          float64 `json:"lon" binding:"required"`
@@ -112,14 +113,58 @@ func geofenceSet() gin.HandlerFunc {
 			c.JSON(400, gin.H{"code": "INVALID_REQUEST", "message": "Invalid request body"})
 			return
 		}
-		_ = req
-		c.JSON(201, gin.H{"code": "OK", "message": "Geofence set"})
+		gf := &model.Geofence{
+			ElderlyID:    elderlyID,
+			Name:         req.Name,
+			Latitude:     req.Lat,
+			Longitude:    req.Lon,
+			RadiusMeters: req.RadiusMeters,
+			Active:       true,
+		}
+		if err := pg.CreateGeofence(c.Request.Context(), gf); err != nil {
+			c.JSON(500, gin.H{"code": "CREATE_FAILED", "message": "Failed to create geofence"})
+			return
+		}
+		c.JSON(201, gin.H{"code": "OK", "data": gf})
 	}
 }
 
-func geofenceList() gin.HandlerFunc {
+func geofenceList(pg *store.Postgres) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(200, gin.H{"code": "OK", "data": []any{}})
+		elderlyID := c.Param("elderly_id")
+		fences, err := pg.ListGeofences(c.Request.Context(), elderlyID)
+		if err != nil {
+			c.JSON(500, gin.H{"code": "QUERY_FAILED", "message": "Failed to fetch geofences"})
+			return
+		}
+		c.JSON(200, gin.H{"code": "OK", "data": fences})
+	}
+}
+
+func geofenceUpdate(pg *store.Postgres) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		gfID := c.Param("geofence_id")
+		var req model.UpdateGeofenceRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(400, gin.H{"code": "INVALID_REQUEST", "message": "Invalid request body"})
+			return
+		}
+		if err := pg.UpdateGeofence(c.Request.Context(), gfID, &req); err != nil {
+			c.JSON(500, gin.H{"code": "UPDATE_FAILED", "message": "Failed to update geofence"})
+			return
+		}
+		c.JSON(200, gin.H{"code": "OK", "message": "Geofence updated"})
+	}
+}
+
+func geofenceDelete(pg *store.Postgres) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		gfID := c.Param("geofence_id")
+		if err := pg.DeleteGeofence(c.Request.Context(), gfID); err != nil {
+			c.JSON(500, gin.H{"code": "DELETE_FAILED", "message": "Failed to delete geofence"})
+			return
+		}
+		c.JSON(200, gin.H{"code": "OK", "message": "Geofence deleted"})
 	}
 }
 

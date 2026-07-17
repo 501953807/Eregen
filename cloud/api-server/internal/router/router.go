@@ -5,19 +5,25 @@ import (
 	"eregen.dev/api-server/internal/middleware"
 	"eregen.dev/api-server/internal/service"
 	"eregen.dev/api-server/internal/store"
+	"eregen.dev/api-server/internal/ws"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
 // New creates the full Gin engine with all route groups.
-func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth *middleware.JWTAuth, sms *service.SMSProvider, push *service.PushProvider, log *zap.Logger) *gin.Engine {
+func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth *middleware.JWTAuth, sms *service.SMSProvider, push *service.PushProvider, log *zap.Logger, wsHub *ws.Hub) *gin.Engine {
 	r := gin.Default()
 
 	r.Use(corsMiddleware())
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"code": "OK", "message": "Eregen API server is running"})
+	})
+
+	// WebSocket real-time alerts (no auth needed — user_id passed as query param)
+	r.GET("/ws/alerts", func(c *gin.Context) {
+		ws.UpgradeHandler(wsHub)(c.Writer, c.Request)
 	})
 
 	authH := handler.NewAuthHandler(pg, redis, auth, service.NewSMSProvider("", "", log), log)
@@ -76,8 +82,10 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 			// Location endpoints
 			elderly.GET("/location/latest", locationLatest(pg))
 			elderly.GET("/location/history", locationHistory(pg))
-			elderly.POST("/geofence", geofenceSet())
-			elderly.GET("/geofence", geofenceList())
+			elderly.POST("/geofence", geofenceSet(pg))
+			elderly.GET("/geofence", geofenceList(pg))
+			elderly.PUT("/geofence/:geofence_id", geofenceUpdate(pg))
+			elderly.DELETE("/geofence/:geofence_id", geofenceDelete(pg))
 
 			// Medication endpoints
 			elderly.GET("/medication/rules", medRules(pg))
