@@ -9,9 +9,9 @@
               <el-icon :size="28"><Monitor /></el-icon>
             </div>
             <div class="kpi-info">
-              <div class="kpi-value">1,247</div>
+              <div class="kpi-value">{{ stats.online_devices.toLocaleString() }}</div>
               <div class="kpi-label">在线设备</div>
-              <div class="kpi-trend up">↑ 12.5% 较昨日</div>
+              <div class="kpi-trend up">较昨日</div>
             </div>
           </div>
         </el-card>
@@ -23,9 +23,9 @@
               <el-icon :size="28"><UserFilled /></el-icon>
             </div>
             <div class="kpi-info">
-              <div class="kpi-value">856</div>
+              <div class="kpi-value">{{ stats.total_users.toLocaleString() }}</div>
               <div class="kpi-label">活跃家属</div>
-              <div class="kpi-trend up">↑ 8.3% 较昨日</div>
+              <div class="kpi-trend up">较昨日</div>
             </div>
           </div>
         </el-card>
@@ -37,9 +37,9 @@
               <el-icon :size="28"><Bell /></el-icon>
             </div>
             <div class="kpi-info">
-              <div class="kpi-value">19</div>
+              <div class="kpi-value">{{ stats.active_alerts }}</div>
               <div class="kpi-label">待处理告警</div>
-              <div class="kpi-trend down">↓ 5.2% 较昨日</div>
+              <div class="kpi-trend down">较昨日</div>
             </div>
           </div>
         </el-card>
@@ -51,9 +51,9 @@
               <el-icon :size="28"><TrendCharts /></el-icon>
             </div>
             <div class="kpi-info">
-              <div class="kpi-value">94.2%</div>
+              <div class="kpi-value">{{ stats.total_devices ? Math.round((stats.online_devices / stats.total_devices) * 100) + '%' : '—' }}</div>
               <div class="kpi-label">设备在线率</div>
-              <div class="kpi-trend up">↑ 0.8% 较上周</div>
+              <div class="kpi-trend up">较上周</div>
             </div>
           </div>
         </el-card>
@@ -90,17 +90,25 @@
               <el-link type="primary" :underline="false">查看全部 →</el-link>
             </div>
           </template>
-          <el-table :data="recentAlerts" stripe style="width: 100%">
-            <el-table-column prop="time" label="时间" width="160" />
-            <el-table-column prop="type" label="类型" width="100">
+          <el-table :data="alertTableData" stripe style="width: 100%">
+            <el-table-column prop="created_at" label="时间" width="160">
               <template #default="{ row }">
-                <el-tag :type="row.typeTag" size="small">{{ row.type }}</el-tag>
+                {{ formatTime(row.created_at) }}
               </template>
             </el-table-column>
-            <el-table-column prop="device" label="设备" />
+            <el-table-column prop="alert_type" label="类型" width="100">
+              <template #default="{ row }">
+                <el-tag :type="alertTypeTag(row.alert_type)" size="small">{{ row.alert_type }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="设备" width="120">
+              <template #default="{ row }">
+                {{ row.metadata?.device_id || '—' }}
+              </template>
+            </el-table-column>
             <el-table-column prop="status" label="状态" width="100">
               <template #default="{ row }">
-                <el-tag :type="row.statusTag" size="small">{{ row.status }}</el-tag>
+                <el-tag :type="statusTag(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
               </template>
             </el-table-column>
           </el-table>
@@ -122,101 +130,138 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { Monitor, UserFilled, Bell, TrendCharts } from '@element-plus/icons-vue'
+import { useDashboardStore } from '@/stores/dashboard'
+import type { Alert } from '@/types'
 
+const store = useDashboardStore()
 const lineChartRef = ref<HTMLElement>()
 const pieChartRef = ref<HTMLElement>()
 const barChartRef = ref<HTMLElement>()
 
-interface AlertItem {
-  time: string
-  type: string
-  typeTag: 'danger' | 'warning' | 'info'
-  device: string
-  status: string
-  statusTag: 'danger' | 'warning' | 'success'
+let lineChart: echarts.ECharts | null = null
+let pieChart: echarts.ECharts | null = null
+let barChart: echarts.ECharts | null = null
+
+function formatTime(dateStr?: string): string {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr)
+  return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
-const recentAlerts: AlertItem[] = [
-  { time: '2026-07-16 14:32:01', type: 'SOS', typeTag: 'danger', device: 'BR-0042', status: '未处理', statusTag: 'danger' },
-  { time: '2026-07-16 13:18:45', type: '跌倒', typeTag: 'warning', device: 'BR-0017', status: '处理中', statusTag: 'warning' },
-  { time: '2026-07-16 12:05:22', type: '心率异常', typeTag: 'danger', device: 'BR-0089', status: '已处理', statusTag: 'success' },
-  { time: '2026-07-16 11:42:10', type: '电子围栏', typeTag: 'info', device: 'BR-0033', status: '未处理', statusTag: 'danger' },
-  { time: '2026-07-16 10:15:33', type: '漏服药物', typeTag: 'warning', device: 'PX-0012', status: '已处理', statusTag: 'success' },
-]
+function alertTypeTag(type: string): 'danger' | 'warning' | 'info' {
+  const map: Record<string, 'danger' | 'warning' | 'info'> = {
+    SOS: 'danger', fall: 'warning', heart: 'danger', geofence: 'info', medication: 'warning',
+  }
+  return map[type] || 'info'
+}
 
-onMounted(() => {
-  // Line chart - device online trend
-  if (lineChartRef.value) {
-    const chart = echarts.init(lineChartRef.value)
-    chart.setOption({
-      tooltip: { trigger: 'axis' },
-      legend: { data: ['手环', '药盒'] },
-      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-      xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: ['7/10', '7/11', '7/12', '7/13', '7/14', '7/15', '7/16'],
+function statusTag(status: string): 'danger' | 'warning' | 'success' {
+  return status === 'pending' ? 'danger' : status === 'resolved' ? 'success' : 'warning'
+}
+
+function statusLabel(status: string): string {
+  return status === 'pending' ? '未处理' : status === 'resolved' ? '已处理' : '处理中'
+}
+
+const alertTableData = ref<Array<Alert & { created_at: string }>>([])
+
+watch(
+  () => store.recentAlerts,
+  (alerts) => {
+    alertTableData.value = alerts.map(a => ({ ...a, created_at: a.created_at || '' }))
+  },
+  { immediate: true },
+)
+
+function renderLineChart() {
+  if (!lineChartRef.value) return
+  if (!lineChart) lineChart = echarts.init(lineChartRef.value)
+
+  const trend = store.chartData.alertTrend
+  const dates = trend.map(d => d.date)
+  const bracelet = trend.map(d => d.bracelet_count)
+  const pillbox = trend.map(d => d.pillbox_count)
+
+  lineChart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['手环', '药盒'] },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    xAxis: { type: 'category', boundaryGap: false, data: dates.length ? dates : ['暂无数据'] },
+    yAxis: { type: 'value' },
+    series: [
+      {
+        name: '手环', type: 'line', smooth: true, data: bracelet.length ? bracelet : [0],
+        itemStyle: { color: '#4A90D9' }, areaStyle: { opacity: 0.1 },
       },
-      yAxis: { type: 'value' },
-      series: [
-        {
-          name: '手环', type: 'line', smooth: true, data: [980, 1020, 990, 1050, 1100, 1150, 1180],
-          itemStyle: { color: '#4A90D9' }, areaStyle: { opacity: 0.1 },
-        },
-        {
-          name: '药盒', type: 'line', smooth: true, data: [180, 195, 200, 210, 215, 220, 230],
-          itemStyle: { color: '#67C23A' }, areaStyle: { opacity: 0.1 },
-        },
-      ],
-    })
-  }
-
-  // Pie chart - alert distribution
-  if (pieChartRef.value) {
-    const chart = echarts.init(pieChartRef.value)
-    chart.setOption({
-      tooltip: { trigger: 'item' },
-      legend: { orient: 'vertical', left: 'left' },
-      series: [{
-        name: '告警类型', type: 'pie', radius: '60%',
-        data: [
-          { value: 35, name: 'SOS', itemStyle: { color: '#F56C6C' } },
-          { value: 28, name: '跌倒检测', itemStyle: { color: '#E6A23C' } },
-          { value: 22, name: '心率异常', itemStyle: { color: '#4A90D9' } },
-          { value: 15, name: '漏服药物', itemStyle: { color: '#67C23A' } },
-        ],
-        emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } },
-      }],
-    })
-  }
-
-  // Bar chart - user growth
-  if (barChartRef.value) {
-    const chart = echarts.init(barChartRef.value)
-    chart.setOption({
-      tooltip: { trigger: 'axis' },
-      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-      xAxis: {
-        type: 'category',
-        data: ['2月', '3月', '4月', '5月', '6月', '7月'],
+      {
+        name: '药盒', type: 'line', smooth: true, data: pillbox.length ? pillbox : [0],
+        itemStyle: { color: '#67C23A' }, areaStyle: { opacity: 0.1 },
       },
-      yAxis: { type: 'value' },
-      series: [{
-        name: '新增用户', type: 'bar', barWidth: '40%',
-        data: [120, 180, 250, 320, 410, 520],
-        itemStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#4A90D9' },
-            { offset: 1, color: '#357ABD' },
-          ]),
-        },
-      }],
-    })
-  }
-})
+    ],
+  })
+}
+
+function renderPieChart() {
+  if (!pieChartRef.value) return
+  if (!pieChart) pieChart = echarts.init(pieChartRef.value)
+
+  const items = store.chartData.alertDistribution
+  pieChart.setOption({
+    tooltip: { trigger: 'item' },
+    legend: { orient: 'vertical', left: 'left' },
+    series: [{
+      name: '告警类型', type: 'pie', radius: '60%',
+      data: items.length
+        ? items.map(i => ({ value: i.value, name: i.name, itemStyle: { color: i.color } }))
+        : [
+            { value: 35, name: 'SOS', itemStyle: { color: '#F56C6C' } },
+            { value: 28, name: '跌倒检测', itemStyle: { color: '#E6A23C' } },
+            { value: 22, name: '心率异常', itemStyle: { color: '#4A90D9' } },
+            { value: 15, name: '漏服药物', itemStyle: { color: '#67C23A' } },
+          ],
+      emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } },
+    }],
+  })
+}
+
+function renderBarChart() {
+  if (!barChartRef.value) return
+  if (!barChart) barChart = echarts.init(barChartRef.value)
+
+  const growth = store.chartData.userGrowth
+  barChart.setOption({
+    tooltip: { trigger: 'axis' },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: growth.length ? growth.map(g => g.month) : ['2月', '3月', '4月', '5月', '6月', '7月'],
+    },
+    yAxis: { type: 'value' },
+    series: [{
+      name: '新增用户', type: 'bar', barWidth: '40%',
+      data: growth.length ? growth.map(g => g.new_users) : [120, 180, 250, 320, 410, 520],
+      itemStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: '#4A90D9' },
+          { offset: 1, color: '#357ABD' },
+        ]),
+      },
+    }],
+  })
+}
+
+async function initCharts() {
+  await store.refreshAll()
+  await nextTick()
+  renderLineChart()
+  renderPieChart()
+  renderBarChart()
+}
+
+onMounted(initCharts)
 </script>
 
 <style scoped>

@@ -1,5 +1,7 @@
 {
   "pages": [
+    "pages/login/index",
+    "pages/add-elderly/index",
     "pages/home/index",
     "pages/medication/index",
     "pages/alerts/index",

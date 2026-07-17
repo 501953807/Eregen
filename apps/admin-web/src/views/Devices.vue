@@ -5,7 +5,7 @@
       <el-col :span="8">
         <el-card shadow="hover" class="stat-card">
           <div class="stat-content">
-            <div class="stat-value">1,247</div>
+            <div class="stat-value">{{ stats.bracelet_count.toLocaleString() }}</div>
             <div class="stat-label">手环总数</div>
           </div>
           <el-icon :size="40" style="color: #4A90D9;"><Watch /></el-icon>
@@ -14,7 +14,7 @@
       <el-col :span="8">
         <el-card shadow="hover" class="stat-card">
           <div class="stat-content">
-            <div class="stat-value">230</div>
+            <div class="stat-value">{{ stats.pillbox_count.toLocaleString() }}</div>
             <div class="stat-label">药盒总数</div>
           </div>
           <el-icon :size="40" style="color: #67C23A;"><PieChart /></el-icon>
@@ -23,7 +23,7 @@
       <el-col :span="8">
         <el-card shadow="hover" class="stat-card">
           <div class="stat-content">
-            <div class="stat-value">94.2%</div>
+            <div class="stat-value">{{ stats.online_rate }}%</div>
             <div class="stat-label">在线率</div>
           </div>
           <el-icon :size="40" style="color: #E6A23C;"><Connection /></el-icon>
@@ -54,8 +54,8 @@
           <el-input v-model="filters.firmware" placeholder="输入版本" clearable style="width: 140px;" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary">查询</el-button>
-          <el-button>重置</el-button>
+          <el-button type="primary" @click="handleSearch">查询</el-button>
+          <el-button @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -68,41 +68,62 @@
           <el-button type="primary" size="small">批量OTA升级</el-button>
         </div>
       </template>
-      <el-table :data="devices" stripe style="width: 100%">
+      <el-table v-loading="deviceStore.loading" :data="displayDevices" stripe style="width: 100%">
         <el-table-column type="selection" width="50" />
-        <el-table-column prop="id" label="设备ID" width="120" />
-        <el-table-column prop="type" label="类型" width="120">
+        <el-table-column prop="device_id" label="设备ID" width="120" />
+        <el-table-column label="类型" width="120">
           <template #default="{ row }">
-            <el-tag :type="row.typeTag" size="small">{{ row.type }}</el-tag>
+            <el-tag :type="typeTag(row.device_type, row.tier)" size="small">{{ deviceLabel(row) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="elderly" label="关联老人" width="120" />
-        <el-table-column prop="family" label="绑定家属" width="120" />
-        <el-table-column prop="firmware" label="固件版本" width="100" />
-        <el-table-column prop="online" label="状态" width="80">
+        <el-table-column label="关联老人" width="120">
           <template #default="{ row }">
-            <el-tag :type="row.online ? 'success' : 'info'" size="small">{{ row.online ? '在线' : '离线' }}</el-tag>
+            {{ row.owner_user_id || '—' }}
           </template>
         </el-table-column>
-        <el-table-column prop="lastSeen" label="最后上线" width="160" />
+        <el-table-column label="绑定家属" width="120">
+          <template #default="{ row }">
+            {{ row.owner_user_id || '—' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="固件版本" width="100">
+          <template #default="{ row }">
+            {{ row.settings?.firmware_version || '—' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 'online' ? 'success' : 'info'" size="small">{{ row.status === 'online' ? '在线' : '离线' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="最后上线" width="160">
+          <template #default="{ row }">
+            {{ row.last_seen || '—' }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" fixed="right" min-width="180">
           <template #default="{ row }">
-            <el-button link type="primary" size="small">OTA升级</el-button>
-            <el-button link type="primary" size="small">远程配置</el-button>
+            <el-button link type="primary" size="small" @click="handleOTA(row)">OTA升级</el-button>
+            <el-button link type="primary" size="small" @click="handleConfig(row)">远程配置</el-button>
             <el-button link type="danger" size="small">解绑</el-button>
           </template>
         </el-table-column>
       </el-table>
       <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
-        <el-pagination background layout="prev, pager, next" :total="1247" :page-size="20" />
+        <el-pagination background layout="prev, pager, next" :total="deviceStore.total" :page-size="20" />
       </div>
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { Watch, PieChart, Connection } from '@element-plus/icons-vue'
+import { useDeviceStore } from '@/stores/device'
+import type { Device } from '@/types'
+
+const deviceStore = useDeviceStore()
 
 const filters = ref({
   type: '',
@@ -110,28 +131,54 @@ const filters = ref({
   firmware: '',
 })
 
-interface Device {
-  id: string
-  type: string
-  typeTag: 'primary' | 'success' | 'warning'
-  elderly: string
-  family: string
-  firmware: string
-  online: boolean
-  lastSeen: string
+const displayDevices = computed(() => {
+  let list = deviceStore.devices
+  if (filters.value.online) {
+    list = list.filter(d => d.status === filters.value.online)
+  }
+  return list
+})
+
+function deviceLabel(d: Device): string {
+  const labels: Record<string, Record<string, string>> = {
+    bracelet: { starter: '手环Starter', plus: '手环Plus', pro: '手环Pro' },
+    pillbox: { basic: '药盒Basic', smart: '药盒Smart', auto: '药盒Auto' },
+  }
+  return labels[d.device_type]?.[d.tier] || `${d.device_type}-${d.tier}`
 }
 
-const devices: Device[] = [
-  { id: 'BR-0042', type: '手环Pro', typeTag: 'primary', elderly: '张建国', family: '张伟', firmware: 'v2.1.0', online: true, lastSeen: '2分钟前' },
-  { id: 'BR-0017', type: '手环Plus', typeTag: 'success', elderly: '李秀英', family: '李芳', firmware: 'v2.0.8', online: true, lastSeen: '5分钟前' },
-  { id: 'BR-0089', type: '手环Starter', typeTag: 'warning', elderly: '王德明', family: '王磊', firmware: 'v2.1.0', online: false, lastSeen: '3小时前' },
-  { id: 'PX-0012', type: '药盒Auto', typeTag: 'primary', elderly: '赵淑华', family: '赵敏', firmware: 'v1.3.2', online: true, lastSeen: '1分钟前' },
-  { id: 'PX-0008', type: '药盒Smart', typeTag: 'success', elderly: '陈志强', family: '陈刚', firmware: 'v1.3.2', online: false, lastSeen: '1天前' },
-]
+function typeTag(type: string, tier: string): 'primary' | 'success' | 'warning' {
+  if (type === 'bracelet') return 'primary'
+  return 'success'
+}
+
+async function handleSearch() {
+  const params: Record<string, any> = {}
+  if (filters.value.online) params.status = filters.value.online
+  await deviceStore.fetchList(params)
+}
+
+function handleReset() {
+  filters.value = { type: '', online: '', firmware: '' }
+  deviceStore.fetchList()
+}
+
+function handleOTA(_row: Device) {
+  ElMessage.info('OTA升级功能开发中')
+}
+
+function handleConfig(_row: Device) {
+  ElMessage.info('远程配置功能开发中')
+}
+
+onMounted(() => {
+  Promise.all([deviceStore.fetchList(), deviceStore.fetchStats()])
+})
 </script>
 
 <style scoped>
 .stat-card :deep(.el-card__body) { padding: 20px; display: flex; align-items: center; justify-content: space-between; }
+.stat-content { flex: 1; }
 .stat-value { font-size: 32px; font-weight: 700; color: #303133; }
 .stat-label { font-size: 13px; color: #909399; margin-top: 4px; }
 .table-header { display: flex; justify-content: space-between; align-items: center; }

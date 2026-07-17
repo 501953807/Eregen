@@ -1,0 +1,127 @@
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #EFF6FF 0%, #ffffff 40%);
+  padding: 0 48rpx;
+}
+
+/* Logo Section */
+.logo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 120rpx;
+  margin-bottom: 80rpx;
+}
+.logo-icon {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4A90D9, #357ABD);
+  color: white;
+  font-size: 56rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(74, 144, 217, 0.3);
+}
+.brand-name {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #1F2937;
+  margin-bottom: 8rpx;
+}
+.brand-slogan {
+  font-size: 24rpx;
+  color: #6B7280;
+  letter-spacing: 4rpx;
+}
+
+/* Form Section */
+.form-section {
+  background: white;
+  border-radius: 32rpx;
+  padding: 40rpx;
+  box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.06);
+}
+.form-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1F2937;
+  text-align: center;
+  margin-bottom: 48rpx;
+}
+
+.input-group {
+  margin-bottom: 32rpx;
+}
+.input-label {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 12rpx;
+}
+.input-field {
+  width: 100%;
+  height: 88rpx;
+  padding: 0 24rpx;
+  border: 2rpx solid #E5E7EB;
+  border-radius: 16rpx;
+  font-size: 30rpx;
+  background: #F9FAFB;
+  box-sizing: border-box;
+}
+.code-row {
+  display: flex;
+  gap: 16rpx;
+}
+.code-input {
+  flex: 1;
+}
+.send-btn {
+  height: 88rpx;
+  padding: 0 24rpx;
+  font-size: 26rpx;
+  line-height: 88rpx;
+  border-radius: 16rpx;
+  background: #4A90D9;
+  color: white;
+  border: none;
+  flex-shrink: 0;
+  min-width: 180rpx;
+  text-align: center;
+}
+.send-btn.disabled {
+  background: #D1D5DB;
+  color: #9CA3AF;
+}
+
+.login-btn {
+  width: 100%;
+  height: 96rpx;
+  line-height: 96rpx;
+  background: linear-gradient(135deg, #4A90D9, #357ABD);
+  color: white;
+  font-size: 32rpx;
+  font-weight: 600;
+  border-radius: 48rpx;
+  border: none;
+  margin-top: 48rpx;
+  text-align: center;
+}
+.login-btn.loading {
+  opacity: 0.7;
+}
+
+.agreement {
+  display: flex;
+  justify-content: center;
+  margin-top: 32rpx;
+  font-size: 22rpx;
+  color: #9CA3AF;
+}
+.link {
+  color: #4A90D9;
+  font-weight: 500;
+}

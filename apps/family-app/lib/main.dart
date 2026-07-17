@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
-import 'screens/home/home_page.dart';
-import 'screens/health/health_page.dart';
-import 'screens/alerts/alerts_page.dart';
-import 'screens/medication/medication_page.dart';
+import '../common/theme.dart';
+import '../widgets/elderly_selector.dart';
+import '../widgets/map_section.dart';
+import '../widgets/quick_status_card.dart';
+import '../widgets/sos_button.dart';
+import '../widgets/recent_alerts_list.dart';
+import '../widgets/bottom_nav_bar.dart';
+import '../api/client.dart';
+import '../screens/login/login_page.dart';
+import '../screens/login/main_tab_screen.dart';
 
-void main() {
+/// Entry point — initializes ApiClient, checks token, shows login or main app.
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ApiClient.init();
   runApp(const EregenFamilyApp());
 }
 
@@ -17,38 +26,54 @@ class EregenFamilyApp extends StatelessWidget {
       title: '颐贞',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        fontFamily: null, // Use system font (PingFang SC on iOS)
+        fontFamily: null,
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4A90D9)),
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF5F6FA),
       ),
-      home: const MainTabScreen(),
+      home: ApiClient.instance.isAuthenticated
+          ? const MainTabScreen()
+          : _LoginGate(),
     );
   }
 }
 
-/// Main tab screen — switches between the 4 prototype pages
-class MainTabScreen extends StatefulWidget {
-  const MainTabScreen({super.key});
+/// Bridge widget that reads async auth state from ApiClient singleton.
+class _LoginGate extends StatefulWidget {
+  const _LoginGate();
 
   @override
-  State<MainTabScreen> createState() => _MainTabScreenState();
+  State<_LoginGate> createState() => _LoginGateState();
 }
 
-class _MainTabScreenState extends State<MainTabScreen> {
-  int _currentIndex = 0;
+class _LoginGateState extends State<_LoginGate> {
+  bool _checking = true;
 
-  final List<Widget> _pages = const [
-    HomePage(),
-    HealthPage(),
-    AlertsPage(),
-    MedicationPage(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // ApiClient.init() already ran in main(), but we check again in case
+    // the singleton was not yet populated at build time.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() => _checking = false);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _pages),
-    );
+    if (_checking) {
+      return const Scaffold(
+        backgroundColor: AppTheme.bgScaffold,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (ApiClient.instance.isAuthenticated) {
+      return const MainTabScreen();
+    }
+    return LoginPage(onLoginSuccess: () {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const MainTabScreen()),
+      );
+    });
   }
 }
