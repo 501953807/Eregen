@@ -279,16 +279,6 @@ const showConfigDialog = ref(false)
 const configTargetDevice = ref<Device | null>(null)
 const configForm = ref<Record<string, any>>({})
 
-function handleBatchOta() {
-  if (deviceStore.devices.length === 0) {
-    ElMessage.warning('暂无设备可升级')
-    return
-  }
-  otaTargetDevice.value = null
-  showOtaDialog.value = true
-  otaForm.value = { firmwareUrl: '', hash: '' }
-}
-
 onMounted(() => {
   Promise.all([deviceStore.fetchList(), deviceStore.fetchStats()])
 })

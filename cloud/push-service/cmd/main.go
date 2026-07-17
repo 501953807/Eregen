@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -16,6 +17,7 @@ import (
 	"eregen.dev/push/internal/fcm"
 	"eregen.dev/push/internal/publisher"
 	"eregen.dev/push/internal/router"
+	"eregen.dev/push/internal/store"
 )
 
 func main() {
@@ -25,6 +27,21 @@ func main() {
 	}
 
 	log.Printf("push-service starting (port=%d)", cfg.Port)
+
+	// PostgreSQL connection for family member lookup
+	db, err := sql.Open("postgres", cfg.PostgresDSN)
+	if err != nil {
+		log.Fatalf("postgres connect: %v", err)
+	}
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(5 * time.Minute)
+	if err = db.Ping(); err != nil {
+		log.Fatalf("postgres ping: %v", err)
+	}
+	defer db.Close()
+
+	pgStore := store.NewPostgres(db)
 
 	// NATS subscriber for device events from gateway
 	natsSub, err := publisher.NewSubscriber(cfg.NATSURL)
@@ -56,9 +73,9 @@ func main() {
 		WriteTimeout: 5 * time.Second,
 	}
 
-	// Start NATS subscriber in background
+	// Start NATS subscriber in background with DB store
 	go func() {
-		natsSub.Start(rtr)
+		natsSub.Start(rtr, pgStore)
 	}()
 
 	// Graceful shutdown

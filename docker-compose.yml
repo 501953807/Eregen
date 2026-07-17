@@ -1,0 +1,282 @@
+# Eregen Platform - Full Stack Orchestration
+# All services: cloud backend, B2B, monitoring
+# © 2026 Eregen (颐贞). All rights reserved.
+
+version: '3.8'
+
+services:
+  # ========== DATABASES ==========
+  postgres:
+    image: postgres:16-alpine
+    container_name: eregen-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: eregen
+      POSTGRES_USER: eregen
+      POSTGRES_PASSWORD: eregen
+      POSTGRES_DB_B2B: eregen_b2b
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/00-init.sql
+    networks:
+      - eregen-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: eregen-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - eregen-network
+
+  influxdb:
+    image: influxdb:2-alpine
+    container_name: eregen-influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: server
+      DOCKER_INFLUXDB_INIT_USERNAME: eregen
+      DOCKER_INFLUXDB_INIT_PASSWORD: eregen_password
+      DOCKER_INFLUXDB_INIT_ORG: eregen
+      DOCKER_INFLUXDB_INIT_BUCKET: health_data
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: eregen_token
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    networks:
+      - eregen-network
+
+  # ========== MESSAGE BROKERS ==========
+  emqx:
+    image: emqx/emqx:5.7.0
+    container_name: eregen-emqx
+    restart: unless-stopped
+    ports:
+      - "1883:1883"   # MQTT TCP
+      - "8083:8083"   # MQTT WS
+      - "8084:8084"   # MQTT WS (SSL)
+      - "18083:18083" # Dashboard
+    environment:
+      EMQX_NAME: eregen-mqtt
+      EMQX_HOST: eregen-mqtt
+    volumes:
+      - emqx-data:/opt/emqx/data
+      - emqx-log:/opt/emqx/log
+    networks:
+      - eregen-network
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: eregen-nats
+    restart: unless-stopped
+    ports:
+      - "4222:4222"   # Client
+      - "8222:8222"   # HTTP monitoring
+    command: >
+      --js
+      --store_dir /nats/data
+      --monitor_port 8222
+    volumes:
+      - nats-data:/nats/data
+    networks:
+      - eregen-network
+
+  # ========== CLOUD SERVICES ==========
+  gateway:
+    build:
+      context: ./cloud/gateway
+      dockerfile: ../../Dockerfile.cloud
+    container_name: eregen-gateway
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      GATEWAY_MQTT_BROKER: tcp://emqx:1883
+      GATEWAY_NATS_URL: nats://nats:4222
+      GATEWAY_POSTGRES_DSN: host=postgres port=5432 user=eregen password=eregen dbname=eregen sslmode=disable
+      GATEWAY_REDIS_ADDRESS: redis:6379
+      GATEWAY_INFLUXDB_URL: http://influxdb:8086
+      GATEWAY_INFLUXDB_TOKEN: eregen_token
+      GATEWAY_INFLUXDB_ORG: eregen
+      GATEWAY_INFLUXDB_BUCKET: health_data
+    depends_on:
+      - emqx
+      - nats
+      - postgres
+      - redis
+      - influxdb
+    networks:
+      - eregen-network
+
+  api-server:
+    build:
+      context: ./cloud/api-server
+      dockerfile: ../../Dockerfile.cloud
+    container_name: eregen-api-server
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      JWT_SECRET: eregen-dev-secret-change-in-production
+      DB_URL: postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      NATS_URL: nats://nats:4222
+      INFLUXDB_URL: http://influxdb:8086
+      INFLUXDB_TOKEN: eregen_token
+      INFLUXDB_ORG: eregen
+      INFLUXDB_BUCKET: health_data
+      PORT: "8080"
+    depends_on:
+      - postgres
+      - redis
+      - nats
+      - influxdb
+    networks:
+      - eregen-network
+
+  data-pipeline:
+    build:
+      context: ./cloud/data-pipeline
+      dockerfile: ../../Dockerfile.cloud
+    container_name: eregen-data-pipeline
+    restart: unless-stopped
+    environment:
+      NATS_URL: nats://nats:4222
+      POSTGRES_DSN: postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable
+      INFLUXDB_URL: http://influxdb:8086
+      INFLUXDB_TOKEN: eregen_token
+      INFLUXDB_ORG: eregen
+      INFLUXDB_BUCKET: health_data
+      PIPELINE_PORT: "8087"
+    depends_on:
+      - postgres
+      - nats
+      - influxdb
+    networks:
+      - eregen-network
+
+  push-service:
+    build:
+      context: ./cloud/push-service
+      dockerfile: ../../Dockerfile.cloud
+    container_name: eregen-push-service
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      NATS_URL: nats://nats:4222
+      POSTGRES_DSN: postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable
+      FCM_KEY_PATH: /run/secrets/fcm_key
+      WECHAT_APP_ID: ""
+      WECHAT_APP_SECRET: ""
+      SMS_ACCESS_KEY: ""
+      SMS_ACCESS_SECRET: ""
+      SMS_SIGN_NAME: 颐贞
+      PUSH_SERVICE_PORT: "8085"
+    depends_on:
+      - nats
+      - postgres
+    networks:
+      - eregen-network
+
+  admin-api:
+    build:
+      context: ./cloud/admin-api
+      dockerfile: ../../Dockerfile.cloud
+    container_name: eregen-admin-api
+    restart: unless-stopped
+    ports:
+      - "8089:8089"
+    environment:
+      DATABASE_URL: postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable
+      JWT_SECRET: eregen-admin-secret-change-in-production
+      PORT: "8089"
+    depends_on:
+      - postgres
+    networks:
+      - eregen-network
+
+  # ========== B2B SERVICES ==========
+  hospital-api:
+    build:
+      context: ./b2b/hospital-api
+      dockerfile: ../../Dockerfile.b2b
+    container_name: eregen-hospital-api
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      DATABASE_URL: postgres://eregen:eregen@postgres:5432/eregen_b2b?sslmode=disable
+      PORT: "8082"
+    depends_on:
+      - postgres
+    networks:
+      - eregen-network
+
+  insurance-integration:
+    build:
+      context: ./b2b/insurance-integration
+      dockerfile: ../../Dockerfile.b2b
+    container_name: eregen-insurance-api
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      DATABASE_URL: postgres://eregen:eregen@postgres:5432/eregen_b2b?sslmode=disable
+      PORT: "8084"
+    depends_on:
+      - postgres
+    networks:
+      - eregen-network
+
+  # ========== FRONTEND ==========
+  admin-web:
+    build:
+      context: ./apps/admin-web
+      dockerfile: ../../Dockerfile.frontend
+    container_name: eregen-admin-web
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      VITE_API_BASE: http://localhost:8080
+      VITE_ADMIN_API_BASE: http://localhost:8089
+    depends_on:
+      - api-server
+      - admin-api
+    networks:
+      - eregen-network
+
+  website:
+    build:
+      context: ./apps/website
+      dockerfile: ../../Dockerfile.frontend
+    container_name: eregen-website
+    restart: unless-stopped
+    ports:
+      - "1313:1313"
+    volumes:
+      - ./apps/website:/src
+    depends_on:
+      - admin-web
+    networks:
+      - eregen-network
+
+volumes:
+  postgres-data:
+  redis-data:
+  influxdb-data:
+  emqx-data:
+  emqx-log:
+  nats-data:
+
+networks:
+  eregen-network:
+    driver: bridge

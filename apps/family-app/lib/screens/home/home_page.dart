@@ -9,6 +9,7 @@ import '../widgets/recent_alerts_list.dart';
 import '../../api/client.dart';
 import '../../models/health.dart';
 import '../../models/alert.dart';
+import '../alerts/alerts_page.dart';
 
 /// Home page — matches home.html prototype, now with live API data.
 class HomePage extends StatefulWidget {
@@ -158,7 +159,13 @@ class _HomePageState extends State<HomePage> {
                             children: [
                               const Text('最近告警', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                               GestureDetector(
-                                onTap: () {},
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const AlertsPage(),
+                                    ),
+                                  );
+                                },
                                 child: const Text('查看全部 ›', style: TextStyle(fontSize: 12, color: AppTheme.primary, fontWeight: FontWeight.w600)),
                               ),
                             ],

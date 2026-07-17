@@ -1,6 +1,9 @@
 package channel
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -61,6 +64,19 @@ func (c *SMSClient) allowSend(maxPerDay int) bool {
 	return c.dailyCount < maxPerDay
 }
 
+// signRequest builds the HMAC-SHA256 signature required by 阿里云SMS API.
+func (c *SMSClient) signRequest(params url.Values, method, canonicalURI string) string {
+	stringToSign := method + "\n" +
+		"\n" + // Accept
+		"\n" + // ContentType
+		time.Now().UTC().Format(http.TimeFormat) + "\n" +
+		canonicalURI + "?" + params.Encode()
+
+	h := hmac.New(sha256.New, []byte(c.accessSecret))
+	h.Write([]byte(stringToSign))
+	return "HMAC-SHA256 Signature=" + hex.EncodeToString(h.Sum(nil))
+}
+
 func (c *SMSClient) send(phone, tmplID, message string) error {
 	if c.accessKey == "" || c.accessSecret == "" {
 		log.Printf("[sms] SKIP: not configured (phone=%s msg=%s)", phone, message)
@@ -68,23 +84,26 @@ func (c *SMSClient) send(phone, tmplID, message string) error {
 	}
 
 	phoneNum := phone
-	if !strings.HasPrefix(phoneNum, "+") {
+	if len(phoneNum) > 0 && phoneNum[0] != '+' {
 		phoneNum = "+86" + phoneNum
 	}
 
-	params := map[string]string{"message": message}
-	paramJSON, _ := json.Marshal(params)
+	params := url.Values{}
+	params.Set("PhoneNumbers", phoneNum)
+	params.Set("RegionId", "cn-shanghai")
+	params.Set("SignName", c.signName)
+	params.Set("TemplateCode", tmplID)
+	params.Set("TemplateParam", `{"message":"`+message+`"}`)
 
-	apiURL := fmt.Sprintf(
-		"https://dysmsapi.aliyuncs.com/?PhoneNumbers=%s&SignName=%s&TemplateCode=%s&TemplateParam=%s&RegionId=cn-shanghai",
-		url.QueryEscape(phoneNum),
-		url.QueryEscape(c.signName),
-		url.QueryEscape(tmplID),
-		url.QueryEscape(string(paramJSON)),
-	)
+	canonicalURI := "/"
+	signature := c.signRequest(params, "POST", canonicalURI)
 
-	req, _ := http.NewRequest("GET", apiURL, nil)
+	apiURL := "https://dysmsapi.aliyuncs.com/"
+
+	req, _ := http.NewRequest("POST", apiURL, strings.NewReader(params.Encode()))
+	req.Header.Set("Authorization", signature)
 	req.Header.Set("Date", time.Now().UTC().Format(http.TimeFormat))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
@@ -104,6 +123,11 @@ func (c *SMSClient) send(phone, tmplID, message string) error {
 	if result.Code != "OK" {
 		return fmt.Errorf("sms error: %s (%s)", result.Message, result.Code)
 	}
+
+	c.mu.Lock()
+	c.lastSendAt = time.Now()
+	c.dailyCount++
+	c.mu.Unlock()
 
 	log.Printf("[sms] sent to %s: %s", phoneNum, message)
 	return nil

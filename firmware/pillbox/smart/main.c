@@ -35,6 +35,7 @@
 #include "app_link.h"
 #include "oled_status.h"
 #include "volume_control.h"
+#include "mqtt_common.h"
 
 /* Task priorities */
 #define MAIN_TASK_PRIORITY          (tskIDLE_PRIORITY + 2)
@@ -72,8 +73,20 @@
 /* MQTT command topic subscription */
 #define MQTT_CMD_TOPIC_FMT          "eregen/device/%s/cmd"
 
+/* MQTT data topic format */
+#define MQTT_DATA_TOPIC_FMT         "eregen/device/%s/data"
+
+/* MQTT broker config */
+#define MQTT_BROKER_HOST            "localhost"
+#define MQTT_BROKER_PORT            1883
+#define MQTT_CLIENT_ID_PREFIX       "pillbox-smart-"
+
 /* Log tag */
 static const char *TAG = "pillbox_smart";
+
+/* MQTT connection state (shared across tasks) */
+static bool s_mqtt_connected = false;
+static char s_mqtt_data_topic[128];
 
 /* Event group for inter-task signaling */
 #define WIFI_CONNECTED_BIT    BIT0
@@ -85,19 +98,24 @@ static EventGroupHandle_t s_main_events;
 static char s_device_id[20];
 
 /**
- * Send medication status to cloud via MQTT publish placeholder.
- * In production this sends through the MQTT client.
+ * Send medication status to cloud via MQTT publish.
  */
 static void send_med_status(uint8_t compartment, bool taken)
 {
     char msg[128];
-    snprintf(msg, sizeof(msg),
+    int len = snprintf(msg, sizeof(msg),
              "{\"type\":\"med_status\",\"dev_id\":\"%s%s\","
              "\"compartment\":%d,\"taken\":%s,\"ts\":%lu}",
              DEVICE_ID_PREFIX, s_device_id, compartment,
              taken ? "true" : "false", (unsigned long)vTaskGetTickCount());
-    ESP_LOGI(TAG, "Med status: %s", msg);
-    /* TODO: mqtt_publish(MQTT_DATA_TOPIC, msg, strlen(msg)); */
+
+    if (s_mqtt_connected) {
+        char topic[128];
+        snprintf(topic, sizeof(topic), MQTT_DATA_TOPIC_FMT, s_device_id);
+        mqtt_common_publish(topic, msg, len, 0);
+    } else {
+        ESP_LOGI(TAG, "Med status: %s", msg);
+    }
 }
 
 /**
@@ -207,8 +225,9 @@ static void vOledTask(void *pvParameter)
 }
 
 /**
- * APP command task — listens for MQTT commands (placeholder).
- * In production this subscribes to MQTT and dispatches.
+ * APP command task — monitors MQTT connection health.
+ * Actual message dispatch is handled by mqtt_common callback registration
+ * in app_main via mqtt_common_subscribe → applink_parse_mqtt_message.
  */
 static void vAppCmdTask(void *pvParameter)
 {
@@ -216,14 +235,33 @@ static void vAppCmdTask(void *pvParameter)
 
     ESP_LOGI(TAG, "APP command task started");
 
+    uint32_t reconnect_check = 0;
     for (;;) {
-        /* TODO: MQTT receive loop
-         * while (mqtt_message_available()) {
-         *     mqtt_recv(&topic, &payload, &len);
-         *     applink_parse_mqtt_message(topic, payload, len);
-         * }
-         */
         vTaskDelay(pdMS_TO_TICKS(1000));
+        reconnect_check++;
+
+        /* Every 60s, check if WiFi/MQTT still alive and reconnect if needed */
+        if (reconnect_check % 60 == 0) {
+            bool wifi_ok = wifi_is_connected();
+            if (wifi_ok && !s_mqtt_connected) {
+                ESP_LOGW(TAG, "WiFi up but MQTT down, attempting reconnect");
+                char mqtt_client_id[32];
+                snprintf(mqtt_client_id, sizeof(mqtt_client_id), "%s%02X%02X%02X",
+                         MQTT_CLIENT_ID_PREFIX, s_device_id[0], s_device_id[1], s_device_id[2]);
+                int ret = mqtt_common_connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT,
+                                              mqtt_client_id, NULL, NULL);
+                if (ret == 0) {
+                    s_mqtt_connected = true;
+                    char cmd_topic[128];
+                    snprintf(cmd_topic, sizeof(cmd_topic), MQTT_CMD_TOPIC_FMT, s_device_id);
+                    mqtt_common_subscribe(cmd_topic, applink_parse_mqtt_message);
+                }
+            } else if (!wifi_ok && s_mqtt_connected) {
+                ESP_LOGW(TAG, "WiFi lost, disconnecting MQTT");
+                mqtt_common_disconnect();
+                s_mqtt_connected = false;
+            }
+        }
     }
 }
 
@@ -343,6 +381,27 @@ void app_main(void)
         ESP_LOGW(TAG, "OLED init failed, display disabled");
     }
 
+    /* Connect to MQTT broker for data publishing and command subscription */
+    if (wifi_is_connected()) {
+        char mqtt_client_id[32];
+        snprintf(mqtt_client_id, sizeof(mqtt_client_id), "%s%02X%02X%02X",
+                 MQTT_CLIENT_ID_PREFIX, s_device_id[0], s_device_id[1], s_device_id[2]);
+        snprintf(s_mqtt_data_topic, sizeof(s_mqtt_data_topic), MQTT_DATA_TOPIC_FMT, s_device_id);
+
+        ret = mqtt_common_connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT,
+                                  mqtt_client_id, NULL, NULL);
+        if (ret == 0) {
+            s_mqtt_connected = true;
+
+            /* Subscribe to downlink commands */
+            char cmd_topic[128];
+            snprintf(cmd_topic, sizeof(cmd_topic), MQTT_CMD_TOPIC_FMT, s_device_id);
+            mqtt_common_subscribe(cmd_topic, applink_parse_mqtt_message);
+
+            ESP_LOGI(TAG, "MQTT connected for bidirectional communication");
+        }
+    }
+
     /* Create Smart-tier tasks */
     xTaskCreate(vReminderTask, "Remind", REMINDER_TASK_STACK_SIZE,
                 NULL, REMINDER_TASK_PRIORITY, NULL);
@@ -430,10 +489,15 @@ static void vMainTask(void *pvParameter)
             }
 
             char heartbeat_msg[128];
-            snprintf(heartbeat_msg, sizeof(heartbeat_msg),
+            int len = snprintf(heartbeat_msg, sizeof(heartbeat_msg),
                      "{\"type\":\"heartbeat\",\"dev_id\":\"%s%s\",\"bat\":%d}",
                      DEVICE_ID_PREFIX, s_device_id, bat_int);
-            ESP_LOGI(TAG, "Heartbeat: %s", heartbeat_msg);
+
+            if (s_mqtt_connected) {
+                mqtt_common_publish(s_mqtt_data_topic, heartbeat_msg, len, 0);
+            } else {
+                ESP_LOGI(TAG, "Heartbeat: %s", heartbeat_msg);
+            }
 
             if (connected) {
                 led_set_color(LED_COLOR_GREEN);

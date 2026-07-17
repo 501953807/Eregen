@@ -4,7 +4,7 @@ import '../widgets/bottom_nav_bar.dart';
 import '../../api/client.dart';
 import '../../models/health.dart';
 
-/// Health dashboard page — now fetches live data from GET /health/records.
+/// Health dashboard page — fetches live data from GET /health/records and risk score from GET /health/risk-score.
 class HealthPage extends StatefulWidget {
   const HealthPage({super.key});
 
@@ -17,6 +17,9 @@ class _HealthPageState extends State<HealthPage> {
   String _timeRange = '本周';
   bool _loading = true;
   List<HealthRecord> _records = [];
+  double _riskScore = 0;
+  String _riskLevel = '加载中...';
+  Color _riskColor = Colors.white;
 
   @override
   void initState() {
@@ -26,15 +29,74 @@ class _HealthPageState extends State<HealthPage> {
 
   Future<void> _fetchData() async {
     try {
-      final resp = await ApiClient.instance.get('/health/records', query: {'range': _timeRange});
-      final list = resp.data as List;
+      // Fetch health records
+      final healthResp = await ApiClient.instance.get('/health/records', query: {'range': _timeRange});
+      final list = (healthResp.data as List);
+      final records = list.map((r) => HealthRecord.fromJson(r as Map<String, dynamic>)).toList();
+
+      // Fetch risk score from API
+      double riskScore = 0;
+      String riskLevel = '暂无数据';
+      Color riskColor = Colors.white;
+      try {
+        final riskResp = await ApiClient.instance.get('/health/risk-score');
+        if (riskResp.data != null) {
+          final riskData = riskResp.data as Map<String, dynamic>;
+          riskScore = (riskData['score'] ?? 0).toDouble();
+          final level = (riskData['level'] ?? '未知').toString().toLowerCase();
+          if (level.contains('低')) {
+            riskLevel = '低风险';
+            riskColor = const Color(0xFF4CAF50);
+          } else if (level.contains('中') || level.contains('moderate')) {
+            riskLevel = '中风险';
+            riskColor = const Color(0xFFFFA726);
+          } else {
+            riskLevel = '高风险';
+            riskColor = const Color(0xFFFF5252);
+          }
+        }
+      } catch (_) {
+        // Risk score endpoint may not be available — fall back to computed score
+        riskScore = _computeRiskScore(records);
+        riskLevel = _riskLabel(riskScore);
+        riskColor = _riskColorForScore(riskScore);
+      }
+
       setState(() {
-        _records = list.map((r) => HealthRecord.fromJson(r as Map<String, dynamic>)).toList();
+        _records = records;
         _loading = false;
+        _riskScore = riskScore;
+        _riskLevel = riskLevel;
+        _riskColor = riskColor;
       });
     } catch (e) {
       setState(() => _loading = false);
     }
+  }
+
+  /// Compute a simple risk score from health records when API is unavailable.
+  double _computeRiskScore(List<HealthRecord> records) {
+    if (records.isEmpty) return 0;
+    final latest = records.first;
+    double score = 0;
+    if (latest.hr != null && (latest.hr! < 60 || latest.hr! > 100)) score += 0.2;
+    if (latest.spo2 != null && latest.spo2! < 95) score += 0.3;
+    if (latest.bpSystolic != null && latest.bpSystolic! > 140) score += 0.25;
+    if (latest.bpDiastolic != null && latest.bpDiastolic! > 90) score += 0.15;
+    if (latest.sleepHours != null && latest.sleepHours! < 6) score += 0.1;
+    return (score * 100).clamp(0, 100);
+  }
+
+  String _riskLabel(double score) {
+    if (score < 30) return '低风险';
+    if (score < 60) return '中风险';
+    return '高风险';
+  }
+
+  Color _riskColorForScore(double score) {
+    if (score < 30) return const Color(0xFF4CAF50);
+    if (score < 60) return const Color(0xFFFFA726);
+    return const Color(0xFFFF5252);
   }
 
   // Derive current values from fetched records
@@ -60,7 +122,7 @@ class _HealthPageState extends State<HealthPage> {
                       color: AppTheme.bgCard,
                       child: Row(
                         children: [
-                          IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 18), onPressed: () {}),
+                          IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 18), onPressed: () => Navigator.of(context).pop()),
                           const Expanded(child: Text('健康数据', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700))),
                           IconButton(icon: const Icon(Icons.share_outlined), onPressed: () {}),
                         ],
@@ -68,7 +130,7 @@ class _HealthPageState extends State<HealthPage> {
                     ),
                   ),
 
-                  // Risk score card (placeholder — AI engine not yet connected)
+                  // Risk score card — now fetched from API or computed locally
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -79,14 +141,14 @@ class _HealthPageState extends State<HealthPage> {
                           const Text('综合健康风险评估', style: TextStyle(fontSize: 13, color: Colors.white, opacity: 0.9)),
                           const SizedBox(height: 8),
                           Stack(alignment: Alignment.center, children: [
-                            SizedBox(width: 100, height: 100, child: CircularProgressIndicator(value: 0.65, strokeWidth: 8, backgroundColor: Colors.white.withOpacity(0.2), valueColor: const AlwaysStoppedAnimation<Color>(Colors.white))),
+                            SizedBox(width: 100, height: 100, child: CircularProgressIndicator(value: _riskScore / 100, strokeWidth: 8, backgroundColor: Colors.white.withOpacity(0.2), valueColor: AlwaysStoppedAnimation<Color>(_riskColor))),
                             Column(mainAxisSize: MainAxisSize.min, children: [
-                              const Text('35', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white)),
+                              Text('${_riskScore.toInt()}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white)),
                               Text('/ 100', style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.8))),
                             ]),
                           ]),
                           const SizedBox(height: 4),
-                          const Text('🟢 低风险', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+                          Text(_riskLevel, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _riskColor)),
                           const SizedBox(height: 6),
                           Text(_riskSummary(), style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.85), height: 1.5)),
                         ]),

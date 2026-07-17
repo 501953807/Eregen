@@ -101,9 +101,9 @@ class _AlertsPageState extends State<AlertsPage> {
                 // Header
                 SliverToBoxAdapter(
                   child: Container(padding: const EdgeInsets.fromLTRB(20, 12, 20, 0), color: AppTheme.bgCard, child: Row(children: [
-                    IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 18), onPressed: () {}),
+                    IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 18), onPressed: () => Navigator.of(context).pop()),
                     const Expanded(child: Text('告警中心', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700))),
-                    IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+                    IconButton(icon: const Icon(Icons.search), onPressed: () => _showSearchDialog(context)),
                   ])),
                 ),
 
@@ -175,6 +175,27 @@ class _AlertsPageState extends State<AlertsPage> {
           ]),
         ],
       ]),
+    );
+  }
+
+  void _showSearchDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('搜索告警'),
+        content: TextField(
+          decoration: const InputDecoration(hintText: '输入关键词搜索...'),
+          onSubmitted: (keyword) {
+            Navigator.of(ctx).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('搜索: $keyword')),
+            );
+          },
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('取消')),
+        ],
+      ),
     );
   }
 

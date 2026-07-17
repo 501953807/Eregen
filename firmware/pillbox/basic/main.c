@@ -31,6 +31,7 @@
 #include "motor_control.h"
 #include "tts_playback.h"
 #include "state_machine.h"
+#include "mqtt_common.h"
 
 /* Task priorities */
 #define MAIN_TASK_PRIORITY          (tskIDLE_PRIORITY + 2)
@@ -46,6 +47,14 @@
 
 /* Heartbeat interval (seconds) */
 #define HEARTBEAT_INTERVAL_S        30
+
+/* MQTT data topic: eregen/device/PX-XXXX/data */
+#define MQTT_DATA_TOPIC_FMT         "eregen/device/%s/data"
+
+/* MQTT broker config */
+#define MQTT_BROKER_HOST            "localhost"
+#define MQTT_BROKER_PORT            1883
+#define MQTT_CLIENT_ID_PREFIX       "pillbox-"
 
 /* Button scan interval (milliseconds) */
 #define BUTTON_SCAN_INTERVAL_MS     20
@@ -184,6 +193,22 @@ static void vMainTask(void *pvParameter)
 
     ESP_LOGI(TAG, "Device ID: %s%s", DEVICE_ID_PREFIX, device_id);
 
+    /* Connect to MQTT broker if WiFi is available */
+    bool mqtt_connected = false;
+    char mqtt_data_topic[128];
+    char mqtt_client_id[32];
+    snprintf(mqtt_client_id, sizeof(mqtt_client_id), "%s%02X%02X%02X",
+             MQTT_CLIENT_ID_PREFIX, device_id[0], device_id[1], device_id[2]);
+    if (wifi_is_connected()) {
+        snprintf(mqtt_data_topic, sizeof(mqtt_data_topic), MQTT_DATA_TOPIC_FMT, device_id);
+        ret = mqtt_common_connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT,
+                                  mqtt_client_id, NULL, NULL);
+        if (ret == 0) {
+            mqtt_connected = true;
+            ESP_LOGI(TAG, "MQTT connected for data publishing");
+        }
+    }
+
     uint32_t heartbeat_counter = 0;
     uint32_t battery_counter = 0;
     uint32_t sm_tick_counter = 0;
@@ -248,12 +273,17 @@ static void vMainTask(void *pvParameter)
                 led_blink(LED_COLOR_RED, LED_PATTERN_FAST_BLINK);
             }
 
-            /* Format and log heartbeat message */
-            char heartbeat_msg[128];
-            snprintf(heartbeat_msg, sizeof(heartbeat_msg),
-                     "{\"type\":\"heartbeat\",\"dev_id\":\"%s%s\",\"bat\":%d}",
-                     DEVICE_ID_PREFIX, device_id, bat_int);
-            ESP_LOGI(TAG, "Heartbeat: %s", heartbeat_msg);
+            /* Format and send heartbeat message via MQTT */
+            char heartbeat_msg[256];
+            int len = snprintf(heartbeat_msg, sizeof(heartbeat_msg),
+                     "{\"type\":\"heartbeat\",\"dev_id\":\"%s%s\",\"bat\":%d,\"rssi\":%d}",
+                     DEVICE_ID_PREFIX, device_id, bat_int, wifi_get_rssi());
+
+            if (mqtt_connected) {
+                mqtt_common_publish(mqtt_data_topic, heartbeat_msg, len, 0);
+            } else {
+                ESP_LOGI(TAG, "Heartbeat: %s", heartbeat_msg);
+            }
 
             /* Set LED to solid green after heartbeat (if WiFi connected) */
             if (connected) {
