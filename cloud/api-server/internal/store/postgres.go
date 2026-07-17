@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -632,6 +633,69 @@ func (p *Postgres) UpdateAlert(ctx context.Context, alertID string, status model
 	q := `UPDATE alerts SET status = $1, resolved_at = now() WHERE id = $2`
 	_, err := p.pool.Exec(ctx, q, status, alertID)
 	return err
+}
+
+// ---------- Geofence ----------
+
+func (p *Postgres) CreateGeofence(ctx context.Context, gf *model.Geofence) error {
+	gf.ID = uuid.New().String()
+	gf.CreatedAt = time.Now()
+	gf.UpdatedAt = gf.CreatedAt
+	q := `INSERT INTO geofences (id, elderly_id, name, latitude, longitude, radius_meters, active, created_at, updated_at)
+		  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+	_, err := p.pool.Exec(ctx, q,
+		gf.ID, gf.ElderlyID, gf.Name, gf.Latitude, gf.Longitude,
+		gf.RadiusMeters, gf.Active, gf.CreatedAt, gf.UpdatedAt,
+	)
+	return err
+}
+
+func (p *Postgres) ListGeofences(ctx context.Context, elderlyID string) ([]model.Geofence, error) {
+	q := `SELECT id, elderly_id, name, latitude, longitude, radius_meters, active, created_at, updated_at
+		  FROM geofences WHERE elderly_id = $1 ORDER BY name ASC`
+	rows, err := p.pool.Query(ctx, q, elderlyID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var fences []model.Geofence
+	for rows.Next() {
+		var g model.Geofence
+		if err := rows.Scan(&g.ID, &g.ElderlyID, &g.Name, &g.Latitude, &g.Longitude,
+			&g.RadiusMeters, &g.Active, &g.CreatedAt, &g.UpdatedAt); err != nil {
+			return nil, err
+		}
+		fences = append(fences, g)
+	}
+	return fences, rows.Err()
+}
+
+func (p *Postgres) UpdateGeofence(ctx context.Context, id string, req *model.UpdateGeofenceRequest) error {
+	q := `UPDATE geofences SET name=$1, latitude=$2, longitude=$3, radius_meters=$4, active=$5, updated_at=now()
+		  WHERE id=$6`
+	_, err := p.pool.Exec(ctx, q, req.Name, req.Lat, req.Lon, req.RadiusMeters, req.Active, id)
+	return err
+}
+
+func (p *Postgres) DeleteGeofence(ctx context.Context, id string) error {
+	_, err := p.pool.Exec(ctx, `DELETE FROM geofences WHERE id = $1`, id)
+	return err
+}
+
+// GetDeviceByElderlyID finds the device linked to an elderly profile via owner user.
+func (p *Postgres) GetDeviceByElderlyID(ctx context.Context, elderlyID string) (string, error) {
+	var userID string
+	err := p.pool.QueryRow(ctx, `SELECT user_id FROM elderly_profiles WHERE id = $1`, elderlyID).Scan(&userID)
+	if err != nil {
+		return "", err
+	}
+	var deviceID string
+	err = p.pool.QueryRow(ctx, `SELECT device_id FROM devices WHERE owner_user_id = $1 AND device_type = 'pillbox' ORDER BY created_at DESC LIMIT 1`, userID).Scan(&deviceID)
+	if err == sql.ErrNoRows {
+		return "", nil // no pillbox linked
+	}
+	return deviceID, err
 }
 
 // ---------- Subscription ----------

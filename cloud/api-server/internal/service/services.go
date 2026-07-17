@@ -147,7 +147,8 @@ func NewHealthService(store healthStore, redis redisCache, log *zap.Logger) *Hea
 }
 
 func (s *HealthService) GetSummary(ctx context.Context, elderlyID string, day time.Time) (*model.HealthRecord, error) {
-	if _, err := s.redis.GetLatestHealth(ctx, elderlyID); err == nil {
+	cached, err := s.redis.GetLatestHealth(ctx, elderlyID)
+	if err == nil && len(cached) > 0 {
 		return &model.HealthRecord{}, nil
 	}
 	return s.store.GetHealthSummary(ctx, elderlyID, day)
@@ -171,6 +172,8 @@ type LocationService struct {
 type locationStore interface {
 	GetLatestLocation(ctx context.Context, elderlyID string) (*model.LocationRecord, error)
 	GetLocationHistory(ctx context.Context, elderlyID string, from, until time.Time) ([]model.LocationRecord, error)
+	CreateGeofence(ctx context.Context, gf *model.Geofence) error
+	ListGeofences(ctx context.Context, elderlyID string) ([]model.Geofence, error)
 }
 
 type locCache interface {
@@ -194,6 +197,14 @@ func (s *LocationService) GetHistory(ctx context.Context, elderlyID string, from
 	return s.store.GetLocationHistory(ctx, elderlyID, from, until)
 }
 
+func (s *LocationService) CreateGeofence(ctx context.Context, gf *model.Geofence) error {
+	return s.store.CreateGeofence(ctx, gf)
+}
+
+func (s *LocationService) ListGeofences(ctx context.Context, elderlyID string) ([]model.Geofence, error) {
+	return s.store.ListGeofences(ctx, elderlyID)
+}
+
 // MedicationService manages medication rules and tracking.
 type MedicationService struct {
 	store medStore
@@ -209,6 +220,7 @@ type medStore interface {
 	DeleteMedicationRule(ctx context.Context, ruleID string) error
 	GetTodayMedStatus(ctx context.Context, elderlyID string) ([]model.MedStatusRecord, error)
 	GetMedicationHistory(ctx context.Context, elderlyID string, days int) ([]model.MedStatusRecord, error)
+	GetDeviceByElderlyID(ctx context.Context, elderlyID string) (string, error)
 }
 
 // NewMedicationService creates a new medication service.
@@ -228,6 +240,13 @@ func (s *MedicationService) CreateRule(ctx context.Context, elderlyID string, re
 	if err := s.store.CreateMedicationRule(ctx, mr); err != nil {
 		return err
 	}
+
+	// Find linked pillbox device for this elderly user
+	deviceID, _ := s.store.GetDeviceByElderlyID(ctx, elderlyID)
+	if deviceID == "" {
+		deviceID = "unknown" // fallback — push will be queued until device is bound
+	}
+
 	cmd := map[string]any{
 		"type": "med_rule",
 		"rule": map[string]any{
@@ -237,7 +256,7 @@ func (s *MedicationService) CreateRule(ctx context.Context, elderlyID string, re
 			"days":   req.DaysOfWeek,
 		},
 	}
-	_ = s.nats.PublishCommand(ctx, "BR-XXXX", cmd)
+	_ = s.nats.PublishCommand(ctx, deviceID, cmd)
 	return nil
 }
 

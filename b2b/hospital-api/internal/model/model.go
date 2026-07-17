@@ -144,3 +144,18 @@ type AlertForwardRequest struct {
 		Lon float64 `json:"lon"`
 	} `json:"lat_lon,omitempty"`
 }
+
+// VitalSignRecord is the persisted vital sign entry in b2b_vital_signs table.
+type VitalSignRecord struct {
+	ID           string    `json:"id"`
+	ElderlyID    string    `json:"elderly_id"`
+	InstitutionID string   `json:"institution_id"`
+	PatientID    string    `json:"patient_id"`
+	HeartRate    *int      `json:"heart_rate,omitempty"`
+	SPO2         *int      `json:"spo2,omitempty"`
+	SystolicBP   *int      `json:"systolic_bp,omitempty"`
+	DiastolicBP  *int      `json:"diastolic_bp,omitempty"`
+	Temperature  *float64  `json:"temperature,omitempty"`
+	Steps        *int64    `json:"steps,omitempty"`
+	RecordedAt   time.Time `json:"recorded_at"`
+}

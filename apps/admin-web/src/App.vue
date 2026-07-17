@@ -87,8 +87,15 @@ const currentBreadcrumb = computed(() => {
   const map: Record<string, string> = {
     '/dashboard': '首页 / 仪表盘总览',
     '/devices': '设备管理 / 手环设备',
+    '/pillboxes': '设备管理 / 药盒设备',
     '/subscriptions': '运营管理 / 订阅管理',
     '/users': '用户管理 / 全部用户',
+    '/institutions': '用户管理 / 机构管理',
+    '/alerts': '告警中心 / 告警列表',
+    '/analytics': '数据分析 / 概览',
+    '/settings': '系统设置 / 配置',
+    '/ota': '设备管理 / 固件OTA',
+    '/elderly': '用户管理 / 老人档案',
   }
   return map[route.path] || route.path
 })

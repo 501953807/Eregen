@@ -1,0 +1,11 @@
+package:
+  name: "eregen/pillbox_auto"
+  version: "1.0.0"
+  description: "Eregen Auto pillbox firmware — motor dispensing, optical detection, TTS, inventory tracking"
+  authors:
+    - "Eregen Team <dev@eregen.example>"
+
+dependencies:
+  idf: ">=5.3"
+  esptool_py: "^4.0"
+  driver: "^1.0"

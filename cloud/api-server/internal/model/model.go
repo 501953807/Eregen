@@ -199,6 +199,28 @@ type GeofenceRequest struct {
 	Name         string  `json:"name"`
 }
 
+// Geofence is the persisted geofence entity.
+type Geofence struct {
+	ID           string    `json:"id"`
+	ElderlyID    string    `json:"elderly_id"`
+	Name         string    `json:"name"`
+	Latitude     float64   `json:"latitude"`
+	Longitude    float64   `json:"longitude"`
+	RadiusMeters int       `json:"radius_meters"`
+	Active       bool      `json:"active"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+// UpdateGeofenceRequest for modifying an existing geofence.
+type UpdateGeofenceRequest struct {
+	Name         string `json:"name"`
+	Lat          float64 `json:"lat"`
+	Lon          float64 `json:"lon"`
+	RadiusMeters int    `json:"radius_meters"`
+	Active       bool   `json:"active"`
+}
+
 // CreateMedicationRuleRequest for adding a new medication schedule.
 type CreateMedicationRuleRequest struct {
 	ScheduleTime string `json:"schedule_time"`

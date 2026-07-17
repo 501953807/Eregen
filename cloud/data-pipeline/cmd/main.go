@@ -4,14 +4,17 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"eregen.dev/pipeline/internal/analyzer"
 	"eregen.dev/pipeline/internal/config"
 	"eregen.dev/pipeline/internal/store"
+	"eregen.dev/pipeline/internal/subscriber"
+
+	"github.com/nats-io/nats.go"
 )
 
 func main() {
@@ -37,12 +40,24 @@ func main() {
 		cfg.RiskActivityWt,
 		cfg.RiskSleepWt,
 	)
-	_ = healthAnalyzer
-	_ = riskCalc
 
-	// NATS subscriber for device events
-	// Connect to NATS and start processing
-	log.Println("listening for device events...")
+	// NATS connection for JetStream event processing
+	nc, err := nats.Connect(cfg.NATSURL)
+	if err != nil {
+		log.Fatalf("nats connect: %v", err)
+	}
+	defer nc.Close()
+
+	js, err := nc.JetStream()
+	if err != nil {
+		log.Fatalf("nats jetstream: %v", err)
+	}
+
+	hAnalyzer := subscriber.NewHandler(js, healthAnalyzer, riskCalc, db)
+	if err := hAnalyzer.Start(); err != nil {
+		log.Fatalf("nats subscriber start: %v", err)
+	}
+	log.Println("NATS subscriber started on eregen.event.>")
 
 	// HTTP health endpoint
 	mux := http.NewServeMux()
@@ -53,22 +68,27 @@ func main() {
 	})
 
 	httpServer := &http.Server{
-		Addr:         ":8087",
+		Addr:         ":" + strconv.Itoa(cfg.Port),
 		Handler:      mux,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
 	}
 
 	// Graceful shutdown
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
 	go func() {
-		sigch := make(chan os.Signal, 1)
-		signal.Notify(sigch, syscall.SIGINT, syscall.SIGTERM)
-		<-sigch
+		<-ctx.Done()
 		log.Println("shutting down...")
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		httpServer.Shutdown(ctx)
+		shutdownCtx, stop := context.WithTimeout(context.Background(), 10*time.Second)
+		defer stop()
+		httpServer.Shutdown(shutdownCtx)
 	}()
 
-	log.Fatal(httpServer.ListenAndServe())
+	if err := httpServer.ListenAndServe(); err != http.ErrServerClosed {
+		log.Fatalf("http server: %v", err)
+	}
+
+	log.Println("stopped")
 }

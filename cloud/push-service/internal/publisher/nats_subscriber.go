@@ -39,7 +39,7 @@ func NewSubscriber(natsURL string) (*Subscriber, error) {
 		alert: make(chan model.AlertPushEvent, 128),
 	}
 
-	_, err = js.Subscribe("device.events", s.onMessage,
+	_, err = js.Subscribe("eregen.event.>", s.onMessage,
 		nats.Durable("push-service"),
 	)
 	if err != nil {

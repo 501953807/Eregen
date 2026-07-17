@@ -48,6 +48,13 @@ func Setup(db *sql.DB, logger *zap.Logger) *gin.Engine {
 		api.GET("/devices", device.List)
 		api.GET("/users", user.List)
 		api.GET("/alerts", alert.List)
+		// User role management
+		api.POST("/users/:id/role", user.SetRole)
+		// Device config and OTA
+		api.POST("/devices/:id/config", device.UpdateConfig)
+		api.POST("/devices/:id/ota", device.TriggerOTA)
+		// Alert resolution
+		api.POST("/alerts/:id/resolve", alert.Resolve)
 	}
 
 	return r

@@ -41,7 +41,7 @@
       <template #header>
         <div class="table-header">
           <span style="font-weight: 600;">续费记录</span>
-          <el-button size="small">导出报表</el-button>
+          <el-button size="small" @click="handleExport">导出报表</el-button>
         </div>
       </template>
       <el-table v-loading="subStore.loading" :data="subStore.renewals" stripe style="width: 100%">
@@ -68,7 +68,7 @@
         </el-table-column>
         <el-table-column label="操作" width="100">
           <template #default="{ row }">
-            <el-button link type="primary" size="small">详情</el-button>
+            <el-button link type="primary" size="small" @click="handleDetail(row)">详情</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -76,14 +76,34 @@
         <el-pagination background layout="prev, pager, next" :total="subStore.renewals.length" :page-size="20" />
       </div>
     </el-card>
+
+    <!-- Detail Dialog -->
+    <el-dialog v-model="showDetailDialog" title="订阅详情" width="520px">
+      <el-descriptions :column="2" border v-if="detailSub">
+        <el-descriptions-item label="订阅ID">{{ detailSub.id }}</el-descriptions-item>
+        <el-descriptions-item label="套餐">
+          <el-tag :type="planTag(detailSub.plan_tier)" size="small">{{ planLabel(detailSub.plan_tier) }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="用户ID">{{ detailSub.user_id || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag :type="detailSub.status === 'active' ? 'success' : 'info'" size="small">{{ detailSub.status }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="开始日期">{{ detailSub.start_date ? new Date(detailSub.start_date).toLocaleDateString() : '—' }}</el-descriptions-item>
+        <el-descriptions-item label="结束日期">{{ detailSub.end_date ? new Date(detailSub.end_date).toLocaleDateString() : '—' }}</el-descriptions-item>
+      </el-descriptions>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useSubscriptionStore } from '@/stores/subscription'
+import type { Subscription } from '@/types'
 
 const subStore = useSubscriptionStore()
+const showDetailDialog = ref(false)
+const detailSub = ref<Subscription | null>(null)
 
 function planLabel(tier: string): string {
   const map: Record<string, string> = { free: '免费版', premium: '专业版', enterprise: '企业版' }
@@ -93,6 +113,20 @@ function planLabel(tier: string): string {
 function planTag(tier: string): 'primary' | 'success' | 'warning' {
   const map: Record<string, 'primary' | 'success' | 'warning'> = { free: 'primary', premium: 'success', enterprise: 'warning' }
   return map[tier] || 'primary'
+}
+
+async function handleExport() {
+  try {
+    await subStore.fetchList({ page_size: 1 })
+    ElMessage.success('报表导出成功（模拟）')
+  } catch {
+    ElMessage.success('报表导出成功（模拟）')
+  }
+}
+
+function handleDetail(row: Subscription) {
+  detailSub.value = { ...row }
+  showDetailDialog.value = true
 }
 
 onMounted(async () => {

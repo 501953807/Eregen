@@ -198,3 +198,66 @@ func (s *Postgres) GetActiveLinksForElderly(ctx context.Context, elderlyID strin
 	}
 	return links, nil
 }
+
+// ---------- Health Data ----------
+
+func (s *Postgres) StoreVitals(ctx context.Context, v *model.VitalSignRecord) error {
+	q := `INSERT INTO b2b_vital_signs (id, elderly_id, institution_id, patient_id,
+		   heart_rate, spo2, systolic_bp, diastolic_bp, temperature, steps, recorded_at)
+		   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`
+	_, err := s.pool.Exec(ctx, q,
+		v.ID, v.ElderlyID, v.InstitutionID, v.PatientID,
+		v.HeartRate, v.SPO2, v.SystolicBP, v.DiastolicBP,
+		v.Temperature, v.Steps, v.RecordedAt,
+	)
+	return err
+}
+
+func (s *Postgres) BulkStoreVitals(ctx context.Context, vitals []*model.VitalSignRecord) error {
+	for _, v := range vitals {
+		if err := s.StoreVitals(ctx, v); err != nil {
+			s.log.Warn("store vital sign", zap.Error(err))
+		}
+	}
+	return nil
+}
+
+func (s *Postgres) GetVitalsForElderly(ctx context.Context, elderlyID string, days int) ([]model.VitalSignRecord, error) {
+	q := `SELECT id, elderly_id, institution_id, patient_id,
+		   heart_rate, spo2, systolic_bp, diastolic_bp, temperature, steps, recorded_at
+		   FROM b2b_vital_signs WHERE elderly_id = $1 AND recorded_at > now() - interval $2 day
+		   ORDER BY recorded_at DESC`
+	rows, err := s.pool.Query(ctx, q, elderlyID, fmt.Sprintf("%d days", days))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var vitals []model.VitalSignRecord
+	for rows.Next() {
+		var v model.VitalSignRecord
+		if err := rows.Scan(&v.ID, &v.ElderlyID, &v.InstitutionID, &v.PatientID,
+			&v.HeartRate, &v.SPO2, &v.SystolicBP, &v.DiastolicBP,
+			&v.Temperature, &v.Steps, &v.RecordedAt); err != nil {
+			return nil, err
+		}
+		vitals = append(vitals, v)
+	}
+	return vitals, rows.Err()
+}
+
+func (s *Postgres) LinkElderlyToExternalPatient(ctx context.Context, elderlyID, patientID, eregenID string) error {
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO b2b_patient_links (id, external_patient_id, local_elderly_id, created_at)
+		 VALUES ($1, $2, $3, now())`,
+		uuid.New().String(), patientID, eregenID)
+	return err
+}
+
+func (s *Postgres) FindElderlyByExternalPatient(ctx context.Context, patientID string) (string, error) {
+	var elderlyID string
+	err := s.pool.QueryRow(ctx,
+		`SELECT local_elderly_id FROM b2b_patient_links WHERE external_patient_id = $1`,
+		patientID).Scan(&elderlyID)
+	return elderlyID, err
+}

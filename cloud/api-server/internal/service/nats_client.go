@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	natsDeviceSubject = "device.events.>"
-	natsTopicFormat   = "device.command.%s"
+	natsDeviceSubject = "eregen.event.>"
+	natsTopicFormat   = "eregen.command.%s"
 )
 
 // NatsClient manages NATS JetStream connections for device event processing.
@@ -39,7 +39,7 @@ func NewNatsClient(url string, log *zap.Logger) (*NatsClient, error) {
 
 	_, err = js.AddStream(&nats.StreamConfig{
 		Name:     "DEVICE_EVENTS",
-		Subjects: []string{"device.events.>"},
+		Subjects: []string{"eregen.event.>"},
 		Storage:  nats.FileStorage,
 	})
 	if err != nil && err != nats.ErrStreamNameAlreadyInUse {

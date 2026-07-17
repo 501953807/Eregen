@@ -55,3 +55,15 @@ type RiskScore struct {
 	SleepQuality   float64   `json:"sleep_quality"`
 	RecordedAt     time.Time `json:"recorded_at"`
 }
+
+// Geofence defines a circular geographic boundary for an elderly person.
+type Geofence struct {
+	ID           string  `json:"id"`
+	ElderlyID    string  `json:"elderly_id"`
+	Name         string  `json:"name"`
+	Latitude     float64 `json:"latitude"`
+	Longitude    float64 `json:"longitude"`
+	RadiusMeters int     `json:"radius_meters"`
+	Active       bool    `json:"active"`
+	CreatedAt    time.Time `json:"created_at"`
+}

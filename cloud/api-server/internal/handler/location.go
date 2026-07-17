@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"eregen.dev/api-server/internal/model"
 	"eregen.dev/api-server/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -72,14 +73,35 @@ func (h *LocationHandler) SetGeofence(c *gin.Context) {
 		return
 	}
 
-	// In production: store geofence in PostgreSQL and push to device
-	_ = elderlyID
-	_ = req
-	c.JSON(http.StatusCreated, gin.H{"code": "OK", "message": "Geofence set"})
+	gf := &model.Geofence{
+		ElderlyID:    elderlyID,
+		Name:         req.Name,
+		Latitude:     req.Lat,
+		Longitude:    req.Lon,
+		RadiusMeters: req.RadiusMeters,
+		Active:       true,
+	}
+
+	err := h.svc.CreateGeofence(c.Request.Context(), gf)
+	if err != nil {
+		h.log.Error("create geofence", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "CREATE_FAILED", "message": "Failed to create geofence"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": gf})
 }
 
 // GET /api/v1/elderly/:elderly_id/geofence
 func (h *LocationHandler) ListGeofences(c *gin.Context) {
-	// In production: query geofences from PostgreSQL
-	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": []any{}})
+	elderlyID := c.Param("elderly_id")
+
+	fences, err := h.svc.ListGeofences(c.Request.Context(), elderlyID)
+	if err != nil {
+		h.log.Error("list geofences", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "QUERY_FAILED", "message": "Failed to fetch geofences"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": fences})
 }

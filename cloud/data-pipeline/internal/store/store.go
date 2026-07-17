@@ -161,6 +161,36 @@ func (s *Store) GetLatestActivityLevel(elderlyID string, days int) (float64, err
 	return level, nil
 }
 
+// GetActiveGeofences returns all active geofences for an elderly person.
+func (s *Store) GetActiveGeofences(ctx context.Context, elderlyID string) ([]model.Geofence, error) {
+	query := `SELECT id, elderly_id, name, latitude, longitude, radius_meters, active, created_at
+		FROM geofences WHERE elderly_id = $1 AND active = true ORDER BY name ASC`
+	rows, err := s.pgPool.Query(ctx, query, elderlyID)
+	if err != nil {
+		return nil, fmt.Errorf("get geofences: %w", err)
+	}
+	defer rows.Close()
+
+	var fences []model.Geofence
+	for rows.Next() {
+		var gf model.Geofence
+		if err := rows.Scan(&gf.ID, &gf.ElderlyID, &gf.Name, &gf.Latitude, &gf.Longitude,
+			&gf.RadiusMeters, &gf.Active, &gf.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan geofence: %w", err)
+		}
+		fences = append(fences, gf)
+	}
+	return fences, rows.Err()
+}
+
+// InsertMedStatus records a medication status event.
+func (s *Store) InsertMedStatus(elderlyID string, taken bool, compartment int) error {
+	query := `INSERT INTO med_status_records (elderly_id, taken, compartment, recorded_at)
+		VALUES ($1, $2, $3, now())`
+	_, err := s.pgPool.Exec(context.Background(), query, elderlyID, taken, compartment)
+	return err
+}
+
 // GetLatestSleepQuality returns sleep quality score (0-100).
 func (s *Store) GetLatestSleepQuality(elderlyID string, days int) (float64, error) {
 	query := `SELECT COALESCE(AVG(CASE WHEN sleep_hours > 0 THEN LEAST(sleep_hours * 10, 100) ELSE 50 END), 50)

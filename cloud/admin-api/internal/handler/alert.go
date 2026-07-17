@@ -20,6 +20,16 @@ func NewAlertHandler(s *store.PostgresStore) *AlertHandler {
 	return &AlertHandler{store: s}
 }
 
+// Resolve marks an alert as resolved.
+func (h *AlertHandler) Resolve(c *gin.Context) {
+	alertID := c.Param("id")
+	if err := h.store.ResolveAlert(c.Request.Context(), alertID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "alert resolved"})
+}
+
 // List returns recent alerts with optional severity and status filters.
 func (h *AlertHandler) List(c *gin.Context) {
 	var sev, status string
