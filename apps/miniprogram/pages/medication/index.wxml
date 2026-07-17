@@ -1,0 +1,55 @@
+<view class="page">
+  <!-- Adherence Ring -->
+  <view class="adherence-card">
+    <view class="adherence-ring">
+      <text class="adherence-value">{{weeklyAdherence}}%</text>
+      <text class="adherence-label">本周依从率</text>
+    </view>
+    <view class="adherence-stats">
+      <view class="as-item">
+        <text class="as-val" style="color:#4CAF50;">{{stats.taken}}</text>
+        <text class="as-lbl">已服用</text>
+      </view>
+      <view class="as-item">
+        <text class="as-val" style="color:#FF6B6B;">{{stats.missed}}</text>
+        <text class="as-lbl">漏服</text>
+      </view>
+      <view class="as-item">
+        <text class="as-val" style="color:#FFA726;">{{stats.late}}</text>
+        <text class="as-lbl">迟到</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Loading State -->
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- Timeline -->
+  <view wx:else class="timeline-section">
+    <view class="section-title">今日用药时间线</view>
+    <view class="timeline">
+      <view wx:for="{{medications}}" wx:key="id" class="timeline-item">
+        <view class="tl-time">{{item.time}}</view>
+        <view class="tl-line {{item.status === 'taken' ? 'taken' : (item.status === 'missed' ? 'missed' : 'pending')}}"></view>
+        <view class="tl-dot {{item.status}}"></view>
+        <view class="tl-card">
+          <view class="tl-header">
+            <text class="tl-name">{{item.name}} {{item.dose}}</text>
+            <text class="tl-type">{{item.type}}</text>
+          </view>
+          <view class="tl-status {{item.status}}">
+            <text wx:if="{{item.status === 'taken'}}">✓ 已服用 · {{item.takenTime}}</text>
+            <text wx:elif="{{item.status === 'missed'}}">✗ 已漏服</text>
+            <text wx:else>⏳ 待服用</text>
+          </view>
+          <button wx:if="{{item.status !== 'taken'}}" class="btn-take" size="mini" data-id="{{item.id}}" bindtap="markTaken">
+            标记已服
+          </button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

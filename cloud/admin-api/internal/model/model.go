@@ -65,3 +65,15 @@ type SubscriptionStat struct {
 	Count int     `json:"count"`
 	Pct   float64 `json:"pct"`
 }
+
+// ElderlyProfile is a lightweight row returned by the elderly list endpoint.
+type ElderlyProfile struct {
+	ID         string   `json:"id"`
+	UserID     string   `json:"user_id"`
+	Name       string   `json:"name"`
+	BirthDate  *string  `json:"birth_date,omitempty"`
+	AvatarURL  string   `json:"avatar_url,omitempty"`
+	HealthTiers []string `json:"health_tiers"`
+	CreatedAt  string   `json:"created_at"`
+	UpdatedAt  string   `json:"updated_at"`
+}

@@ -10,6 +10,7 @@ import '../../api/client.dart';
 import '../../models/health.dart';
 import '../../models/alert.dart';
 import '../alerts/alerts_page.dart';
+import '../../screens/settings/settings_page.dart';
 
 /// Home page — matches home.html prototype, now with live API data.
 class HomePage extends StatefulWidget {
@@ -77,7 +78,12 @@ class _HomePageState extends State<HomePage> {
                                   children: [
                                     _headerIcon(Icons.notifications_outlined, badge: _recentAlerts.where((a) => a.status == 'pending').length),
                                     const SizedBox(width: 8),
-                                    _headerIcon(Icons.settings_outlined),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsPage()));
+                                      },
+                                      child: _headerIcon(Icons.settings_outlined),
+                                    ),
                                   ],
                                 ),
                               ],

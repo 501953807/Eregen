@@ -1,0 +1,42 @@
+<view class="page">
+  <!-- Filter Tabs -->
+  <scroll-view scroll-x class="filter-tabs">
+    <view wx:for="{{filters}}" wx:key="*this"
+          class="filter-tab {{filterTab === index ? 'active' : ''}}"
+          data-index="{{index}}" bindtap="switchFilter">
+      {{item}}
+    </view>
+  </scroll-view>
+
+  <!-- Loading State -->
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- Alert Items -->
+  <view wx:else class="alert-list">
+    <view wx:for="{{alerts}}" wx:key="id" class="alert-item {{item.status === 'unread' ? 'unread' : ''}}"
+          data-id="{{item.id}}" bindtap="onAlertTap">
+      <view class="alert-icon">{{item.icon}}</view>
+      <view class="alert-body">
+        <view class="alert-header">
+          <text class="alert-title">{{item.title}}</text>
+          <text class="alert-priority P{{item.priority.slice(1)}}">{{item.priority}}</text>
+        </view>
+        <text class="alert-device">{{item.device || '未知设备'}}</text>
+        <text class="alert-time">{{item.time}}</text>
+      </view>
+      <view class="alert-actions">
+        <button wx:if="{{item.type === 'sos'}}" class="btn-call" size="mini" catchtap="onCall">立即呼叫</button>
+        <button wx:elif="{{item.type === 'fall' || item.type === 'geofence'}}" class="btn-location" size="mini" catchtap="onViewLocation">查看位置</button>
+        <button wx:else class="btn-mark" size="mini" catchtap="onMarkResolved">标记处理</button>
+      </view>
+      <view wx:if="{{item.status === 'unread'}}" class="unread-dot"></view>
+    </view>
+    <view wx:if="{{alerts.length === 0}}" class="empty-state">
+      <text class="empty-icon">📭</text>
+      <text class="empty-text">暂无告警记录</text>
+    </view>
+  </view>
+</view>

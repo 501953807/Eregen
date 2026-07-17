@@ -31,6 +31,7 @@ func Setup(db *sql.DB, logger *zap.Logger) *gin.Engine {
 	device := handler.NewDeviceHandler(s)
 	user := handler.NewUserHandler(s)
 	alert := handler.NewAlertHandler(s)
+	elderly := handler.NewElderlyHandler(s)
 
 	// Rate limiter — fail open if Redis is unavailable
 	rateLimiter, rlErr := middleware.NewAdminRateLimiter()
@@ -55,6 +56,19 @@ func Setup(db *sql.DB, logger *zap.Logger) *gin.Engine {
 		api.POST("/devices/:id/ota", device.TriggerOTA)
 		// Alert resolution
 		api.POST("/alerts/:id/resolve", alert.Resolve)
+		// Elderly person management
+		api.GET("/elderly", elderly.List)
+		api.GET("/elderly/:id", elderly.Detail)
+		api.POST("/elderly", elderly.Create)
+		api.PUT("/elderly/:id", elderly.Update)
+		api.DELETE("/elderly/:id", elderly.Delete)
+		// Elderly detail views
+		api.GET("/elderly/:id/health-stats", elderly.HealthStats)
+		api.GET("/elderly/:id/health-records", elderly.HealthRecords)
+		api.GET("/elderly/:id/medication-rules", elderly.MedicationRules)
+		api.GET("/elderly/:id/devices", elderly.DeviceList)
+		api.GET("/elderly/:id/location-history", elderly.LocationHistory)
+		api.GET("/elderly/:id/alert-history", elderly.AlertHistory)
 	}
 
 	return r
