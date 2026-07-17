@@ -102,6 +102,23 @@ temp/
 .serena/
 .playwright-mcp/
 
+# Documentation — NEVER push to GitHub (security policy: project specs/architecture/docs stay local)
+docs/specs/
+docs/superpowers/
+docs/logo/
+README.md
+*.md
+!CLAUDE.md
+
+# CI/CD workflows — internal tooling info
+.github/workflows/
+
+# Hardware design documents
+hardware-design/README.md
+shared/assets/README.md
+cloud/data-pipeline/README.md
+cloud/push-service/README.md
+
 # OS
 .DS_Store
 Thumbs.db
