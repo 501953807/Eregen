@@ -5,7 +5,9 @@
     "pages/home/index",
     "pages/medication/index",
     "pages/alerts/index",
-    "pages/mine/index"
+    "pages/mine/index",
+    "pages/elderly-detail/index",
+    "pages/bind-device/index"
   ],
   "window": {
     "backgroundTextStyle": "light",

@@ -1,0 +1,69 @@
+<view class="page">
+  <!-- Header -->
+  <view class="header">
+    <text class="title">绑定设备</text>
+    <text class="subtitle">扫描设备二维码或输入序列号进行绑定</text>
+  </view>
+
+  <!-- QR Code Scan Button -->
+  <view class="scan-section">
+    <button class="scan-btn" bindtap="scanQRCode">
+      <text class="scan-icon">📷</text>
+      <text>扫描二维码绑定</text>
+    </button>
+  </view>
+
+  <!-- Manual Bind Form -->
+  <view class="form-section">
+    <view class="section-title">手动绑定</view>
+    <view class="form-card">
+      <view class="form-item">
+        <text class="form-label">设备类型</text>
+        <picker range="{{deviceTypes}}" value="{{selectedTypeIndex}}" bindchange="onTypeChange">
+          <view class="picker-value">{{deviceTypes[selectedTypeIndex]}}</view>
+        </picker>
+      </view>
+      <view class="form-item">
+        <text class="form-label">设备序列号</text>
+        <input class="form-input" value="{{serialNumber}}" bindinput="onSerialInput" placeholder="请输入设备 SN 码" />
+      </view>
+      <view class="form-item">
+        <text class="form-label">关联老人</text>
+        <picker range="{{elderlyList}}" range-key="name" value="{{selectedElderlyIndex}}" bindchange="onElderlyChange">
+          <view class="picker-value">{{elderlyList[selectedElderlyIndex].name}}</view>
+        </picker>
+      </view>
+      <button class="bind-btn {{binding ? 'binding' : ''}}" bindtap="handleBind" disabled="{{!serialNumber.trim()}}">
+        {{binding ? '绑定中...' : '确认绑定'}}
+      </button>
+    </view>
+  </view>
+
+  <!-- Bound Devices List -->
+  <view class="bound-section">
+    <view class="section-title">已绑定设备</view>
+    <view class="device-list">
+      <view class="bound-device" wx:for="{{boundDevices}}" wx:key="id">
+        <view class="device-avatar avatar-{{item.type}}">
+          <text>{{item.type === 'bracelet' ? '⌚' : '💊'}}</text>
+        </view>
+        <view class="device-details">
+          <text class="device-name">{{item.name}}</text>
+          <text class="device-sn">SN: {{item.serialNumber}}</text>
+          <text class="device-bound">绑定于 {{item.boundAt}}</text>
+        </view>
+        <view class="device-actions">
+          <view class="status-badge {{item.online ? 'online' : 'offline'}}">
+            <text>{{item.online ? '在线' : '离线'}}</text>
+          </view>
+          <text class="unbind-link" data-id="{{item.id}}" bindtap="handleUnbind">解绑</text>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{boundDevices.length === 0}}" class="empty-state">
+      <text class="empty-icon">📱</text>
+      <text class="empty-text">暂无已绑定设备</text>
+      <text class="empty-hint">扫描二维码或手动输入序列号绑定</text>
+    </view>
+  </view>
+</view>

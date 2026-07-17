@@ -1,0 +1,100 @@
+<view class="page">
+  <!-- Profile Header -->
+  <view class="profile-header">
+    <image class="avatar" src="/assets/images/avatar-default.png" mode="aspectFill" />
+    <view class="info">
+      <text class="name">{{elderly.name}}</text>
+      <text class="meta">{{elderly.age}}岁 · {{elderly.gender}} · {{elderly.birthday}}</text>
+    </view>
+    <view class="tier-badge tier-{{elderly.tier}}">
+      <text>{{tierText}}</text>
+    </view>
+  </view>
+
+  <!-- Quick Stats -->
+  <view class="stats-grid">
+    <view class="stat-card" wx:for="{{healthStats}}" wx:key="label">
+      <view class="stat-icon" style="background:{{item.bg}};">
+        <text class="stat-emoji">{{item.emoji}}</text>
+      </view>
+      <view class="stat-info">
+        <text class="stat-value">{{item.value}}</text>
+        <text class="stat-label">{{item.label}}</text>
+        <text class="stat-unit">{{item.unit}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Device Status -->
+  <view class="section">
+    <view class="section-title">设备状态</view>
+    <view class="device-card" wx:for="{{devices}}" wx:key="id">
+      <view class="device-icon device-{{item.type}}">
+        <text>{{item.type === 'bracelet' ? '⌚' : '💊'}}</text>
+      </view>
+      <view class="device-info">
+        <text class="device-name">{{item.name}}</text>
+        <text class="device-detail">{{item.model}} · 电量 {{item.battery}}%</text>
+      </view>
+      <view class="device-status">
+        <view class="status-dot {{item.online ? 'online' : 'offline'}}"></view>
+        <text class="{{item.online ? 'status-online' : 'status-offline'}}">{{item.online ? '在线' : '离线'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Recent Alerts -->
+  <view class="section">
+    <view class="section-title">最近告警</view>
+    <view class="alert-item" wx:for="{{recentAlerts}}" wx:key="id">
+      <view class="alert-icon alert-{{item.type}}">
+        <text>{{item.emoji}}</text>
+      </view>
+      <view class="alert-info">
+        <text class="alert-title">{{item.title}}</text>
+        <text class="alert-time">{{item.time}}</text>
+      </view>
+      <view class="alert-action">
+        <text class="alert-status alert-status-{{item.status}}">{{item.statusText}}</text>
+      </view>
+    </view>
+    <view wx:if="{{recentAlerts.length === 0}}" class="empty-state">
+      <text class="empty-text">暂无告警记录</text>
+    </view>
+  </view>
+
+  <!-- Medication Today -->
+  <view class="section">
+    <view class="section-title">今日用药</view>
+    <view class="med-item" wx:for="{{medications}}" wx:key="id">
+      <view class="med-left">
+        <text class="med-name">{{item.name}}</text>
+        <text class="med-dose">{{item.dose}}</text>
+      </view>
+      <view class="med-time">{{item.time}}</view>
+      <view class="med-status {{item.taken ? 'taken' : 'pending'}}">
+        <text>{{item.taken ? '✓ 已服用' : '○ 待服用'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Action Buttons -->
+  <view class="actions">
+    <button class="action-btn" bindtap="goToMedication">
+      <text class="action-icon">💊</text>
+      <text>用药管理</text>
+    </button>
+    <button class="action-btn" bindtap="goToLocation">
+      <text class="action-icon">📍</text>
+      <text>位置查看</text>
+    </button>
+    <button class="action-btn" bindtap="goToHealth">
+      <text class="action-icon">📊</text>
+      <text>健康报告</text>
+    </button>
+    <button class="action-btn" bindtap="goToSettings">
+      <text class="action-icon">⚙️</text>
+      <text>设置</text>
+    </button>
+  </view>
+</view>
