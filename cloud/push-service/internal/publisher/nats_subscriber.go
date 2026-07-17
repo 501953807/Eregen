@@ -1,7 +1,6 @@
 package publisher
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -121,11 +120,10 @@ func (s *Subscriber) Start(rtr *router.Router) {
 	for {
 		select {
 		case ev := <-s.alert:
-			log.Printf("[alert] id=%s type=%s severity=%s", ev.AlertID, ev.AlertType, ev.Severity)
-			members := []router.Member{
-				{UserID: ev.ElderlyID}, // TODO: fetch from DB
-			}
-			rtr.DeliverAlert(context.Background(), ev, members)
+			log.Printf("[alert] id=%s type=%s severity=%s elderly_id=%s",
+				ev.AlertID, ev.AlertType, ev.Severity, ev.ElderlyID)
+			// TODO: fetch family members from DB — push-service needs PostgreSQL connection
+			// For now, log the alert and skip delivery until DB is wired
 		}
 	}
 }
