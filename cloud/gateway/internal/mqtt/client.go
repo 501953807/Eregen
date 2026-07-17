@@ -191,7 +191,12 @@ func ValidateDeviceID(id string) bool {
 
 func buildTLSConfig(tc TLSConfig) (*tls.Config, error) {
 	tlsConfig := &tls.Config{
-		InsecureSkipVerify: true, // self-signed cert in dev
+		MinVersion: tls.VersionTLS12,
+	}
+
+	// Only skip CA verification in explicit dev mode.
+	if os.Getenv("MQTT_DEV_MODE") == "1" {
+		tlsConfig.InsecureSkipVerify = true
 	}
 
 	if tc.CACert != "" {
