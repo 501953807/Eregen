@@ -24,7 +24,8 @@
     .info-time { font-size: 10px; color: #999; margin-top: 2px; }
   </style>
   <!-- 高德地图 JS API v2.0，使用 GCJ-02 坐标系 -->
-  <script src="https://webapi.amap.com/maps?v=2.0&key=YOUR_AMAP_KEY&plugin=AMap.Geolocation,AMap.Geocoder"></script>
+  <script src="https://webapi.amap.com/maps?v=2.0&key=YOUR_AMAP_KEY&plugin=AMap.Geolocation,AMap.Geocoder"
+    onerror="window.FlutterReady=false; Flutter.postMessage(JSON.stringify({event:'map_error', message:'高德地图SDK加载失败'}));"></script>
 </head>
 <body>
   <div id="container"></div>
@@ -34,20 +35,39 @@
   </div>
 
   <script>
+    window.FlutterReady = false;
     let map = null;
     let marker = null;
     let circle = null;
     let geocoder = null;
 
+    // Wait for AMap SDK to load before initializing
+    function waitForAMap(callback) {
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        if (typeof AMap !== 'undefined') {
+          clearInterval(interval);
+          callback();
+        } else if (attempts > 50) {
+          // Timeout after ~5 seconds
+          window.FlutterReady = true;
+          Flutter.postMessage(JSON.stringify({event:'map_error', message:'地图SDK加载超时'}));
+        }
+      }, 100);
+    }
+
     // Initialize map centered on default location
     function initMap(lat, lng) {
+      if (typeof AMap === 'undefined') return;
+
       map = new AMap.Map('container', {
         zoom: 15,
         center: [lng, lat], // AMap uses [lng, lat] order
         mapStyle: 'amap://styles/normal',
       });
 
-      // Custom marker icon
+      // Custom marker icon — Eregen brand color #4A90D9
       const icon = new AMap.Icon({
         size: new AMap.Size(36, 36),
         image: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><circle cx="18" cy="18" r="14" fill="#4A90D9"/><circle cx="18" cy="18" r="6" fill="#fff"/></svg>`),
@@ -60,21 +80,27 @@
       });
       map.add(marker);
 
-      // Reverse geocode
+      // Reverse geocode for address
       geocoder = new AMap.Geocoder({});
       getAddress(lng, lat);
+      window.FlutterReady = true;
+      Flutter.postMessage(JSON.stringify({event:'map_ready'}));
     }
 
     function getAddress(lng, lat) {
+      if (!geocoder) return;
       geocoder.getAddress([lng, lat], function(status, result) {
         if (status === 'complete' && result.regeocode) {
           const addr = result.regeocode.formattedAddress;
           document.getElementById('address').textContent = '📍 ' + addr;
         } else {
-          document.getElementById('address').textContent = '📍 ' + lat.toFixed(4) + ', ' + lng.toFixed(4);
+          document.getElementById('address').textContent = '📍 定位中...';
         }
         document.getElementById('time').textContent = '更新时间：' + formatTime();
-        Flutter.postMessage(JSON.stringify({map_address: document.getElementById('address').textContent, map_time: document.getElementById('time').textContent}));
+        Flutter.postMessage(JSON.stringify({
+          map_address: document.getElementById('address').textContent,
+          map_time: document.getElementById('time').textContent
+        }));
       });
     }
 
@@ -104,8 +130,11 @@
       return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     }
 
+    // Start waiting for AMap SDK after DOM ready
     window.onload = function() {
-      Flutter.postMessage(JSON.stringify({event: 'map_ready'}));
+      waitForAMap(function() {
+        initMap(31.2304, 121.4737); // Default: Shanghai
+      });
     };
   </script>
 </body>

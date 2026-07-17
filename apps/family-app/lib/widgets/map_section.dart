@@ -38,9 +38,22 @@ class _MapSectionState extends State<MapSection> {
     }
 
     // Load embedded AMap HTML
-    final htmlData = await rootBundle.loadString('assets/amap.html');
-    // Replace placeholder key with real key when configured
-    final html = htmlData.replaceAll('YOUR_AMAP_KEY', String.fromEnvironment('AMAP_KEY', defaultValue: ''));
+    String htmlData;
+    try {
+      htmlData = await rootBundle.loadString('assets/amap.html');
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _address = '地图资源加载失败';
+      });
+      return;
+    }
+
+    final amapKey = String.fromEnvironment('AMAP_KEY', defaultValue: '');
+    if (amapKey.isEmpty) {
+      debugPrint('⚠️ AMap key not configured — set via --dart-define=AMAP_KEY=your_key');
+    }
+    final html = htmlData.replaceAll('YOUR_AMAP_KEY', amapKey);
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -48,12 +61,9 @@ class _MapSectionState extends State<MapSection> {
       ..addJavaScriptChannel('Flutter', onMessageReceived: _handleJsMessage)
       ..loadRequest(Uri.parse('about:blank'));
 
-    // Inject initial map setup
+    // Inject HTML with placeholder location (actual init happens in window.onload)
     await _controller.loadHtmlString('''
       $html
-      <script>
-        initMap(31.2304, 121.4737); // Default: Shanghai
-      </script>
     ''');
 
     // Start periodic location updates
@@ -63,14 +73,16 @@ class _MapSectionState extends State<MapSection> {
   void _handleJsMessage(JavaScriptMessage message) {
     try {
       final data = jsonDecode(message.message) as Map<String, dynamic>;
-      if (data['event'] == 'map_ready') {
+      final event = data['event'] as String?;
+      if (event == 'map_ready') {
         setState(() => _loading = false);
-      }
-      if (data.containsKey('map_address')) {
-        setState(() => _address = data['map_address'] as String);
-      }
-      if (data.containsKey('map_time')) {
-        setState(() => _updateTime = data['map_time'] as String);
+      } else if (event == 'map_error') {
+        final msg = data['message'] as String? ?? '地图加载失败';
+        setState(() {
+          _loading = false;
+          _address = msg;
+        });
+        debugPrint('AMap error: $msg');
       }
     } catch (_) {}
   }
