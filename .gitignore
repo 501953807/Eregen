@@ -108,7 +108,6 @@ docs/superpowers/
 docs/logo/
 README.md
 *.md
-!CLAUDE.md
 
 # CI/CD workflows — internal tooling info
 .github/workflows/
