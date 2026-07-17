@@ -66,6 +66,23 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	// Check password complexity
+	hasUpper, hasLower, hasDigit := false, false, false
+	for _, r := range req.Password {
+		switch {
+		case r >= 'A' && r <= 'Z':
+			hasUpper = true
+		case r >= 'a' && r <= 'z':
+			hasLower = true
+		case r >= '0' && r <= '9':
+			hasDigit = true
+		}
+	}
+	if !hasUpper || !hasLower || !hasDigit {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "WEAK_PASSWORD", "message": "Password must be at least 8 chars with uppercase, lowercase, and digit"})
+		return
+	}
+
 	if req.Phone == nil && req.Email == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "IDENTIFIER_REQUIRED", "message": "Phone or email required"})
 		return

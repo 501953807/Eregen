@@ -16,6 +16,7 @@ require (
 )
 
 require (
+	eregen.dev/shared/validation v0.0.0
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
@@ -56,3 +57,5 @@ require (
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace eregen.dev/shared/validation => ../../shared/validation
