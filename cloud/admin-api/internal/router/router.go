@@ -3,19 +3,29 @@ package router
 import (
 	"database/sql"
 	"log"
+	"os"
+	"time"
+
 	"eregen.dev/admin-api/internal/handler"
 	"eregen.dev/admin-api/internal/middleware"
 	"eregen.dev/admin-api/internal/store"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // Setup wires up the Gin engine with all admin routes.
-func Setup(db *sql.DB) *gin.Engine {
+func Setup(db *sql.DB, logger *zap.Logger) *gin.Engine {
 	s := store.NewStore(db)
 	r := gin.Default()
 
-	r.Use(middleware.Auth())
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "change-me-in-production"
+	}
+	adminJWT := middleware.NewAdminJWT(jwtSecret, 24*time.Hour, logger)
+
+	r.Use(adminJWT.AuthMiddleware())
 
 	dashboard := handler.NewDashboardHandler(s)
 	device := handler.NewDeviceHandler(s)
