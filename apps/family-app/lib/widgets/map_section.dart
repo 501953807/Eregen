@@ -1,11 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter/services.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../common/theme.dart';
-import '../../api/client.dart';
 
-/// Real Google Maps widget showing elderly location with live geolocation.
+/// AMap (高德地图) widget using WebView + JS API v2.0 with GCJ-02 coordinate system.
 class MapSection extends StatefulWidget {
   const MapSection({super.key});
 
@@ -14,20 +15,19 @@ class MapSection extends StatefulWidget {
 }
 
 class _MapSectionState extends State<MapSection> {
-  GoogleMapController? _controller;
-  final Set<Marker> _markers = {};
-  final Set<Circle> _circles = {};
-  LatLng? _currentLocation;
-  bool _loading = true;
+  late final WebViewController _controller;
   String _address = '定位中...';
+  String _updateTime = '';
+  bool _loading = true;
+  Timer? _locationTimer;
 
   @override
   void initState() {
     super.initState();
-    _initMap();
+    _initWebView();
   }
 
-  Future<void> _initMap() async {
+  Future<void> _initWebView() async {
     final hasPermission = await _requestLocationPermission();
     if (!hasPermission) {
       setState(() {
@@ -36,7 +36,43 @@ class _MapSectionState extends State<MapSection> {
       });
       return;
     }
-    await _updateLocation();
+
+    // Load embedded AMap HTML
+    final htmlData = await rootBundle.loadString('assets/amap.html');
+    // Replace placeholder key with real key when configured
+    final html = htmlData.replaceAll('YOUR_AMAP_KEY', String.fromEnvironment('AMAP_KEY', defaultValue: ''));
+
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0xFFF0F2F5))
+      ..addJavaScriptChannel('Flutter', onMessageReceived: _handleJsMessage)
+      ..loadRequest(Uri.parse('about:blank'));
+
+    // Inject initial map setup
+    await _controller.loadHtmlString('''
+      $html
+      <script>
+        initMap(31.2304, 121.4737); // Default: Shanghai
+      </script>
+    ''');
+
+    // Start periodic location updates
+    _startLocationUpdates();
+  }
+
+  void _handleJsMessage(JavaScriptMessage message) {
+    try {
+      final data = jsonDecode(message.message) as Map<String, dynamic>;
+      if (data['event'] == 'map_ready') {
+        setState(() => _loading = false);
+      }
+      if (data.containsKey('map_address')) {
+        setState(() => _address = data['map_address'] as String);
+      }
+      if (data.containsKey('map_time')) {
+        setState(() => _updateTime = data['map_time'] as String);
+      }
+    } catch (_) {}
   }
 
   Future<bool> _requestLocationPermission() async {
@@ -55,29 +91,19 @@ class _MapSectionState extends State<MapSection> {
     return true;
   }
 
-  Future<void> _updateLocation() async {
-    try {
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      setState(() {
-        _currentLocation = LatLng(position.latitude, position.longitude);
-        _markers.clear();
-        _markers.add(Marker(
-          markerId: const MarkerId('elderly'),
-          position: _currentLocation!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-          infoWindow: const InfoWindow(title: '老人当前位置'),
-        ));
-        _loading = false;
-        _address = '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
-      });
-    } catch (e) {
-      setState(() {
-        _loading = false;
-        _address = '定位失败';
-      });
-    }
+  void _startLocationUpdates() {
+    _locationTimer?.cancel();
+    _locationTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
+      try {
+        final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+        // Update marker via JavaScript: [lng, lat] for AMap
+        _controller.runJavaScript('''
+          updateMarker(${position.longitude}, ${position.latitude});
+        ''');
+      } catch (_) {}
+    });
   }
 
   @override
@@ -101,18 +127,7 @@ class _MapSectionState extends State<MapSection> {
           children: [
             _loading
                 ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-                : GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: _currentLocation ?? const LatLng(31.2304, 121.4737),
-                      zoom: 15,
-                    ),
-                    markers: _markers,
-                    circles: _circles,
-                    onMapCreated: (controller) => _controller = controller,
-                    myLocationEnabled: true,
-                    myLocationButtonEnabled: false,
-                    zoomControlsEnabled: false,
-                  ),
+                : WebViewWidget(controller: _controller),
             Positioned(
               left: 12,
               right: 12,
@@ -128,9 +143,9 @@ class _MapSectionState extends State<MapSection> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('📍 $_address', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    Text(_address, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),
-                    Text('更新时间：${DateTime.now().toString().substring(0, 16)}',
+                    Text(_updateTime.isEmpty ? '更新时间：刚刚' : _updateTime,
                         style: const TextStyle(fontSize: 10, color: Color(0xFF999999))),
                   ],
                 ),
@@ -144,7 +159,7 @@ class _MapSectionState extends State<MapSection> {
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _locationTimer?.cancel();
     super.dispose();
   }
 }
