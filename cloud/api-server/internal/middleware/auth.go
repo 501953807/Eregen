@@ -176,6 +176,11 @@ func (a *JWTAuth) ResolveRuleID() gin.HandlerFunc {
 }
 
 func (a *JWTAuth) unauthorized(c *gin.Context, code, msg string) {
+	a.log.Warn("authentication failed",
+		zap.String("ip", c.ClientIP()),
+		zap.String("path", c.Request.URL.Path),
+		zap.String("code", code),
+	)
 	c.JSON(http.StatusUnauthorized, gin.H{
 		"code":    code,
 		"message": msg,
