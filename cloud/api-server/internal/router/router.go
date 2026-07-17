@@ -26,7 +26,16 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 	alertSvc := service.NewAlertService(pg, push, nats, log)
 	alertH := handler.NewAlertHandler(pg, alertSvc, log)
 
+	// Rate limiter — fail open if Redis is unavailable at startup
+	rateLimiter, rlErr := middleware.NewSlidingWindowLimiter(log)
+	if rlErr != nil {
+		log.Warn("rate limiter init failed (will fail open)", zap.Error(rlErr))
+	}
+
 	pub := r.Group("/api/v1/auth")
+	if rlErr == nil {
+		pub.Use(rateLimiter.Anonymous())
+	}
 	{
 		pub.POST("/register", authH.Register)
 		pub.POST("/login", authH.Login)
@@ -38,6 +47,9 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 
 	protected := r.Group("/api/v1")
 	protected.Use(auth.AuthMiddleware())
+	if rlErr == nil {
+		protected.Use(rateLimiter.Authenticated())
+	}
 	{
 		protected.GET("/users/me", userH.GetMe)
 		protected.PUT("/users/me", userH.UpdateMe)
