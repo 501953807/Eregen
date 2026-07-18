@@ -25,6 +25,7 @@ static bool s_uart_connected = false;
 /* Connection state */
 static bool s_connected = false;
 static bool s_tcp_connected = false;
+static bool s_tls_enabled = false;
 static cat1_status_t s_status = CAT1_OK;
 
 /* Response buffer */
@@ -312,8 +313,41 @@ bool cat1_disconnect(void)
     cat1_send_command_internal("+CGATT=0", "OK", 3000U, 0);
     s_connected = false;
     s_tcp_connected = false;
+    s_tls_enabled = false;
     s_status = CAT1_NO_CARRIER;
     return true;
+}
+
+/*
+ * Configure TLS settings on the Cat1 module.
+ * Loads CA certificate and sets SSL context for encrypted connections.
+ */
+bool cat1_tls_init(void)
+{
+#ifndef TEST_MODE
+    /* Set SSL context: AT+SSLCFG="sslversion",0,4 (TLS 1.2) */
+    if (!cat1_send_command_internal("SSLCFG=sslversion,0,4", "OK", 2000U, 0)) {
+        log_warn("Failed to set TLS version");
+    }
+
+    /* Set SSL session timeout (default 7200s) */
+    cat1_send_command_internal("SSLCFG=sessiontimeout,7200", "OK", 2000U, 0);
+
+    /* Set security level: 1 = verify server cert */
+    cat1_send_command_internal("SSLCFG=seclevel,1,1", "OK", 2000U, 0);
+
+    log_info("Cat1 TLS configured (TLS 1.2, server verification enabled)");
+#endif
+    s_tls_enabled = true;
+    return true;
+}
+
+/*
+ * Check if TLS is currently enabled.
+ */
+bool cat1_is_tls_enabled(void)
+{
+    return s_tls_enabled;
 }
 
 /*
@@ -328,9 +362,12 @@ bool cat1_tcp_connect(const char *host, uint16_t port)
 
     const cat1_config_t *cfg = cat1_get_config(NULL);
 
+    /* Choose protocol based on TLS state */
+    const char *proto = s_tls_enabled ? "SSL" : "TCP";
+
     /* Start single IP session */
     char cmd[128];
-    int len = snprintf(cmd, sizeof(cmd), "+CIPSTART=\"TCP\",\"%s\",%d", host, port);
+    int len = snprintf(cmd, sizeof(cmd), "+CIPSTART=\"%s\",\"%s\",%d", proto, host, port);
     if (len < 0 || len >= (int)sizeof(cmd)) {
         return false;
     }

@@ -33,9 +33,9 @@
 /* Prototype MQTT shared secret (Phase 1.2 — upgraded to TLS/cert pinning in Phase 2) */
 #define MQTT_SHARED_SECRET        "eregen_dev_prototype"
 
-/* MQTT broker endpoint (EMQX via Cat1 TCP) */
+/* MQTT broker endpoint (EMQX via Cat1 SSL/TLS) */
 #define MQTT_BROKER_HOST          "mqtt.eregen.dev"
-#define MQTT_BROKER_PORT          1883
+#define MQTT_BROKER_PORT          CAT1_MQTT_TLS_PORT
 
 /* Global device serial number (set once at boot) */
 char s_device_id[17];
@@ -320,9 +320,12 @@ static void vCommTask(void *pvParameters)
         log_info("Cat1 connected");
     }
 
-    /* Establish TCP connection to MQTT broker */
+    /* Initialize TLS (enables SSL mode for subsequent connections) */
+    cat1_tls_init();
+
+    /* Establish SSL/TCP connection to MQTT broker */
     if (!cat1_tcp_connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT)) {
-        log_warn("TCP connect to MQTT broker failed, will retry");
+        log_warn("SSL connect to MQTT broker failed, will retry");
     } else {
         /* Send MQTT CONNECT with device credentials */
         cat1_mqtt_connect(s_device_id, s_device_id, MQTT_SHARED_SECRET);

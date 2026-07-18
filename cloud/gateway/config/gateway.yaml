@@ -1,0 +1,31 @@
+# Eregen Gateway Configuration
+log_level: info
+mqtt:
+  broker: "tcp://emqx:1883"
+  client_id: "gateway-1"
+  username: "eregen"
+  password: "eregen_password"
+  keep_alive: 60s
+  tls:
+    enabled: true
+    ca_cert: "/etc/certs/ca.crt"
+    cert: "/etc/certs/server.crt"
+    key: "/etc/certs/server.key"
+nats:
+  url: "nats://nats:4222"
+  jetstream_domain: "EREGEN"
+  stream_name: "DEVICE_EVENTS"
+postgres:
+  dsn: "host=postgres port=5432 user=eregen password=eregen dbname=eregen sslmode=disable"
+redis:
+  address: "redis:6379"
+  password: ""
+  db: 0
+influxdb:
+  url: "http://influxdb:8086"
+  token: "eregen_token"
+  org: "eregen"
+  bucket: "health_data"
+auth:
+  secret_key: "dev-secret-key-change-in-production"
+  rate_limit: 100

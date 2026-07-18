@@ -21,8 +21,15 @@
 #define CAT1_DEFAULT_APN       "cmiot"
 
 /* MQTT broker settings */
-#define CAT1_MQTT_BROKER       "broker.emqx.io"
+#define CAT1_MQTT_BROKER       "mqtt.eregen.dev"
 #define CAT1_MQTT_PORT         1883
+#define CAT1_MQTT_TLS_PORT     8883
+
+/* TLS configuration for Cat1 module */
+#define CAT1_TLS_ENABLED       1
+#define CAT1_TLS_CA_CERT       "eregen_ca.crt"
+#define CAT1_TLS_CLIENT_CERT   "eregen_client.crt"
+#define CAT1_TLS_CLIENT_KEY    "eregen_client.key"
 
 /* Max retry count for AT commands */
 #define CAT1_MAX_RETRIES       3U
