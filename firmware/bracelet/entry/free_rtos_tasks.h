@@ -105,4 +105,22 @@ bool tasks_send_display(const display_cmd_t *cmd, uint32_t timeout_ms);
  */
 void* tasks_get_comm_handle(void);
 
+/**
+ * Get the handle to the health data message queue.
+ * @return Queue handle, or NULL if not initialized.
+ */
+QueueHandle_t tasks_get_health_queue(void);
+
+/**
+ * Get the handle to the location data message queue.
+ * @return Queue handle, or NULL if not initialized.
+ */
+QueueHandle_t tasks_get_location_queue(void);
+
+/**
+ * Get the handle to the SOS alert message queue.
+ * @return Queue handle, or NULL if not initialized.
+ */
+QueueHandle_t tasks_get_sos_queue(void);
+
 #endif /* FREERTOS_TASKS_H */

@@ -36,7 +36,7 @@ class RecentAlertsList extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border(left: BorderSide(color: borderColors[alert['type']]!, width: 3)),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 1)),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 1)),
             ],
           ),
           child: Row(

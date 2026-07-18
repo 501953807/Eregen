@@ -186,6 +186,11 @@ type UpdateElderlyRequest struct {
 	HealthTiers []string `json:"health_tiers"`
 }
 
+// BindDeviceRequest for linking a device to a user.
+type BindDeviceRequest struct {
+	DeviceID string `json:"device_id" binding:"required"`
+}
+
 // DeviceSettingsRequest for updating device configuration.
 type DeviceSettingsRequest struct {
 	Settings map[string]any `json:"settings"`

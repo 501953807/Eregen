@@ -11,6 +11,7 @@ import (
 
 	"eregen.dev/gateway/internal/handler"
 	"eregen.dev/gateway/internal/model"
+	"eregen.dev/gateway/internal/store"
 )
 
 // ParsedMessage holds a validated incoming MQTT message.
@@ -83,7 +84,7 @@ func (p *ParsedMessage) ToDeviceMessage() *model.DeviceMessage {
 }
 
 // OnMessage is the callback invoked by the MQTT client for each received packet.
-func OnMessage(h *handler.Handler) func(topic string, payload []byte) {
+func OnMessage(h *handler.Handler, db *store.Store) func(topic string, payload []byte) {
 	return func(topic string, payload []byte) {
 		deviceID := DeviceIDFromTopic(topic)
 		if deviceID == "" {
@@ -96,6 +97,15 @@ func OnMessage(h *handler.Handler) func(topic string, payload []byte) {
 			log.Printf("WARN: invalid message from %s: %v", deviceID, err)
 			return
 		}
+
+		// Auto-register device on first heartbeat (pending until user binds via app)
+		regCtx, regCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		if registered, regErr := db.RegisterDeviceAuto(regCtx, msg.DeviceID); regErr != nil {
+			log.Printf("ERROR: auto-register device %s: %v", msg.DeviceID, regErr)
+		} else if registered {
+			log.Printf("New device auto-registered: %s", msg.DeviceID)
+		}
+		regCancel()
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()

@@ -30,6 +30,13 @@
 #define DEVICE_ID_PREFIX          "BR-"
 #define DEVICE_ID_SERIAL_LEN      4U
 
+/* Prototype MQTT shared secret (Phase 1.2 — upgraded to TLS/cert pinning in Phase 2) */
+#define MQTT_SHARED_SECRET        "eregen_dev_prototype"
+
+/* MQTT broker endpoint (EMQX via Cat1 TCP) */
+#define MQTT_BROKER_HOST          "mqtt.eregen.dev"
+#define MQTT_BROKER_PORT          1883
+
 /* Global device serial number (set once at boot) */
 char s_device_id[17];
 
@@ -38,7 +45,7 @@ static uint32_t s_step_count = 0;
 static float s_last_accel_mag = 0.0f;
 
 /* GPS timestamp monotonically increasing counter */
-static uint32_t s_gps_timestamp = 0;
+uint32_t s_gps_timestamp = 0;
 
 /* Forward declarations */
 static void vSensorTask(void *pvParameters);
@@ -313,6 +320,14 @@ static void vCommTask(void *pvParameters)
         log_info("Cat1 connected");
     }
 
+    /* Establish TCP connection to MQTT broker */
+    if (!cat1_tcp_connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT)) {
+        log_warn("TCP connect to MQTT broker failed, will retry");
+    } else {
+        /* Send MQTT CONNECT with device credentials */
+        cat1_mqtt_connect(s_device_id, s_device_id, MQTT_SHARED_SECRET);
+    }
+
     /* Heartbeat interval */
     uint32_t heartbeat_counter = 0;
 
@@ -321,14 +336,17 @@ static void vCommTask(void *pvParameters)
         if (++heartbeat_counter >= 30) {
             heartbeat_counter = 0;
 
-            /* Read battery for heartbeat */
+            /* Build and publish heartbeat JSON to MQTT broker */
             battery_status_t batt = battery_get_status();
-
-            log_info("HEARTBEAT: dev_id=%s, bat=%u",
-                   s_device_id, (unsigned)batt.percent);
-            /* TODO: Publish heartbeat JSON to MQTT broker
-             * {"type":"heartbeat","dev_id":"BR-XXXX","bat":85}
-             */
+            char json_buf[80];
+            int len = snprintf(json_buf, sizeof(json_buf),
+                "{\"type\":\"heartbeat\",\"dev_id\":\"%s\",\"bat\":%u,\"ts\":%lu}",
+                s_device_id, (unsigned)batt.percent,
+                (unsigned long)s_gps_timestamp);
+            if (len > 0 && (uint32_t)len < (uint32_t)sizeof(json_buf)) {
+                cat1_mqtt_publish("eregen/device/bracelet/BR-CLOUD/up",
+                    (const uint8_t *)json_buf, (uint16_t)len);
+            }
         }
 
         /* Signal strength check */
@@ -339,18 +357,62 @@ static void vCommTask(void *pvParameters)
             log_info("RSSI: %ddBm", (int)rssi);
         }
 
-        /* Process incoming health data from queue (placeholder) */
-        health_data_t health_msg;
-        if (xQueueReceive(tasks_get_comm_handle() ?
-                          *(QueueHandle_t*)0 : NULL,
-                          &health_msg, pdMS_TO_TICKS(1)) == pdPASS) {
-            /* Data received from sensor task - publish to MQTT */
-            /* TODO: Implement MQTT publish */
+        /* Process incoming health data from queue */
+        {
+            static uint16_t s_health_msg_id = 0;
+            health_data_t health_msg;
+            if (xQueueReceive(tasks_get_health_queue(), &health_msg, pdMS_TO_TICKS(1)) == pdPASS) {
+                char json_buf[128];
+                int len = snprintf(json_buf, sizeof(json_buf),
+                    "{\"type\":\"health\",\"dev_id\":\"%s\",\"hr\":%u,\"spo2\":%u,\"step\":%lu,\"ts\":%lu}",
+                    s_device_id,
+                    (unsigned)health_msg.hr,
+                    (unsigned)health_msg.spo2,
+                    (unsigned long)health_msg.step_count,
+                    (unsigned long)s_gps_timestamp);
+                if (len > 0 && (uint32_t)len < (uint32_t)sizeof(json_buf)) {
+                    s_health_msg_id++;
+                    cat1_mqtt_publish("eregen/device/bracelet/BR-CLOUD/up",
+                        (const uint8_t *)json_buf, (uint16_t)len);
+                }
+            }
         }
 
-        /* Process incoming location data from queue (placeholder) */
-        location_data_t loc_msg;
-        /* Similar queue processing for location data */
+        /* Process incoming location data from queue */
+        {
+            static uint32_t s_loc_msg_id = 0;
+            location_data_t loc_msg;
+            if (xQueueReceive(tasks_get_location_queue(), &loc_msg, pdMS_TO_TICKS(1)) == pdPASS) {
+                char json_buf[128];
+                int len = snprintf(json_buf, sizeof(json_buf),
+                    "{\"type\":\"location\",\"dev_id\":\"%s\",\"lat\":%.6f,\"lon\":%.6f,\"acc\":%u,\"ts\":%lu}",
+                    s_device_id, loc_msg.lat, loc_msg.lon,
+                    (unsigned)loc_msg.accuracy,
+                    (unsigned long)loc_msg.timestamp);
+                if (len > 0 && (uint32_t)len < (uint32_t)sizeof(json_buf)) {
+                    s_loc_msg_id++;
+                    cat1_mqtt_publish("eregen/device/bracelet/BR-CLOUD/up",
+                        (const uint8_t *)json_buf, (uint16_t)len);
+                }
+            }
+        }
+
+        /* Process incoming SOS alert from queue */
+        {
+            sos_alert_t sos_msg;
+            if (xQueueReceive(tasks_get_sos_queue(), &sos_msg, pdMS_TO_TICKS(1)) == pdPASS) {
+                char json_buf[128];
+                int len = snprintf(json_buf, sizeof(json_buf),
+                    "{\"type\":\"sos\",\"dev_id\":\"%s\",\"lat\":%.6f,\"lon\":%.6f,\"ts\":%lu}",
+                    s_device_id, sos_msg.lat, sos_msg.lon,
+                    (unsigned long)sos_msg.timestamp);
+                if (len > 0 && (uint32_t)len < (uint32_t)sizeof(json_buf)) {
+                    cat1_mqtt_publish("eregen/device/bracelet/BR-CLOUD/up",
+                        (const uint8_t *)json_buf, (uint16_t)len);
+                    log_warn("SOS ALERT PUBLISHED: lat=%.6f, lon=%.6f", sos_msg.lat, sos_msg.lon);
+                }
+            }
+        }
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }

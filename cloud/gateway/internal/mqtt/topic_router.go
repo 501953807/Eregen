@@ -7,19 +7,22 @@ import (
 	"strings"
 
 	"eregen.dev/gateway/internal/handler"
+	"eregen.dev/gateway/internal/store"
 )
 
 // TopicRouter subscribes to device topics and routes parsed messages through the handler.
 type TopicRouter struct {
 	mqttClient *Client
 	handler    *handler.Handler
+	db         *store.Store
 }
 
 // NewTopicRouter creates a router that bridges MQTT device topics to the handler pipeline.
-func NewTopicRouter(mqttClient *Client, h *handler.Handler) *TopicRouter {
+func NewTopicRouter(mqttClient *Client, h *handler.Handler, db *store.Store) *TopicRouter {
 	return &TopicRouter{
 		mqttClient: mqttClient,
 		handler:    h,
+		db:         db,
 	}
 }
 
@@ -31,7 +34,7 @@ func (r *TopicRouter) Start() error {
 	}
 
 	for _, topic := range topics {
-		if err := r.mqttClient.Subscribe(topic, OnMessage(r.handler)); err != nil {
+		if err := r.mqttClient.Subscribe(topic, OnMessage(r.handler, r.db)); err != nil {
 			return err
 		}
 		log.Printf("Subscribed to topic: %s", topic)

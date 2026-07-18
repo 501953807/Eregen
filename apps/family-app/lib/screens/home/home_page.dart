@@ -5,7 +5,6 @@ import '../../widgets/elderly_selector.dart';
 import '../../widgets/map_section.dart';
 import '../../widgets/quick_status_card.dart';
 import '../../widgets/sos_button.dart';
-import '../../widgets/recent_alerts_list.dart';
 import '../../api/client.dart';
 import '../../models/health.dart';
 import '../../models/alert.dart';

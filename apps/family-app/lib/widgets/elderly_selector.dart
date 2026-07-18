@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../common/theme.dart';
-
 /// Elderly selector card shown under app header
 class ElderlySelector extends StatelessWidget {
   final String name;
@@ -20,7 +18,7 @@ class ElderlySelector extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
+          color: Colors.white.withValues(alpha:0.15),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -31,7 +29,7 @@ class ElderlySelector extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0xFFFFD93D),
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+                border: Border.all(color: Colors.white.withValues(alpha:0.5), width: 2),
               ),
               child: const Center(child: Text('👵', style: TextStyle(fontSize: 20))),
             ),
@@ -55,13 +53,13 @@ class ElderlySelector extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text('设备${isOnline ? "在线" : "离线"} · 最后更新 $lastUpdate',
-                          style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.9))),
+                          style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha:0.9))),
                     ],
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_drop_down, color: Colors.white.withOpacity(0.7)),
+            Icon(Icons.arrow_drop_down, color: Colors.white.withValues(alpha:0.7)),
           ],
         ),
       ),

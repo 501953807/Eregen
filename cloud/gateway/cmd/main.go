@@ -105,7 +105,7 @@ func main() {
 	}
 	defer mqttClient.Disconnect()
 
-	router := mqtt.NewTopicRouter(mqttClient, h)
+	router := mqtt.NewTopicRouter(mqttClient, h, dbStore)
 	if err := router.Start(); err != nil {
 		log.Fatalf("Failed to start topic router: %v", err)
 	}

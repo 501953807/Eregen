@@ -42,8 +42,9 @@ static void heartbeat_timer_callback(TimerHandle_t xTimer)
 
     char json_buf[128];
     int len = snprintf(json_buf, sizeof(json_buf),
-        "{\"type\":1,\"dev_id\":\"%s\",\"bat\":%u}",
-        s_device_id, (unsigned)batt.percent);
+        "{\"type\":\"heartbeat\",\"dev_id\":\"%s\",\"bat\":%u,\"ts\":%lu}",
+        s_device_id, (unsigned)batt.percent,
+        (unsigned long)s_gps_timestamp);
 
     if (len <= 0 || len >= (int)sizeof(json_buf)) {
         log_error("Heartbeat JSON build failed");
@@ -55,8 +56,9 @@ static void heartbeat_timer_callback(TimerHandle_t xTimer)
     json_buf[len + 1] = (char)(crc & 0xFF);
     json_buf[len + 2] = '\0';
 
-    /* TODO: Replace with actual MQTT publish when implemented */
-    log_info("HEARTBEAT: %s, bat=%u%%", s_device_id, (unsigned)batt.percent);
+    cat1_mqtt_publish("eregen/device/bracelet/BR-CLOUD/up",
+        (const uint8_t *)json_buf, (uint16_t)(len + 2));
+    log_info("HEARTBEAT PUBLISHED: %s, bat=%u%%", s_device_id, (unsigned)batt.percent);
 }
 
 void heartbeat_start(void)

@@ -6,6 +6,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -42,7 +43,7 @@ func (s *Store) Close() { s.pool.Close() }
 func (s *Store) DeviceExists(ctx context.Context, deviceID string) (bool, error) {
 	var exists bool
 	err := s.pool.QueryRow(ctx,
-		"SELECT EXISTS(SELECT 1 FROM devices WHERE dev_id = $1)", deviceID,
+		"SELECT EXISTS(SELECT 1 FROM devices WHERE device_id = $1)", deviceID,
 	).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("check device %s: %w", deviceID, err)
@@ -99,4 +100,33 @@ func (s *Store) RecentHeartbeat(ctx context.Context, deviceID string) (time.Time
 		return time.Time{}, fmt.Errorf("query heartbeat: %w", err)
 	}
 	return t, nil
+}
+
+// RegisterDeviceAuto creates a pending device record if it does not exist yet.
+// Returns true+nil when a new record was created, false+nil when it already existed.
+func (s *Store) RegisterDeviceAuto(ctx context.Context, deviceID string) (bool, error) {
+	var exists bool
+	err := s.pool.QueryRow(ctx,
+		"SELECT EXISTS(SELECT 1 FROM devices WHERE device_id = $1)", deviceID,
+	).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("check device %s: %w", deviceID, err)
+	}
+	if exists {
+		return false, nil
+	}
+
+	q := `INSERT INTO devices (device_id, device_type, tier, status, owner_user_id, settings, created_at, updated_at)
+		  VALUES ($1, $2, $3, 'pending', NULL, '{}', now(), now())`
+	deviceType := "bracelet"
+	tier := "starter"
+	if len(deviceID) >= 3 && deviceID[:2] == "PX" {
+		deviceType = "pillbox"
+	}
+	_, err = s.pool.Exec(ctx, q, deviceID, deviceType, tier)
+	if err != nil {
+		return false, fmt.Errorf("register device %s: %w", deviceID, err)
+	}
+	log.Printf("AUTO-REGISTERED device %s (type=%s, tier=%s)", deviceID, deviceType, tier)
+	return true, nil
 }

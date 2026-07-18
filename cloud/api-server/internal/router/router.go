@@ -63,6 +63,7 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 		devices := protected.Group("/devices")
 		{
 			devices.GET("", deviceH.List)
+			devices.POST("", deviceH.Bind)
 			devices.GET("/:device_id", auth.ResolveDeviceID(), deviceH.Get)
 			devices.PUT("/:device_id/settings", auth.ResolveDeviceID(), deviceH.UpdateSettings)
 			devices.DELETE("/:device_id", auth.ResolveDeviceID(), deviceH.Delete)

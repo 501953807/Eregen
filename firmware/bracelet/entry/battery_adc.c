@@ -215,7 +215,7 @@ battery_status_t battery_get_status(void)
 
     status.voltage_mv = battery_read_voltage_mv();
     status.percent = battery_calculate_percent(status.voltage_mv);
-    status.charging = false;  /* TODO: Detect charging state via GPIO */
+    status.charging = !gpio_bit_get(GPIOC, GPIO_PIN_5);
     status.critical = (status.voltage_mv < (uint16_t)(BATT_VOLTAGE_EMPTY * 1000.0f * 0.95f));
 
     return status;

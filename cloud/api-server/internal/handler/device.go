@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"eregen.dev/api-server/internal/middleware"
 	"eregen.dev/api-server/internal/model"
@@ -113,4 +114,46 @@ func (h *DeviceHandler) Delete(c *gin.Context) {
 
 	h.redis.InvalidateDevice(c.Request.Context(), deviceID)
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "Device unbound"})
+}
+
+// POST /api/v1/devices/bind — bind a device to the authenticated user
+func (h *DeviceHandler) Bind(c *gin.Context) {
+	userID, _ := c.Get(string(middleware.ContextUserID))
+
+	var req model.BindDeviceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_REQUEST", "message": "device_id required"})
+		return
+	}
+
+	// Parse device type and tier from device ID (BR-XXXX = bracelet, PX-XXXX = pillbox)
+	deviceType := "bracelet"
+	tier := "starter"
+	switch {
+	case strings.HasPrefix(req.DeviceID, "BR-"):
+		deviceType = "bracelet"
+	case strings.HasPrefix(req.DeviceID, "PX-"):
+		deviceType = "pillbox"
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_DEVICE_ID", "message": "Device ID must start with BR- or PX-"})
+		return
+	}
+
+	device, err := h.store.BindDevice(c.Request.Context(), req.DeviceID, userID.(string), deviceType, tier)
+	if err != nil {
+		// Device already bound to another user
+		existing, getErr := h.store.GetDevice(c.Request.Context(), req.DeviceID)
+		if getErr == nil && existing.OwnerUserID != userID.(string) {
+			c.JSON(http.StatusConflict, gin.H{"code": "DEVICE_BOUND", "message": "Device already bound to another account"})
+			return
+		}
+		h.log.Error("bind device", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "BIND_FAILED", "message": "Failed to bind device"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"code": "OK",
+		"data": device,
+	})
 }

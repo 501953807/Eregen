@@ -116,7 +116,7 @@ class _SOSButtonState extends State<SOSButton> with SingleTickerProviderStateMix
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFFF6B6B).withOpacity(0.3),
+                    color: const Color(0xFFFF6B6B).withValues(alpha: 0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -135,10 +135,10 @@ class _SOSButtonState extends State<SOSButton> with SingleTickerProviderStateMix
                           border: Border.all(
                             color: _isLongPressActive
                                 ? Colors.yellow
-                                : Colors.white.withOpacity(0.4),
+                                : Colors.white.withValues(alpha: 0.4),
                             width: _isLongPressActive ? 3 : 1,
                           ),
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                         ),
                         child: Center(
                           child: _isLongPressActive

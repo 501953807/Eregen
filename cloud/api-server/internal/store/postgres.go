@@ -267,6 +267,37 @@ func (p *Postgres) DeleteDevice(ctx context.Context, deviceID, ownerID string) e
 	return err
 }
 
+// BindDevice registers a new device under the given user and returns it.
+func (p *Postgres) BindDevice(ctx context.Context, deviceID, ownerUserID, deviceType, tier string) (*model.Device, error) {
+	d := &model.Device{
+		DeviceID:    deviceID,
+		DeviceType:  deviceType,
+		Tier:        tier,
+		OwnerUserID: ownerUserID,
+		Status:      model.DeviceOffline,
+		Settings:    map[string]any{},
+	}
+
+	settingsJSON, _ := json.Marshal(d.Settings)
+	q := `INSERT INTO devices (id, device_id, device_type, tier, owner_user_id, status, last_seen, created_at, updated_at, settings)
+		  VALUES ($1, $2, $3, $4, $5, $6, NULL, $7, $8, $9)
+		  ON CONFLICT (device_id) DO NOTHING`
+	_, err := p.pool.Exec(ctx, q,
+		uuid.New().String(), d.DeviceID, d.DeviceType, d.Tier, d.OwnerUserID,
+		d.Status, d.CreatedAt, d.UpdatedAt, settingsJSON,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return the bound device (may already exist from a prior bind)
+	existing, getErr := p.GetDevice(ctx, deviceID)
+	if getErr != nil {
+		return d, nil
+	}
+	return existing, nil
+}
+
 // ---------- HealthRecord ----------
 
 func (p *Postgres) CreateHealthRecord(ctx context.Context, r *model.HealthRecord) error {

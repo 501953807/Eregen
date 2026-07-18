@@ -62,7 +62,7 @@ class _NavItem extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppTheme.primary,
                   shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.3), blurRadius: 12)],
+                  boxShadow: [BoxShadow(color: AppTheme.primary.withValues(alpha:0.3), blurRadius: 12)],
                 ),
                 child: Icon(tab.activeIcon, color: Colors.white, size: 22),
               )

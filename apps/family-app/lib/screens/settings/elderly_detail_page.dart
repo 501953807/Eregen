@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../common/theme.dart';
 import '../../api/client.dart';
-import '../../models/elderly.dart';
 
 /// Elderly person detail screen — health overview, devices, medication rules.
 class ElderlyDetailPage extends StatefulWidget {
@@ -14,8 +13,6 @@ class ElderlyDetailPage extends StatefulWidget {
 class _ElderlyDetailPageState extends State<ElderlyDetailPage> {
   bool _loading = true;
   Map<String, dynamic>? _healthStats;
-  List<Map<String, dynamic>> _devices = [];
-  List<Map<String, dynamic>> _medRules = [];
 
   @override
   void initState() {
@@ -61,7 +58,7 @@ class _ElderlyDetailPageState extends State<ElderlyDetailPage> {
                     decoration: BoxDecoration(
                       color: AppTheme.bgCard,
                       borderRadius: BorderRadius.circular(14),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
                     ),
                     child: Row(
                       children: [
@@ -174,7 +171,7 @@ class _ElderlyDetailPageState extends State<ElderlyDetailPage> {
   Widget _statusChip(String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
       child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
     );
   }

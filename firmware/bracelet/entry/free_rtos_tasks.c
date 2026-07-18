@@ -114,3 +114,18 @@ void tasks_set_comm_handle(TaskHandle_t handle)
 {
     s_comm_task_handle = handle;
 }
+
+QueueHandle_t tasks_get_health_queue(void)
+{
+    return s_health_queue;
+}
+
+QueueHandle_t tasks_get_location_queue(void)
+{
+    return s_location_queue;
+}
+
+QueueHandle_t tasks_get_sos_queue(void)
+{
+    return s_sos_queue;
+}
