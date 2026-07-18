@@ -22,10 +22,10 @@
                 {{ row.created_at ? new Date(row.created_at).toLocaleDateString() : '—' }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" fixed="right" min-width="220">
+            <el-table-column label="操作" fixed="right" min-width="160">
               <template #default="{ row }">
+                <el-button link type="primary" size="small" @click="openSidePanel(row)">详情</el-button>
                 <el-button link type="primary" size="small" @click="handleEditUser(row)">编辑</el-button>
-                <el-button link type="primary" size="small" @click="handleChangeRole(row)">权限</el-button>
                 <el-button link type="danger" size="small" @click="handleDisableUser(row)">禁用</el-button>
               </template>
             </el-table-column>
@@ -59,7 +59,7 @@
             </el-table-column>
             <el-table-column label="操作" fixed="right" min-width="120">
               <template #default="{ row }">
-                <el-button link type="primary" size="small" @click="handleViewElderly(row)">查看详情</el-button>
+                <el-button link type="primary" size="small" @click="openElderlyPanel(row)">详情</el-button>
                 <el-button link type="primary" size="small" @click="handleEditElderly(row)">编辑</el-button>
               </template>
             </el-table-column>
@@ -131,6 +131,56 @@
         <el-descriptions-item label="更新时间">{{ viewElderly.updated_at ? new Date(viewElderly.updated_at).toLocaleDateString() : '—' }}</el-descriptions-item>
       </el-descriptions>
     </el-dialog>
+
+    <!-- Side Panel for User Details — v2 prototype enhancement -->
+    <div v-if="showSidePanel" class="side-panel-overlay" @click.self="showSidePanel = false">
+      <div class="side-panel">
+        <div class="side-panel-header">
+          <div>
+            <div style="font-size:16px;font-weight:700;">{{ selectedUser?.name || selectedElderly?.name }}</div>
+            <div style="font-size:12px;color:#909399;margin-top:2px;">{{ selectedUser ? roleLabel(selectedUser.role) : (selectedElderly ? '老人档案' : '') }}</div>
+          </div>
+          <el-button link type="primary" @click="showSidePanel = false"><el-icon><Close /></el-icon></el-button>
+        </div>
+
+        <!-- User info cards -->
+        <div class="side-panel-section">
+          <div class="section-title">基本信息</div>
+          <el-descriptions :column="1" size="small" border>
+            <el-descriptions-item label="手机号">{{ selectedUser?.phone || '—' }}</el-descriptions-item>
+            <el-descriptions-item label="邮箱">{{ selectedUser?.email || '—' }}</el-descriptions-item>
+            <el-descriptions-item label="注册时间">{{ selectedUser?.created_at ? new Date(selectedUser.created_at).toLocaleDateString() : (selectedElderly?.created_at ? new Date(selectedElderly.created_at).toLocaleDateString() : '—') }}</el-descriptions-item>
+            <el-descriptions-item label="设备数">{{ (selectedUser?.elderly_profiles || []).length }} 位老人</el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <!-- Activity Timeline -->
+        <div class="side-panel-section">
+          <div class="section-title">活动记录</div>
+          <div class="timeline">
+            <div v-for="(item, i) in activityTimeline" :key="i" class="timeline-item">
+              <div class="timeline-dot" :style="{ background: item.color }"></div>
+              <div class="timeline-content">
+                <div class="timeline-title">{{ item.title }}</div>
+                <div class="timeline-time">{{ item.time }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Billing History -->
+        <div class="side-panel-section">
+          <div class="section-title">订阅记录</div>
+          <div v-for="(sub, i) in billingHistory" :key="i" class="billing-item">
+            <div class="billing-row">
+              <span class="billing-plan">{{ sub.plan }}</span>
+              <el-tag :type="sub.status === 'active' ? 'success' : 'info'" size="small">{{ sub.statusText }}</el-tag>
+            </div>
+            <div class="billing-detail">{{ sub.date }} · ¥{{ sub.amount }}/月</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -138,6 +188,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Close } from '@element-plus/icons-vue'
 import { useUsersStore } from '@/stores/users'
 import { usersApi } from '@/api/users'
 import type { User, ElderlyProfile } from '@/types'
@@ -265,6 +316,37 @@ function handleViewElderly(row: ElderlyProfile) {
   showViewElderlyDialog.value = true
 }
 
+// Side panel — v2 prototype enhancement
+const showSidePanel = ref(false)
+const selectedUser = ref<User | null>(null)
+const selectedElderly = ref<ElderlyProfile | null>(null)
+
+function openSidePanel(user: User) {
+  selectedUser.value = user
+  selectedElderly.value = null
+  showSidePanel.value = true
+}
+
+function openElderlyPanel(elderly: ElderlyProfile) {
+  selectedElderly.value = elderly
+  selectedUser.value = null
+  showSidePanel.value = true
+}
+
+const activityTimeline = ref([
+  { title: '设备上线：手环 BR-0042', time: '2026-07-18 14:32', color: '#67C23A' },
+  { title: '健康数据同步：心率 72bpm', time: '2026-07-18 14:30', color: '#409EFF' },
+  { title: 'SOS告警（误触已取消）', time: '2026-07-18 10:15', color: '#F56C6C' },
+  { title: '用药确认：早餐药已服用', time: '2026-07-18 08:05', color: '#E6A23C' },
+  { title: '家属APP登录', time: '2026-07-17 22:10', color: '#909399' },
+])
+
+const billingHistory = ref([
+  { plan: 'Plus 套餐', statusText: '活跃中', status: 'active', date: '2026-06-18', amount: '59' },
+  { plan: 'Plus 套餐', statusText: '已完成', status: 'active', date: '2026-05-18', amount: '59' },
+  { plan: 'Starter 套餐', statusText: '已完成', status: 'active', date: '2026-04-18', amount: '29' },
+])
+
 function handleEditElderly(row: ElderlyProfile) {
   router.push({ path: '/elderly' })
 }
@@ -286,4 +368,38 @@ onMounted(async () => {
 .tab-toolbar { display: flex; align-items: center; }
 :deep(.el-tabs--border-card) { border: none; box-shadow: none; }
 :deep(.el-tabs--border-card > .el-tabs__header) { background: #fafafa; border-bottom: 1px solid #e8e8e8; }
+
+/* Side Panel — v2 */
+.side-panel-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.3); z-index: 2000;
+  display: flex; justify-content: flex-end;
+}
+.side-panel {
+  width: 420px; max-width: 90vw; background: #fff;
+  overflow-y: auto; box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+  padding: 20px; display: flex; flex-direction: column; gap: 20px;
+}
+.side-panel-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding-bottom: 16px; border-bottom: 1px solid #EBEEF5;
+}
+.section-title {
+  font-size: 14px; font-weight: 700; color: #303133; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.timeline-item { display: flex; gap: 12px; position: relative; padding-bottom: 16px; }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
+}
+.timeline-content { flex: 1; }
+.timeline-title { font-size: 13px; color: #303133; }
+.timeline-time { font-size: 11px; color: #909399; margin-top: 2px; }
+.billing-item { padding: 10px 12px; background: #FAFAFA; border-radius: 8px; margin-bottom: 8px; }
+.billing-item:last-child { margin-bottom: 0; }
+.billing-row { display: flex; justify-content: space-between; align-items: center; }
+.billing-plan { font-size: 13px; font-weight: 600; }
+.billing-detail { font-size: 11px; color: #909399; margin-top: 4px; }
 </style>

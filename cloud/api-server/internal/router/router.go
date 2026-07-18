@@ -30,6 +30,10 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 	deviceH := handler.NewDeviceHandler(pg, redis, log)
 	alertSvc := service.NewAlertService(pg, push, nats, log)
 	alertH := handler.NewAlertHandler(pg, alertSvc, log)
+	insightEngine := service.NewInsightEngine(pg, log)
+	insightsH := handler.NewInsightsHandler(insightEngine, log)
+	otaSvc := service.NewOTAService(pg, nats, log)
+	otaH := handler.NewOTAHandler(otaSvc, log)
 
 	rateLimiter, rlErr := middleware.NewSlidingWindowLimiter(log)
 	if rlErr != nil {
@@ -45,6 +49,8 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 		pub.POST("/login", authH.Login)
 		pub.POST("/refresh", authH.Refresh)
 		pub.POST("/logout", authH.Logout)
+		pub.POST("/revoke-all-sessions", authH.RevokeAllSessions)
+		pub.POST("/device/register", authH.RegisterDevice)
 		pub.POST("/send-otp", authH.SendOTP)
 		pub.POST("/forgot-password", authH.ForgotPassword)
 	}
@@ -96,8 +102,14 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 				elderly.DELETE("/medication/rules/:rule_id", auth.ResolveRuleID(), medDeleteRule(pg))
 				elderly.GET("/medication/today", medToday(pg))
 				elderly.GET("/medication/history", medHistory(pg))
+
+					insights := elderly.Group("/insights")
+					{
+						insights.GET("/daily", insightsH.DailyInsight)
+						insights.GET("/weekly", insightsH.WeeklyInsight)
+					}
+				}
 			}
-		}
 
 		alerts := protected.Group("/alerts")
 		{
@@ -105,6 +117,18 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 			alerts.GET("/:alert_id", auth.ResolveAlertID(), alertH.Get)
 			alerts.PUT("/:alert_id", auth.ResolveAlertID(), alertH.Update)
 			alerts.POST("/sos/call", alertH.SOSCall)
+		}
+
+		admin := protected.Group("/admin")
+		{
+			firmware := admin.Group("/firmware")
+			{
+				firmware.POST("", otaH.CreateFirmware)
+				firmware.GET("", otaH.ListFirmware)
+				firmware.GET("/:id", otaH.GetFirmware)
+			}
+			admin.POST("/ota/push", otaH.PushOTA)
+			admin.GET("/ota/jobs/:id", otaH.GetOTAJob)
 		}
 	}
 

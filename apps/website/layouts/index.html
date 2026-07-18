@@ -129,6 +129,109 @@
     </div>
 </section>
 
+<!-- Product Comparison Section -->
+<section class="section" id="comparison" style="background:white;">
+    <div class="section-inner">
+        <div class="section-header">
+            <div class="section-tag">产品对比</div>
+            <h2 class="section-title">选择最适合您的方案</h2>
+            <p class="section-desc">三档手环、三档药盒，每一档都共享同一生态系统，可随时升级。</p>
+        </div>
+        <div class="comparison-table-wrap">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th class="feat-col">功能</th>
+                        <th class="tier-col starter-col">Starter<br><span class="price-tag">¥399</span></th>
+                        <th class="tier-col plus-col">Plus<br><span class="price-tag">¥599</span></th>
+                        <th class="tier-col pro-col">Pro<br><span class="price-tag">¥899</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td class="feat-col">心率监测</td><td>✅</td><td>✅</td><td>✅</td></tr>
+                    <tr><td class="feat-col">血氧检测</td><td>✅</td><td>✅</td><td>✅</td></tr>
+                    <tr><td class="feat-col">GPS 定位</td><td>✅</td><td>✅</td><td>高精度多星</td></tr>
+                    <tr><td class="feat-col">跌倒检测</td><td>—</td><td>✅</td><td>✅</td></tr>
+                    <tr><td class="feat-col">电子围栏</td><td>—</td><td>✅</td><td>✅</td></tr>
+                    <tr><td class="feat-col">ECG 心电</td><td>—</td><td>—</td><td>✅</td></tr>
+                    <tr><td class="feat-col">AMOLED 彩屏</td><td>—</td><td>TFT 屏</td><td>AMOLED</td></tr>
+                    <tr><td class="feat-col">金属机身</td><td>—</td><td>塑料</td><td>铝合金</td></tr>
+                    <tr><td class="feat-col">续航</td><td>5 天</td><td>7 天</td><td>10 天</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- Architecture Section -->
+<section class="section" id="architecture" style="background:var(--gray-50);">
+    <div class="section-inner">
+        <div class="section-header">
+            <div class="section-tag">技术架构</div>
+            <h2 class="section-title">端到端全链路设计</h2>
+            <p class="section-desc">从传感器到云端到应用，每一个环节都是自研。</p>
+        </div>
+        <div class="arch-flow">
+            <div class="arch-step">
+                <div class="arch-icon">⌚</div>
+                <h4>硬件层</h4>
+                <p>GD32 / ESP32<br>FreeRTOS / ESP-IDF</p>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-step">
+                <div class="arch-icon">📡</div>
+                <h4>通信层</h4>
+                <p>Cat1 / WiFi<br>MQTT over TLS</p>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-step">
+                <div class="arch-icon">☁️</div>
+                <h4>云端层</h4>
+                <p>Go + Gin<br>NATS + PostgreSQL</p>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-step">
+                <div class="arch-icon">🤖</div>
+                <h4>AI 引擎</h4>
+                <p>趋势分析<br>异常检测</p>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-step">
+                <div class="arch-icon">📱</div>
+                <h4>应用层</h4>
+                <p>Flutter APP<br>Vue 3 管理后台</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="section" id="testimonials" style="background:white;">
+    <div class="section-inner">
+        <div class="section-header">
+            <div class="section-tag">用户心声</div>
+            <h2 class="section-title">来自真实家庭的反馈</h2>
+        </div>
+        <div class="testimonial-grid">
+            <div class="testimonial-card">
+                <div class="stars">★★★★★</div>
+                <p>"妈妈一个人住在老家，戴上手环后我每天都能看到她的位置和心率。有一次她摔倒了，系统立刻通知了我，及时送到了医院。"</p>
+                <div class="author"><strong>李女士</strong><span>上海 · 子女版用户</span></div>
+            </div>
+            <div class="testimonial-card">
+                <div class="stars">★★★★★</div>
+                <p>"爷爷的用药一直让我担心。智能药盒会语音提醒，如果没吃，APP 上马上会有通知。再也不用每次打电话问了。"</p>
+                <div class="author"><strong>张先生</strong><span>北京 · 智能药盒用户</span></div>
+            </div>
+            <div class="testimonial-card">
+                <div class="stars">★★★★★</div>
+                <p>"作为养老院院长，管理后台让我们能同时监控 200 多位老人的健康数据。电子围栏功能特别实用，老人走出安全范围立刻告警。"</p>
+                <div class="author"><strong>王院长</strong><span>杭州 · 机构版用户</span></div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- CTA Section -->
 <section class="section cta-section">
     <div class="section-inner">
@@ -137,6 +240,11 @@
         <div class="cta-actions">
             <a href="#" class="btn btn-white btn-lg">免费注册试用</a>
             <a href="#" class="btn btn-ghost btn-lg">联系销售</a>
+        </div>
+        <div class="cta-trust">
+            <span>🔒 数据加密传输</span>
+            <span>🆓 永久免费基础版</span>
+            <span>📞 7×24 技术支持</span>
         </div>
     </div>
 </section>

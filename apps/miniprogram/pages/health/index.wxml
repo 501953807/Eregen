@@ -1,0 +1,151 @@
+<!-- pages/health/index.wxml -->
+<view class="container">
+  <!-- Header -->
+  <view class="header">
+    <view class="header-back" bindtap="goBack">
+      <image class="back-icon" src="/assets/back.png" mode="aspectFit"></image>
+    </view>
+    <text class="header-title">健康数据</text>
+    <view class="header-share" bindtap="shareHealth">
+      <image src="/assets/share.png" mode="aspectFit" class="share-icon"></image>
+    </view>
+  </view>
+
+  <scroll-view class="scroll-content" scroll-y>
+    <!-- Risk Assessment Card -->
+    <view class="risk-card">
+      <text class="risk-label">综合健康风险评估</text>
+      <view class="risk-gauge">
+        <canvas canvas-id="riskGauge" class="gauge-canvas" style="width:200rpx;height:120rpx;"></canvas>
+        <view class="risk-score-wrap">
+          <text class="risk-score">{{riskScore}}</text>
+          <text class="risk-max">/ 100</text>
+        </view>
+      </view>
+      <text class="risk-level" style="color:{{riskLevelColor}}">{{riskLevel}}</text>
+      <text class="risk-summary">{{riskSummary}}</text>
+    </view>
+
+    <!-- Time Range Selector -->
+    <view class="time-selector">
+      <view wx:for="{{timeRanges}}" wx:key="label"
+            class="time-chip {{currentRange === item.label ? 'active' : ''}}"
+            bindtap="selectTimeRange" data-range="{{item.label}}">
+        <text>{{item.label}}</text>
+      </view>
+    </view>
+
+    <!-- Health Metrics Grid -->
+    <view class="metrics-grid">
+      <view class="metric-item">
+        <view class="metric-icon hr-bg">
+          <text class="metric-emoji">❤️</text>
+        </view>
+        <text class="metric-value">{{latestHR || '--'}}</text>
+        <text class="metric-unit">bpm</text>
+        <text class="metric-trend" style="color:{{hrTrendColor}}">{{hrTrend}}</text>
+      </view>
+      <view class="metric-item">
+        <view class="metric-icon spo2-bg">
+          <text class="metric-emoji">🫁</text>
+        </view>
+        <text class="metric-value">{{latestSPO2 || '--'}}</text>
+        <text class="metric-unit">%</text>
+        <text class="metric-trend" style="color:{{spo2TrendColor}}">{{spo2Trend}}</text>
+      </view>
+      <view class="metric-item">
+        <view class="metric-icon steps-bg">
+          <text class="metric-emoji">🚶</text>
+        </view>
+        <text class="metric-value">{{formatSteps}}</text>
+        <text class="metric-unit">步</text>
+        <text class="metric-trend" style="color:{{stepsTrendColor}}">{{stepsTrend}}</text>
+      </view>
+      <view class="metric-item">
+        <view class="metric-icon sleep-bg">
+          <text class="metric-emoji">😴</text>
+        </view>
+        <text class="metric-value">{{latestSleep || '--'}}</text>
+        <text class="metric-unit">小时</text>
+        <text class="metric-trend" style="color:{{sleepTrendColor}}">{{sleepTrend}}</text>
+      </view>
+    </view>
+
+    <!-- Blood Pressure Detail -->
+    <view wx:if="{{hasBP}}" class="bp-section">
+      <text class="section-title">血压详情</text>
+      <view class="bp-card">
+        <view class="bp-half">
+          <text class="bp-number">{{latestSys || '--'}}</text>
+          <text class="bp-label">收缩压</text>
+          <text class="bp-status" style="color:{{sysColor}}">{{sysStatus}}</text>
+        </view>
+        <view class="bp-divider"></view>
+        <view class="bp-half">
+          <text class="bp-number">{{latestDia || '--'}}</text>
+          <text class="bp-label">舒张压</text>
+          <text class="bp-status" style="color:{{diaColor}}">{{diaStatus}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Steps Summary -->
+    <view class="steps-summary">
+      <view class="step-stat">
+        <text class="step-num">{{todaySteps}}</text>
+        <text class="step-label">今日步数</text>
+      </view>
+      <view class="step-stat">
+        <text class="step-num">{{calories}}</text>
+        <text class="step-label">千卡消耗</text>
+      </view>
+      <view class="step-stat">
+        <text class="step-num">{{activeMin}}</text>
+        <text class="step-label">活动分钟</text>
+      </view>
+    </view>
+
+    <!-- Weekly Trend Chart -->
+    <view class="trend-section">
+      <text class="section-title">7日趋势</text>
+      <canvas canvas-id="trendChart" class="trend-canvas" style="width:750rpx;height:300rpx;"></canvas>
+    </view>
+
+    <!-- AI Insight Banner -->
+    <view class="ai-insight">
+      <view class="ai-icon-wrap">
+        <text class="ai-icon">🤖</text>
+      </view>
+      <view class="ai-content">
+        <text class="ai-title">AI 健康洞察</text>
+        <text class="ai-text">{{aiInsightText}}</text>
+      </view>
+    </view>
+
+    <!-- Intergenerational Comparison -->
+    <view class="compare-section">
+      <view class="compare-header">
+        <text class="section-title">同龄人对比</text>
+        <view class="compare-toggle" bindtap="toggleCompare">
+          <text class="toggle-text {{showCompare ? 'on' : 'off'}}">{{showCompare ? '已开启' : '对比'}}</text>
+        </view>
+      </view>
+      <view wx:if="{{showCompare}}" class="compare-list">
+        <view wx:for="{{compareData}}" wx:key="label" class="compare-row">
+          <text class="compare-label">{{item.label}}</text>
+          <view class="compare-bar-wrap">
+            <view class="compare-bar-bg">
+              <view class="compare-bar-fill" style="width:{{item.barWidth}}%;background:{{item.isBetter ? '#4CAF50' : '#FF6B6B'}};"></view>
+            </view>
+          </view>
+          <text class="compare-value">{{item.value}}{{item.unit}}</text>
+          <text class="compare-diff" style="color:{{item.isBetter ? '#4CAF50' : '#FF6B6B'}}">
+            {{item.diffText}}
+          </text>
+        </view>
+      </view>
+    </view>
+
+    <view class="bottom-spacer"></view>
+  </scroll-view>
+</view>

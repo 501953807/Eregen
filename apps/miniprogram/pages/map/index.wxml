@@ -1,0 +1,121 @@
+<!-- pages/map/index.wxml -->
+<view class="container">
+  <!-- Header -->
+  <view class="header">
+    <view class="header-back" bindtap="goBack">
+      <text class="back-text">‹</text>
+    </view>
+    <view class="header-center">
+      <text class="elderly-name">{{elderlyName}}</text>
+      <text class="location-time">{{locationTime}}</text>
+    </view>
+    <view class="header-pin" bindtap="toggleFence">
+      <text class="pin-icon">{{showFence ? '🔒' : '📍'}}</text>
+    </view>
+  </view>
+
+  <!-- Map Canvas -->
+  <view class="map-container">
+    <map
+      id="eregenMap"
+      class="map-view"
+      latitude="{{latitude}}"
+      longitude="{{longitude}}"
+      scale="16"
+      show-location="true"
+      show-compass="true"
+      show-scale="true"
+      enable-overlooking="true"
+      enable-zoom="true"
+      enable-scroll="true"
+      bindregionchange="onRegionChange"
+      bindmarkertap="onMarkerTap"
+    >
+      <!-- Elder marker -->
+      <marker
+        id="elder"
+        iconPath="/assets/marker/elder.png"
+        latitude="{{latitude}}"
+        longitude="{{longitude}}"
+        width="30"
+        height="30"
+        anchor="0.5 0.5"
+      />
+
+      <!-- Geofence markers -->
+      <label wx:if="{{showFence && geofences.length > 0}}" class="geofence-label">
+        <view class="geofence-info">
+          <text class="fence-title">电子围栏</text>
+          <text class="fence-count">{{geofences.length}} 个围栏</text>
+        </view>
+      </label>
+    </map>
+
+    <!-- Geofence overlay -->
+    <view wx:if="{{showFence && geofences.length > 0}}" class="fence-overlay">
+      <view wx:for="{{geofences}}" wx:key="id" class="fence-item">
+        <text class="fence-name">{{item.name}}</text>
+        <text class="fence-radius">半径 {{item.radiusMeters}}m</text>
+        <view class="fence-status {{item.active ? 'active' : 'inactive'}}">
+          <text>{{item.active ? '启用中' : '已关闭'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Bottom sheet -->
+    <view class="bottom-sheet">
+      <view class="sheet-header">
+        <view class="sheet-location">
+          <text class="sheet-title">实时位置</text>
+          <view class="online-dot"></view>
+          <text class="sheet-online">在线</text>
+        </view>
+        <view class="sheet-actions">
+          <view class="action-btn" bindtap="callElderly">
+            <text class="action-icon">📞</text>
+            <text class="action-text">呼叫</text>
+          </view>
+          <view class="action-btn" bindtap="shareLocation">
+            <text class="action-icon">📤</text>
+            <text class="action-text">分享</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="address-card">
+        <text class="address-text">{{address}}</text>
+      </view>
+
+      <view class="history-section">
+        <view class="history-header">
+          <text class="section-title">移动轨迹</text>
+          <view class="time-selector">
+            <view wx:for="{{timeOptions}}" wx:key="label"
+                  class="time-option {{currentRange === item.value ? 'active' : ''}}"
+                  bindtap="selectTimeRange" data-value="{{item.value}}">
+              <text>{{item.label}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="history-chart">
+          <canvas canvas-id="trajectoryChart" class="chart-canvas" style="width:702rpx;height:200rpx;"></canvas>
+        </view>
+      </view>
+
+      <view class="nearby-section">
+        <text class="section-title">附近安全点</text>
+        <scroll-view class="nearby-scroll" scroll-x enable-flex>
+          <view wx:for="{{nearbyPlaces}}" wx:key="name" class="nearby-card" bindtap="showPlaceDetail" data-place="{{item}}">
+            <text class="place-icon">{{item.icon}}</text>
+            <text class="place-name">{{item.name}}</text>
+            <text class="place-dist">{{item.distance}}m</text>
+          </view>
+        </scroll-view>
+      </view>
+
+      <view class="sheet-footer">
+        <button class="center-button" bindtap="centerOnElder">回到老人位置</button>
+      </view>
+    </view>
+  </view>
+</view>

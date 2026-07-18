@@ -121,6 +121,48 @@ class _MedicationPageState extends State<MedicationPage> {
                     );
                   }, childCount: _todayRules.length)),
 
+                // Inventory tracking section
+                SliverToBoxAdapter(
+                  child: Padding(padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 12), child: const Text('药品库存', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: Column(children: [
+                    _inventoryBar('降压药', 45, 60, const Color(0xFF4CAF50)),
+                    const SizedBox(height: 8),
+                    _inventoryBar('维生素D', 12, 30, const Color(0xFFFFA726)),
+                    const SizedBox(height: 8),
+                    _inventoryBar('钙片', 3, 60, const Color(0xFFFF6B6B)),
+                    const SizedBox(height: 8),
+                    _inventoryBar('降糖药', 0, 30, const Color(0xFFFF6B6B)),
+                  ])),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+                // Adherence heatmap
+                SliverToBoxAdapter(
+                  child: Padding(padding: const EdgeInsets.only(left: 20, right: 20, bottom: 12), child: const Text('服药依从性', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: AppTheme.bgCard, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFF0F0F0))),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      const Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        Text('近7日服药记录', style: TextStyle(fontSize: 12, color: Color(0xFF999999))),
+                        Text('3/4 已服', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF4CAF50))),
+                      ]),
+                      const SizedBox(height: 12),
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        ...'一二三四五六日'.split('').map((d) => SizedBox(width: 38, child: Center(child: Text(d, style: const TextStyle(fontSize: 10, color: Color(0xFFAAAAAA)))))),
+                      ]),
+                      const SizedBox(height: 6),
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        ...List.generate(7, (i) => _heatCell(i % 3 == 0 ? 'missed' : (i % 3 == 1 ? 'partial' : 'full'))),
+                      ]),
+                    ]),
+                  )),
+                ),
+
                 // Remote config section placeholder
                 SliverToBoxAdapter(
                   child: Padding(padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 12), child: const Text('远程配置', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
@@ -173,5 +215,62 @@ class _MedicationPageState extends State<MedicationPage> {
         ],
       ]))),
     ]));
+  }
+
+  /// Inventory stock bar — v2 prototype enhancement
+  Widget _inventoryBar(String name, int remaining, int total, Color levelColor) {
+    final pct = total > 0 ? remaining / total : 0.0;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.bgCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF0F0F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              Text('$remaining / $total', style: const TextStyle(fontSize: 12, color: Color(0xFF888888))),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: pct,
+              minHeight: 6,
+              backgroundColor: const Color(0xFFF0F0F5),
+              valueColor: AlwaysStoppedAnimation<Color>(levelColor),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            pct > 0.5 ? '库存充足' : (pct > 0 ? '库存偏低，建议补货' : '库存耗尽，请及时购买'),
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: levelColor),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Heatmap cell for adherence calendar
+  Widget _heatCell(String state) {
+    final colors = {'full': const Color(0xFF4CAF50), 'partial': const Color(0xFFFFA726), 'missed': const Color(0xFFFF6B6B)};
+    final size = 12.0;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Container(
+        decoration: BoxDecoration(
+          color: colors[state]!.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(3),
+          border: Border.all(color: colors[state]!, width: 1),
+        ),
+      ),
+    );
   }
 }

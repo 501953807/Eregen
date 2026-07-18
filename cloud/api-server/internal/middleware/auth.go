@@ -14,6 +14,73 @@ import (
 	"go.uber.org/zap"
 )
 
+// DeviceAuth provides middleware for device-to-cloud mutual authentication.
+type DeviceAuth struct {
+	store *store.Postgres
+	log   *zap.Logger
+}
+
+// NewDeviceAuth creates a device auth handler.
+func NewDeviceAuth(pg *store.Postgres, log *zap.Logger) *DeviceAuth {
+	return &DeviceAuth{store: pg, log: log}
+}
+
+// DeviceAuthMiddleware validates device tokens signed by the cloud server.
+// Devices present a short-lived JWT with device_id + owner_user_id claims.
+func (d *DeviceAuth) DeviceAuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenStr := c.GetHeader("X-Device-Token")
+		if tokenStr == "" {
+			d.unauthorized(c, "MISSING_DEVICE_TOKEN", "Device token required")
+			return
+		}
+
+		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (any, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, jwt.ErrSignatureInvalid
+			}
+			return []byte("device-secret"), nil // separate signing key for device tokens
+		})
+		if err != nil || !token.Valid {
+			d.unauthorized(c, "INVALID_DEVICE_TOKEN", "Invalid or expired device token")
+			return
+		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			d.unauthorized(c, "INVALID_DEVICE_TOKEN", "Invalid device token claims")
+			return
+		}
+
+		deviceID, _ := claims["device_id"].(string)
+		ownerID, _ := claims["owner_id"].(string)
+
+		// Verify device is registered and active
+		dev, err := d.store.GetDeviceByDeviceID(c.Request.Context(), deviceID)
+		if err != nil || dev == nil {
+			d.unauthorized(c, "DEVICE_NOT_FOUND", "Device not registered")
+			return
+		}
+		if dev.Status != model.DeviceOnline {
+			d.unauthorized(c, "DEVICE_OFFLINE", "Device is offline")
+			return
+		}
+
+		c.Set("device_id", deviceID)
+		c.Set("device_owner", ownerID)
+		c.Next()
+	}
+}
+
+func (d *DeviceAuth) unauthorized(c *gin.Context, code, msg string) {
+	d.log.Warn("device auth failed",
+		zap.String("ip", c.ClientIP()),
+		zap.String("code", code),
+	)
+	c.JSON(http.StatusUnauthorized, gin.H{"code": code, "message": msg})
+	c.Abort()
+}
+
 // ContextKey is the key used to store user info in gin.Context.
 type ContextKey string
 

@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "健康数据",
+  "navigationBarBackgroundColor": "#FFFFFF",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#F7F8FC",
+  "enablePullDownRefresh": false
+}

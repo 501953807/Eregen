@@ -142,6 +142,26 @@ func (r *Redis) VerifyOTP(ctx context.Context, phoneOrEmail, code string) error 
 	return nil
 }
 
+// DelByPattern deletes all keys matching a Redis glob pattern.
+// Used for bulk token revocation on logout/session management.
+func (r *Redis) DelByPattern(ctx context.Context, pattern string) error {
+	var cursor uint64
+	for {
+		keys, nextCursor, err := r.client.Scan(ctx, cursor, pattern, 100).Result()
+		if err != nil {
+			return err
+		}
+		if len(keys) > 0 {
+			r.client.Del(ctx, keys...)
+		}
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+	}
+	return nil
+}
+
 // SetResetToken stores a password reset token.
 func (r *Redis) SetResetToken(ctx context.Context, token, userID string, ttl time.Duration) error {
 	key := "reset:" + token

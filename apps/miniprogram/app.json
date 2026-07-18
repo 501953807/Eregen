@@ -7,7 +7,9 @@
     "pages/alerts/index",
     "pages/mine/index",
     "pages/elderly-detail/index",
-    "pages/bind-device/index"
+    "pages/bind-device/index",
+    "pages/health/index",
+    "pages/map/index"
   ],
   "window": {
     "backgroundTextStyle": "light",

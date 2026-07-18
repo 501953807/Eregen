@@ -228,17 +228,95 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 // POST /api/v1/auth/logout
 func (h *AuthHandler) Logout(c *gin.Context) {
-	tokenStr := c.GetHeader("Authorization")
-	tokenStr = strings.TrimPrefix(tokenStr, "Bearer ")
-
-	claims, err := h.auth.ParseToken(tokenStr)
-	if err == nil {
-		if uid, ok := claims["user_id"].(string); ok {
-			h.redis.SetRefreshToken(c.Request.Context(), tokenStr, uid, -1)
+	// Blacklist the current access token so it can't be used again before expiry
+	authHeader := c.GetHeader("Authorization")
+	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+	if tokenStr != authHeader && tokenStr != "" {
+		if claims, err := h.auth.ParseToken(tokenStr); err == nil {
+			if uid, ok := claims["user_id"].(string); ok {
+				h.redis.SetRefreshToken(c.Request.Context(), tokenStr, uid+"|access", -1)
+			}
 		}
 	}
 
+	// Also blacklist the refresh token if present
+	var req struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	if err := c.ShouldBindJSON(&req); err == nil && req.RefreshToken != "" {
+		h.redis.InvalidateRefreshToken(c.Request.Context(), req.RefreshToken)
+	}
+
+	// Invalidate all other sessions for this user (force logout everywhere)
+	if userID, exists := c.Get(string(middleware.ContextUserID)); exists {
+		key := "token:user:" + userID.(string) + ":*"
+		h.redis.DelByPattern(c.Request.Context(), key)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "Logged out"})
+}
+
+// POST /api/v1/auth/revoke-all-sessions
+// Revokes all refresh tokens for the current user except the one used in this request.
+func (h *AuthHandler) RevokeAllSessions(c *gin.Context) {
+	userID, exists := c.Get(string(middleware.ContextUserID))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"code": "UNAUTHORIZED", "message": "Not authenticated"})
+		return
+	}
+
+	// Blacklist all tokens for this user
+	key := "token:user:" + userID.(string) + ":*"
+	h.redis.DelByPattern(c.Request.Context(), key)
+
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "All sessions revoked"})
+}
+
+// POST /api/v1/auth/device/register
+// Registers a device with its fingerprint and returns a device credential.
+func (h *AuthHandler) RegisterDevice(c *gin.Context) {
+	var req struct {
+		DeviceID     string `json:"device_id" binding:"required"`
+		DeviceType   string `json:"device_type" binding:"required"` // bracelet | pillbox
+		Tier         string `json:"tier"`                           // starter/plus/pro
+		Fingerprint  string `json:"fingerprint"`                    // TLS client cert SHA256
+		SerialNumber string `json:"serial_number"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_REQUEST", "message": "device_id and device_type required"})
+		return
+	}
+
+	userID, exists := c.Get(string(middleware.ContextUserID))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"code": "UNAUTHORIZED", "message": "Not authenticated"})
+		return
+	}
+
+	dev := &model.Device{
+		ID:          uuid.New().String(),
+		DeviceID:    req.DeviceID,
+		DeviceType:  req.DeviceType,
+		Tier:        req.Tier,
+		OwnerUserID: userID.(string),
+		Status:      model.DeviceOffline,
+		Settings: map[string]any{
+			"fingerprint": req.Fingerprint,
+			"serial":      req.SerialNumber,
+		},
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	if err := h.store.CreateDevice(c.Request.Context(), dev); err != nil {
+		c.JSON(http.StatusConflict, gin.H{"code": "DEVICE_EXISTS", "message": "Device already registered"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": map[string]string{
+		"device_id":     dev.DeviceID,
+		"device_uuid":   dev.ID,
+		"registered_at": time.Now().UTC().Format(time.RFC3339),
+	}})
 }
 
 // POST /api/v1/auth/send-otp

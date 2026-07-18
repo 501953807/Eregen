@@ -253,3 +253,57 @@ type CreateElderlyRequest struct {
 type LinkDeviceRequest struct {
 	DeviceID string `json:"device_id" binding:"required"`
 }
+
+// FirmwareRelease represents a firmware version available for OTA.
+type FirmwareRelease struct {
+	ID            string                 `json:"id"`
+	DeviceType    string                 `json:"device_type"` // bracelet / pillbox
+	Tier          string                 `json:"tier"`        // starter / plus / pro
+	Version       string                 `json:"version"`
+	URL           string                 `json:"url"`
+	Sha256Hash    string                 `json:"sha256_hash"`
+	Changelog     string                 `json:"changelog"`
+	MinAppVersion string                 `json:"min_app_version,omitempty"`
+	ForceUpdate   bool                   `json:"force_update"`
+	Active        bool                   `json:"active"`
+	CreatedAt     time.Time              `json:"created_at"`
+	UpdatedAt     time.Time              `json:"updated_at"`
+}
+
+// OTAJob tracks an OTA push to one or more devices.
+type OTAJob struct {
+	ID           string             `json:"id"`
+	FirmwareID   string             `json:"firmware_id"`
+	TargetDevices []string          `json:"target_devices"` // BR-XXXX / PX-XXXX or all
+	Progress     OTAJobProgress     `json:"progress"`
+	CreatedAt    time.Time          `json:"created_at"`
+	UpdatedAt    time.Time          `json:"updated_at"`
+}
+
+// OTAJobProgress tracks how many devices completed the OTA.
+type OTAJobProgress struct {
+	Total     int `json:"total"`
+	Pending   int `json:"pending"`
+	Downloading int `json:"downloading"`
+	Succeeding int `json:"succeeding"`
+	Succeeded  int `json:"succeeded"`
+	Failed     int `json:"failed"`
+}
+
+// CreateFirmwareRequest for uploading a new firmware release.
+type CreateFirmwareRequest struct {
+	DeviceType    string `json:"device_type" binding:"required"`
+	Tier          string `json:"tier" binding:"required"`
+	Version       string `json:"version" binding:"required"`
+	URL           string `json:"url" binding:"required"`
+	Sha256Hash    string `json:"sha256_hash" binding:"required"`
+	Changelog     string `json:"changelog"`
+	MinAppVersion string `json:"min_app_version,omitempty"`
+	ForceUpdate   bool   `json:"force_update"`
+}
+
+// PushOTARequest for triggering an OTA push.
+type PushOTARequest struct {
+	FirmwareID string   `json:"firmware_id" binding:"required"`
+	DeviceIDs  []string `json:"device_ids,omitempty"` // empty = all matching devices
+}

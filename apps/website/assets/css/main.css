@@ -201,6 +201,71 @@ body {
 .btn-ghost { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); }
 .btn-ghost:hover { background: rgba(255,255,255,0.25); }
 
+/* Comparison Table */
+.comparison-table-wrap { overflow-x: auto; }
+.comparison-table {
+  width: 100%; border-collapse: collapse; background: white;
+  border-radius: 16px; overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+}
+.comparison-table th, .comparison-table td {
+  padding: 16px 20px; text-align: center; font-size: 14px;
+  border-bottom: 1px solid var(--gray-100);
+}
+.comparison-table th.feat-col, .comparison-table td.feat-col {
+  text-align: left; font-weight: 600; color: var(--gray-700);
+  background: var(--gray-50); min-width: 140px;
+}
+.comparison-table th.tier-col { font-weight: 700; font-size: 15px; }
+.comparison-table th.starter-col { color: var(--success); }
+.comparison-table th.plus-col { color: var(--primary); }
+.comparison-table th.pro-col { color: #7C3AED; }
+.price-tag {
+  display: block; font-size: 12px; font-weight: 400;
+  color: var(--gray-500); margin-top: 4px;
+}
+.comparison-table tbody tr:last-child td { border-bottom: none; }
+.comparison-table tbody tr:hover { background: #FAFBFF; }
+
+/* Architecture Flow */
+.arch-flow {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; flex-wrap: wrap; padding: 20px 0;
+}
+.arch-step {
+  background: white; border-radius: 20px; padding: 28px 20px;
+  text-align: center; min-width: 140px; flex: 1; max-width: 200px;
+  border: 1px solid var(--gray-200); transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+.arch-step:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08); }
+.arch-icon { font-size: 40px; margin-bottom: 12px; }
+.arch-step h4 { font-size: 15px; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
+.arch-step p { font-size: 12px; color: var(--gray-500); line-height: 1.5; }
+.arch-arrow { font-size: 24px; color: var(--gray-300); }
+
+/* Testimonials */
+.testimonial-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.testimonial-card {
+  background: white; border-radius: 20px; padding: 28px;
+  border: 1px solid var(--gray-200); transition: all 0.2s;
+}
+.testimonial-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+.stars { font-size: 16px; color: #FBBF24; letter-spacing: 2px; margin-bottom: 12px; }
+.testimonial-card p {
+  font-size: 14px; color: var(--gray-600); line-height: 1.7;
+  margin-bottom: 16px; font-style: italic;
+}
+.author { display: flex; flex-direction: column; }
+.author strong { font-size: 14px; color: var(--gray-900); }
+.author span { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+
+/* CTA Trust */
+.cta-trust {
+  display: flex; gap: 32px; justify-content: center;
+  margin-top: 32px; font-size: 13px; color: rgba(255,255,255,0.7);
+}
+
 /* Footer */
 footer { background: var(--gray-900); color: var(--gray-400); padding: 60px 40px 30px; }
 .footer-inner { max-width: 1200px; margin: 0 auto; }
@@ -216,4 +281,22 @@ footer { background: var(--gray-900); color: var(--gray-400); padding: 60px 40px
   padding-top: 24px;
   display: flex; align-items: center; justify-content: space-between;
   font-size: 12px; color: var(--gray-600);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero-inner { grid-template-columns: 1fr !important; }
+  .hero-visual { display: none; }
+  .hero-title { font-size: 32px !important; }
+  .features-grid { grid-template-columns: 1fr !important; }
+  .products-grid { grid-template-columns: 1fr !important; }
+  .testimonial-grid { grid-template-columns: 1fr !important; }
+  .footer-grid { grid-template-columns: 1fr !important; }
+  .arch-flow { flex-direction: column; }
+  .arch-arrow { transform: rotate(90deg); }
+  .top-nav { padding: 0 16px; }
+  .nav-links { display: none; }
+  .section { padding: 48px 16px; }
+  .comparison-table { font-size: 12px; }
+  .comparison-table th, .comparison-table td { padding: 10px 8px; }
 }

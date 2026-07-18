@@ -291,6 +291,11 @@ func (p *Postgres) GetDevice(ctx context.Context, deviceID string) (*model.Devic
 	return scanDevice(row)
 }
 
+// GetDeviceByDeviceID is an alias for GetDevice — used by device auth middleware.
+func (p *Postgres) GetDeviceByDeviceID(ctx context.Context, deviceID string) (*model.Device, error) {
+	return p.GetDevice(ctx, deviceID)
+}
+
 func (p *Postgres) UpdateDeviceSettings(ctx context.Context, deviceID string, settings map[string]any) error {
 	data, _ := json.Marshal(settings)
 	q := `UPDATE devices SET settings = $1, updated_at = now(), status = 'online', last_seen = now()
@@ -794,6 +799,120 @@ func (p *Postgres) GetSubscription(ctx context.Context, userID string) (*model.S
 		return nil, err
 	}
 	return s, nil
+}
+
+// ---------- FirmwareRelease ----------
+
+func (p *Postgres) CreateFirmwareRelease(ctx context.Context, r *model.FirmwareRelease) error {
+	q := `INSERT INTO firmware_releases (id, device_type, tier, version, url, sha256_hash, changelog, min_app_version, force_update, active, created_at, updated_at)
+		  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
+	_, err := p.pool.Exec(ctx, q,
+		r.ID, r.DeviceType, r.Tier, r.Version, r.URL, r.Sha256Hash,
+		r.Changelog, r.MinAppVersion, r.ForceUpdate, r.Active,
+		r.CreatedAt, r.UpdatedAt,
+	)
+	return err
+}
+
+func (p *Postgres) ListFirmwareReleases(ctx context.Context, deviceType, tier string) ([]model.FirmwareRelease, error) {
+	q := `SELECT id, device_type, tier, version, url, sha256_hash, changelog, min_app_version, force_update, active, settings, created_at, updated_at
+		  FROM firmware_releases WHERE active = true`
+	args := []any{}
+	idx := 1
+	if deviceType != "" {
+		q += fmt.Sprintf(" AND device_type = $%d", idx)
+		args = append(args, deviceType)
+		idx++
+	}
+	if tier != "" {
+		q += fmt.Sprintf(" AND tier = $%d", idx)
+		args = append(args, tier)
+		idx++
+	}
+	q += " ORDER BY created_at DESC"
+
+	rows, err := p.pool.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var releases []model.FirmwareRelease
+	for rows.Next() {
+		var r model.FirmwareRelease
+		if err := rows.Scan(&r.ID, &r.DeviceType, &r.Tier, &r.Version, &r.URL, &r.Sha256Hash,
+			&r.Changelog, &r.MinAppVersion, &r.ForceUpdate, &r.Active,
+			&r.CreatedAt, &r.UpdatedAt); err != nil {
+			return nil, err
+		}
+		releases = append(releases, r)
+	}
+	return releases, rows.Err()
+}
+
+func (p *Postgres) GetFirmwareRelease(ctx context.Context, id string) (*model.FirmwareRelease, error) {
+	r := &model.FirmwareRelease{}
+	q := `SELECT id, device_type, tier, version, url, sha256_hash, changelog, min_app_version, force_update, active, created_at, updated_at
+		  FROM firmware_releases WHERE id = $1`
+	err := p.pool.QueryRow(ctx, q, id).Scan(
+		&r.ID, &r.DeviceType, &r.Tier, &r.Version, &r.URL, &r.Sha256Hash,
+		&r.Changelog, &r.MinAppVersion, &r.ForceUpdate, &r.Active,
+		&r.CreatedAt, &r.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+// ---------- OTAJob ----------
+
+func (p *Postgres) CreateOTAJob(ctx context.Context, j *model.OTAJob) error {
+	targetJSON, _ := json.Marshal(j.TargetDevices)
+	progressJSON, _ := json.Marshal(j.Progress)
+	q := `INSERT INTO ota_jobs (id, firmware_id, target_devices, progress, created_at, updated_at)
+		  VALUES ($1, $2, $3, $4, $5, $6)`
+	_, err := p.pool.Exec(ctx, q,
+		j.ID, j.FirmwareID, targetJSON, progressJSON, j.CreatedAt, j.UpdatedAt,
+	)
+	return err
+}
+
+func (p *Postgres) GetOTAJob(ctx context.Context, id string) (*model.OTAJob, error) {
+	j := &model.OTAJob{}
+	var targetJSON, progressJSON []byte
+	q := `SELECT id, firmware_id, target_devices, progress, created_at, updated_at
+		  FROM ota_jobs WHERE id = $1`
+	err := p.pool.QueryRow(ctx, q, id).Scan(
+		&j.ID, &j.FirmwareID, &targetJSON, &progressJSON, &j.CreatedAt, &j.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	json.Unmarshal(targetJSON, &j.TargetDevices)
+	json.Unmarshal(progressJSON, &j.Progress)
+	return j, nil
+}
+
+// UpdateOTAJobProgressFn is a callback type for updating OTA job progress atomically.
+type UpdateOTAJobProgressFn func(*model.OTAJobProgress)
+
+func (p *Postgres) UpdateOTAJobProgress(ctx context.Context, jobID string, fn UpdateOTAJobProgressFn) error {
+	var progressJSON []byte
+	err := p.pool.QueryRow(ctx, `SELECT progress FROM ota_jobs WHERE id = $1`, jobID).Scan(&progressJSON)
+	if err != nil {
+		return err
+	}
+
+	var prog model.OTAJobProgress
+	if len(progressJSON) > 0 {
+		json.Unmarshal(progressJSON, &prog)
+	}
+	fn(&prog)
+
+	newJSON, _ := json.Marshal(prog)
+	_, err = p.pool.Exec(ctx, `UPDATE ota_jobs SET progress = $1, updated_at = now() WHERE id = $2`, newJSON, jobID)
+	return err
 }
 
 // ---------- helpers ----------

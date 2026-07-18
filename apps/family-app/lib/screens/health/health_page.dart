@@ -147,6 +147,10 @@ class _HealthPageState extends State<HealthPage> {
                   if (_latestSys != null && _latestDia != null) _buildBloodPressure(),
                   if (_latestSleep != null) _buildSleepQuality(),
                   _buildStepsSummary(),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  _buildAIInsightBanner(),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  _buildIntergenerationalComparison(),
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 ],
               ),
@@ -505,6 +509,188 @@ class _HealthPageState extends State<HealthPage> {
           Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: color)),
           Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF999999))),
         ],
+      ),
+    );
+  }
+
+  /// AI health insight banner — v2 prototype enhancement
+  Widget _buildAIInsightBanner() {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [const Color(0xFFEDE9FE), const Color(0xFFDBEAFE)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF7C3AED),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Center(child: Icon(Icons.auto_awesome, size: 20, color: Colors.white)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'AI 健康洞察',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF5B21B6)),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _aiInsightText(),
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF6D28D9), height: 1.5),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _aiInsightText() {
+    final insights = <String>[];
+    if (_latestHr != null && _latestHr! >= 60 && _latestHr! <= 100) insights.add('心率稳定在正常范围');
+    if (_latestSpo2 != null && _latestSpo2! >= 95) insights.add('血氧水平良好');
+    if (_latestSteps != null && _latestSteps! < 5000) insights.add('今日步数略低于目标（5000步），建议傍晚散步30分钟');
+    if (_latestSleep != null && _latestSleep! < 6) insights.add('睡眠不足6小时，注意休息');
+    if (_latestSys != null && _latestSys! > 140) insights.add('收缩压偏高，建议减少盐分摄入');
+    if (insights.isEmpty) insights.add('各项指标基本正常，继续保持健康生活方式');
+    return insights.join('；');
+  }
+
+  /// Intergenerational comparison toggle — compare elder's metrics against age-group average
+  Widget _buildIntergenerationalComparison() {
+    final showCompare = _compareVisible;
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  '同龄人对比',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
+                GestureDetector(
+                  onTap: () => setState(() => _compareVisible = !_compareVisible),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _compareVisible ? AppTheme.primary : const Color(0xFFF0F0F5),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _compareVisible ? Icons.toggle_on : Icons.toggle_off,
+                          size: 18,
+                          color: _compareVisible ? Colors.white : const Color(0xFF888888),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _compareVisible ? '已开启' : '对比',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: _compareVisible ? Colors.white : const Color(0xFF888888),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            if (showCompare) ...[
+              _comparisonRow('心率', _latestHr ?? 72, 75, 'bpm'),
+              _comparisonRow('血氧', _latestSpo2 ?? 97, 96, '%'),
+              _comparisonRow('步数', _latestSteps ?? 3456, 6200, '步'),
+              _comparisonRow('血压(收缩)', _latestSys ?? 120, 128, 'mmHg'),
+              _comparisonRow('睡眠', _latestSleep ?? 7.2, 6.5, 'h'),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  bool _compareVisible = false;
+
+  Widget _comparisonRow(String label, double value, double average, String unit) {
+    final diff = value - average;
+    final isBetter = (label == '心率' || label == '血压(收缩)' || label == '睡眠')
+        ? (label == '心率' || label == '血压(收缩)' ? diff.abs() < 5 : diff > 0)
+        : diff > 0;
+    final diffPercent = average != 0 ? ((diff / average) * 100).toStringAsFixed(1) : '0';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppTheme.bgCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFF0F0F0)),
+        ),
+        child: Row(
+          children: [
+            SizedBox(width: 60, child: Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF666666)))),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: value / (average * 1.3),
+                  minHeight: 6,
+                  backgroundColor: const Color(0xFFF0F0F5),
+                  valueColor: AlwaysStoppedAnimation<Color>(isBetter ? AppTheme.statusNormal : const Color(0xFFFF6B6B)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              '${value.toStringAsFixed(0)}${unit.length > 1 ? '' : ' '}',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isBetter ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                '${isBetter ? '-' : '+'}$diffPercent%',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: isBetter ? AppTheme.statusNormal : const Color(0xFFFF6B6B),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
