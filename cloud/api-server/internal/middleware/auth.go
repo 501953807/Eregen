@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"eregen.dev/api-server/internal/model"
+	"eregen.dev/api-server/internal/store"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -29,15 +30,17 @@ type JWTAuth struct {
 	tokenTTL   time.Duration
 	refreshTTL time.Duration
 	log        *zap.Logger
+	store      *store.Postgres
 }
 
 // NewJWTAuth creates an auth middleware with the given secret.
-func NewJWTAuth(secret string, tokenTTL, refreshTTL time.Duration, log *zap.Logger) *JWTAuth {
+func NewJWTAuth(secret string, tokenTTL, refreshTTL time.Duration, log *zap.Logger, pg *store.Postgres) *JWTAuth {
 	return &JWTAuth{
 		secret:     secret,
 		tokenTTL:   tokenTTL,
 		refreshTTL: refreshTTL,
 		log:        log,
+		store:      pg,
 	}
 }
 
@@ -131,6 +134,28 @@ func (a *JWTAuth) ResolveElderlyID() gin.HandlerFunc {
 			a.badRequest(c, "MISSING_ELDERLY_ID", "elderly_id parameter is required")
 			return
 		}
+
+		userID, _ := c.Get(string(ContextUserID))
+		roleStr, _ := c.Get(string(ContextUserRole))
+
+		// Institution users can access any elder
+		if roleStr == string(model.RoleInstitution) {
+			c.Set(string(ContextElderlyID), elderlyID)
+			c.Next()
+			return
+		}
+
+		// Family/elderly users must own the profile
+		var count int
+		err := a.store.Pool().QueryRow(c.Request.Context(),
+			"SELECT COUNT(*) FROM elderly_profiles WHERE id = $1 AND user_id = $2",
+			elderlyID, userID.(string),
+		).Scan(&count)
+		if err != nil || count == 0 {
+			a.forbidden(c, "ACCESS_DENIED", "You don't have access to this elder")
+			return
+		}
+
 		c.Set(string(ContextElderlyID), elderlyID)
 		c.Next()
 	}

@@ -26,6 +26,11 @@ func NewPostgres(pool *pgxpool.Pool, log *zap.Logger) *Postgres {
 	return &Postgres{pool: pool, log: log}
 }
 
+// Pool returns the underlying pgxpool for raw queries.
+func (p *Postgres) Pool() *pgxpool.Pool {
+	return p.pool
+}
+
 // ---------- User ----------
 
 func (p *Postgres) CreateUser(ctx context.Context, u *model.User) error {
@@ -178,6 +183,39 @@ func (p *Postgres) UpdateElderlyProfile(ctx context.Context, elderlyID string, r
 	}
 	_, err := p.pool.Exec(ctx, q, args...)
 	return err
+}
+
+// ListElderlyProfiles returns a paginated list of elderly profiles for a given user.
+func (p *Postgres) ListElderlyProfiles(ctx context.Context, userID string, page, pageSize int) ([]model.ElderlyProfile, int, error) {
+	offset := (page - 1) * pageSize
+
+	countQ := "SELECT COUNT(*) FROM elderly_profiles WHERE user_id = $1"
+	var total int
+	if err := p.pool.QueryRow(ctx, countQ, userID).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	q := `SELECT id, user_id, name, birth_date, avatar_url, health_tiers, created_at, updated_at
+		  FROM elderly_profiles WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`
+	rows, err := p.pool.Query(ctx, q, userID, pageSize, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var profiles []model.ElderlyProfile
+	for rows.Next() {
+		var ep model.ElderlyProfile
+		var data pq.ByteaArray
+		if err := rows.Scan(&ep.ID, &ep.UserID, &ep.Name, &ep.BirthDate, &ep.AvatarURL, &data, &ep.CreatedAt, &ep.UpdatedAt); err != nil {
+			return nil, 0, err
+		}
+		if len(data) > 0 {
+			json.Unmarshal(data[0], &ep.HealthTiers)
+		}
+		profiles = append(profiles, ep)
+	}
+	return profiles, total, rows.Err()
 }
 
 // ---------- Device ----------

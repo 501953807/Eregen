@@ -99,7 +99,7 @@ func main() {
 	push := service.NewPushProvider(cfg.FCMServerKey, cfg.FCMProjectID, log)
 
 	authMW := middleware.NewJWTAuth(cfg.JWTSecret, time.Duration(cfg.TokenExpiry)*time.Second,
-		time.Duration(cfg.RefreshExpiry)*time.Second, log)
+		time.Duration(cfg.RefreshExpiry)*time.Second, log, pg)
 
 	r := router.New(pg, redisLayer, natsClient, authMW, sms, push, log, wsHub)
 

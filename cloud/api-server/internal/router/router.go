@@ -21,7 +21,6 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 		c.JSON(200, gin.H{"code": "OK", "message": "Eregen API server is running"})
 	})
 
-	// WebSocket real-time alerts (no auth needed — user_id passed as query param)
 	r.GET("/ws/alerts", func(c *gin.Context) {
 		ws.UpgradeHandler(wsHub)(c.Writer, c.Request)
 	})
@@ -32,7 +31,6 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 	alertSvc := service.NewAlertService(pg, push, nats, log)
 	alertH := handler.NewAlertHandler(pg, alertSvc, log)
 
-	// Rate limiter — fail open if Redis is unavailable at startup
 	rateLimiter, rlErr := middleware.NewSlidingWindowLimiter(log)
 	if rlErr != nil {
 		log.Warn("rate limiter init failed (will fail open)", zap.Error(rlErr))
@@ -69,32 +67,36 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 			devices.DELETE("/:device_id", auth.ResolveDeviceID(), deviceH.Delete)
 		}
 
-		elderly := protected.Group("/elderly/:elderly_id")
-		elderly.Use(auth.ResolveElderlyID())
+		elderlyGroup := protected.Group("/elderly")
 		{
-			elderly.GET("/profile", userH.GetElderlyProfile)
-			elderly.PUT("/profile", userH.UpdateElderlyProfile)
+			elderlyGroup.GET("", userH.ListElderly)
+			elderlyGroup.POST("", userH.CreateElderly)
 
-			// Health endpoints delegate to store
-			elderly.GET("/health/summary", healthSummary(pg))
-			elderly.GET("/health/history", healthHistory(pg))
-			elderly.GET("/health/trend", healthTrend(pg))
+			elderly := elderlyGroup.Group("/:elderly_id")
+			elderly.Use(auth.ResolveElderlyID())
+			{
+				elderly.GET("/profile", userH.GetElderlyProfile)
+				elderly.PUT("/profile", userH.UpdateElderlyProfile)
+				elderly.POST("/link-device", userH.LinkDeviceToElderly)
 
-			// Location endpoints
-			elderly.GET("/location/latest", locationLatest(pg))
-			elderly.GET("/location/history", locationHistory(pg))
-			elderly.POST("/geofence", geofenceSet(pg))
-			elderly.GET("/geofence", geofenceList(pg))
-			elderly.PUT("/geofence/:geofence_id", geofenceUpdate(pg))
-			elderly.DELETE("/geofence/:geofence_id", geofenceDelete(pg))
+				elderly.GET("/health/summary", healthSummary(pg))
+				elderly.GET("/health/history", healthHistory(pg))
+				elderly.GET("/health/trend", healthTrend(pg))
 
-			// Medication endpoints
-			elderly.GET("/medication/rules", medRules(pg))
-			elderly.POST("/medication/rules", medCreateRule(pg, nats))
-			elderly.PUT("/medication/rules/:rule_id", auth.ResolveRuleID(), medUpdateRule(pg))
-			elderly.DELETE("/medication/rules/:rule_id", auth.ResolveRuleID(), medDeleteRule(pg))
-			elderly.GET("/medication/today", medToday(pg))
-			elderly.GET("/medication/history", medHistory(pg))
+				elderly.GET("/location/latest", locationLatest(pg))
+				elderly.GET("/location/history", locationHistory(pg))
+				elderly.POST("/geofence", geofenceSet(pg))
+				elderly.GET("/geofence", geofenceList(pg))
+				elderly.PUT("/geofence/:geofence_id", geofenceUpdate(pg))
+				elderly.DELETE("/geofence/:geofence_id", geofenceDelete(pg))
+
+				elderly.GET("/medication/rules", medRules(pg))
+				elderly.POST("/medication/rules", medCreateRule(pg, nats))
+				elderly.PUT("/medication/rules/:rule_id", auth.ResolveRuleID(), medUpdateRule(pg))
+				elderly.DELETE("/medication/rules/:rule_id", auth.ResolveRuleID(), medDeleteRule(pg))
+				elderly.GET("/medication/today", medToday(pg))
+				elderly.GET("/medication/history", medHistory(pg))
+			}
 		}
 
 		alerts := protected.Group("/alerts")

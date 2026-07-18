@@ -240,3 +240,16 @@ type AlertFilter struct {
 	Severity *AlertSeverity `json:"severity,omitempty"`
 	Status   *AlertStatus   `json:"status,omitempty"`
 }
+
+// CreateElderlyRequest for creating a new elderly profile.
+type CreateElderlyRequest struct {
+	Name        string   `json:"name" binding:"required"`
+	BirthDate   *string  `json:"birth_date,omitempty"`
+	AvatarURL   *string  `json:"avatar_url,omitempty"`
+	HealthTiers []string `json:"health_tiers"`
+}
+
+// LinkDeviceRequest for associating a device with an elderly profile.
+type LinkDeviceRequest struct {
+	DeviceID string `json:"device_id" binding:"required"`
+}
