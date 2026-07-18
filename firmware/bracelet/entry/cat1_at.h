@@ -31,6 +31,11 @@
 #define CAT1_TLS_CLIENT_CERT   "eregen_client.crt"
 #define CAT1_TLS_CLIENT_KEY    "eregen_client.key"
 
+/* CA cert SHA-256 pin (prototype self-signed CA) */
+#define CAT1_TLS_CA_PIN_SHA256 \
+    "eb470526d6abab2b6120ffc7b46f58668eea3c5d61b981e19a5b421033e35603"
+#define CAT1_TLS_CA_PIN_LEN    64U
+
 /* Max retry count for AT commands */
 #define CAT1_MAX_RETRIES       3U
 
@@ -83,6 +88,17 @@ bool cat1_connect(void);
  * @return true on success.
  */
 bool cat1_disconnect(void);
+
+/**
+ * Check if CA certificate pinning has been verified.
+ */
+bool cat1_is_ca_pinned(void);
+
+/**
+ * Verify CA certificate pin against expected SHA-256 hash.
+ * @return true if pin matches.
+ */
+bool cat1_verify_ca_pin(const char *expected_hash);
 
 /**
  * Establish TCP connection to remote host.
@@ -148,5 +164,14 @@ bool cat1_is_connected(void);
  * @return RSSI in dBm (negative value), or -127 on error.
  */
 int16_t cat1_get_signal_strength(void);
+
+/**
+ * Receive one byte from the Cat1 TCP/SSL data stream.
+ * Used by OTA download to read firmware chunks in transparent transmission mode.
+ * @param[out] byte Pointer to store received byte.
+ * @param timeout_ms Read timeout in milliseconds.
+ * @return true if a byte was received within timeout.
+ */
+bool cat1_tcp_recv_byte(uint8_t *byte, uint32_t timeout_ms);
 
 #endif /* CAT1_AT_H */

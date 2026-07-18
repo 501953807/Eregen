@@ -7,6 +7,7 @@ import (
 
 	"eregen.dev/api-server/internal/model"
 	"eregen.dev/api-server/internal/service"
+	"eregen.dev/api-server/internal/validation"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -51,6 +52,16 @@ func (h *MedicationHandler) CreateRule(c *gin.Context) {
 		return
 	}
 
+	if err := validation.Medication(req.DoseCount, req.PillType); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_MEDICATION", "message": err.Error()})
+		return
+	}
+
+	if err := validation.DaysOfWeek(req.DaysOfWeek); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_DAYS", "message": "days_of_week: " + err.Error()})
+		return
+	}
+
 	if err := h.svc.CreateRule(c.Request.Context(), elderlyID, &req); err != nil {
 		h.log.Error("create medication rule", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "CREATE_FAILED", "message": "Failed to create rule"})
@@ -72,6 +83,11 @@ func (h *MedicationHandler) UpdateRule(c *gin.Context) {
 
 	if err := validateTime(req.ScheduleTime); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_TIME", "message": "schedule_time must be HH:MM format"})
+		return
+	}
+
+	if err := validation.Medication(req.DoseCount, req.PillType); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_MEDICATION", "message": err.Error()})
 		return
 	}
 

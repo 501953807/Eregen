@@ -8,6 +8,7 @@ import (
 	"eregen.dev/api-server/internal/middleware"
 	"eregen.dev/api-server/internal/model"
 	"eregen.dev/api-server/internal/store"
+	"eregen.dev/api-server/internal/validation"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -123,6 +124,12 @@ func (h *DeviceHandler) Bind(c *gin.Context) {
 	var req model.BindDeviceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_REQUEST", "message": "device_id required"})
+		return
+	}
+
+	// Input validation: device ID format
+	if err := validation.DeviceID(req.DeviceID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_DEVICE_ID", "message": err.Error()})
 		return
 	}
 

@@ -40,7 +40,7 @@ class _TabItem {
 
 class _NavItem extends StatelessWidget {
   final _TabItem tab;
-  const _NavItem(this.tab, {super.key});
+  const _NavItem(this.tab);
 
   @override
   Widget build(BuildContext context) {

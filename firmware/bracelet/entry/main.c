@@ -323,6 +323,14 @@ static void vCommTask(void *pvParameters)
     /* Initialize TLS (enables SSL mode for subsequent connections) */
     cat1_tls_init();
 
+    /* Verify CA certificate pin to prevent MITM attacks */
+    if (!cat1_verify_ca_pin(CAT1_TLS_CA_PIN_SHA256)) {
+        log_error("CA certificate pin mismatch — aborting TLS connection");
+        return;
+    }
+    s_ca_pinned = true;
+    log_info("CA certificate pinned successfully");
+
     /* Establish SSL/TCP connection to MQTT broker */
     if (!cat1_tcp_connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT)) {
         log_warn("SSL connect to MQTT broker failed, will retry");

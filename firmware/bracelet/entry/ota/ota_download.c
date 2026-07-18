@@ -87,6 +87,9 @@ ota_download_status_t ota_download_start(ota_download_ctx_t *ctx, const char *ur
     log_info("OTA: Starting download from %s", url);
 
     /* Parse host and port from URL */
+    char host_buf[128];
+    memset(host_buf, 0, sizeof(host_buf));
+
     const char *host = NULL;
     uint16_t port = 80;
     const char *path = "/";
@@ -103,14 +106,12 @@ ota_download_status_t ota_download_start(ota_download_ctx_t *ctx, const char *ur
     }
 
     /* Find path separator */
-    const char *slash = strchr(host, '/');
+    const char *slash = strchr((const char*)host, '/');
     if (slash) {
         path = slash;
-        /* Null-terminate host portion temporarily */
-        char host_buf[128];
-        uint16_t host_len = (uint16_t)(slash - url - 7);
+        uint16_t host_len = (uint16_t)(slash - (const char*)host);
         if (host_len >= sizeof(host_buf)) host_len = sizeof(host_buf) - 1;
-        strncpy(host_buf, url + 7, host_len);
+        memcpy(host_buf, host, host_len);
         host_buf[host_len] = '\0';
         host = host_buf;
     }
@@ -123,7 +124,7 @@ ota_download_status_t ota_download_start(ota_download_ctx_t *ctx, const char *ur
 
     /* Establish TCP connection */
     if (!cat1_tcp_connect(host, port)) {
-        log_error("OTA: TCP connection failed to %s:%u", host, port);
+        log_error("OTA: TCP connection failed to %s:%d", host, port);
         return OTA_DOWNLOAD_ERROR;
     }
 
@@ -150,13 +151,42 @@ ota_download_status_t ota_download_start(ota_download_ctx_t *ctx, const char *ur
     /* Read response headers to get Content-Length */
     char resp_buf[CAT1_RESP_BUF_SIZE];
     memset(resp_buf, 0, sizeof(resp_buf));
+    uint16_t resp_idx = 0;
 
-    /* In production, read TCP response line by line */
-    /* For now, assume we got the content length from the response */
+    /* Read headers line by line until double CRLF */
+    for (uint32_t timeout = 5000U; timeout > 0; timeout--) {
+        uint8_t ch;
+        if (cat1_tcp_recv_byte(&ch, 1)) {
+            if (resp_idx < sizeof(resp_buf) - 1) {
+                resp_buf[resp_idx++] = (char)ch;
+                resp_buf[resp_idx] = '\0';
+            }
+
+            /* Check for end of headers (empty line after CRLF) */
+            if (resp_idx >= 4 &&
+                resp_buf[resp_idx-4] == '\r' &&
+                resp_buf[resp_idx-3] == '\n' &&
+                resp_buf[resp_idx-2] == '\r' &&
+                resp_buf[resp_idx-1] == '\n') {
+                break;
+            }
+        }
+    }
+
+    /* Parse Content-Length from headers */
+    uint32_t content_len = 0;
+    if (parse_content_length(resp_buf, &content_len) == 0) {
+        ctx->total_size = content_len;
+        log_info("OTA: Content-Length = %lu bytes", (unsigned long)content_len);
+    } else {
+        log_warn("OTA: No Content-Length in response, using max size");
+        ctx->total_size = OTA_MAX_FIRMWARE_SIZE;
+    }
+
     ctx->downloading = true;
-    ctx->resume_supported = true;
+    ctx->resume_supported = parse_accept_ranges(resp_buf);
 
-    log_info("OTA: Connection established, waiting for data (%lu bytes expected)",
+    log_info("OTA: Connection established, downloading (%lu bytes expected)",
              (unsigned long)ctx->total_size);
 
     return OTA_DOWNLOAD_OK;
@@ -164,6 +194,7 @@ ota_download_status_t ota_download_start(ota_download_ctx_t *ctx, const char *ur
 
 /*
  * Download one chunk of firmware data.
+ * Reads from TCP socket via AT+CIPSEND (in CIPMODE=1) / AT+CIPRECVDATA.
  */
 int ota_download_chunk(ota_download_ctx_t *ctx, uint8_t *buf, uint16_t buf_len)
 {
@@ -171,15 +202,87 @@ int ota_download_chunk(ota_download_ctx_t *ctx, uint8_t *buf, uint16_t buf_len)
         return -1;
     }
 
-    /* Read available data from TCP connection */
-    /* In production, this reads from cat1 TCP socket buffer */
-    /* For now, return 0 to indicate no data available in test mode without mock */
+    /* Calculate remaining bytes to receive */
+    uint32_t remaining = ctx->total_size - ctx->bytes_received;
+    if (remaining == 0) {
+        return 0;  /* Download complete */
+    }
 
-    /* Read up to buf_len bytes */
-    /* The actual TCP read would be implemented via cat1 AT commands */
-    /* e.g., AT+CIPRECVDATA to check available bytes, then AT+CIPRECEIVE to read */
+    /* Limit buffer to remaining data */
+    uint16_t read_len = buf_len;
+    if (read_len > (uint16_t)remaining) {
+        read_len = (uint16_t)remaining;
+    }
 
-    return 0;  /* Placeholder: real implementation reads from TCP stream */
+#ifdef TEST_MODE
+    /* In test mode, simulate receiving data without actual Cat1 module */
+    (void)read_len;
+    log_debug("OTA: Test mode — chunk read simulated");
+    return 0;
+#else
+    /* In CIPMODE=1 (transparent transmission), data is read directly from UART.
+     * The sequence is:
+     *   1. Send HTTP GET with Range header to start download
+     *   2. Module enters transparent transmission mode (prompt ">")
+     *   3. Send data length via AT+CIPSEND=<len>
+     *   4. Read response headers to get Content-Length
+     *   5. Read firmware chunks in a loop until total_size received
+     *
+     * For firmware chunk reads, we use the transparent TCP stream:
+     *   - Wait for available data on the SSL/TLS connection
+     *   - Read up to buf_len bytes from the UART RX buffer
+     *   - The Cat1 module handles TCP reassembly and TLS decryption
+     */
+
+    /* Read bytes from UART1 (Cat1 module) until we have buf_len or timeout */
+    uint16_t got = 0;
+    uint32_t chunk_start = 0;
+#ifdef TEST_MODE
+    struct timeval tv_start;
+    gettimeofday(&tv_start, NULL);
+    chunk_start = (uint32_t)(tv_start.tv_sec * 1000 + tv_start.tv_usec / 1000);
+#else
+    chunk_start = xTaskGetTickCount();
+#endif
+
+    while (got < read_len) {
+        uint8_t ch;
+        if (cat1_tcp_recv_byte(&ch, 10)) {
+            buf[got++] = ch;
+        }
+
+        /* Per-chunk timeout */
+        uint32_t now = 0;
+#ifdef TEST_MODE
+        struct timeval tv_now;
+        gettimeofday(&tv_now, NULL);
+        now = (uint32_t)(tv_now.tv_sec * 1000 + tv_now.tv_usec / 1000);
+#else
+        now = xTaskGetTickCount();
+#endif
+        if ((now - chunk_start) >= OTA_DOWNLOAD_TIMEOUT_MS) {
+            break;  /* Timeout — will retry */
+        }
+    }
+
+    if (got > 0) {
+        ctx->bytes_received += got;
+        ctx->offset += got;
+        ctx->retry_count = 0;
+        return (int)got;
+    }
+
+    /* No data received — retry logic */
+    ctx->retry_count++;
+    if (ctx->retry_count >= OTA_MAX_RETRIES) {
+        log_error("OTA: Max retries (%u) exceeded", OTA_MAX_RETRIES);
+        return -2;
+    }
+
+    log_warn("OTA: Chunk read timeout, retry %u/%u",
+             ctx->retry_count, OTA_MAX_RETRIES);
+    return -1;
+#endif
 }
 
 /*

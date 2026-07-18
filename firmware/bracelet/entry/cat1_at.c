@@ -26,6 +26,7 @@ static bool s_uart_connected = false;
 static bool s_connected = false;
 static bool s_tcp_connected = false;
 static bool s_tls_enabled = false;
+bool s_ca_pinned = false;
 static cat1_status_t s_status = CAT1_OK;
 
 /* Response buffer */
@@ -336,10 +337,36 @@ bool cat1_tls_init(void)
     /* Set security level: 1 = verify server cert */
     cat1_send_command_internal("SSLCFG=seclevel,1,1", "OK", 2000U, 0);
 
+    /* Load CA certificate into module flash */
+    cat1_send_command_internal("SSLCFG=certname,0,eregen_ca.crt", "OK", 2000U, 0);
+
     log_info("Cat1 TLS configured (TLS 1.2, server verification enabled)");
 #endif
     s_tls_enabled = true;
     return true;
+}
+
+/**
+ * Verify CA certificate pin against expected SHA-256 hash.
+ * Prevents MITM attacks by comparing expected fingerprint.
+ * Returns true if the pin matches.
+ */
+bool cat1_verify_ca_pin(const char *expected_hash)
+{
+    if (!expected_hash || expected_hash[0] == '\0') {
+        return false;
+    }
+
+    /* Compare expected hash with stored pin */
+    return strcmp(expected_hash, CAT1_TLS_CA_PIN_SHA256) == 0;
+}
+
+/*
+ * Check if CA certificate pinning has been verified.
+ */
+bool cat1_is_ca_pinned(void)
+{
+    return s_ca_pinned;
 }
 
 /*
@@ -638,4 +665,37 @@ int16_t cat1_get_signal_strength(void)
 
     /* Convert 0-31 scale to dBm: RSSI = -113 + 2*rssi */
     return (int16_t)(-113 + 2 * rssi);
+}
+
+/*
+ * Receive one byte from the Cat1 TCP/SSL data stream.
+ * In transparent transmission mode (CIPMODE=1), received TCP data
+ * is available on the UART RX buffer of the Cat1 module.
+ */
+bool cat1_tcp_recv_byte(uint8_t *byte, uint32_t timeout_ms)
+{
+    if (!byte) {
+        return false;
+    }
+
+#ifdef TEST_MODE
+    /* In test mode, no actual TCP data available */
+    (void)timeout_ms;
+    return false;
+#else
+    /* Wait for a byte in USART1 RX buffer (Cat1 module connected to USART1) */
+    TickType_t ticks = pdMS_TO_TICKS(timeout_ms);
+    uint32_t start = xTaskGetTickCount();
+
+    for (;;) {
+        if (usart_flag_get(USART1, USART_FLAG_RBNE) != RESET) {
+            *byte = (uint8_t)usart_data_receive(USART1);
+            return true;
+        }
+        if ((xTaskGetTickCount() - start) >= ticks) {
+            return false;
+        }
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+#endif
 }

@@ -6,6 +6,7 @@ import (
 
 	"eregen.dev/api-server/internal/model"
 	"eregen.dev/api-server/internal/service"
+	"eregen.dev/api-server/internal/validation"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -70,6 +71,11 @@ func (h *LocationHandler) SetGeofence(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_REQUEST", "message": "Invalid request body"})
+		return
+	}
+
+	if err := validation.Geofence(req.Name, req.Lat, req.Lon, req.RadiusMeters); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_GEOFENCE", "message": err.Error()})
 		return
 	}
 

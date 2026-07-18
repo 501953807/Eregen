@@ -80,4 +80,13 @@ bool ota_download_is_complete(const ota_download_ctx_t *ctx);
  */
 void ota_download_abort(ota_download_ctx_t *ctx);
 
+/**
+ * Parse HTTP response headers to extract Content-Length.
+ * Must be called after TCP connection is established and HTTP GET sent.
+ * @param ctx    Download context (total_size will be set).
+ * @param header_buf Buffer containing HTTP response headers.
+ * @return true if Content-Length was parsed successfully.
+ */
+bool ota_download_parse_headers(ota_download_ctx_t *ctx, const char *header_buf);
+
 #endif /* OTA_DOWNLOAD_H */

@@ -158,7 +158,7 @@ class _MedicationPageState extends State<MedicationPage> {
       const SizedBox(width: 14),
       Container(width: 2, height: 100, margin: const EdgeInsets.only(top: 0), child: Stack(children: [
         Positioned(top: 0, child: Container(width: 14, height: 14, decoration: BoxDecoration(color: dotBg, shape: BoxShape.circle, border: Border.all(color: dotColor, width: 3)))),
-        if (hasLine) Positioned(top: 14, left: -6, child: Container(width: 2, height: 86, color: lineColor!)),
+        if (hasLine) Positioned(top: 14, left: -6, child: Container(width: 2, height: 86, color: lineColor)),
       ])),
       const SizedBox(width: 14),
       Expanded(child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppTheme.bgCard, borderRadius: BorderRadius.circular(12), border: Border(left: BorderSide(color: borderColor, width: 3)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4)]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

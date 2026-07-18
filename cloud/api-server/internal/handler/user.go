@@ -9,6 +9,7 @@ import (
 	"eregen.dev/api-server/internal/middleware"
 	"eregen.dev/api-server/internal/model"
 	"eregen.dev/api-server/internal/store"
+	"eregen.dev/api-server/internal/validation"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -91,6 +92,24 @@ func (h *UserHandler) CreateElderly(c *gin.Context) {
 		return
 	}
 
+	// Input validation
+	if err := validation.ElderlyName(req.Name); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_NAME", "message": err.Error()})
+		return
+	}
+	for _, tier := range req.HealthTiers {
+		if err := validation.HealthTier(tier); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_TIER", "message": "health_tier: " + err.Error()})
+			return
+		}
+	}
+	if req.BirthDate != nil {
+		if err := validation.DateString(*req.BirthDate); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_BIRTHDATE", "message": err.Error()})
+			return
+		}
+	}
+
 	ep := &model.ElderlyProfile{
 		UserID:     userID.(string),
 		Name:       req.Name,
@@ -168,6 +187,12 @@ func (h *UserHandler) LinkDeviceToElderly(c *gin.Context) {
 	var req model.LinkDeviceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_REQUEST", "message": "device_id required"})
+		return
+	}
+
+	// Input validation: device ID format
+	if err := validation.DeviceID(req.DeviceID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_DEVICE_ID", "message": err.Error()})
 		return
 	}
 

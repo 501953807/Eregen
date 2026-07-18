@@ -8,6 +8,7 @@ import (
 	"eregen.dev/api-server/internal/model"
 	"eregen.dev/api-server/internal/service"
 	"eregen.dev/api-server/internal/store"
+	"eregen.dev/api-server/internal/validation"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -113,6 +114,11 @@ func (h *AlertHandler) SOSCall(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_REQUEST", "message": "elderly_id required"})
+		return
+	}
+
+	if err := validation.Location(req.Lat, req.Lon); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_LOCATION", "message": err.Error()})
 		return
 	}
 

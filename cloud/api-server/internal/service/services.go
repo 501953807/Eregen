@@ -265,14 +265,53 @@ func (s *MedicationService) ListRules(ctx context.Context, elderlyID string) ([]
 }
 
 func (s *MedicationService) UpdateRule(ctx context.Context, ruleID string, req *model.CreateMedicationRuleRequest) error {
-	if _, err := s.store.GetMedicationRule(ctx, ruleID); err != nil {
+	rule, err := s.store.GetMedicationRule(ctx, ruleID)
+	if err != nil {
 		return err
 	}
-	return s.store.UpdateMedicationRule(ctx, ruleID, req)
+	if err := s.store.UpdateMedicationRule(ctx, ruleID, req); err != nil {
+		return err
+	}
+
+	// Push updated rule to pillbox device
+	deviceID, _ := s.store.GetDeviceByElderlyID(ctx, rule.ElderlyID)
+	if deviceID == "" {
+		deviceID = "unknown"
+	}
+	cmd := map[string]any{
+		"type": "med_rule_update",
+		"rule_id": ruleID,
+		"rule": map[string]any{
+			"time":   req.ScheduleTime,
+			"dose":   req.DoseCount,
+			"type":   req.PillType,
+			"days":   req.DaysOfWeek,
+		},
+	}
+	_ = s.nats.PublishCommand(ctx, deviceID, cmd)
+	return nil
 }
 
 func (s *MedicationService) DeleteRule(ctx context.Context, ruleID string) error {
-	return s.store.DeleteMedicationRule(ctx, ruleID)
+	rule, err := s.store.GetMedicationRule(ctx, ruleID)
+	if err != nil {
+		return err
+	}
+	if err := s.store.DeleteMedicationRule(ctx, ruleID); err != nil {
+		return err
+	}
+
+	// Notify pillbox device to remove rule
+	deviceID, _ := s.store.GetDeviceByElderlyID(ctx, rule.ElderlyID)
+	if deviceID == "" {
+		deviceID = "unknown"
+	}
+	cmd := map[string]any{
+		"type":    "med_rule_delete",
+		"rule_id": ruleID,
+	}
+	_ = s.nats.PublishCommand(ctx, deviceID, cmd)
+	return nil
 }
 
 func (s *MedicationService) GetTodayStatus(ctx context.Context, elderlyID string) ([]model.MedStatusRecord, error) {
