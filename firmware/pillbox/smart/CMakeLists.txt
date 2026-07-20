@@ -5,7 +5,10 @@
 idf_component_register(
     SRCS "main.c" "voice_reminder.c" "reminder_scheduler.c"
          "app_link.c" "oled_status.c" "volume_control.c"
+         "../../common/src/ota_handler.c"
     INCLUDE_DIRS "."
+                 "../common/include"
+                 "../../common/include"
     REQUIRES
         esp_wifi
         esp_event
@@ -14,6 +17,9 @@ idf_component_register(
         driver
         esp_timer
         cJSON
+        esp_https_ota
+        esp_http_client
+        sha256
 )
 
 # Require ESP-IDF >= 5.3

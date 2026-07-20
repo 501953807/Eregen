@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"eregen.dev/api-server/internal/crypto"
 	"eregen.dev/api-server/internal/model"
 
 	"github.com/google/uuid"
@@ -23,6 +24,8 @@ type NatsClient struct {
 	nc  *nats.Conn
 	js  nats.JetStreamContext
 	log *zap.Logger
+
+	crypto *crypto.PayloadCrypto // optional payload decryption
 }
 
 // NewNatsClient creates a NATS client connected to the given URL.
@@ -56,35 +59,46 @@ func (n *NatsClient) Close() {
 	}
 }
 
+// SetPayloadCrypto sets the key for decrypting device payloads.
+func (n *NatsClient) SetPayloadCrypto(masterKey []byte) error {
+	c, err := crypto.NewPayloadCrypto(masterKey)
+	if err != nil {
+		return fmt.Errorf("init payload crypto: %w", err)
+	}
+	n.crypto = c
+	return nil
+}
+
 // SubscribeDeviceEvents starts consuming device events from JetStream.
 func (n *NatsClient) SubscribeDeviceEvents(ctx context.Context, handler *EventHandler) error {
 	sub, err := n.js.Subscribe(natsDeviceSubject, func(msg *nats.Msg) {
-		var event DeviceEvent
-		if err := json.Unmarshal(msg.Data, &event); err != nil {
-			n.log.Warn("unmarshal device event", zap.Error(err))
-			msg.Nak()
+		data := msg.Data
+
+		// Try plaintext JSON first
+		var ev DeviceEvent
+		if jsonErr := json.Unmarshal(data, &ev); jsonErr == nil && ev.Type != "" {
+			n.routeEvent(ctx, &ev, handler)
+			msg.Ack()
 			return
 		}
 
-		switch event.Type {
-		case "health":
-			handler.handleHealth(ctx, &event)
-		case "location":
-			handler.handleLocation(ctx, &event)
-		case "sos":
-			handler.handleSOS(ctx, &event)
-		case "fall":
-			handler.handleFall(ctx, &event)
-		case "heartbeat":
-			handler.handleHeartbeat(ctx, &event)
-		case "med_status":
-			handler.handleMedStatus(ctx, &event)
-		default:
-			n.log.Debug("unknown device event type", zap.String("type", event.Type))
+		// Plaintext didn't parse — try decrypting if crypto is configured
+		if n.crypto != nil && len(data) >= 60 {
+			plain, decErr := n.crypto.Decrypt(data)
+			if decErr == nil {
+				var ev2 DeviceEvent
+				if jsonErr := json.Unmarshal(plain, &ev2); jsonErr == nil && ev2.Type != "" {
+					n.routeEvent(ctx, &ev2, handler)
+					msg.Ack()
+					return
+				}
+			}
+			n.log.Warn("encrypted payload decryption failed", zap.Error(decErr))
 		}
 
-		msg.Ack()
-	}, nats.Durable("api-server-events"))
+		n.log.Warn("unparseable device event")
+		msg.Nak()
+	})
 
 	if err != nil {
 		return fmt.Errorf("subscribe device events: %w", err)
@@ -93,6 +107,26 @@ func (n *NatsClient) SubscribeDeviceEvents(ctx context.Context, handler *EventHa
 	<-ctx.Done()
 	sub.Unsubscribe()
 	return nil
+}
+
+// routeEvent dispatches a parsed DeviceEvent to the appropriate handler callback.
+func (n *NatsClient) routeEvent(ctx context.Context, ev *DeviceEvent, handler *EventHandler) {
+	switch ev.Type {
+	case "health":
+		handler.handleHealth(ctx, ev)
+	case "location":
+		handler.handleLocation(ctx, ev)
+	case "sos":
+		handler.handleSOS(ctx, ev)
+	case "fall":
+		handler.handleFall(ctx, ev)
+	case "heartbeat":
+		handler.handleHeartbeat(ctx, ev)
+	case "med_status":
+		handler.handleMedStatus(ctx, ev)
+	default:
+		n.log.Debug("unknown device event type", zap.String("type", ev.Type))
+	}
 }
 
 // PublishCommand publishes a device command (config update, TTS, OTA).

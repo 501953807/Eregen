@@ -9,6 +9,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"io"
 )
@@ -114,6 +115,13 @@ func GenerateProvisioningCode() (string, error) {
 	}
 	code := uint32(b[0])<<16 | uint32(b[1])<<8 | uint32(b[2])
 	return base36Encode(code % 0x1000000), nil
+}
+
+// HashSHA256 computes SHA-256 hash of data and returns hex-encoded string.
+func HashSHA256(data string) string {
+	h := sha256.New()
+	h.Write([]byte(data))
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func base36Encode(n uint32) string {

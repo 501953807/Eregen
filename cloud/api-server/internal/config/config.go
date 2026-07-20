@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 )
 
 // Config holds all runtime configuration loaded from environment variables.
@@ -20,18 +21,35 @@ type Config struct {
 	InfluxDBBucket string
 
 	FCMProjectID string
-	FCMServerKey string
+	FCMKeyPath   string // path to service account JSON for FCM OAuth2
 
-	SMSSignName  string
-	SMPTemplateID string
+	SMSAccessKey   string
+	SMSAccessSecret string
+	SMSSignName     string
+	SMPTemplateID   string
 
-	Port string
+	Port          string
+	CORSOrigins   []string // comma-separated allowed origins
+	BodyLimitMB   int      // max request body in MB
+	DeviceSecret  string   // HMAC key for device tokens
 }
 
 // Load reads configuration from environment variables with sensible defaults.
 func Load() *Config {
+	corsStr := getEnv("CORS_ORIGINS", "")
+	var corsOrigins []string
+	if corsStr != "" {
+		for _, o := range strings.Split(corsStr, ",") {
+			o = strings.TrimSpace(o)
+			if o != "" {
+				corsOrigins = append(corsOrigins, o)
+			}
+		}
+	}
+
 	return &Config{
-		JWTSecret:     getEnv("JWT_SECRET", "eregen-dev-secret-change-in-production"),
+		// JWT_SECRET must be set in production — no fallback allowed
+		JWTSecret:     getEnv("JWT_SECRET", ""),
 		TokenExpiry:   getEnvAsInt("TOKEN_EXPIRY", 3600),
 		RefreshExpiry: getEnvAsInt("REFRESH_EXPIRY", 604800),
 
@@ -44,12 +62,17 @@ func Load() *Config {
 		InfluxDBBucket: getEnv("INFLUXDB_BUCKET", "health"),
 
 		FCMProjectID: getEnv("FCM_PROJECT_ID", ""),
-		FCMServerKey: getEnv("FCM_SERVER_KEY", ""),
+		FCMKeyPath:   getEnv("FCM_KEY_PATH", ""),
 
-		SMSSignName:  getEnv("SMS_SIGN_NAME", "颐贞"),
-		SMPTemplateID: getEnv("SMS_TEMPLATE_ID", "SMS_XXXXXXXX"),
+		SMSAccessKey:    getEnv("SMS_ACCESS_KEY", ""),
+		SMSAccessSecret: getEnv("SMS_ACCESS_SECRET", ""),
+		SMSSignName:     getEnv("SMS_SIGN_NAME", "颐贞"),
+		SMPTemplateID:   getEnv("SMS_TEMPLATE_ID", "SMS_XXXXXXXX"),
 
-		Port: getEnv("PORT", "8080"),
+		Port:          getEnv("PORT", "8080"),
+		CORSOrigins:   corsOrigins,
+		BodyLimitMB:   getEnvAsInt("BODY_LIMIT_MB", 1),
+		DeviceSecret:  getEnv("DEVICE_SECRET", ""),
 	}
 }
 

@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Eregen 颐贞 — 家属APP用药管理 (Enhanced)</title>
+<style>
+  :root {
+    --primary: #2563EB;
+    --primary-light: #DBEAFE;
+    --success: #16A34A;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-400: #9CA3AF;
+    --gray-500: #6B7280;
+    --gray-600: #4B5563;
+    --gray-700: #374151;
+    --gray-800: #1F2937;
+    --gray-900: #111827;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --radius-md: 16px;
+    --shadow-sm: 0 1px 4px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    background: var(--gray-100);
+    color: var(--gray-800);
+    overflow-y: auto;
+    height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== Top Bar ===== */
+  .top-bar {
+    background: white;
+    padding: 12px 16px 8px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: var(--shadow-sm);
+  }
+  .top-bar-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .back-btn {
+    width: 36px; height: 36px; border-radius: 18px; border: none;
+    background: var(--gray-100); display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 18px; transition: transform 0.15s;
+  }
+  .back-btn:active { transform: scale(0.92); }
+  .page-title { font-size: 18px; font-weight: 700; color: var(--gray-900); }
+  .add-btn {
+    width: 36px; height: 36px; border-radius: 18px; border: none;
+    background: var(--primary); color: white; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 20px; transition: transform 0.15s;
+  }
+  .add-btn:active { transform: scale(0.92); }
+
+  /* Elder Selector */
+  .elder-selector {
+    display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding: 4px 0;
+  }
+  .elder-selector::-webkit-scrollbar { display: none; }
+  .elder-card {
+    flex-shrink: 0; display: flex; align-items: center; gap: 10px;
+    padding: 8px 14px 8px 8px; border-radius: 24px;
+    border: 2px solid var(--gray-200); background: white; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .elder-card.active { border-color: var(--primary); background: var(--primary-light); box-shadow: 0 2px 12px rgba(37,99,235,0.15); }
+  .elder-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+  }
+  .elder-info { line-height: 1.3; }
+  .elder-name { font-size: 14px; font-weight: 600; }
+  .elder-status { font-size: 11px; color: var(--gray-500); }
+
+  /* ===== Scrollable Content ===== */
+  .content { padding: 16px; padding-bottom: calc(80px + var(--safe-bottom)); }
+
+  /* Today Summary Card */
+  .summary-card {
+    background: linear-gradient(135deg, #66BB6A, #43A047);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    color: white;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 16px rgba(22,163,74,0.3);
+    position: relative;
+    overflow: hidden;
+  }
+  .summary-card::after {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 120px; height: 120px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+  }
+  .summary-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .summary-title { font-size: 14px; opacity: 0.9; }
+  .summary-date { font-size: 12px; opacity: 0.7; }
+  .ring-wrap {
+    display: flex; align-items: center; gap: 20px;
+  }
+  .med-ring { width: 90px; height: 90px; flex-shrink: 0; }
+  .summary-stats { font-size: 13px; line-height: 1.8; opacity: 0.95; }
+  .summary-stats strong { font-size: 18px; opacity: 1; }
+  .reminder-status {
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    font-size: 12px;
+  }
+  .reminder-item {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+  }
+  .reminder-check { font-size: 14px; }
+
+  /* Period Tabs */
+  .period-tabs {
+    display: flex; gap: 6px; margin-bottom: 12px;
+  }
+  .period-tab {
+    padding: 6px 14px; border-radius: 16px;
+    background: white; border: 1px solid var(--gray-200);
+    font-size: 12px; font-weight: 600; color: var(--gray-500);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .period-tab.active {
+    background: var(--primary); color: white; border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(37,99,235,0.2);
+  }
+  .period-tab.has-missed {
+    border-color: var(--danger); color: var(--danger);
+  }
+  .period-tab .missed-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--danger);
+    display: inline-block; margin-left: 4px;
+  }
+
+  /* Timeline */
+  .timeline-section { margin-bottom: 16px; }
+  .timeline-period-label {
+    font-size: 13px; font-weight: 700; color: var(--gray-700);
+    margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .timeline-period-icon { font-size: 16px; }
+  .timeline-list { display: flex; flex-direction: column; gap: 8px; }
+  .med-item {
+    background: white; border-radius: 14px; padding: 14px;
+    box-shadow: var(--shadow-sm);
+    display: flex; align-items: center; gap: 12px;
+    transition: transform 0.15s;
+  }
+  .med-item:active { transform: scale(0.98); }
+  .med-item.missed { background: #FFF5F5; border: 1px solid rgba(239,68,68,0.15); }
+  .med-item.taken { opacity: 0.7; }
+  .med-time {
+    text-align: center; flex-shrink: 0; width: 52px;
+  }
+  .med-time-value { font-size: 16px; font-weight: 700; color: var(--gray-900); }
+  .med-time-period { font-size: 10px; color: var(--gray-400); }
+  .med-icon {
+    width: 44px; height: 44px; border-radius: 22px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .med-icon.capsule { background: #FEF3C7; }
+  .med-icon.tablet { background: #DBEAFE; }
+  .med-icon.syrup { background: #FCE7F3; }
+  .med-body { flex: 1; min-width: 0; }
+  .med-name { font-size: 14px; font-weight: 700; color: var(--gray-800); margin-bottom: 2px; }
+  .med-dosage { font-size: 12px; color: var(--gray-500); }
+  .med-note { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+  .med-status {
+    flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .med-status-badge {
+    font-size: 10px; padding: 3px 8px; border-radius: 8px;
+    font-weight: 700; text-align: center; min-width: 48px;
+  }
+  .med-status-badge.taken { background: #F0FDF4; color: var(--success); }
+  .med-status-badge.pending { background: #FFFBEB; color: #D97706; }
+  .med-status-badge.missed { background: #FEF2F2; color: var(--danger); }
+  .med-timer { font-size: 10px; color: var(--gray-400); }
+  .med-confirm-btn {
+    width: 36px; height: 36px; border-radius: 18px;
+    background: var(--success); color: white; border: none;
+    font-size: 18px; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .med-confirm-btn:active { transform: scale(0.85); }
+  .med-confirm-btn.taken-btn {
+    background: var(--gray-200); color: var(--gray-400); cursor: default;
+  }
+
+  /* Medication Inventory */
+  .inventory-card {
+    background: white; border-radius: var(--radius-md);
+    padding: 16px; box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+  }
+  .inventory-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .inventory-title { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+  .inventory-link { font-size: 12px; color: var(--primary); font-weight: 600; cursor: pointer; }
+  .inventory-list { display: flex; flex-direction: column; gap: 10px; }
+  .inventory-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px; border-radius: 12px; background: var(--gray-50);
+  }
+  .inv-icon { font-size: 24px; flex-shrink: 0; }
+  .inv-body { flex: 1; }
+  .inv-name { font-size: 13px; font-weight: 600; }
+  .inv-bar-wrap {
+    height: 6px; background: var(--gray-200); border-radius: 3px;
+    margin-top: 4px; overflow: hidden;
+  }
+  .inv-bar {
+    height: 100%; border-radius: 3px; transition: width 0.5s ease;
+  }
+  .inv-bar.ok { background: var(--success); }
+  .inv-bar.low { background: var(--warning); }
+  .inv-bar.critical { background: var(--danger); }
+  .inv-count { font-size: 12px; font-weight: 700; flex-shrink: 0; text-align: right; }
+  .inv-count small { font-weight: 400; color: var(--gray-400); display: block; font-size: 10px; }
+  .inv-warning { font-size: 10px; color: var(--danger); font-weight: 600; margin-top: 2px; }
+
+  /* Remote Config Panel */
+  .config-card {
+    background: white; border-radius: var(--radius-md);
+    padding: 16px; box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+  }
+  .config-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+  .config-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--gray-100);
+  }
+  .config-label { font-size: 13px; font-weight: 600; }
+  .config-desc { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+  .config-toggle {
+    width: 48px; height: 28px; border-radius: 14px;
+    background: var(--gray-300); position: relative; cursor: pointer;
+    transition: background 0.2s; flex-shrink: 0;
+  }
+  .config-toggle.on { background: var(--success); }
+  .config-toggle::after {
+    content: '';
+    width: 22px; height: 22px; border-radius: 50%;
+    background: white; position: absolute; top: 3px; left: 3px;
+    transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .config-toggle.on::after { transform: translateX(20px); }
+
+  /* History Section */
+  .history-card {
+    background: white; border-radius: var(--radius-md);
+    padding: 16px; box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+  }
+  .history-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .history-title { font-size: 15px; font-weight: 700; }
+  .history-month-select {
+    font-size: 12px; color: var(--primary); font-weight: 600;
+    background: none; border: none; cursor: pointer;
+  }
+  .adherence-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+  }
+  .adherence-day {
+    aspect-ratio: 1; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600;
+  }
+  .adherence-day.full { background: #DCFCE7; color: var(--success); }
+  .adherence-day.partial { background: #FEF9C3; color: #B45309; }
+  .adherence-day.missed { background: #FEE2E2; color: var(--danger); }
+  .adherence-day.empty { background: var(--gray-100); color: var(--gray-300); }
+  .adherence-weekday-labels {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+    margin-bottom: 4px;
+  }
+  .weekday-label {
+    text-align: center; font-size: 10px; color: var(--gray-400);
+  }
+
+  /* ===== Modal Overlay ===== */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 500; display: none; align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-sheet {
+    background: white; border-radius: 24px 24px 0 0;
+    width: 100%; max-width: 400px; max-height: 80vh;
+    padding: 20px; padding-bottom: calc(20px + var(--safe-bottom));
+    overflow-y: auto;
+    animation: slideUp 0.3s ease-out;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .modal-handle {
+    width: 36px; height: 4px; border-radius: 2px;
+    background: var(--gray-300); margin: 0 auto 16px;
+  }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+
+  /* Confirm Take Modal */
+  .confirm-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 600; display: none; align-items: center; justify-content: center;
+  }
+  .confirm-modal.show { display: flex; }
+  .confirm-dialog {
+    background: white; border-radius: 20px;
+    width: 300px; padding: 24px; text-align: center;
+    animation: popIn 0.2s ease-out;
+  }
+  @keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .confirm-icon { font-size: 48px; margin-bottom: 12px; }
+  .confirm-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .confirm-desc { font-size: 13px; color: var(--gray-500); margin-bottom: 20px; }
+  .confirm-actions { display: flex; gap: 8px; }
+  .confirm-btn {
+    flex: 1; padding: 12px; border-radius: 12px; border: none;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .confirm-btn.cancel { background: var(--gray-100); color: var(--gray-600); }
+  .confirm-btn.confirm { background: var(--success); color: white; }
+
+  /* Success Animation */
+  .success-overlay {
+    position: fixed; inset: 0; background: rgba(22,163,74,0.1);
+    z-index: 700; display: none; align-items: center; justify-content: center;
+  }
+  .success-overlay.show { display: flex; }
+  .success-check {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: var(--success); display: flex; align-items: center; justify-content: center;
+    font-size: 40px; color: white;
+    animation: successPop 0.5s ease-out forwards;
+  }
+  @keyframes successPop {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+
+  /* ===== Dark Mode ===== */
+  body.dark-mode { background: #111827; color: #E5E7EB; }
+  body.dark-mode .top-bar { background: #1F2937; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+  body.dark-mode .page-title { color: #F9FAFB; }
+  body.dark-mode .back-btn, body.dark-mode .add-btn { background: #374151; color: #D1D5DB; }
+  body.dark-mode .elder-card { border-color: #4B5563; background: #1F2937; color: #E5E7EB; }
+  body.dark-mode .elder-card.active { border-color: #60A5FA; background: #1E3A5F; }
+  body.dark-mode .period-tabs { background: #1F2937; }
+  body.dark-mode .period-tab { background: #374151; border-color: #4B5563; color: #9CA3AF; }
+  body.dark-mode .period-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+  body.dark-mode .timeline-period-label { color: #D1D5DB; }
+  body.dark-mode .med-item { background: #1F2937; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+  body.dark-mode .med-item.missed { background: #2C1010; border-color: rgba(239,68,68,0.3); }
+  body.dark-mode .med-time-value { color: #F9FAFB; }
+  body.dark-mode .med-name { color: #E5E7EB; }
+  body.dark-mode .med-dosage { color: #9CA3AF; }
+  body.dark-mode .med-note { color: #6B7280; }
+  body.dark-mode .med-status-badge { color: #D1D5DB; }
+  body.dark-mode .med-status-badge.taken { background: #14532D; color: #86EFAC; }
+  body.dark-mode .med-status-badge.pending { background: #451A03; color: #FCD34D; }
+  body.dark-mode .med-status-badge.missed { background: #451A1A; color: #FCA5A5; }
+  body.dark-mode .inventory-card { background: #1F2937; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+  body.dark-mode .inventory-title { color: #F9FAFB; }
+  body.dark-mode .inventory-link { color: #60A5FA; }
+  body.dark-mode .inventory-item { background: #374151; }
+  body.dark-mode .inv-name { color: #E5E7EB; }
+  body.dark-mode .inv-count { color: #D1D5DB; }
+  body.dark-mode .inv-count small { color: #6B7280; }
+  body.dark-mode .config-card { background: #1F2937; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+  body.dark-mode .config-title { color: #F9FAFB; }
+  body.dark-mode .config-row { border-bottom-color: #374151; }
+  body.dark-mode .config-label { color: #E5E7EB; }
+  body.dark-mode .config-desc { color: #6B7280; }
+  body.dark-mode .history-card { background: #1F2937; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+  body.dark-mode .history-title { color: #F9FAFB; }
+  body.dark-mode .history-month-select { color: #60A5FA; }
+  body.dark-mode .adherence-day.full { background: #14532D; color: #86EFAC; }
+  body.dark-mode .adherence-day.partial { background: #451A03; color: #FCD34D; }
+  body.dark-mode .adherence-day.missed { background: #451A1A; color: #FCA5A5; }
+  body.dark-mode .adherence-day.empty { background: #374151; color: #6B7280; }
+  body.dark-mode .bottom-nav { background: #1F2937; border-top: 1px solid #374151; }
+  body.dark-mode .nav-item { color: #6B7280; }
+  body.dark-mode .skeleton { background: linear-gradient(90deg, #374151 25%, #4B5563 50%, #374151 75%); }
+  body.dark-mode .modal-sheet { background: #1F2937; }
+  body.dark-mode .modal-handle { background: #4B5563; }
+  body.dark-mode .modal-title { color: #F9FAFB; }
+  body.dark-mode .confirm-dialog { background: #1F2937; }
+  body.dark-mode .confirm-desc { color: #9CA3AF; }
+  body.dark-mode .confirm-btn.cancel { background: #374151; color: #D1D5DB; }
+
+  /* ===== Bottom Nav ===== */
+  .bottom-nav {
+    display: flex; background: white; border-top: 1px solid var(--gray-200);
+    flex-shrink: 0; padding-bottom: var(--safe-bottom);
+    z-index: 100; position: sticky; bottom: 0;
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; padding: 8px 0 6px; gap: 2px; cursor: pointer;
+    color: var(--gray-500); font-size: 10px; border: none; background: none;
+  }
+  .nav-item.active { color: var(--primary); }
+  .nav-icon { font-size: 22px; }
+  .nav-label { font-weight: 500; }
+
+  /* Skeleton Loading */
+  .skeleton {
+    background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.5s infinite;
+    border-radius: 14px;
+  }
+  @keyframes skeletonShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="top-bar">
+  <div class="top-bar-header">
+    <button class="back-btn">&#8592;</button>
+    <span class="page-title">用药管理</span>
+    <div style="display:flex;gap:6px;">
+      <button onclick="toggleDarkMode()" style="width:36px;height:36px;border-radius:18px;border:none;background:var(--gray-100);cursor:pointer;font-size:16px;">&#9790;</button>
+      <button class="add-btn" onclick="openAddMed()">&#43;</button>
+    </div>
+  </div>
+  <div class="elder-selector">
+    <div class="elder-card active">
+      <div class="elder-avatar" style="background:#FEF3C7;">&#128105;</div>
+      <div class="elder-info"><div class="elder-name">爷爷 张三丰</div></div>
+    </div>
+    <div class="elder-card">
+      <div class="elder-avatar" style="background:#FCE7F3;">&#128104;</div>
+      <div class="elder-info"><div class="elder-name">奶奶 李秀英</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Content -->
+<div class="content">
+
+  <!-- Today Summary -->
+  <div class="summary-card">
+    <div class="summary-top">
+      <div>
+        <div class="summary-title">今日服药进度</div>
+        <div class="summary-date">2025年7月14日 周一</div>
+      </div>
+    </div>
+    <div class="ring-wrap">
+      <svg class="med-ring" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8"/>
+        <circle cx="50" cy="50" r="42" fill="none" stroke="white" stroke-width="8"
+          stroke-dasharray="263.89" stroke-dashoffset="79.17" stroke-linecap="round"
+          transform="rotate(-90 50 50)"/>
+        <text x="50" y="46" text-anchor="middle" fill="white" font-size="20" font-weight="700">3/4</text>
+        <text x="50" y="62" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="9">已服用</text>
+      </svg>
+      <div class="summary-stats">
+        <strong>75%</strong> 服药率
+        <br>漏服 0 次 · 延迟 1 次
+      </div>
+    </div>
+    <div class="reminder-status">
+      <div class="reminder-item"><span class="reminder-check">&#10003;</span> 早餐药 - 已播报</div>
+      <div class="reminder-item"><span class="reminder-check">&#10003;</span> 午餐药 - 已播报</div>
+      <div class="reminder-item"><span class="reminder-check">&#10003;</span> 晚餐药 - 已播报</div>
+      <div class="reminder-item"><span class="reminder-check" style="opacity:0.4;">&#9675;</span> 睡前药 - 未到时</div>
+    </div>
+  </div>
+
+  <!-- Period Tabs -->
+  <div class="period-tabs">
+    <div class="period-tab active">上午 <span style="font-size:10px;opacity:0.6;">3项</span></div>
+    <div class="period-tab">中午 <span style="font-size:10px;opacity:0.6;">2项</span></div>
+    <div class="period-tab has-missed">下午<span class="missed-dot"></span></div>
+    <div class="period-tab">晚上 <span style="font-size:10px;opacity:0.6;">2项</span></div>
+    <div class="period-tab">睡前 <span style="font-size:10px;opacity:0.6;">1项</span></div>
+  </div>
+
+  <!-- Morning Timeline -->
+  <div class="timeline-section">
+    <div class="timeline-period-label">
+      <span class="timeline-period-icon">&#9728;&#65039;</span> 早晨时段
+    </div>
+    <div class="timeline-list">
+
+      <!-- Taken -->
+      <div class="med-item taken">
+        <div class="med-time">
+          <div class="med-time-value">08:00</div>
+          <div class="med-time-period">早晨</div>
+        </div>
+        <div class="med-icon capsule">&#128138;</div>
+        <div class="med-body">
+          <div class="med-name">降压药 (氨氯地平)</div>
+          <div class="med-dosage">每次 1 粒，餐后服用</div>
+          <div class="med-note">智能药盒已于 07:55 语音播报提醒</div>
+        </div>
+        <div class="med-status">
+          <span class="med-status-badge taken">&#10003; 已服</span>
+          <span class="med-timer">08:02</span>
+        </div>
+      </div>
+
+      <!-- Taken -->
+      <div class="med-item taken">
+        <div class="med-time">
+          <div class="med-time-value">08:00</div>
+          <div class="med-time-period">早晨</div>
+        </div>
+        <div class="med-icon tablet">&#128138;</div>
+        <div class="med-body">
+          <div class="med-name">维生素D</div>
+          <div class="med-dosage">每次 1 粒，随降压药服用</div>
+          <div class="med-note">智能药盒已于 07:55 语音播报提醒</div>
+        </div>
+        <div class="med-status">
+          <span class="med-status-badge taken">&#10003; 已服</span>
+          <span class="med-timer">08:02</span>
+        </div>
+      </div>
+
+      <!-- Pending -->
+      <div class="med-item">
+        <div class="med-time">
+          <div class="med-time-value">10:00</div>
+          <div class="med-time-period">上午</div>
+        </div>
+        <div class="med-icon syrup">&#127869;</div>
+        <div class="med-body">
+          <div class="med-name">钙片</div>
+          <div class="med-dosage">每次 2 粒，饭后服用</div>
+          <div class="med-note">预计 10:00 语音播报提醒</div>
+        </div>
+        <div class="med-status">
+          <span class="med-status-badge pending">待服用</span>
+          <button class="med-confirm-btn" onclick="showConfirm('钙片', '2粒')">&#10003;</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Afternoon (with missed) -->
+  <div class="timeline-section">
+    <div class="timeline-period-label">
+      <span class="timeline-period-icon">&#128524;</span> 下午时段
+    </div>
+    <div class="timeline-list">
+      <div class="med-item missed">
+        <div class="med-time">
+          <div class="med-time-value" style="color:var(--danger);">14:00</div>
+          <div class="med-time-period">下午</div>
+        </div>
+        <div class="med-icon tablet">&#128138;</div>
+        <div class="med-body">
+          <div class="med-name" style="color:var(--danger);">降糖药 (二甲双胍)</div>
+          <div class="med-dosage">每次 1 粒，餐中服用</div>
+          <div class="med-note" style="color:var(--danger);">&#9888; 已超时2小时未服用，已发送短信提醒</div>
+        </div>
+        <div class="med-status">
+          <span class="med-status-badge missed">漏服</span>
+          <button class="med-confirm-btn" style="background:var(--warning);" onclick="showConfirm('降糖药', '补服1粒')">补服</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Medication Inventory -->
+  <div class="inventory-card">
+    <div class="inventory-header">
+      <span class="inventory-title">&#128190; 药品库存</span>
+      <span class="inventory-link" onclick="openInventory()">查看全部 &rarr;</span>
+    </div>
+    <div class="inventory-list">
+      <div class="inventory-item">
+        <span class="inv-icon">&#128138;</span>
+        <div class="inv-body">
+          <div class="inv-name">降压药 (氨氯地平)</div>
+          <div class="inv-bar-wrap"><div class="inv-bar ok" style="width:75%;"></div></div>
+        </div>
+        <div class="inv-count">22<small>剩余22天</small></div>
+      </div>
+      <div class="inventory-item">
+        <span class="inv-icon">&#128138;</span>
+        <div class="inv-body">
+          <div class="inv-name">钙片</div>
+          <div class="inv-bar-wrap"><div class="inv-bar low" style="width:35%;"></div></div>
+        </div>
+        <div class="inv-count">5<small>约5天用完</small></div>
+      </div>
+      <div class="inventory-item" style="border:1px solid rgba(239,68,68,0.15);">
+        <span class="inv-icon">&#128138;</span>
+        <div class="inv-body">
+          <div class="inv-name" style="color:var(--danger);">降糖药 (二甲双胍)</div>
+          <div class="inv-bar-wrap"><div class="inv-bar critical" style="width:10%;"></div></div>
+          <div class="inv-warning">&#9888; 仅剩2天量，建议尽快购买</div>
+        </div>
+        <div class="inv-count" style="color:var(--danger);">2<small>天</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Remote Config -->
+  <div class="config-card">
+    <div class="config-title">&#9881;&#65039; 远程配置</div>
+    <div class="config-row">
+      <div>
+        <div class="config-label">语音播报提醒</div>
+        <div class="config-desc">药盒到点自动语音通知服药</div>
+      </div>
+      <div class="config-toggle on" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="config-row">
+      <div>
+        <div class="config-label">家属推送通知</div>
+        <div class="config-desc">漏服/延迟时推送消息给家属</div>
+      </div>
+      <div class="config-toggle on" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="config-row">
+      <div>
+        <div class="config-label">短信兜底提醒</div>
+        <div class="config-desc">超时2小时未服发送短信</div>
+      </div>
+      <div class="config-toggle on" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="config-row" style="border:none;">
+      <div>
+        <div class="config-label">库存预警通知</div>
+        <div class="config-desc">药品低于3天量时提醒补货</div>
+      </div>
+      <div class="config-toggle" onclick="this.classList.toggle('on')"></div>
+    </div>
+  </div>
+
+  <!-- Adherence History -->
+  <div class="history-card">
+    <div class="history-header">
+      <span class="history-title">&#128200; 服药依从性</span>
+      <select class="history-month-select">
+        <option>2025年7月</option>
+        <option>2025年6月</option>
+        <option>2025年5月</option>
+      </select>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:12px;color:var(--gray-500);">
+      <span>本月服药率 <strong style="color:var(--success);font-size:16px;">92%</strong></span>
+      <span>连续准时 12 天</span>
+    </div>
+    <div class="adherence-weekday-labels">
+      <span class="weekday-label">一</span>
+      <span class="weekday-label">二</span>
+      <span class="weekday-label">三</span>
+      <span class="weekday-label">四</span>
+      <span class="weekday-label">五</span>
+      <span class="weekday-label">六</span>
+      <span class="weekday-label">日</span>
+    </div>
+    <div class="adherence-grid">
+      <div class="adherence-day full">14</div>
+      <div class="adherence-day full">13</div>
+      <div class="adherence-day full">12</div>
+      <div class="adherence-day full">11</div>
+      <div class="adherence-day partial">10</div>
+      <div class="adherence-day full">9</div>
+      <div class="adherence-day full">8</div>
+      <div class="adherence-day full">7</div>
+      <div class="adherence-day full">6</div>
+      <div class="adherence-day missed">5</div>
+      <div class="adherence-day full">4</div>
+      <div class="adherence-day full">3</div>
+      <div class="adherence-day partial">2</div>
+      <div class="adherence-day full">1</div>
+      <div class="adherence-day empty">30</div>
+      <div class="adherence-day empty">29</div>
+      <div class="adherence-day empty">28</div>
+      <div class="adherence-day empty">27</div>
+      <div class="adherence-day empty">26</div>
+      <div class="adherence-day empty">25</div>
+      <div class="adherence-day empty">24</div>
+      <div class="adherence-day empty">23</div>
+      <div class="adherence-day empty">22</div>
+      <div class="adherence-day empty">21</div>
+      <div class="adherence-day empty">20</div>
+      <div class="adherence-day empty">19</div>
+      <div class="adherence-day empty">18</div>
+      <div class="adherence-day empty">17</div>
+      <div class="adherence-day empty">16</div>
+      <div class="adherence-day empty">15</div>
+      <div class="adherence-day empty">14</div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:10px;font-size:10px;color:var(--gray-400);">
+      <span>&#9632; 全按时</span>
+      <span>&#9632; 部分延迟</span>
+      <span>&#9632; 有漏服</span>
+      <span>&#9632; 无数据</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Confirm Take Modal -->
+<div class="confirm-modal" id="confirmModal">
+  <div class="confirm-dialog">
+    <div class="confirm-icon">&#128138;</div>
+    <div class="confirm-title" id="confirmTitle">确认服用？</div>
+    <div class="confirm-desc" id="confirmDesc">为爷爷服用 钙片 2粒</div>
+    <div class="confirm-actions">
+      <button class="confirm-btn cancel" onclick="closeConfirm()">取消</button>
+      <button class="confirm-btn confirm" onclick="confirmTake()">确认服用</button>
+    </div>
+  </div>
+</div>
+
+<!-- Success Overlay -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-check">&#10003;</div>
+</div>
+
+<!-- Add Medicine Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">添加用药规则</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <label style="font-size:12px;color:var(--gray-500);font-weight:600;">药品名称</label>
+        <input type="text" placeholder="如：降压药" style="width:100%;padding:10px 12px;border:1px solid var(--gray-200);border-radius:10px;font-size:14px;margin-top:4px;">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;">
+          <label style="font-size:12px;color:var(--gray-500);font-weight:600;">剂量</label>
+          <input type="text" placeholder="1 粒" style="width:100%;padding:10px 12px;border:1px solid var(--gray-200);border-radius:10px;font-size:14px;margin-top:4px;">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:12px;color:var(--gray-500);font-weight:600;">频次</label>
+          <select style="width:100%;padding:10px 12px;border:1px solid var(--gray-200);border-radius:10px;font-size:14px;margin-top:4px;">
+            <option>每日1次</option>
+            <option>每日2次</option>
+            <option selected>每日3次</option>
+            <option>必要时</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--gray-500);font-weight:600;">服用时间</label>
+        <input type="time" value="08:00" style="width:100%;padding:10px 12px;border:1px solid var(--gray-200);border-radius:10px;font-size:14px;margin-top:4px;">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--gray-500);font-weight:600;">备注</label>
+        <textarea placeholder="如：餐后服用" rows="2" style="width:100%;padding:10px 12px;border:1px solid var(--gray-200);border-radius:10px;font-size:14px;margin-top:4px;resize:none;"></textarea>
+      </div>
+      <button class="modal-action-btn primary" style="margin-top:8px;" onclick="closeAddModal()">保存用药规则</button>
+      <button class="modal-action-btn secondary" onclick="closeAddModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+  <button class="nav-item">
+    <span class="nav-icon">&#127968;</span>
+    <span class="nav-label">首页</span>
+  </button>
+  <button class="nav-item">
+    <span class="nav-icon">&#128133;</span>
+    <span class="nav-label">健康</span>
+  </button>
+  <button class="nav-item">
+    <span class="nav-icon">&#9888;</span>
+    <span class="nav-label">告警</span>
+  </button>
+  <button class="nav-item active">
+    <span class="nav-icon">&#128139;</span>
+    <span class="nav-label">用药</span>
+  </button>
+  <button class="nav-item">
+    <span class="nav-icon">&#128100;</span>
+    <span class="nav-label">我的</span>
+  </button>
+</div>
+
+<script>
+// Dark mode toggle
+function toggleDarkMode() {
+  document.body.classList.toggle('dark-mode');
+  const isDark = document.body.classList.contains('dark-mode');
+  try { localStorage.setItem('eregen_dark_mode', isDark ? '1' : '0'); } catch(e) {}
+}
+
+(function() {
+  try { if (localStorage.getItem('eregen_dark_mode') === '1') document.body.classList.add('dark-mode'); } catch(e) {}
+})();
+
+function showConfirm(medName, dose) {
+  document.getElementById('confirmTitle').textContent = '确认服用？';
+  document.getElementById('confirmDesc').textContent = `为爷爷服用 ${medName} ${dose}`;
+  document.getElementById('confirmModal').classList.add('show');
+}
+
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('show');
+}
+
+function confirmTake() {
+  closeConfirm();
+  const overlay = document.getElementById('successOverlay');
+  overlay.classList.add('show');
+  setTimeout(() => {
+    overlay.classList.remove('show');
+  }, 1200);
+}
+
+function openAddMed() {
+  document.getElementById('addModal').classList.add('show');
+}
+
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('show');
+}
+
+function openInventory() {
+  alert('打开完整药品库存页面');
+}
+</script>
+
+</body>
+</html>

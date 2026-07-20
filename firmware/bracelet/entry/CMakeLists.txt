@@ -56,6 +56,10 @@ set(APP_SOURCES
     ../protocol/message_encode.c
     ../protocol/message_decode.c
     ../protocol/heartbeat.c
+    ota/ota_download.c
+    ota/ota_verify.c
+    ota/ota_update.c
+    ota/boot_switch.c
 )
 
 # Linker script

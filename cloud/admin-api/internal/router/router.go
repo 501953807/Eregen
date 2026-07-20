@@ -32,6 +32,8 @@ func Setup(db *sql.DB, logger *zap.Logger) *gin.Engine {
 	user := handler.NewUserHandler(s)
 	alert := handler.NewAlertHandler(s)
 	elderly := handler.NewElderlyHandler(s)
+	firmware := handler.NewFirmwareHandler(s)
+	settings := handler.NewSettingsHandler(s)
 
 	// Rate limiter — fail open if Redis is unavailable
 	rateLimiter, rlErr := middleware.NewAdminRateLimiter()
@@ -69,6 +71,35 @@ func Setup(db *sql.DB, logger *zap.Logger) *gin.Engine {
 		api.GET("/elderly/:id/devices", elderly.DeviceList)
 		api.GET("/elderly/:id/location-history", elderly.LocationHistory)
 		api.GET("/elderly/:id/alert-history", elderly.AlertHistory)
+
+		// Dashboard chart stats
+		api.GET("/stats/alert-trend", dashboard.GetAlertTrend)
+		api.GET("/stats/alert-distribution", dashboard.GetAlertDistribution)
+		api.GET("/stats/user-growth", dashboard.GetUserGrowth)
+
+		// Device detail / unbind / batch OTA
+		api.GET("/devices/:id", device.Detail)
+		api.DELETE("/devices/:id/unbind", device.Unbind)
+		api.POST("/devices/batch-ota", device.BatchOTA)
+
+		// Firmware versions (OTA management)
+		fw := api.Group("/firmware-versions")
+		{
+			fw.GET("", firmware.List)
+			fw.POST("", firmware.Create)
+			fw.DELETE("/:id", firmware.Delete)
+		}
+		api.POST("/ota/push", firmware.PushOTA)
+
+		// System settings
+		setting := api.Group("/settings")
+		{
+			setting.GET("/notifications", settings.GetNotificationSettings)
+			setting.PUT("/notifications", settings.UpdateNotificationSettings)
+			setting.GET("/api-keys", settings.ListAPIKeys)
+			setting.POST("/api-keys", settings.CreateAPIKey)
+			setting.DELETE("/api-keys/:id", settings.RevokeAPIKey)
+		}
 	}
 
 	return r

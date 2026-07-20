@@ -14,7 +14,8 @@ func Load() *Config {
 		Port:        getEnv("PORT", "8085"),
 		DatabaseURL: getEnv("DATABASE_URL", "postgres://localhost/eregen"),
 		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379"),
-		JWTSecret:   getEnv("JWT_SECRET", "change-me-in-production"),
+		// JWT_SECRET must be set in production
+		JWTSecret:   getEnv("JWT_SECRET", ""),
 	}
 }
 

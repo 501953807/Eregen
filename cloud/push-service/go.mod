@@ -11,3 +11,7 @@ require (
 	golang.org/x/crypto v0.49.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 )
+
+replace eregen.dev/shared/crypto => ../../shared/crypto
+replace eregen.dev/shared/sanitize => ../../shared/sanitize
+replace eregen.dev/shared/ratelimit => ../../shared/ratelimit

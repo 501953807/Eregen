@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Eregen 颐贞 — 微信小程序首页 (Enhanced)</title>
+<style>
+  :root {
+    --wechat: #07C160;
+    --wechat-dark: #06AD56;
+    --primary: #2563EB;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --gray-50: #F5F5F5;
+    --gray-100: #EEEEEE;
+    --gray-200: #E0E0E0;
+    --gray-400: #999999;
+    --gray-600: #666666;
+    --gray-800: #333333;
+    --gray-900: #1A1A1A;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    background: #111;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 20px;
+  }
+
+  /* Phone Frame */
+  .phone-frame {
+    width: 375px; height: 812px; border-radius: 40px;
+    background: white; overflow: hidden; position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3), inset 0 0 0 2px #333;
+  }
+  .phone-notch {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 150px; height: 30px; background: #111;
+    border-radius: 0 0 20px 20px; z-index: 200;
+  }
+  .status-bar {
+    height: 44px; background: white; display: flex; align-items: flex-end;
+    justify-content: space-between; padding: 0 20px 6px;
+    font-size: 12px; font-weight: 600; color: var(--gray-900);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .scrollable {
+    height: calc(100% - 44px - 56px);
+    overflow-y: auto; padding-bottom: 12px;
+    scrollbar-width: none;
+  }
+  .scrollable::-webkit-scrollbar { display: none; }
+  .tab-bar {
+    height: 56px; background: white; border-top: 1px solid var(--gray-200);
+    display: flex; align-items: stretch;
+    padding-bottom: var(--safe-bottom); position: sticky; bottom: 0; z-index: 100;
+  }
+  .tab-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2px;
+    font-size: 10px; color: var(--gray-400); cursor: pointer;
+    background: none; border: none;
+  }
+  .tab-item.active { color: var(--wechat); }
+  .tab-icon { font-size: 22px; }
+
+  /* Page Content */
+  .page-header {
+    padding: 8px 16px 12px;
+    background: linear-gradient(180deg, var(--wechat) 0%, var(--wechat-dark) 100%);
+    color: white;
+  }
+  .header-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .app-name { font-size: 20px; font-weight: 800; letter-spacing: 1px; }
+  .app-subtitle { font-size: 11px; opacity: 0.8; }
+  .elder-selector-mini {
+    display: flex; gap: 8px;
+  }
+  .elder-chip {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 10px 4px 4px; border-radius: 16px;
+    font-size: 12px; cursor: pointer; backdrop-filter: blur(10px);
+  }
+  .elder-chip.active { background: rgba(255,255,255,0.35); }
+  .elder-chip-avatar {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+  }
+
+  /* Quick Status Card */
+  .quick-card {
+    margin: -20px 12px 12px;
+    background: white; border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    padding: 16px; position: relative; z-index: 10;
+  }
+  .quick-card-title {
+    font-size: 13px; font-weight: 700; color: var(--gray-800);
+    margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .quick-card-more { font-size: 11px; color: var(--gray-400); font-weight: 400; }
+  .quick-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  }
+  .quick-stat {
+    text-align: center; padding: 8px 4px;
+    border-radius: 10px; background: var(--gray-50);
+  }
+  .quick-stat-icon { font-size: 18px; margin-bottom: 4px; }
+  .quick-stat-value { font-size: 16px; font-weight: 800; color: var(--gray-900); line-height: 1; }
+  .quick-stat-label { font-size: 10px; color: var(--gray-400); margin-top: 2px; }
+  .quick-stat.good .quick-stat-value { color: var(--wechat); }
+  .quick-stat.warn .quick-stat-value { color: var(--warning); }
+  .quick-stat.bad .quick-stat-value { color: var(--danger); }
+
+  /* SOS Banner */
+  .sos-banner {
+    margin: 0 12px 12px;
+    background: linear-gradient(135deg, #FEF2F2, #FEE2E2);
+    border: 1px solid rgba(239,68,68,0.15);
+    border-radius: 12px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sos-icon {
+    width: 36px; height: 36px; border-radius: 18px;
+    background: var(--danger); display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: white; flex-shrink: 0;
+    animation: sosPulse 2s infinite;
+  }
+  @keyframes sosPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+  }
+  .sos-text { flex: 1; }
+  .sos-title { font-size: 12px; font-weight: 700; color: #991B1B; }
+  .sos-desc { font-size: 10px; color: #B91C1C; margin-top: 1px; }
+  .sos-btn {
+    background: var(--danger); color: white; border: none;
+    padding: 8px 14px; border-radius: 10px; font-size: 12px;
+    font-weight: 700; cursor: pointer;
+  }
+
+  /* Medication Reminder */
+  .med-section { margin: 0 12px 12px; }
+  .med-card {
+    background: white; border-radius: 14px; padding: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .med-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .med-card-title { font-size: 14px; font-weight: 700; color: var(--gray-800); display: flex; align-items: center; gap: 6px; }
+  .med-ring-mini { width: 50px; height: 50px; }
+  .med-list { display: flex; flex-direction: column; gap: 8px; }
+  .med-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 10px; background: var(--gray-50);
+  }
+  .med-time-tag {
+    font-size: 11px; font-weight: 700; color: var(--primary);
+    background: var(--primary); background: #DBEAFE;
+    padding: 3px 8px; border-radius: 6px; flex-shrink: 0;
+  }
+  .med-name { font-size: 12px; font-weight: 600; flex: 1; }
+  .med-dose { font-size: 10px; color: var(--gray-400); }
+  .med-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid var(--gray-300); display: flex;
+    align-items: center; justify-content: center;
+    font-size: 12px; flex-shrink: 0; cursor: pointer;
+  }
+  .med-check.done { background: var(--wechat); border-color: var(--wechat); color: white; }
+
+  /* Location Section */
+  .location-section { margin: 0 12px 12px; }
+  .location-card {
+    background: white; border-radius: 14px; overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .location-map {
+    width: 100%; height: 120px;
+    background: linear-gradient(135deg, #DBEAFE 0%, #E0E7FF 100%);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .map-pin {
+    font-size: 28px;
+    animation: pinBounce 2s infinite;
+  }
+  @keyframes pinBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  .map-label {
+    position: absolute; bottom: 8px; left: 8px;
+    background: rgba(255,255,255,0.9); padding: 4px 10px;
+    border-radius: 8px; font-size: 10px; color: var(--gray-600);
+    backdrop-filter: blur(4px);
+  }
+  .location-info {
+    padding: 10px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .location-text { font-size: 12px; color: var(--gray-600); }
+  .location-time { font-size: 10px; color: var(--gray-400); }
+
+  /* Health Tip */
+  .health-tip {
+    margin: 0 12px 12px;
+    background: linear-gradient(135deg, #ECFDF5, #D1FAE5);
+    border-radius: 12px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .tip-icon { font-size: 24px; flex-shrink: 0; }
+  .tip-text { font-size: 12px; color: #065F46; line-height: 1.4; flex: 1; }
+  .tip-title { font-weight: 700; }
+
+  /* Bottom Actions */
+  .bottom-actions {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    padding: 0 12px; margin-bottom: 12px;
+  }
+  .action-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 12px 0; background: white; border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04); cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .action-btn:active { transform: scale(0.95); }
+  .action-icon { font-size: 24px; }
+  .action-label { font-size: 11px; color: var(--gray-600); font-weight: 500; }
+
+  /* Footer */
+  .footer {
+    text-align: center; padding: 16px; font-size: 10px; color: var(--gray-400);
+  }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="phone-notch"></div>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span>9:41</span>
+    <span>&#128267; &#128244;</span>
+  </div>
+
+  <!-- Scrollable Content -->
+  <div class="scrollable">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="header-top">
+        <div>
+          <div class="app-name">颐贞 Eregen</div>
+          <div class="app-subtitle">守护家人健康</div>
+        </div>
+      </div>
+      <div class="elder-selector-mini">
+        <div class="elder-chip active">
+          <div class="elder-chip-avatar">&#128105;</div>
+          <span>爷爷</span>
+        </div>
+        <div class="elder-chip">
+          <div class="elder-chip-avatar">&#128104;</div>
+          <span>奶奶</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="quick-card">
+      <div class="quick-card-title">
+        实时状态
+        <span class="quick-card-more">详情 &rarr;</span>
+      </div>
+      <div class="quick-stats">
+        <div class="quick-stat good">
+          <div class="quick-stat-icon">&#9825;</div>
+          <div class="quick-stat-value">72</div>
+          <div class="quick-stat-label">心率 bpm</div>
+        </div>
+        <div class="quick-stat good">
+          <div class="quick-stat-icon">&#127807;</div>
+          <div class="quick-stat-value">98%</div>
+          <div class="quick-stat-label">血氧</div>
+        </div>
+        <div class="quick-stat warn">
+          <div class="quick-stat-icon">&#128736;</div>
+          <div class="quick-stat-value">3.2k</div>
+          <div class="quick-stat-label">今日步数</div>
+        </div>
+        <div class="quick-stat">
+          <div class="quick-stat-icon">&#128267;</div>
+          <div class="quick-stat-value">85%</div>
+          <div class="quick-stat-label">设备电量</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOS Banner -->
+    <div class="sos-banner">
+      <div class="sos-icon">&#9889;</div>
+      <div class="sos-text">
+        <div class="sos-title">紧急联系人一键呼叫</div>
+        <div class="sos-desc">爷爷设备异常时自动通知</div>
+      </div>
+      <button class="sos-btn">设置</button>
+    </div>
+
+    <!-- Location -->
+    <div class="location-section">
+      <div class="location-card">
+        <div class="location-map">
+          <span class="map-pin">&#128205;</span>
+          <div class="map-label">幸福家园小区 · 3号楼</div>
+        </div>
+        <div class="location-info">
+          <span class="location-text">当前位置正常，在安全区域内</span>
+          <span class="location-time">2分钟前更新</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Medication -->
+    <div class="med-section">
+      <div class="med-card">
+        <div class="med-card-header">
+          <span class="med-card-title">&#128139; 今日用药</span>
+          <svg class="med-ring-mini" viewBox="0 0 60 60">
+            <circle cx="30" cy="30" r="24" fill="none" stroke="#E0E0E0" stroke-width="5"/>
+            <circle cx="30" cy="30" r="24" fill="none" stroke="#07C160" stroke-width="5"
+              stroke-dasharray="150.8" stroke-dashoffset="37.7" stroke-linecap="round"
+              transform="rotate(-90 30 30)"/>
+            <text x="30" y="33" text-anchor="middle" fill="#333" font-size="12" font-weight="700">3/4</text>
+          </svg>
+        </div>
+        <div class="med-list">
+          <div class="med-row">
+            <span class="med-time-tag">08:00</span>
+            <span class="med-name">降压药</span>
+            <span class="med-dose">1粒</span>
+            <span class="med-check done">&#10003;</span>
+          </div>
+          <div class="med-row">
+            <span class="med-time-tag">08:00</span>
+            <span class="med-name">维生素D</span>
+            <span class="med-dose">1粒</span>
+            <span class="med-check done">&#10003;</span>
+          </div>
+          <div class="med-row">
+            <span class="med-time-tag">12:00</span>
+            <span class="med-name">钙片</span>
+            <span class="med-dose">2粒</span>
+            <span class="med-check done">&#10003;</span>
+          </div>
+          <div class="med-row">
+            <span class="med-time-tag" style="background:#FFF7ED;color:#C2410C;">20:00</span>
+            <span class="med-name" style="color:var(--gray-400);">降糖药</span>
+            <span class="med-dose">1粒</span>
+            <span class="med-check"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Health Tip -->
+    <div class="health-tip">
+      <span class="tip-icon">&#128161;</span>
+      <div class="tip-text">
+        <span class="tip-title">今日健康提示</span><br>
+        爷爷今日步数略低于目标（5000步），建议傍晚散步30分钟。
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bottom-actions">
+      <div class="action-btn">
+        <span class="action-icon">&#128200;</span>
+        <span class="action-label">健康报告</span>
+      </div>
+      <div class="action-btn">
+        <span class="action-icon">&#128172;</span>
+        <span class="action-label">在线问诊</span>
+      </div>
+      <div class="action-btn">
+        <span class="action-icon">&#128139;</span>
+        <span class="action-label">药品购买</span>
+      </div>
+      <div class="action-btn">
+        <span class="action-icon">&#9881;&#65039;</span>
+        <span class="action-label">设备管理</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      颐贞 Eregen · 守护每一位长辈<br>
+      <span style="opacity:0.6;">版本 1.0.0</span>
+    </div>
+
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <button class="tab-item active">
+      <span class="tab-icon">&#127968;</span>
+      <span>首页</span>
+    </button>
+    <button class="tab-item">
+      <span class="tab-icon">&#128133;</span>
+      <span>健康</span>
+    </button>
+    <button class="tab-item">
+      <span class="tab-icon">&#128139;</span>
+      <span>用药</span>
+    </button>
+    <button class="tab-item">
+      <span class="tab-icon">&#128100;</span>
+      <span>我的</span>
+    </button>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -3,10 +3,10 @@ module eregen.dev/api-server
 go 1.25
 
 require (
+	eregen.dev/shared/sanitize v0.0.0-00010101000000-000000000000
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
-	github.com/influxdata/influxdb-client-go/v2 v2.13.0
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/lib/pq v1.10.9
 	github.com/nats-io/nats.go v1.36.0
@@ -15,11 +15,13 @@ require (
 	golang.org/x/crypto v0.31.0
 )
 
-require github.com/gorilla/websocket v1.5.3 // indirect
+require (
+	github.com/gorilla/websocket v1.5.3
+	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
+)
 
 require (
-	eregen.dev/shared/validation v0.0.0
-	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
+	eregen.dev/shared/crypto v0.0.0-00010101000000-000000000000 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
@@ -32,7 +34,6 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.20.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
-	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
@@ -45,7 +46,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/nats-io/nkeys v0.4.7 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/oapi-codegen/runtime v1.0.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/rogpeppe/go-internal v1.15.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
@@ -61,3 +61,9 @@ require (
 )
 
 replace eregen.dev/shared/validation => ../../shared/validation
+
+replace eregen.dev/shared/crypto => ../../shared/crypto
+
+replace eregen.dev/shared/sanitize => ../../shared/sanitize
+
+replace eregen.dev/shared/ratelimit => ../../shared/ratelimit

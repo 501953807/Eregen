@@ -21,7 +21,10 @@
 #define FIRMWARE_PAGES        128U
 
 /* Flash page buffer for write operations */
-static uint8_t s_write_buf[FLASH_PAGE_SIZE];
+static uint8_t s_page_buf[FLASH_PAGE_SIZE];
+
+/* Temporary buffer for incoming download chunks */
+static uint8_t s_recv_buf[FLASH_PAGE_SIZE];
 
 /* OTA state machine context */
 static ota_state_t s_current_state = OTA_STATE_IDLE;
@@ -114,12 +117,12 @@ static void vOTAUpdateTask(void *pvParameters)
     log_info("OTA: Phase 1 — Downloading %lu bytes", (unsigned long)fw_size);
 
     while (total_bytes_received < fw_size) {
-        int bytes_read = ota_download_chunk(&s_download_ctx, s_write_buf, FLASH_PAGE_SIZE);
+        int bytes_read = ota_download_chunk(&s_download_ctx, s_recv_buf, FLASH_PAGE_SIZE);
 
         if (bytes_read > 0) {
             /* Accumulate into page buffer */
             for (int i = 0; i < bytes_read; i++) {
-                s_write_buf[bytes_in_page++] = s_write_buf[i];
+                s_page_buf[bytes_in_page++] = s_recv_buf[i];
             }
             total_bytes_received += bytes_read;
 
@@ -128,7 +131,7 @@ static void vOTAUpdateTask(void *pvParameters)
                 total_bytes_received == fw_size) {
                 uint32_t page_addr = FIRMWARE_BANK_B_ADDR +
                                      (pages_written * FLASH_PAGE_SIZE);
-                if (!ota_flash_write_page(page_addr, s_write_buf)) {
+                if (!ota_flash_write_page(page_addr, s_page_buf)) {
                     result = OTA_ERR_FLASH;
                     break;
                 }

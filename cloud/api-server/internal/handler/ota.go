@@ -142,3 +142,24 @@ func (h *OTAHandler) GetOTAJob(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": job})
 }
+
+// POST /api/v1/admin/firmware/:id/verify — verify firmware signature
+func (h *OTAHandler) VerifyFirmware(c *gin.Context) {
+	id := c.Param("id")
+
+	valid, status, err := h.svc.VerifyFirmwareSignature(c.Request.Context(), id)
+	if err != nil {
+		h.log.Error("verify firmware failed", zap.String("firmware_id", id), zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "INTERNAL_ERROR", "message": "Failed to verify firmware signature"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":    "OK",
+		"data": gin.H{
+			"firmware_id": id,
+			"valid":       valid,
+			"status":      status,
+		},
+	})
+}

@@ -38,19 +38,19 @@ func (p *Postgres) CreateUser(ctx context.Context, u *model.User) error {
 	u.CreatedAt = time.Now()
 	u.UpdatedAt = u.CreatedAt
 
-	q := `INSERT INTO users (id, email, phone, password_hash, role, name, created_at, updated_at)
-		  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+	q := `INSERT INTO users (id, email, phone, open_id, password_hash, role, name, created_at, updated_at)
+		  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 	_, err := p.pool.Exec(ctx, q,
-		u.ID, u.Email, u.Phone, u.PasswordHash, u.Role, u.Name, u.CreatedAt, u.UpdatedAt,
+		u.ID, u.Email, u.Phone, u.OpenID, u.PasswordHash, u.Role, u.Name, u.CreatedAt, u.UpdatedAt,
 	)
 	return err
 }
 
 func (p *Postgres) GetUserByID(ctx context.Context, id string) (*model.User, error) {
 	u := &model.User{}
-	q := `SELECT id, email, phone, password_hash, role, name, created_at, updated_at FROM users WHERE id = $1`
+	q := `SELECT id, email, phone, open_id, password_hash, role, name, created_at, updated_at FROM users WHERE id = $1`
 	err := p.pool.QueryRow(ctx, q, id).Scan(
-		&u.ID, &u.Email, &u.Phone, &u.PasswordHash, &u.Role, &u.Name, &u.CreatedAt, &u.UpdatedAt,
+		&u.ID, &u.Email, &u.Phone, &u.OpenID, &u.PasswordHash, &u.Role, &u.Name, &u.CreatedAt, &u.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -72,9 +72,21 @@ func (p *Postgres) GetUserByPhone(ctx context.Context, phone string) (*model.Use
 
 func (p *Postgres) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	u := &model.User{}
-	q := `SELECT id, email, phone, password_hash, role, name, created_at, updated_at FROM users WHERE email = $1`
+	q := `SELECT id, email, phone, open_id, password_hash, role, name, created_at, updated_at FROM users WHERE email = $1`
 	err := p.pool.QueryRow(ctx, q, email).Scan(
-		&u.ID, &u.Email, &u.Phone, &u.PasswordHash, &u.Role, &u.Name, &u.CreatedAt, &u.UpdatedAt,
+		&u.ID, &u.Email, &u.Phone, &u.OpenID, &u.PasswordHash, &u.Role, &u.Name, &u.CreatedAt, &u.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+func (p *Postgres) GetUserByOpenID(ctx context.Context, openID string) (*model.User, error) {
+	u := &model.User{}
+	q := `SELECT id, email, phone, open_id, password_hash, role, name, created_at, updated_at FROM users WHERE open_id = $1`
+	err := p.pool.QueryRow(ctx, q, openID).Scan(
+		&u.ID, &u.Email, &u.Phone, &u.OpenID, &u.PasswordHash, &u.Role, &u.Name, &u.CreatedAt, &u.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -804,18 +816,18 @@ func (p *Postgres) GetSubscription(ctx context.Context, userID string) (*model.S
 // ---------- FirmwareRelease ----------
 
 func (p *Postgres) CreateFirmwareRelease(ctx context.Context, r *model.FirmwareRelease) error {
-	q := `INSERT INTO firmware_releases (id, device_type, tier, version, url, sha256_hash, changelog, min_app_version, force_update, active, created_at, updated_at)
-		  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
+	q := `INSERT INTO firmware_releases (id, device_type, tier, version, url, sha256_hash, signature, changelog, min_app_version, force_update, active, created_at, updated_at)
+		  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
 	_, err := p.pool.Exec(ctx, q,
 		r.ID, r.DeviceType, r.Tier, r.Version, r.URL, r.Sha256Hash,
-		r.Changelog, r.MinAppVersion, r.ForceUpdate, r.Active,
+		r.Signature, r.Changelog, r.MinAppVersion, r.ForceUpdate, r.Active,
 		r.CreatedAt, r.UpdatedAt,
 	)
 	return err
 }
 
 func (p *Postgres) ListFirmwareReleases(ctx context.Context, deviceType, tier string) ([]model.FirmwareRelease, error) {
-	q := `SELECT id, device_type, tier, version, url, sha256_hash, changelog, min_app_version, force_update, active, settings, created_at, updated_at
+	q := `SELECT id, device_type, tier, version, url, sha256_hash, signature, changelog, min_app_version, force_update, active, settings, created_at, updated_at
 		  FROM firmware_releases WHERE active = true`
 	args := []any{}
 	idx := 1
@@ -841,7 +853,7 @@ func (p *Postgres) ListFirmwareReleases(ctx context.Context, deviceType, tier st
 	for rows.Next() {
 		var r model.FirmwareRelease
 		if err := rows.Scan(&r.ID, &r.DeviceType, &r.Tier, &r.Version, &r.URL, &r.Sha256Hash,
-			&r.Changelog, &r.MinAppVersion, &r.ForceUpdate, &r.Active,
+			&r.Signature, &r.Changelog, &r.MinAppVersion, &r.ForceUpdate, &r.Active,
 			&r.CreatedAt, &r.UpdatedAt); err != nil {
 			return nil, err
 		}
@@ -852,11 +864,11 @@ func (p *Postgres) ListFirmwareReleases(ctx context.Context, deviceType, tier st
 
 func (p *Postgres) GetFirmwareRelease(ctx context.Context, id string) (*model.FirmwareRelease, error) {
 	r := &model.FirmwareRelease{}
-	q := `SELECT id, device_type, tier, version, url, sha256_hash, changelog, min_app_version, force_update, active, created_at, updated_at
+	q := `SELECT id, device_type, tier, version, url, sha256_hash, signature, changelog, min_app_version, force_update, active, created_at, updated_at
 		  FROM firmware_releases WHERE id = $1`
 	err := p.pool.QueryRow(ctx, q, id).Scan(
 		&r.ID, &r.DeviceType, &r.Tier, &r.Version, &r.URL, &r.Sha256Hash,
-		&r.Changelog, &r.MinAppVersion, &r.ForceUpdate, &r.Active,
+		&r.Signature, &r.Changelog, &r.MinAppVersion, &r.ForceUpdate, &r.Active,
 		&r.CreatedAt, &r.UpdatedAt,
 	)
 	if err != nil {
@@ -915,7 +927,246 @@ func (p *Postgres) UpdateOTAJobProgress(ctx context.Context, jobID string, fn Up
 	return err
 }
 
-// ---------- helpers ----------
+// GetElderlyIDsByUserID returns all elderly profile IDs accessible to a user.
+func (p *Postgres) GetElderlyIDsByUserID(ctx context.Context, userID string) ([]string, error) {
+	rows, err := p.pool.Query(ctx,
+		`SELECT id FROM elderly_profiles WHERE user_id = $1`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			break
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+// ListUsers returns all users with optional pagination.
+func (p *Postgres) ListUsers(ctx context.Context, page, pageSize int) ([]model.User, int, error) {
+	offset := (page - 1) * pageSize
+
+	countQ := "SELECT COUNT(*) FROM users"
+	var total int
+	if err := p.pool.QueryRow(ctx, countQ).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	q := `SELECT id, email, phone, password_hash, role, name, created_at, updated_at
+		  FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2`
+	rows, err := p.pool.Query(ctx, q, pageSize, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var users []model.User
+	for rows.Next() {
+		var u model.User
+		if err := rows.Scan(&u.ID, &u.Email, &u.Phone, &u.PasswordHash, &u.Role, &u.Name, &u.CreatedAt, &u.UpdatedAt); err != nil {
+			return nil, 0, err
+		}
+		users = append(users, u)
+	}
+	return users, total, rows.Err()
+}
+
+// CreateMedTakeRecord records a medication taken event.
+func (p *Postgres) CreateMedTakeRecord(ctx context.Context, ruleID, elderlyID string) error {
+	now := time.Now()
+	q := `INSERT INTO med_status_records (id, rule_id, elderly_id, taken_at, taken, recorded_at)
+		  VALUES ($1, $2, $3, $4, true, $5)`
+	_, err := p.pool.Exec(ctx, q, uuid.New().String(), ruleID, elderlyID, now, now)
+	return err
+}
+
+// ResolveAlertByID marks an alert as resolved.
+func (p *Postgres) ResolveAlertByID(ctx context.Context, alertID string) error {
+	q := `UPDATE alerts SET status = 'resolved', resolved_at = now() WHERE id = $1`
+	_, err := p.pool.Exec(ctx, q, alertID)
+	return err
+}
+
+// ListSubscriptions returns all subscriptions for a user.
+func (p *Postgres) ListSubscriptions(ctx context.Context, userID string, page, pageSize int) ([]model.Subscription, int, error) {
+	offset := (page - 1) * pageSize
+
+	countQ := "SELECT COUNT(*) FROM subscriptions WHERE user_id = $1"
+	var total int
+	if err := p.pool.QueryRow(ctx, countQ, userID).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	q := `SELECT id, user_id, plan_tier, status, start_date, end_date, auto_renew, payment_method
+		  FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`
+	rows, err := p.pool.Query(ctx, q, userID, pageSize, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var subs []model.Subscription
+	for rows.Next() {
+		var s model.Subscription
+		if err := rows.Scan(&s.ID, &s.UserID, &s.PlanTier, &s.Status, &s.StartDate, &s.EndDate,
+			&s.AutoRenew, &s.PaymentMethod); err != nil {
+			return nil, 0, err
+		}
+		subs = append(subs, s)
+	}
+	return subs, total, rows.Err()
+}
+
+// ---------- Data Export / Deletion ----------
+
+func (p *Postgres) GetElderlyProfilesByUserID(ctx context.Context, userID string) ([]model.ElderlyProfile, error) {
+	profiles, _, err := p.ListElderlyProfiles(ctx, userID, 1, 10000)
+	return profiles, err
+}
+
+func (p *Postgres) GetHealthRecordsByElderlyID(ctx context.Context, elderlyID string, from, until time.Time) ([]model.HealthRecord, error) {
+	q := `SELECT id, elderly_id, timestamp, hr, spo2, steps, sleep_hours, bp_systolic, bp_diastolic
+		  FROM health_records WHERE elderly_id = $1 AND timestamp >= $2 AND timestamp <= $3
+		  ORDER BY timestamp ASC`
+
+	rows, err := p.pool.Query(ctx, q, elderlyID, from, until)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var records []model.HealthRecord
+	for rows.Next() {
+		var r model.HealthRecord
+		if err := rows.Scan(&r.ID, &r.ElderlyID, &r.Timestamp, &r.HR, &r.SPO2, &r.Steps,
+			&r.SleepHours, &r.BPSystolic, &r.BPDiastolic); err != nil {
+			return nil, err
+		}
+		records = append(records, r)
+	}
+	return records, rows.Err()
+}
+
+func (p *Postgres) GetLocationHistoryByElderlyID(ctx context.Context, elderlyID string, from, until time.Time) ([]model.LocationRecord, error) {
+	return p.GetLocationHistory(ctx, elderlyID, from, until)
+}
+
+func (p *Postgres) GetMedicationRulesByElderlyID(ctx context.Context, elderlyID string) ([]model.MedicationRule, error) {
+	return p.ListMedicationRules(ctx, elderlyID)
+}
+
+func (p *Postgres) GetAlertsByElderlyID(ctx context.Context, elderlyID string, from, until time.Time) ([]model.Alert, error) {
+	q := `SELECT id, elderly_id, alert_type, severity, status, metadata, created_at, resolved_at
+		  FROM alerts WHERE elderly_id = $1 AND created_at >= $2 AND created_at <= $3
+		  ORDER BY created_at DESC`
+
+	rows, err := p.pool.Query(ctx, q, elderlyID, from, until)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var alerts []model.Alert
+	for rows.Next() {
+		var a model.Alert
+		var metaJSON []byte
+		if err := rows.Scan(&a.ID, &a.ElderlyID, &a.AlertType, &a.Severity, &a.Status, &metaJSON, &a.CreatedAt, &a.ResolvedAt); err != nil {
+			return nil, err
+		}
+		if len(metaJSON) > 0 {
+			json.Unmarshal(metaJSON, &a.Metadata)
+		}
+		alerts = append(alerts, a)
+	}
+	return alerts, rows.Err()
+}
+
+func (p *Postgres) DeleteUser(ctx context.Context, userID string) error {
+	tx, err := p.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+
+	elderlyIDs, err := p.GetElderlyIDsByUserID(ctx, userID)
+	if err != nil {
+		_ = tx.Rollback(ctx)
+		return fmt.Errorf("get elderly ids: %w", err)
+	}
+
+	for _, eid := range elderlyIDs {
+		_, err := tx.Exec(ctx, `DELETE FROM geofences WHERE elderly_id = $1`, eid)
+		if err != nil {
+			_ = tx.Rollback(ctx)
+			return fmt.Errorf("delete geofences: %w", err)
+		}
+		_, err = tx.Exec(ctx, `DELETE FROM alerts WHERE elderly_id = $1`, eid)
+		if err != nil {
+			_ = tx.Rollback(ctx)
+			return fmt.Errorf("delete alerts: %w", err)
+		}
+		_, err = tx.Exec(ctx, `DELETE FROM health_records WHERE elderly_id = $1`, eid)
+		if err != nil {
+			_ = tx.Rollback(ctx)
+			return fmt.Errorf("delete health records: %w", err)
+		}
+		_, err = tx.Exec(ctx, `DELETE FROM location_records WHERE elderly_id = $1`, eid)
+		if err != nil {
+			_ = tx.Rollback(ctx)
+			return fmt.Errorf("delete location records: %w", err)
+		}
+		_, err = tx.Exec(ctx, `DELETE FROM medication_rules WHERE elderly_id = $1`, eid)
+		if err != nil {
+			_ = tx.Rollback(ctx)
+			return fmt.Errorf("delete medication rules: %w", err)
+		}
+		_, err = tx.Exec(ctx, `DELETE FROM med_status_records WHERE elderly_id = $1`, eid)
+		if err != nil {
+			_ = tx.Rollback(ctx)
+			return fmt.Errorf("delete med status records: %w", err)
+		}
+		_, err = tx.Exec(ctx, `DELETE FROM elderly_profiles WHERE id = $1`, eid)
+		if err != nil {
+			_ = tx.Rollback(ctx)
+			return fmt.Errorf("delete elderly profile: %w", err)
+		}
+	}
+
+	_, err = tx.Exec(ctx, `DELETE FROM devices WHERE owner_user_id = $1`, userID)
+	if err != nil {
+		_ = tx.Rollback(ctx)
+		return fmt.Errorf("delete devices: %w", err)
+	}
+
+	_, err = tx.Exec(ctx, `DELETE FROM subscriptions WHERE user_id = $1`, userID)
+	if err != nil {
+		_ = tx.Rollback(ctx)
+		return fmt.Errorf("delete subscriptions: %w", err)
+	}
+
+	_, err = tx.Exec(ctx, `DELETE FROM users WHERE id = $1`, userID)
+	if err != nil {
+		_ = tx.Rollback(ctx)
+		return fmt.Errorf("delete user: %w", err)
+	}
+
+	return tx.Commit(ctx)
+}
+
+func join(seps []string, sep string) string {
+	if len(seps) == 0 {
+		return "1=0"
+	}
+	s := seps[0]
+	for i := 1; i < len(seps); i++ {
+		s += sep + seps[i]
+	}
+	return s
+}
 
 func scanDevice(row any) (*model.Device, error) {
 	type scanner interface {

@@ -27,9 +27,9 @@ type AuthHandler struct {
 	log   *zap.Logger
 }
 
-// NewAuthHandler creates a new auth handler.
-func NewAuthHandler(store *store.Postgres, redis *store.Redis, auth *middleware.JWTAuth, sms *service.SMSProvider, log *zap.Logger) *AuthHandler {
-	return &AuthHandler{store: store, redis: redis, auth: auth, sms: sms, log: log}
+// NewAuthHandler creates a new AuthHandler.
+func NewAuthHandler(pg *store.Postgres, redis *store.Redis, auth *middleware.JWTAuth, sms *service.SMSProvider, log *zap.Logger) *AuthHandler {
+	return &AuthHandler{store: pg, redis: redis, auth: auth, sms: sms, log: log}
 }
 
 type RegisterRequest struct {
@@ -66,7 +66,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Check password complexity
 	hasUpper, hasLower, hasDigit := false, false, false
 	for _, r := range req.Password {
 		switch {
@@ -137,18 +136,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	var user *model.User
 	identifier := strings.ToLower(req.Identifier)
 	if strings.Contains(identifier, "@") {
-		var err error
-		user, err = h.store.GetUserByEmail(c.Request.Context(), identifier)
-		if err != nil {
-			user = nil
-		}
+		user, _ = h.store.GetUserByEmail(c.Request.Context(), identifier)
 	}
 	if user == nil {
-		var err error
-		user, err = h.store.GetUserByPhone(c.Request.Context(), identifier)
-		if err != nil {
-			user = nil
-		}
+		user, _ = h.store.GetUserByPhone(c.Request.Context(), identifier)
 	}
 	if user == nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"code": "INVALID_CREDENTIALS", "message": "Invalid phone/email or password"})
@@ -228,7 +219,6 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 // POST /api/v1/auth/logout
 func (h *AuthHandler) Logout(c *gin.Context) {
-	// Blacklist the current access token so it can't be used again before expiry
 	authHeader := c.GetHeader("Authorization")
 	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 	if tokenStr != authHeader && tokenStr != "" {
@@ -239,7 +229,6 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		}
 	}
 
-	// Also blacklist the refresh token if present
 	var req struct {
 		RefreshToken string `json:"refresh_token"`
 	}
@@ -247,7 +236,6 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		h.redis.InvalidateRefreshToken(c.Request.Context(), req.RefreshToken)
 	}
 
-	// Invalidate all other sessions for this user (force logout everywhere)
 	if userID, exists := c.Get(string(middleware.ContextUserID)); exists {
 		key := "token:user:" + userID.(string) + ":*"
 		h.redis.DelByPattern(c.Request.Context(), key)
@@ -257,7 +245,6 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 }
 
 // POST /api/v1/auth/revoke-all-sessions
-// Revokes all refresh tokens for the current user except the one used in this request.
 func (h *AuthHandler) RevokeAllSessions(c *gin.Context) {
 	userID, exists := c.Get(string(middleware.ContextUserID))
 	if !exists {
@@ -265,7 +252,6 @@ func (h *AuthHandler) RevokeAllSessions(c *gin.Context) {
 		return
 	}
 
-	// Blacklist all tokens for this user
 	key := "token:user:" + userID.(string) + ":*"
 	h.redis.DelByPattern(c.Request.Context(), key)
 
@@ -273,13 +259,12 @@ func (h *AuthHandler) RevokeAllSessions(c *gin.Context) {
 }
 
 // POST /api/v1/auth/device/register
-// Registers a device with its fingerprint and returns a device credential.
 func (h *AuthHandler) RegisterDevice(c *gin.Context) {
 	var req struct {
 		DeviceID     string `json:"device_id" binding:"required"`
-		DeviceType   string `json:"device_type" binding:"required"` // bracelet | pillbox
-		Tier         string `json:"tier"`                           // starter/plus/pro
-		Fingerprint  string `json:"fingerprint"`                    // TLS client cert SHA256
+		DeviceType   string `json:"device_type" binding:"required"`
+		Tier         string `json:"tier"`
+		Fingerprint  string `json:"fingerprint"`
 		SerialNumber string `json:"serial_number"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -344,6 +329,112 @@ func (h *AuthHandler) SendOTP(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "Verification code sent"})
+}
+
+// POST /api/v1/auth/send-code — alias for send-otp (WeChat mini-program compatibility)
+func (h *AuthHandler) SendCode(c *gin.Context) {
+	h.SendOTP(c)
+}
+
+// POST /api/v1/auth/phone-login
+func (h *AuthHandler) PhoneLogin(c *gin.Context) {
+	var req struct {
+		Phone string `json:"phone" binding:"required"`
+		Code  string `json:"code" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_REQUEST", "message": "Phone and code required"})
+		return
+	}
+
+	phone := strings.ToLower(req.Phone)
+	if err := h.redis.VerifyOTP(c.Request.Context(), phone, req.Code); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"code": "INVALID_CODE", "message": "Invalid or expired verification code"})
+		return
+	}
+
+	user, err := h.store.GetUserByPhone(c.Request.Context(), phone)
+	if err != nil {
+		u := &model.User{
+			Phone: &phone,
+			Role:  model.RoleFamily,
+		}
+		if err := h.store.CreateUser(c.Request.Context(), u); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": "INTERNAL_ERROR", "message": "Login failed"})
+			return
+		}
+		user = u
+	}
+
+	accessToken, err := h.auth.GenerateAccessToken(user.ID, user.Role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "INTERNAL_ERROR", "message": "Failed to generate token"})
+		return
+	}
+
+	refreshToken, err := h.auth.GenerateRefreshToken(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "INTERNAL_ERROR", "message": "Failed to generate refresh token"})
+		return
+	}
+
+	h.redis.SetRefreshToken(c.Request.Context(), refreshToken, user.ID, h.auth.RefreshTTL())
+
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": LoginResponse{
+		AccessToken:  accessToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    h.auth.TokenExpiry(),
+		RefreshToken: refreshToken,
+	}})
+}
+
+// POST /api/v1/auth/wechat/login — WeChat mini-program silent login
+func (h *AuthHandler) WechatLogin(c *gin.Context) {
+	var req struct {
+		Code string `json:"code" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_REQUEST", "message": "WeChat code required"})
+		return
+	}
+
+	// In production, exchange code for openid via WeChat JSAPI session key exchange.
+	// Placeholder: derive a stable open_id from the ephemeral code.
+	openID := "wx_" + req.Code
+
+	user, err := h.store.GetUserByOpenID(c.Request.Context(), openID)
+	if err != nil {
+		u := &model.User{
+			OpenID: &openID,
+			Role:   model.RoleFamily,
+		}
+		if err := h.store.CreateUser(c.Request.Context(), u); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": "INTERNAL_ERROR", "message": "Login failed"})
+			return
+		}
+		user = u
+	}
+
+	accessToken, err := h.auth.GenerateAccessToken(user.ID, user.Role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "INTERNAL_ERROR", "message": "Failed to generate token"})
+		return
+	}
+
+	refreshToken, err := h.auth.GenerateRefreshToken(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "INTERNAL_ERROR", "message": "Failed to generate refresh token"})
+		return
+	}
+
+	h.redis.SetRefreshToken(c.Request.Context(), refreshToken, user.ID, h.auth.RefreshTTL())
+
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": LoginResponse{
+		AccessToken:  accessToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    h.auth.TokenExpiry(),
+		RefreshToken: refreshToken,
+	}})
 }
 
 // POST /api/v1/auth/forgot-password

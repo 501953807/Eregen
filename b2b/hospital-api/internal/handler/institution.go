@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type InstitutionHandler struct {
@@ -78,14 +79,22 @@ func (h *InstitutionHandler) CreateAPIKey(c *gin.Context) {
 		return
 	}
 
+	// Generate random key and hash it with bcrypt
+	rawKey := generateRandomKey()
+	hashedKey, err := bcrypt.GenerateFromPassword([]byte(rawKey), bcrypt.DefaultCost)
+	if err != nil {
+		h.log.Error("generate bcrypt hash", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate secure key"})
+		return
+	}
+
 	key := &model.InstitutionAPIKey{
 		InstitutionID: instID,
 		Name:          req.Name,
-		ExpiresAt: time.Now().AddDate(0, 0, req.ExpiresIn),
+		ExpiresAt:     time.Now().AddDate(0, 0, req.ExpiresIn),
 		Active:        true,
+		KeyHash:       string(hashedKey),
 	}
-	// In production: generate random key, hash with bcrypt, store hash
-	key.KeyHash = generateRandomKey()
 
 	if err := h.store.CreateAPIKey(c.Request.Context(), key); err != nil {
 		h.log.Error("create api key", zap.Error(err))
@@ -95,7 +104,7 @@ func (h *InstitutionHandler) CreateAPIKey(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": gin.H{
 		"key_id":    key.ID,
-		"key_value": key.KeyHash, // only shown once
+		"key_value": rawKey, // only shown once — caller must save this
 		"expires":   key.ExpiresAt,
 	}})
 }

@@ -90,6 +90,9 @@ func generateHealthReport(elderlyID string, periodStart, periodEnd time.Time, ex
 		"data_summary": map[string]interface{}{
 			"total_records": 0,
 			"note":          "Health data sourced from connected institutions and IoT devices",
+			"health_checks": []interface{}{},
+			"care_plans":    []interface{}{},
+			"events":        []interface{}{},
 		},
 	}
 }

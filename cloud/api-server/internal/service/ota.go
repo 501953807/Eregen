@@ -2,7 +2,11 @@ package service
 
 import (
 	"context"
+	"crypto/ed25519"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
+	"os"
 	"time"
 
 	"eregen.dev/api-server/internal/model"
@@ -191,4 +195,51 @@ func (s *OTAService) GetMatchingDevices(ctx context.Context, deviceType, tier st
 		}
 	}
 	return matched, nil
+}
+
+// VerifyFirmwareSignature verifies the Ed25519 signature of a firmware release.
+// Returns valid bool, status string, and any error.
+func (s *OTAService) VerifyFirmwareSignature(ctx context.Context, firmwareID string) (bool, string, error) {
+	release, err := s.pg.GetFirmwareRelease(ctx, firmwareID)
+	if err != nil {
+		return false, "", fmt.Errorf("get firmware release: %w", err)
+	}
+
+	if release.Signature == "" {
+		return false, "no_signature", nil
+	}
+
+	// Decode base64 signature
+	sigBytes, err := base64.StdEncoding.DecodeString(release.Signature)
+	if err != nil {
+		return false, "invalid_signature_encoding", err
+	}
+
+	// Verify SHA256 hash format (64 hex chars)
+	if len(release.Sha256Hash) != 64 {
+		return false, "invalid_hash_format", nil
+	}
+
+	// Verify Ed25519 signature against stored public key
+	pubKeyHex := os.Getenv("EREGEN_FIRMWARE_PUBKEY")
+	if pubKeyHex == "" {
+		return false, "public_key_not_configured", nil
+	}
+
+	pubKeyBytes, err := hex.DecodeString(pubKeyHex)
+	if err != nil || len(pubKeyBytes) != ed25519.PublicKeySize {
+		return false, "invalid_public_key", err
+	}
+
+	msgHash, err := hex.DecodeString(release.Sha256Hash)
+	if err != nil {
+		return false, "invalid_hash_encoding", err
+	}
+
+	valid := ed25519.Verify(ed25519.PublicKey(pubKeyBytes), msgHash, sigBytes)
+	if !valid {
+		return false, "signature_invalid", nil
+	}
+
+	return true, "verified", nil
 }

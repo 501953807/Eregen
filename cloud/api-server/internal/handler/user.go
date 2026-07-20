@@ -10,6 +10,7 @@ import (
 	"eregen.dev/api-server/internal/model"
 	"eregen.dev/api-server/internal/store"
 	"eregen.dev/api-server/internal/validation"
+	"eregen.dev/shared/sanitize"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -74,12 +75,12 @@ func (h *UserHandler) ListElderly(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": gin.H{
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": sanitize.SanitizePII(gin.H{
 		"profiles":  profiles,
 		"total":     total,
 		"page":      page,
 		"page_size": pageSize,
-	}})
+	})})
 }
 
 // POST /api/v1/elderly — create a new elderly profile for the authenticated user
@@ -233,7 +234,7 @@ func (h *UserHandler) checkElderlyAccess(ctx context.Context, elderlyID, userID 
 }
 
 func sanitizeUser(u *model.User) map[string]any {
-	return map[string]any{
+	data := map[string]any{
 		"id":         u.ID,
 		"email":      u.Email,
 		"phone":      u.Phone,
@@ -241,4 +242,5 @@ func sanitizeUser(u *model.User) map[string]any {
 		"role":       u.Role,
 		"created_at": u.CreatedAt,
 	}
+	return sanitize.SanitizePII(data).(map[string]any)
 }

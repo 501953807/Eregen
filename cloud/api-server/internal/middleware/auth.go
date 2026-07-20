@@ -11,18 +11,24 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
 // DeviceAuth provides middleware for device-to-cloud mutual authentication.
 type DeviceAuth struct {
-	store *store.Postgres
-	log   *zap.Logger
+	store      *store.Postgres
+	log        *zap.Logger
+	deviceKey  []byte // HMAC key for device JWT signing
 }
 
 // NewDeviceAuth creates a device auth handler.
-func NewDeviceAuth(pg *store.Postgres, log *zap.Logger) *DeviceAuth {
-	return &DeviceAuth{store: pg, log: log}
+func NewDeviceAuth(pg *store.Postgres, log *zap.Logger, deviceSecret string) *DeviceAuth {
+	key := []byte(deviceSecret)
+	if len(key) == 0 {
+		key = []byte("device-secret") // fallback only when not configured
+	}
+	return &DeviceAuth{store: pg, log: log, deviceKey: key}
 }
 
 // DeviceAuthMiddleware validates device tokens signed by the cloud server.
@@ -39,7 +45,7 @@ func (d *DeviceAuth) DeviceAuthMiddleware() gin.HandlerFunc {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
-			return []byte("device-secret"), nil // separate signing key for device tokens
+			return d.deviceKey, nil // HMAC key from config
 		})
 		if err != nil || !token.Valid {
 			d.unauthorized(c, "INVALID_DEVICE_TOKEN", "Invalid or expired device token")
@@ -122,11 +128,14 @@ func (a *JWTAuth) GenerateRefreshToken(userID string) (string, error) {
 }
 
 func (a *JWTAuth) generateToken(userID, role string, ttl time.Duration) (string, error) {
+	nbf := time.Now().Add(-5 * time.Second)
 	claims := jwt.MapClaims{
 		"user_id": userID,
 		"role":    role,
 		"exp":     time.Now().Add(ttl).Unix(),
 		"iat":     time.Now().Unix(),
+		"nbf":     nbf.Unix(),
+		"jti":     uuid.New().String(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(a.secret))
@@ -161,6 +170,12 @@ func (a *JWTAuth) AuthMiddleware() gin.HandlerFunc {
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
 			a.unauthorized(c, "INVALID_TOKEN", "Invalid token claims")
+			return
+		}
+
+		// Validate nbf (not before)
+		if nbf, ok := claims["nbf"].(float64); ok && time.Now().Unix() < int64(nbf) {
+			a.unauthorized(c, "TOKEN_NOT_YET_VALID", "Token not yet valid")
 			return
 		}
 

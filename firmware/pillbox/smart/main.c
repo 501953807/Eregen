@@ -36,6 +36,7 @@
 #include "oled_status.h"
 #include "volume_control.h"
 #include "mqtt_common.h"
+#include "ota_handler.h"
 
 /* Task priorities */
 #define MAIN_TASK_PRIORITY          (tskIDLE_PRIORITY + 2)

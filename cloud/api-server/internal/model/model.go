@@ -50,6 +50,7 @@ type User struct {
 	ID           string    `json:"id"`
 	Email        *string   `json:"email,omitempty"`
 	Phone        *string   `json:"phone,omitempty"`
+	OpenID       *string   `json:"open_id,omitempty"`
 	Name         string    `json:"name"`
 	PasswordHash string    `json:"-"`
 	Role         Role      `json:"role"`
@@ -143,12 +144,14 @@ type Alert struct {
 
 // Subscription tracks a user's paid plan.
 type Subscription struct {
-	ID        string    `json:"id"`
-	UserID    string    `json:"user_id"`
-	PlanTier  PlanTier  `json:"plan_tier"`
-	Status    string    `json:"status"` // active, canceled, expired, trialing
-	StartDate time.Time `json:"start_date"`
-	EndDate   time.Time `json:"end_date"`
+	ID            string    `json:"id"`
+	UserID        string    `json:"user_id"`
+	PlanTier      PlanTier  `json:"plan_tier"`
+	Status        string    `json:"status"` // active, canceled, expired, trialing
+	StartDate     time.Time `json:"start_date"`
+	EndDate       time.Time `json:"end_date"`
+	AutoRenew     bool      `json:"auto_renew"`
+	PaymentMethod *string   `json:"payment_method,omitempty"`
 }
 
 // OTPRequest holds a one-time-password verification payload.
@@ -262,6 +265,7 @@ type FirmwareRelease struct {
 	Version       string                 `json:"version"`
 	URL           string                 `json:"url"`
 	Sha256Hash    string                 `json:"sha256_hash"`
+	Signature     string                 `json:"signature,omitempty"` // Ed25519 signature over firmware binary hash
 	Changelog     string                 `json:"changelog"`
 	MinAppVersion string                 `json:"min_app_version,omitempty"`
 	ForceUpdate   bool                   `json:"force_update"`
@@ -306,4 +310,10 @@ type CreateFirmwareRequest struct {
 type PushOTARequest struct {
 	FirmwareID string   `json:"firmware_id" binding:"required"`
 	DeviceIDs  []string `json:"device_ids,omitempty"` // empty = all matching devices
+}
+
+// VerifyFirmwareRequest for verifying firmware signature.
+type VerifyFirmwareRequest struct {
+	PublicKey string `json:"public_key" binding:"required"` // Ed25519 public key in base64
+	Signature string `json:"signature" binding:"required"`  // Ed25519 signature in base64
 }

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -176,6 +177,30 @@ func (r *Redis) GetResetToken(ctx context.Context, token string) (string, error)
 		return "", nil
 	}
 	return val, err
+}
+
+// SetDeviceTokens stores FCM device tokens for a user (JSON array).
+func (r *Redis) SetDeviceTokens(ctx context.Context, userID string, tokens []string) error {
+	key := "tokens:user:" + userID
+	data, _ := json.Marshal(tokens)
+	return r.client.Set(ctx, key, data, 7*24*time.Hour).Err()
+}
+
+// GetDeviceTokens retrieves FCM device tokens for a user.
+func (r *Redis) GetDeviceTokens(ctx context.Context, userID string) ([]string, error) {
+	key := "tokens:user:" + userID
+	val, err := r.client.Get(ctx, key).Result()
+	if err == redis.Nil {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var tokens []string
+	if err := json.Unmarshal([]byte(val), &tokens); err != nil {
+		return nil, err
+	}
+	return tokens, nil
 }
 
 // Store implements OTPStore.Store — stores an OTP code with TTL.

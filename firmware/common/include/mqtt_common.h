@@ -14,11 +14,13 @@ extern "C" {
  * does not match this hash. Set to NULL to disable pinning (dev only).
  */
 typedef struct {
-    const char* ca_cert_pem;     // Full PEM CA cert string (embedded in flash)
-    const char* cert_fingerprint; // SHA-256 fingerprint of expected broker cert (hex)
+    const char* ca_cert_pem;     /* Full PEM CA cert string (embedded in flash) */
+    const char* cert_fingerprint; /* SHA-256 fingerprint of expected broker cert (hex) */
 } mqtt_tls_config_t;
 
-typedef void (*mqtt_msg_handler_t)(const char* topic, const char* payload, size_t len);
+/* ---- Default broker TLS cert (Eregen CA — deploy via OTA) ---- */
+/* This is a placeholder; production should embed actual CA cert or fetch via secure channel */
+extern const char* EREGEN_BROKER_CA_CERT;
 
 /**
  * Connect to MQTT broker using ESP-MQTT client.
@@ -45,11 +47,29 @@ void mqtt_common_disconnect(void);
 int mqtt_common_subscribe(const char* topic, mqtt_msg_handler_t handler);
 
 /**
- * Publish a message to a topic.
- * @param qos Quality of service (0, 1, or 2)
+ * Publish a plaintext message to a topic.
  * @return bytes published on success, negative on failure
  */
 int mqtt_common_publish(const char* topic, const char* payload, size_t len, int qos);
+
+/**
+ * Publish an encrypted message to a topic.
+ * Payload is encrypted with AES-128-CTR + HMAC-SHA256 before transmission.
+ * @param ctx Crypto context (from payload_crypto_init)
+ * @return bytes published on success, negative on failure
+ */
+int mqtt_common_publish_encrypted(const payload_crypto_ctx_t* ctx,
+                                  const char* topic,
+                                  const uint8_t* plaintext, size_t plain_len,
+                                  int qos);
+
+/**
+ * Decrypt a received MQTT payload.
+ * @return 0 on success, -2 if HMAC mismatch (tampered)
+ */
+int mqtt_common_decrypt_payload(const payload_crypto_ctx_t* ctx,
+                                const uint8_t* encrypted, size_t enc_len,
+                                uint8_t* out, size_t* out_len);
 
 #ifdef __cplusplus
 }

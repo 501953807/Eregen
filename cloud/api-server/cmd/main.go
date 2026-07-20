@@ -95,13 +95,15 @@ func main() {
 		}()
 	}
 
-	sms := service.NewSMSProvider(cfg.SMSSignName, cfg.SMPTemplateID, log)
-	push := service.NewPushProvider(cfg.FCMServerKey, cfg.FCMProjectID, log)
+	sms := service.NewSMSProvider(cfg.SMSAccessKey, cfg.SMSAccessSecret, cfg.SMSSignName, cfg.SMPTemplateID, log)
+	push := service.NewPushProvider(cfg.FCMKeyPath, cfg.FCMProjectID, log)
 
 	authMW := middleware.NewJWTAuth(cfg.JWTSecret, time.Duration(cfg.TokenExpiry)*time.Second,
 		time.Duration(cfg.RefreshExpiry)*time.Second, log, pg)
 
-	r := router.New(pg, redisLayer, natsClient, authMW, sms, push, log, wsHub)
+	deviceAuth := middleware.NewDeviceAuth(pg, log, cfg.DeviceSecret)
+
+	r := router.New(pg, redisLayer, natsClient, authMW, deviceAuth, sms, push, log, wsHub, cfg.CORSOrigins)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,

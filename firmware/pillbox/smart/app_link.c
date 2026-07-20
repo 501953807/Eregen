@@ -19,6 +19,7 @@
 #include "voice_reminder.h"
 #include "reminder_scheduler.h"
 #include "volume_control.h"
+#include "ota_handler.h"
 
 /* MQTT topic for device commands */
 #define MQTT_CMD_TOPIC      "eregen/device/PX-+/cmd"
@@ -27,6 +28,7 @@
 #define MSG_TYPE_MED_RULE   "med_rule"
 #define MSG_TYPE_TTS        "tts"
 #define MSG_TYPE_CONFIG     "config"
+#define MSG_TYPE_OTA        "ota"
 #define MSG_TYPE_PAUSE      "pause_reminder"
 #define MSG_TYPE_RESUME     "resume_reminder"
 
@@ -165,6 +167,8 @@ esp_err_t applink_parse_mqtt_message(const char *topic,
         }
     } else if (strcmp(type->valuestring, MSG_TYPE_CONFIG) == 0) {
         ret = parse_config(root);
+    } else if (strcmp(type->valuestring, MSG_TYPE_OTA) == 0) {
+        ret = ota_handle_command(topic, (const uint8_t *)payload, (uint16_t)payload_len);
     } else if (strcmp(type->valuestring, MSG_TYPE_PAUSE) == 0) {
         ret = applink_handle_pause_reminder();
     } else if (strcmp(type->valuestring, MSG_TYPE_RESUME) == 0) {

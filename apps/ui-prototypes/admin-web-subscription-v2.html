@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eregen 颐贞 — 管理后台订阅管理 (Enhanced)</title>
+<style>
+  :root {
+    --primary: #2563EB; --primary-light: #DBEAFE;
+    --success: #16A34A; --warning: #F59E0B; --danger: #EF4444;
+    --purple: #7C3AED; --teal: #0D9488;
+    --gray-50: #F9FAFB; --gray-100: #F3F4F6; --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB; --gray-400: #9CA3AF; --gray-500: #6B7280;
+    --gray-600: #4B5563; --gray-700: #374151; --gray-800: #1F2937;
+    --gray-900: #111827; --sidebar-w: 240px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; background: var(--gray-100); color: var(--gray-800); display: flex; min-height: 100vh; }
+
+  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: var(--sidebar-w); background: var(--gray-900); color: white; z-index: 100; display: flex; flex-direction: column; }
+  .sidebar-brand { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 12px; }
+  .brand-logo { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), #7C3AED); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; }
+  .brand-text { font-size: 15px; font-weight: 700; }
+  .brand-sub { font-size: 10px; opacity: 0.5; }
+  .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+  .nav-section { padding: 8px 20px 6px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.4; margin-top: 8px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 13px; cursor: pointer; color: rgba(255,255,255,0.6); transition: all 0.15s; border-left: 3px solid transparent; }
+  .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+  .nav-item.active { background: rgba(37,99,235,0.15); color: white; border-left-color: var(--primary); }
+  .nav-icon { width: 20px; text-align: center; }
+  .sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px; }
+  .avatar-sm { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #60A5FA, #A78BFA); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+
+  .main { margin-left: var(--sidebar-w); flex: 1; }
+  .topbar { background: white; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--gray-200); position: sticky; top: 0; z-index: 50; }
+  .breadcrumb { font-size: 13px; color: var(--gray-500); }
+  .breadcrumb span { color: var(--gray-800); font-weight: 600; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+  .content { padding: 24px; }
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .page-title { font-size: 22px; font-weight: 800; }
+
+  /* Revenue KPI */
+  .revenue-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
+  .rev-card { background: white; border-radius: 12px; padding: 16px; border: 1px solid var(--gray-200); }
+  .rev-label { font-size: 12px; color: var(--gray-500); margin-bottom: 6px; }
+  .rev-value { font-size: 24px; font-weight: 800; }
+  .rev-change { font-size: 11px; margin-top: 4px; font-weight: 600; }
+  .rev-change.up { color: var(--success); }
+  .rev-change.down { color: var(--danger); }
+
+  /* Funnel */
+  .funnel-section { background: white; border-radius: 14px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--gray-200); }
+  .section-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+  .funnel { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .funnel-step {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0; transition: transform 0.15s; cursor: pointer;
+  }
+  .funnel-step:hover { transform: scale(1.02); }
+  .funnel-bar-wrap { flex: 1; max-width: 600px; display: flex; align-items: center; gap: 12px; }
+  .funnel-bar { height: 36px; border-radius: 8px; display: flex; align-items: center; padding: 0 14px; font-size: 13px; font-weight: 700; color: white; transition: width 0.6s ease; }
+  .funnel-pct { font-size: 12px; color: var(--gray-400); width: 60px; text-align: right; }
+
+  /* Tier Comparison */
+  .tier-compare { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .tier-card { background: white; border-radius: 14px; padding: 20px; border: 1px solid var(--gray-200); text-align: center; position: relative; }
+  .tier-card.recommended { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+  .tier-rec-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; font-size: 10px; font-weight: 700; padding: 2px 12px; border-radius: 10px; }
+  .tier-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .tier-price { font-size: 28px; font-weight: 800; margin: 8px 0; }
+  .tier-price span { font-size: 14px; font-weight: 400; color: var(--gray-400); }
+  .tier-users { font-size: 13px; color: var(--gray-500); margin-bottom: 12px; }
+  .tier-features { text-align: left; font-size: 12px; color: var(--gray-600); }
+  .tier-feature { padding: 4px 0; display: flex; align-items: center; gap: 6px; }
+  .tier-feature::before { content: '✓'; color: var(--success); font-weight: 700; }
+  .tier-feature.disabled { color: var(--gray-300); }
+  .tier-feature.disabled::before { content: '—'; color: var(--gray-300); }
+
+  /* Filter & Table */
+  .filter-bar { background: white; border-radius: 12px; padding: 14px 18px; display: flex; gap: 10px; margin-bottom: 16px; border: 1px solid var(--gray-200); align-items: center; flex-wrap: wrap; }
+  .filter-label { font-size: 13px; font-weight: 600; color: var(--gray-600); white-space: nowrap; }
+  .filter-select { padding: 7px 12px; border: 1px solid var(--gray-200); border-radius: 8px; font-size: 13px; background: var(--gray-50); cursor: pointer; }
+  .filter-spacer { flex: 1; }
+  .btn-sm { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--gray-200); font-size: 13px; cursor: pointer; background: white; }
+  .btn-sm.primary { background: var(--primary); color: white; border-color: var(--primary); }
+
+  .sub-table { background: white; border-radius: 14px; border: 1px solid var(--gray-200); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 700; color: var(--gray-500); background: var(--gray-50); border-bottom: 1px solid var(--gray-200); }
+  td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--gray-100); }
+  tr:last-child td { border: none; }
+  tr:hover td { background: var(--gray-50); }
+
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  }
+  .status-active { background: #F0FDF4; color: var(--success); }
+  .status-trial { background: #FFFBEB; color: #D97706; }
+  .status-expired { background: var(--gray-100); color: var(--gray-500); }
+  .status-cancelled { background: #FEF2F2; color: var(--danger); }
+  .status-past-due { background: #FFF7ED; color: #C2410C; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .status-active .status-dot { background: var(--success); }
+  .status-trial .status-dot { background: #D97706; }
+  .status-expired .status-dot { background: var(--gray-400); }
+  .status-cancelled .status-dot { background: var(--danger); }
+  .status-past-due .status-dot { background: #C2410C; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+  .tier-tag { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+  .tier-pro { background: #EDE9FE; color: #7C3AED; }
+  .tier-plus { background: #DBEAFE; color: #2563EB; }
+  .tier-basic { background: var(--gray-100); color: var(--gray-500); }
+
+  .plan-tag { font-size: 11px; color: var(--gray-400); }
+
+  /* Churn reason */
+  .churn-reason { font-size: 11px; color: var(--gray-500); background: var(--gray-50); padding: 2px 8px; border-radius: 6px; }
+
+  /* Renewal countdown */
+  .renewal-count { font-size: 12px; font-weight: 600; }
+  .renewal-count.soon { color: var(--warning); }
+  .renewal-count.critical { color: var(--danger); }
+
+  /* Side Panel */
+  .side-panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: none; }
+  .side-panel-overlay.show { display: block; }
+  .side-panel {
+    position: fixed; top: 0; right: -520px; bottom: 0; width: 520px;
+    background: white; z-index: 201; transition: right 0.3s ease;
+    overflow-y: auto; box-shadow: -10px 0 40px rgba(0,0,0,0.1);
+  }
+  .side-panel.open { right: 0; }
+  .panel-header { padding: 20px 24px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: white; z-index: 1; }
+  .panel-close { width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--gray-100); cursor: pointer; font-size: 18px; }
+  .panel-body { padding: 20px 24px; }
+  .panel-section { margin-bottom: 20px; }
+  .panel-section-title { font-size: 13px; font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--gray-100); }
+  .panel-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+  .panel-row-label { color: var(--gray-500); }
+  .panel-row-value { font-weight: 600; }
+
+  .billing-timeline { position: relative; padding-left: 20px; }
+  .billing-timeline::before { content: ''; position: absolute; left: 6px; top: 4px; bottom: 4px; width: 2px; background: var(--gray-200); }
+  .timeline-item { position: relative; padding-bottom: 14px; }
+  .timeline-item::before { content: ''; position: absolute; left: -17px; top: 5px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--gray-300); background: white; }
+  .timeline-item.paid::before { border-color: var(--success); background: var(--success); }
+  .timeline-item.pending::before { border-color: var(--warning); background: var(--warning); }
+  .timeline-item.failed::before { border-color: var(--danger); background: var(--danger); }
+  .timeline-date { font-size: 11px; color: var(--gray-400); }
+  .timeline-desc { font-size: 12px; font-weight: 600; }
+  .timeline-amount { font-size: 12px; color: var(--gray-600); }
+
+  /* Pagination */
+  .pagination { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; }
+  .page-info { font-size: 13px; color: var(--gray-500); }
+  .page-btns { display: flex; gap: 4px; }
+  .page-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--gray-200); background: white; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  .page-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .page-btn:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-brand"><div class="brand-logo">E</div><div><div class="brand-text">颐贞 Eregen</div><div class="brand-sub">运营管理后台</div></div></div>
+  <div class="sidebar-nav">
+    <div class="nav-section">核心功能</div>
+    <div class="nav-item"><span class="nav-icon">&#128200;</span>仪表盘</div>
+    <div class="nav-item"><span class="nav-icon">&#128187;</span>设备管理</div>
+    <div class="nav-item"><span class="nav-icon">&#128100;</span>用户管理</div>
+    <div class="nav-item"><span class="nav-icon">&#9888;&#65039;</span>告警中心<span style="margin-left:auto;background:var(--danger);color:white;font-size:10px;padding:1px 6px;border-radius:8px;">3</span></div>
+    <div class="nav-section">业务运营</div>
+    <div class="nav-item active"><span class="nav-icon">&#128176;</span>订阅管理</div>
+    <div class="nav-item"><span class="nav-icon">&#128230;</span>订单管理</div>
+    <div class="nav-section">系统</div>
+    <div class="nav-item"><span class="nav-icon">&#9881;&#65039;</span>系统设置</div>
+  </div>
+  <div class="sidebar-footer"><div class="avatar-sm">&#128100;</div><div><div style="font-size:12px;font-weight:600;">管理员</div><div style="font-size:10px;opacity:0.5;">超级管理员</div></div></div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="breadcrumb">首页 / <span>订阅管理</span></div>
+    <div class="topbar-right"></div>
+  </div>
+
+  <div class="content">
+    <div class="page-header">
+      <div class="page-title">订阅管理</div>
+      <button class="btn-sm primary">&#43; 创建订阅计划</button>
+    </div>
+
+    <!-- Revenue KPI -->
+    <div class="revenue-row">
+      <div class="rev-card"><div class="rev-label">本月收入</div><div class="rev-value" style="color:var(--success);">¥28,450</div><div class="rev-change up">&#9650; 12.3% vs 上月</div></div>
+      <div class="rev-card"><div class="rev-label">MRR</div><div class="rev-value">¥87,200</div><div class="rev-change up">&#9650; 8.1%</div></div>
+      <div class="rev-card"><div class="rev-label">活跃订阅</div><div class="rev-value">847</div><div class="rev-change up">&#9650; 5.2%</div></div>
+      <div class="rev-card"><div class="rev-label"> churn率</div><div class="rev-value" style="color:var(--danger);">3.2%</div><div class="rev-change down">&#9660; 0.8% 改善</div></div>
+      <div class="rev-card"><div class="rev-label">续费率</div><div class="rev-value" style="color:var(--primary);">94.1%</div><div class="rev-change up">&#9650; 1.5%</div></div>
+    </div>
+
+    <!-- Conversion Funnel -->
+    <div class="funnel-section">
+      <div class="section-title">订阅转化漏斗</div>
+      <div class="funnel">
+        <div class="funnel-step">
+          <div class="funnel-bar-wrap">
+            <div class="funnel-bar" style="width:100%;background:linear-gradient(90deg,#2563EB,#7C3AED);">注册账号 · 5,234</div>
+            <div class="funnel-pct">100%</div>
+          </div>
+        </div>
+        <div class="funnel-step">
+          <div class="funnel-bar-wrap">
+            <div class="funnel-bar" style="width:68%;background:linear-gradient(90deg,#3B82F6,#6366F1);">绑定设备 · 3,558</div>
+            <div class="funnel-pct">68.0%</div>
+          </div>
+        </div>
+        <div class="funnel-step">
+          <div class="funnel-bar-wrap">
+            <div class="funnel-bar" style="width:35%;background:linear-gradient(90deg,#6366F1,#8B5CF6);">使用7天+ · 1,832</div>
+            <div class="funnel-pct">35.0%</div>
+          </div>
+        </div>
+        <div class="funnel-step">
+          <div class="funnel-bar-wrap">
+            <div class="funnel-bar" style="width:18%;background:linear-gradient(90deg,#8B5CF6,#A78BFA);">试用开始 · 945</div>
+            <div class="funnel-pct">18.1%</div>
+          </div>
+        </div>
+        <div class="funnel-step">
+          <div class="funnel-bar-wrap">
+            <div class="funnel-bar" style="width:9%;background:linear-gradient(90deg,#A78BFA,#C4B5FD);">付费订阅 · 487</div>
+            <div class="funnel-pct">9.3%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tier Comparison -->
+    <div class="tier-compare">
+      <div class="tier-card">
+        <div class="tier-name">Starter</div>
+        <div class="tier-price">¥29 <span>/月</span></div>
+        <div class="tier-users">189 订阅中</div>
+        <div class="tier-features">
+          <div class="tier-feature">心率/血氧监测</div>
+          <div class="tier-feature">SOS紧急呼叫</div>
+          <div class="tier-feature">基础定位</div>
+          <div class="tier-feature disabled">电子围栏</div>
+          <div class="tier-feature disabled">ECG心电分析</div>
+        </div>
+      </div>
+      <div class="tier-card recommended">
+        <div class="tier-rec-badge">最受欢迎</div>
+        <div class="tier-name">Plus</div>
+        <div class="tier-price">¥59 <span>/月</span></div>
+        <div class="tier-users">312 订阅中</div>
+        <div class="tier-features">
+          <div class="tier-feature">Starter全部功能</div>
+          <div class="tier-feature">电子围栏</div>
+          <div class="tier-feature">跌倒检测</div>
+          <div class="tier-feature">用药管理</div>
+          <div class="tier-feature disabled">ECG心电分析</div>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-name">Pro</div>
+        <div class="tier-price">¥99 <span>/月</span></div>
+        <div class="tier-users">148 订阅中</div>
+        <div class="tier-features">
+          <div class="tier-feature">Plus全部功能</div>
+          <div class="tier-feature">ECG心电分析</div>
+          <div class="tier-feature">AI健康报告</div>
+          <div class="tier-feature">在线问诊</div>
+          <div class="tier-feature">优先客服</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subscription Table -->
+    <div class="sub-table">
+      <div class="filter-bar" style="border:none;padding:0;margin:0;">
+        <span class="filter-label">筛选：</span>
+        <select class="filter-select"><option>全部状态</option><option>活跃</option><option>试用中</option><option>已过期</option><option>已取消</option><option>逾期</option></select>
+        <select class="filter-select"><option>全部套餐</option><option>Starter</option><option>Plus</option><option>Pro</option></select>
+        <select class="filter-select"><option>续费时间</option><option>即将到期(7天)</option><option>本月到期</option><option>已过期</option></select>
+        <span class="filter-spacer"></span>
+        <button class="btn-sm">重置</button>
+        <button class="btn-sm primary">搜索</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:30px;"><input type="checkbox"></th>
+            <th>用户</th>
+            <th>套餐</th>
+            <th>计费周期</th>
+            <th>状态</th>
+            <th>到期时间</th>
+            <th>月费</th>
+            <th>取消原因</th>
+            <th style="width:100px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr onclick="openPanel('张明', 'Pro', 'active')" style="cursor:pointer;">
+            <td><input type="checkbox"></td>
+            <td><strong>张明</strong><br><span style="font-size:11px;color:var(--gray-400);">138****1234</span></td>
+            <td><span class="tier-tag tier-pro">Pro</span></td>
+            <td class="plan-tag">年度</td>
+            <td><span class="status-badge status-active"><span class="status-dot"></span>活跃</span></td>
+            <td><span class="renewal-count">2025-08-15</span></td>
+            <td>¥99/月</td>
+            <td>—</td>
+            <td><button class="btn-sm" style="padding:4px 10px;font-size:12px;">详情</button></td>
+          </tr>
+          <tr onclick="openPanel('刘芳', 'Plus', 'trial')" style="cursor:pointer;">
+            <td><input type="checkbox"></td>
+            <td><strong>刘芳</strong><br><span style="font-size:11px;color:var(--gray-400);">139****5678</span></td>
+            <td><span class="tier-tag tier-plus">Plus</span></td>
+            <td class="plan-tag">月度</td>
+            <td><span class="status-badge status-trial"><span class="status-dot"></span>试用中</span></td>
+            <td><span class="renewal-count critical">剩余3天</span></td>
+            <td>¥59/月</td>
+            <td>—</td>
+            <td><button class="btn-sm" style="padding:4px 10px;font-size:12px;">详情</button></td>
+          </tr>
+          <tr onclick="openPanel('陈伟', 'Basic', 'expired')" style="cursor:pointer;">
+            <td><input type="checkbox"></td>
+            <td><strong>陈伟</strong><br><span style="font-size:11px;color:var(--gray-400);">136****9012</span></td>
+            <td><span class="tier-tag tier-basic">免费</span></td>
+            <td class="plan-tag">—</td>
+            <td><span class="status-badge status-expired"><span class="status-dot"></span>已过期</span></td>
+            <td><span class="renewal-count" style="color:var(--gray-400);">2025-06-01</span></td>
+            <td>¥0/月</td>
+            <td>—</td>
+            <td><button class="btn-sm" style="padding:4px 10px;font-size:12px;">详情</button></td>
+          </tr>
+          <tr onclick="openPanel('赵敏', 'Pro', 'cancelled')" style="cursor:pointer;">
+            <td><input type="checkbox"></td>
+            <td><strong>赵敏</strong><br><span style="font-size:11px;color:var(--gray-400);">137****3456</span></td>
+            <td><span class="tier-tag tier-pro">Pro</span></td>
+            <td class="plan-tag">月度</td>
+            <td><span class="status-badge status-cancelled"><span class="status-dot"></span>已取消</span></td>
+            <td><span class="renewal-count" style="color:var(--gray-400);">2025-07-01</span></td>
+            <td>¥99/月</td>
+            <td><span class="churn-reason">价格太高</span></td>
+            <td><button class="btn-sm" style="padding:4px 10px;font-size:12px;">详情</button></td>
+          </tr>
+          <tr onclick="openPanel('和睦家养老', 'Pro', 'past_due')" style="cursor:pointer;">
+            <td><input type="checkbox"></td>
+            <td><strong>和睦家养老机构</strong><br><span style="font-size:11px;color:var(--gray-400);">admin@hejiajia.com</span></td>
+            <td><span class="tier-tag tier-pro">Pro</span></td>
+            <td class="plan-tag">年度</td>
+            <td><span class="status-badge status-past-due"><span class="status-dot"></span>逾期</span></td>
+            <td><span class="renewal-count critical">逾期7天</span></td>
+            <td>¥99/月</td>
+            <td>—</td>
+            <td><button class="btn-sm" style="padding:4px 10px;font-size:12px;">详情</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="pagination">
+        <div class="page-info">显示 1-5 共 847 条</div>
+        <div class="page-btns">
+          <button class="page-btn">&lt;</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">...</button>
+          <button class="page-btn">170</button>
+          <button class="page-btn">&gt;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Side Panel -->
+<div class="side-panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+<div class="side-panel" id="sidePanel">
+  <div class="panel-header">
+    <span style="font-size:15px;font-weight:700;">订阅详情</span>
+    <button class="panel-close" onclick="closePanel()">&#10005;</button>
+  </div>
+  <div class="panel-body">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <div style="width:48px;height:48px;border-radius:24px;background:#DBEAFE;display:flex;align-items:center;justify-content:center;font-size:22px;">&#128105;</div>
+      <div><div style="font-size:18px;font-weight:700;" id="panelUserName">张明</div><div style="font-size:12px;color:var(--gray-500);" id="panelPlan">Pro 订阅</div></div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">订阅信息</div>
+      <div class="panel-row"><span class="panel-row-label">状态</span><span class="panel-row-value" id="panelStatus"><span class="status-badge status-active"><span class="status-dot"></span>活跃</span></span></div>
+      <div class="panel-row"><span class="panel-row-label">套餐等级</span><span class="panel-row-value" id="panelTier"><span class="tier-tag tier-pro">Pro</span></span></div>
+      <div class="panel-row"><span class="panel-row-label">计费周期</span><span class="panel-row-value">年度</span></div>
+      <div class="panel-row"><span class="panel-row-label">开始时间</span><span class="panel-row-value">2024-08-15</span></div>
+      <div class="panel-row"><span class="panel-row-label">到期时间</span><span class="panel-row-value">2025-08-15</span></div>
+      <div class="panel-row"><span class="panel-row-label">月均费用</span><span class="panel-row-value">¥99/月</span></div>
+      <div class="panel-row"><span class="panel-row-label">累计消费</span><span class="panel-row-value">¥1,188</span></div>
+      <div class="panel-row"><span class="panel-row-label">支付方式</span><span class="panel-row-value">微信支付</span></div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">关联设备</div>
+      <div class="panel-row"><span class="panel-row-value" style="cursor:pointer;color:var(--primary);">手环Pro · BR-20240815</span></div>
+      <div class="panel-row"><span class="panel-row-value" style="cursor:pointer;color:var(--primary);">智能药盒 · PX-20240901</span></div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">账单记录</div>
+      <div class="billing-timeline">
+        <div class="timeline-item paid"><div class="timeline-date">2025-01-15</div><div class="timeline-desc">年度续费成功</div><div class="timeline-amount">¥1,188.00</div></div>
+        <div class="timeline-item paid"><div class="timeline-date">2024-08-15</div><div class="timeline-desc">年度续费成功</div><div class="timeline-amount">¥1,188.00</div></div>
+        <div class="timeline-item paid"><div class="timeline-date">2024-07-01</div><div class="timeline-desc">月度扣款成功</div><div class="timeline-amount">¥99.00</div></div>
+        <div class="timeline-item pending"><div class="timeline-date">2025-08-15</div><div class="timeline-desc">下次自动续费</div><div class="timeline-amount">¥1,188.00</div></div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">操作</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-sm primary" style="flex:1;">手动续费</button>
+        <button class="btn-sm" style="flex:1;">变更套餐</button>
+        <button class="btn-sm" style="flex:1;">发送提醒</button>
+        <button class="btn-sm" style="flex:1;color:var(--danger);border-color:var(--danger);">强制取消</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openPanel(name, plan, status) {
+  document.getElementById('panelUserName').textContent = name;
+  const statusMap = {
+    active: '<span class="status-badge status-active"><span class="status-dot"></span>活跃</span>',
+    trial: '<span class="status-badge status-trial"><span class="status-dot"></span>试用中</span>',
+    expired: '<span class="status-badge status-expired"><span class="status-dot"></span>已过期</span>',
+    cancelled: '<span class="status-badge status-cancelled"><span class="status-dot"></span>已取消</span>',
+    past_due: '<span class="status-badge status-past-due"><span class="status-dot"></span>逾期</span>'
+  };
+  document.getElementById('panelStatus').innerHTML = statusMap[status] || statusMap.active;
+  document.getElementById('panelPlan').textContent = `${plan} 订阅`;
+  document.getElementById('sidePanel').classList.add('open');
+  document.getElementById('panelOverlay').classList.add('show');
+}
+function closePanel() {
+  document.getElementById('sidePanel').classList.remove('open');
+  document.getElementById('panelOverlay').classList.remove('show');
+}
+</script>
+
+</body>
+</html>

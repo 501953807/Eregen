@@ -25,3 +25,7 @@ require (
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 )
+
+replace eregen.dev/shared/crypto => ../../shared/crypto
+replace eregen.dev/shared/sanitize => ../../shared/sanitize
+replace eregen.dev/shared/ratelimit => ../../shared/ratelimit

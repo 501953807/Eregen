@@ -44,3 +44,6 @@ require (
 )
 
 replace eregen.dev/shared/validation => ../../shared/validation
+replace eregen.dev/shared/crypto => ../../shared/crypto
+replace eregen.dev/shared/sanitize => ../../shared/sanitize
+replace eregen.dev/shared/ratelimit => ../../shared/ratelimit
