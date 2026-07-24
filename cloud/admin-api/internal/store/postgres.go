@@ -1085,3 +1085,13 @@ func (p *PostgresStore) CountPendingPayments(ctx context.Context) (int64, error)
 	err := p.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM community_batch_payments WHERE status='pending'`).Scan(&count)
 	return count, err
 }
+
+// ========== Clinical Workflow Stubs (real impl in Task 4) ==========
+
+func (p *PostgresStore) CreateAdmission(ctx context.Context, a *model.HospitalAdmission) error { return nil }
+func (p *PostgresStore) GetAdmission(ctx context.Context, id string) (*model.HospitalAdmission, error) { return nil, nil }
+func (p *PostgresStore) ListAdmissions(ctx context.Context, page, pageSize int, department, status string) ([]model.HospitalAdmission, error) { return nil, nil }
+func (p *PostgresStore) CompleteAdmission(ctx context.Context, id, dischargeType, notes, transferredTo string) error { return nil }
+func (p *PostgresStore) CreateWardRound(ctx context.Context, w *model.WardRoundEntry) error { return nil }
+func (p *PostgresStore) ListWardRounds(ctx context.Context, patientID string) ([]model.WardRoundEntry, error) { return nil, nil }
+func (p *PostgresStore) EvaluateRegulatoryRules(ctx context.Context, event string, data map[string]string) ([]*model.RegulatoryRuleResult, error) { return nil, nil }

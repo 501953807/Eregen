@@ -701,4 +701,55 @@ func (a *StoreAdapter) CountPendingPayments(ctx context.Context) (int64, error) 
 	return (&SqliteStore{db: a.db}).CountPendingPayments(ctx)
 }
 
+// ========== Clinical Workflow Dispatch ==========
+
+func (a *StoreAdapter) CreateAdmission(ctx context.Context, admission *model.HospitalAdmission) error {
+	if a.dbType == "postgres" {
+		return (&PostgresStore{db: a.db}).CreateAdmission(ctx, admission)
+	}
+	return (&SqliteStore{db: a.db}).CreateAdmission(ctx, admission)
+}
+
+func (a *StoreAdapter) GetAdmission(ctx context.Context, id string) (*model.HospitalAdmission, error) {
+	if a.dbType == "postgres" {
+		return (&PostgresStore{db: a.db}).GetAdmission(ctx, id)
+	}
+	return (&SqliteStore{db: a.db}).GetAdmission(ctx, id)
+}
+
+func (a *StoreAdapter) ListAdmissions(ctx context.Context, page, pageSize int, department, status string) ([]model.HospitalAdmission, error) {
+	if a.dbType == "postgres" {
+		return (&PostgresStore{db: a.db}).ListAdmissions(ctx, page, pageSize, department, status)
+	}
+	return (&SqliteStore{db: a.db}).ListAdmissions(ctx, page, pageSize, department, status)
+}
+
+func (a *StoreAdapter) CompleteAdmission(ctx context.Context, id, dischargeType, notes, transferredTo string) error {
+	if a.dbType == "postgres" {
+		return (&PostgresStore{db: a.db}).CompleteAdmission(ctx, id, dischargeType, notes, transferredTo)
+	}
+	return (&SqliteStore{db: a.db}).CompleteAdmission(ctx, id, dischargeType, notes, transferredTo)
+}
+
+func (a *StoreAdapter) CreateWardRound(ctx context.Context, w *model.WardRoundEntry) error {
+	if a.dbType == "postgres" {
+		return (&PostgresStore{db: a.db}).CreateWardRound(ctx, w)
+	}
+	return (&SqliteStore{db: a.db}).CreateWardRound(ctx, w)
+}
+
+func (a *StoreAdapter) ListWardRounds(ctx context.Context, patientID string) ([]model.WardRoundEntry, error) {
+	if a.dbType == "postgres" {
+		return (&PostgresStore{db: a.db}).ListWardRounds(ctx, patientID)
+	}
+	return (&SqliteStore{db: a.db}).ListWardRounds(ctx, patientID)
+}
+
+func (a *StoreAdapter) EvaluateRegulatoryRules(ctx context.Context, event string, data map[string]string) ([]*model.RegulatoryRuleResult, error) {
+	if a.dbType == "postgres" {
+		return (&PostgresStore{db: a.db}).EvaluateRegulatoryRules(ctx, event, data)
+	}
+	return (&SqliteStore{db: a.db}).EvaluateRegulatoryRules(ctx, event, data)
+}
+
 var _ Store = (*StoreAdapter)(nil)
