@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:nurse_terminal/src/services/medical_wristband_ble_service.dart';
+import 'src/screens/login_screen.dart';
+import 'src/screens/home_screen.dart';
+import 'src/services/medical_wristband_ble_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +25,12 @@ class NurseTerminalApp extends StatelessWidget {
         useMaterial3: true,
         brightness: Brightness.dark,
       ),
-      home: const BleScanPage(),
+      home: const LoginScreen(),
+      routes: {
+        '/': (_) => const LoginScreen(),
+        '/home': (_) => const HomeScreen(),
+        '/ble-scan': (_) => BleScanPage(),
+      },
     );
   }
 }
