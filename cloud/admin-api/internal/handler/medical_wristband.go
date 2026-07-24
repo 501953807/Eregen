@@ -3,12 +3,14 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"eregen.dev/admin-api/internal/model"
 	"eregen.dev/admin-api/internal/store"
 	"eregen.dev/shared/validation"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // MedicalWristbandHandler serves medical wristband management endpoints.
@@ -456,4 +458,97 @@ func (h *MedicalWristbandHandler) CreateAlertTagConfig(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": cfg})
+}
+
+// ---------- Clinical workflow endpoints ----------
+
+// AdmitPatient registers a new hospital admission with wristband binding.
+func (h *MedicalWristbandHandler) AdmitPatient(c *gin.Context) {
+	var req struct {
+		PatientID        string `json:"patient_id" binding:"required"`
+		BedNo            string `json:"bed_no" binding:"required"`
+		Department       string `json:"department" binding:"required"`
+		Diagnosis        string `json:"diagnosis"`
+		EmergencyContact string `json:"emergency_contact"`
+		Allergies        string `json:"allergies"`
+		ExpectedStayDays int    `json:"expected_stay_days"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	admission := &model.HospitalAdmission{
+		ID:               uuid.New().String(),
+		PatientID:        req.PatientID,
+		BedNo:            req.BedNo,
+		Department:       req.Department,
+		Diagnosis:        req.Diagnosis,
+		EmergencyContact: req.EmergencyContact,
+		Allergies:        req.Allergies,
+	}
+	if req.ExpectedStayDays > 0 {
+		t := time.Now().AddDate(0, 0, req.ExpectedStayDays)
+		admission.ExpectedDischargeAt = &t
+	}
+
+	if err := h.store.CreateAdmission(c.Request.Context(), admission); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Evaluate regulatory rules
+	h.store.EvaluateRegulatoryRules(c.Request.Context(), "patient_admitted", map[string]string{
+		"patient_id": req.PatientID,
+	})
+
+	c.JSON(http.StatusCreated, gin.H{"data": admission})
+}
+
+// DischargePatient completes an admission.
+func (h *MedicalWristbandHandler) DischargePatient(c *gin.Context) {
+	admissionID := c.Param("id")
+	var body struct {
+		DischargeType string `json:"discharge_type" binding:"required"`
+		Notes         string `json:"notes"`
+		TransferredTo string `json:"transferred_to"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	if err := h.store.CompleteAdmission(c.Request.Context(), admissionID, body.DischargeType, body.Notes, body.TransferredTo); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "discharged"})
+}
+
+// GetWardRound returns scheduled/completed ward rounds for a patient.
+func (h *MedicalWristbandHandler) GetWardRound(c *gin.Context) {
+	patientID := c.Param("id")
+	rounds, err := h.store.ListWardRounds(c.Request.Context(), patientID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": rounds})
+}
+
+// CompleteWardRound records a nursing round entry with vitals.
+func (h *MedicalWristbandHandler) CompleteWardRound(c *gin.Context) {
+	patientID := c.Param("id")
+	var entry model.WardRoundEntry
+	entry.PatientID = patientID
+	if err := c.ShouldBindJSON(&entry); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	entry.ID = uuid.New().String()
+	if err := h.store.CreateWardRound(c.Request.Context(), &entry); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"data": entry})
 }
