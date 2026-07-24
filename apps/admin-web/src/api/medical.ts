@@ -40,6 +40,47 @@ export interface VerificationRecord {
   timestamp: string
 }
 
+export interface RegulatoryAlert {
+  id: string
+  rule_code: string
+  severity: string
+  patient_id?: string
+  message: string
+  triggered_at: string
+  resolved: boolean
+}
+
+export interface HospitalAdmission {
+  id: string
+  patient_id: string
+  admission_no: string
+  bed_no: string
+  department: string
+  diagnosis?: string
+  emergency_contact?: string
+  allergies?: string
+  admitted_at: string
+  expected_discharge_at?: string
+  discharged_at?: string
+  discharge_type?: string
+  transferred_to?: string
+  notes?: string
+}
+
+export interface WardRoundEntry {
+  id: string
+  patient_id: string
+  nurse_id: string
+  blood_pressure?: string
+  heart_rate?: number
+  spo2?: number
+  temperature?: number
+  weight?: number
+  notes?: string
+  observations?: string
+  completed_at: string
+}
+
 export const medicalApi = {
   // Patients
   listPatients(params: { page?: number; page_size?: number; status?: string }) {
@@ -119,5 +160,42 @@ export const medicalApi = {
   // Stats
   getOverview() {
     return apiClient.get('/medical/stats/overview')
+  },
+
+  // Clinical workflow
+  admitPatient(data: { patient_id: string; bed_no: string; department: string; diagnosis?: string; emergency_contact?: string; allergies?: string; expected_stay_days?: number }) {
+    return apiClient.post('/medical/admissions', data)
+  },
+
+  listAdmissions(params?: { page?: number; page_size?: number; department?: string; status?: string }) {
+    return apiClient.get('/medical/admissions', { params })
+  },
+
+  dischargePatient(id: string, data: { discharge_type: string; notes?: string; transferred_to?: string }) {
+    return apiClient.post(`/medical/admissions/${id}/discharge`, data)
+  },
+
+  getWardRounds(patientId: string) {
+    return apiClient.get(`/medical/patients/${patientId}/ward-round`)
+  },
+
+  completeWardRound(patientId: string, data: { nurse_id: string; blood_pressure?: string; heart_rate?: number; spo2?: number; temperature?: number; weight?: number; notes?: string; observations?: string }) {
+    return apiClient.post(`/medical/patients/${patientId}/ward-round`, data)
+  },
+
+  getRegulatoryAlerts(params?: { rule_code?: string; severity?: string; status?: string; department?: string; page?: number; page_size?: number }) {
+    return apiClient.get('/regulatory/alerts', { params })
+  },
+
+  resolveRegulatoryAlert(alertId: string, data: { user_id: string; notes?: string }) {
+    return apiClient.put(`/regulatory/alerts/${alertId}/resolve`, data)
+  },
+
+  getAuditTrail(patientId: string) {
+    return apiClient.get(`/regulatory/audit/patient/${patientId}`)
+  },
+
+  exportReport(patientId: string) {
+    return apiClient.get(`/regulatory/compliance/report`, { params: { patient_id: patientId } })
   },
 }
