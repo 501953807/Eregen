@@ -184,14 +184,181 @@
           <el-table-column prop="created_by" label="录入人" width="100" />
         </el-table>
       </el-tab-pane>
+
+      <!-- Admissions -->
+      <el-tab-pane label="入院登记" name="admissions">
+        <div style="margin-bottom: 16px;">
+          <el-button type="primary" @click="showAdmitDialog = true; admitForm = { bed_no: '', department: '', patient_id: '', expected_stay_days: 7 }">办理入院</el-button>
+          <el-button @click="loadAdmissions">刷新</el-button>
+        </div>
+        <el-table :data="admissions" v-loading="loading.admissions" stripe>
+          <el-table-column prop="admission_no" label="住院号" width="140">
+            <template #default="{ row }"><span class="mono">{{ row.admission_no }}</span></template>
+          </el-table-column>
+          <el-table-column prop="patient_id" label="患者ID" width="140">
+            <template #default="{ row }"><span class="mono">{{ row.patient_id }}</span></template>
+          </el-table-column>
+          <el-table-column prop="bed_no" label="床号" width="80" />
+          <el-table-column prop="department" label="科室" width="120" />
+          <el-table-column prop="admitted_at" label="入院时间" width="180" />
+          <el-table-column prop="expected_discharge_at" label="预计出院" width="180" />
+          <el-table-column label="状态" width="90">
+            <template #default="{ row }">
+              <span class="status-badge" :class="row.discharged_at ? 'badge-gray' : 'badge-success'">
+                <span class="status-dot" :class="row.discharged_at ? 'dot-gray' : 'dot-success'"></span>
+                {{ row.discharged_at ? '已出院' : '在院' }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="120">
+            <template #default="{ row }">
+              <el-button size="small" type="warning" link @click="showDischargeDialog = true; dischargeTarget = row">出院结算</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-tab-pane>
+
+      <!-- Ward Rounds -->
+      <el-tab-pane label="巡房记录" name="ward-rounds">
+        <el-row :gutter="16" style="margin-bottom: 16px;">
+          <el-col :span="12">
+            <el-select v-model="wardRoundPatientId" placeholder="选择患者" clearable filterable style="width: 100%;">
+              <el-option v-for="p in patients" :key="p.id" :label="`${p.name} (${p.admission_no})`" :value="p.id" />
+            </el-select>
+          </el-col>
+          <el-col :span="4">
+            <el-button type="primary" @click="loadWardRounds" :disabled="!wardRoundPatientId">查询</el-button>
+          </el-col>
+          <el-col :span="4">
+            <el-button type="success" @click="showWardRoundForm = true" :disabled="!wardRoundPatientId">开始巡房</el-button>
+          </el-col>
+        </el-row>
+        <el-table :data="wardRounds" v-loading="loading.wardRounds" stripe>
+          <el-table-column prop="nurse_id" label="护士ID" width="140">
+            <template #default="{ row }"><span class="mono">{{ row.nurse_id }}</span></template>
+          </el-table-column>
+          <el-table-column label="血压" width="100">
+            <template #default="{ row }">{{ row.blood_pressure || '—' }}</template>
+          </el-table-column>
+          <el-table-column label="心率" width="80">
+            <template #default="{ row }">{{ row.heart_rate ? row.heart_rate + ' bpm' : '—' }}</template>
+          </el-table-column>
+          <el-table-column label="SpO2" width="80">
+            <template #default="{ row }">{{ row.spo2 ? row.spo2 + '%' : '—' }}</template>
+          </el-table-column>
+          <el-table-column label="体温" width="80">
+            <template #default="{ row }">{{ row.temperature ? row.temperature + '°C' : '—' }}</template>
+          </el-table-column>
+          <el-table-column prop="notes" label="备注" show-overflow-tooltip />
+          <el-table-column prop="completed_at" label="完成时间" width="180" />
+        </el-table>
+      </el-tab-pane>
+
+      <!-- Regulatory Alerts -->
+      <el-tab-pane label="规则告警" name="regulatory-alerts">
+        <div style="margin-bottom: 16px;">
+          <el-button @click="loadRegulatoryAlerts">刷新</el-button>
+        </div>
+        <el-table :data="regulatoryAlerts" v-loading="loading.regulatoryAlerts" stripe>
+          <el-table-column prop="rule_code" label="规则" width="80">
+            <template #default="{ row }"><el-tag size="small">{{ row.rule_code }}</el-tag></template>
+          </el-table-column>
+          <el-table-column label="严重程度" width="100">
+            <template #default="{ row }">
+              <span class="status-badge" :class="row.severity === 'P0' ? 'badge-danger' : row.severity === 'P1' ? 'badge-warning' : 'badge-primary'">
+                <span class="status-dot" :class="row.severity === 'P0' ? 'dot-danger' : row.severity === 'P1' ? 'dot-warning' : 'dot-primary'"></span>
+                {{ row.severity }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="message" label="告警信息" show-overflow-tooltip />
+          <el-table-column prop="triggered_at" label="触发时间" width="180" />
+          <el-table-column label="状态" width="80">
+            <template #default="{ row }">
+              <span class="status-badge" :class="row.resolved ? 'badge-success' : 'badge-warning'">
+                <span class="status-dot" :class="row.resolved ? 'dot-success' : 'dot-warning'"></span>
+                {{ row.resolved ? '已解决' : '未解决' }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="100">
+            <template #default="{ row }">
+              <el-button v-if="!row.resolved" size="small" type="primary" link @click="handleResolveAlert(row)">处理</el-button>
+              <span v-else class="mono">✓</span>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-tab-pane>
     </el-tabs>
   </div>
+
+  <!-- Admission Dialog -->
+  <el-dialog v-model="showAdmitDialog" title="办理入院" width="500px">
+    <el-form :model="admitForm" label-width="100px">
+      <el-form-item label="患者ID"><el-input v-model="admitForm.patient_id" /></el-form-item>
+      <el-form-item label="床号"><el-input v-model="admitForm.bed_no" /></el-form-item>
+      <el-form-item label="科室"><el-input v-model="admitForm.department" /></el-form-item>
+      <el-form-item label="诊断"><el-input v-model="admitForm.diagnosis" type="textarea" /></el-form-item>
+      <el-form-item label="紧急联系人"><el-input v-model="admitForm.emergency_contact" /></el-form-item>
+      <el-form-item label="过敏史"><el-input v-model="admitForm.allergies" type="textarea" /></el-form-item>
+      <el-form-item label="预计住院天数"><el-input-number v-model="admitForm.expected_stay_days" :min="1" :max="365" /></el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="showAdmitDialog = false">取消</el-button>
+      <el-button type="primary" @click="handleAdmit">确认入院</el-button>
+    </template>
+  </el-dialog>
+
+  <!-- Discharge Dialog -->
+  <el-dialog v-model="showDischargeDialog" title="出院结算" width="500px">
+    <el-form :model="dischargeForm" label-width="100px">
+      <el-form-item label="出院类型">
+        <el-select v-model="dischargeForm.discharge_type" style="width: 100%;">
+          <el-option label="正常出院" value="discharged" />
+          <el-option label="转院" value="transferred" />
+          <el-option label="死亡" value="deceased" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="备注"><el-input v-model="dischargeForm.notes" type="textarea" /></el-form-item>
+      <el-form-item v-if="dischargeForm.discharge_type === 'transferred'" label="转入科室">
+        <el-input v-model="dischargeForm.transferred_to" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="showDischargeDialog = false">取消</el-button>
+      <el-button type="primary" @click="handleDischarge">确认出院</el-button>
+    </template>
+  </el-dialog>
+
+  <!-- Ward Round Form Dialog -->
+  <el-dialog v-model="showWardRoundForm" title="填写巡房记录" width="600px">
+    <el-form :model="wardRoundForm" label-width="100px">
+      <el-form-item label="血压"><el-input v-model="wardRoundForm.blood_pressure" placeholder="如 120/80" /></el-form-item>
+      <el-form-item label="心率"><el-input-number v-model="wardRoundForm.heart_rate" :min="0" :max="300" /></el-form-item>
+      <el-form-item label="SpO2"><el-input-number v-model="wardRoundForm.spo2" :min="0" :max="100" suffix-icon="%" /></el-form-item>
+      <el-form-item label="体温(℃)"><el-input-number v-model="wardRoundForm.temperature" :min="20" :max="45" :precision="1" /></el-form-item>
+      <el-form-item label="体重(kg)"><el-input-number v-model="wardRoundForm.weight" :min="0" :max="300" :precision="1" /></el-form-item>
+      <el-form-item label="备注"><el-input v-model="wardRoundForm.notes" type="textarea" /></el-form-item>
+      <el-form-item label="观察项">
+        <el-checkbox-group v-model="wardRoundForm.observationList">
+          <el-checkbox label="falls" name="obs">跌倒风险</el-checkbox>
+          <el-checkbox label="confusion" name="obs">意识混乱</el-checkbox>
+          <el-checkbox label="pain" name="obs">疼痛</el-checkbox>
+          <el-checkbox label="appetite" name="obs">食欲不佳</el-checkbox>
+        </el-checkbox-group>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="showWardRoundForm = false">取消</el-button>
+      <el-button type="primary" @click="handleWardRound">提交巡房</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { medicalApi, type Patient, type WristbandDevice, type VerificationRecord } from '@/api/medical'
+import { medicalApi, type Patient, type WristbandDevice, type VerificationRecord, type HospitalAdmission, type WardRoundEntry, type RegulatoryAlert } from '@/api/medical'
 
 const activeTab = ref('patients')
 
@@ -217,12 +384,32 @@ const verifications = ref<VerificationRecord[]>([])
 const dailyDate = ref(new Date())
 const dailyEntries = ref<any[]>([])
 
+// Admissions
+const admissions = ref<HospitalAdmission[]>([])
+const showAdmitDialog = ref(false)
+const admitForm = ref<Partial<HospitalAdmission>>({ expected_stay_days: 7 })
+const showDischargeDialog = ref(false)
+const dischargeTarget = ref<HospitalAdmission | null>(null)
+const dischargeForm = ref({ discharge_type: 'discharged', notes: '', transferred_to: '' })
+
+// Ward Rounds
+const wardRounds = ref<WardRoundEntry[]>([])
+const wardRoundPatientId = ref('')
+const showWardRoundForm = ref(false)
+const wardRoundForm = ref({ nurse_id: 'nurse-1', blood_pressure: '', heart_rate: undefined, spo2: undefined, temperature: undefined, weight: undefined, notes: '', observationList: [] as string[] })
+
+// Regulatory Alerts
+const regulatoryAlerts = ref<RegulatoryAlert[]>([])
+
 // Loading states
 const loading = ref({
   patients: false,
   wristbands: false,
   verifications: false,
   daily: false,
+  admissions: false,
+  wardRounds: false,
+  regulatoryAlerts: false,
 })
 
 onMounted(async () => {
@@ -351,6 +538,111 @@ function resultBadgeClass(result: string): string {
 }
 function resultDotClass(result: string): string {
   return result === 'matched' ? 'dot-success' : 'dot-danger'
+}
+
+// --- Admissions ---
+
+async function loadAdmissions() {
+  loading.value.admissions = true
+  try {
+    const res = await medicalApi.listAdmissions({ page: 1, page_size: 50 })
+    admissions.value = res.data?.data || []
+  } finally {
+    loading.value.admissions = false
+  }
+}
+
+async function handleAdmit() {
+  try {
+    const days = admitForm.value.expected_stay_days || 7
+    await medicalApi.admitPatient({
+      patient_id: admitForm.value.patient_id!,
+      bed_no: admitForm.value.bed_no!,
+      department: admitForm.value.department!,
+      diagnosis: admitForm.value.diagnosis,
+      emergency_contact: admitForm.value.emergency_contact,
+      allergies: admitForm.value.allergies,
+      expected_stay_days: days,
+    })
+    ElMessage.success('入院办理成功')
+    showAdmitDialog.value = false
+    await loadAdmissions()
+  } catch (e: any) {
+    ElMessage.error(e.message || '入院办理失败')
+  }
+}
+
+async function handleDischarge() {
+  if (!dischargeTarget.value) return
+  try {
+    await medicalApi.dischargePatient(dischargeTarget.value.id!, {
+      discharge_type: dischargeForm.value.discharge_type,
+      notes: dischargeForm.value.notes,
+      transferred_to: dischargeForm.value.transferred_to,
+    })
+    ElMessage.success('出院结算完成')
+    showDischargeDialog.value = false
+    await loadAdmissions()
+  } catch (e: any) {
+    ElMessage.error(e.message || '出院结算失败')
+  }
+}
+
+// --- Ward Rounds ---
+
+async function loadWardRounds() {
+  if (!wardRoundPatientId.value) return
+  loading.value.wardRounds = true
+  try {
+    const res = await medicalApi.getWardRounds(wardRoundPatientId.value)
+    wardRounds.value = res.data?.data || []
+  } finally {
+    loading.value.wardRounds = false
+  }
+}
+
+async function handleWardRound() {
+  if (!wardRoundPatientId.value) return
+  try {
+    const observations = wardRoundForm.value.observationList.join(',') || undefined
+    await medicalApi.completeWardRound(wardRoundPatientId.value, {
+      nurse_id: wardRoundForm.value.nurse_id || 'nurse-1',
+      blood_pressure: wardRoundForm.value.blood_pressure,
+      heart_rate: wardRoundForm.value.heart_rate,
+      spo2: wardRoundForm.value.spo2,
+      temperature: wardRoundForm.value.temperature,
+      weight: wardRoundForm.value.weight,
+      notes: wardRoundForm.value.notes,
+      observations,
+    })
+    ElMessage.success('巡房记录已提交')
+    showWardRoundForm.value = false
+    await loadWardRounds()
+  } catch (e: any) {
+    ElMessage.error(e.message || '巡房提交失败')
+  }
+}
+
+// --- Regulatory Alerts ---
+
+async function loadRegulatoryAlerts() {
+  loading.value.regulatoryAlerts = true
+  try {
+    const res = await medicalApi.getRegulatoryAlerts({ page: 1, page_size: 50 })
+    regulatoryAlerts.value = res.data?.data || []
+  } finally {
+    loading.value.regulatoryAlerts = false
+  }
+}
+
+async function handleResolveAlert(row: RegulatoryAlert) {
+  try {
+    await medicalApi.resolveRegulatoryAlert(row.id, { user_id: 'admin', notes: '已处理' })
+    ElMessage.success('告警已解决')
+    await loadRegulatoryAlerts()
+  } catch (e: any) {
+    ElMessage.error(e.message || '处理失败')
+  }
 }
 </script>
 
