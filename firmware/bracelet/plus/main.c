@@ -474,37 +474,42 @@ static void vCommTask(void *pvParameters)
 
         /* Process incoming health data from queue */
         health_data_t health_msg;
-        if (tasks_get_comm_handle() &&
-            xQueueReceive(*(QueueHandle_t*)0, &health_msg, pdMS_TO_TICKS(1)) == pdPASS) {
+        void *health_q = tasks_get_health_queue();
+        if (health_q &&
+            xQueueReceive((QueueHandle_t)health_q, &health_msg, pdMS_TO_TICKS(1)) == pdPASS) {
             /* Data received from sensor task — publish to MQTT */
         }
 
         /* Process incoming location data from queue */
         location_data_t loc_msg;
-        if (tasks_get_comm_handle() &&
-            xQueueReceive(*(QueueHandle_t*)0, &loc_msg, pdMS_TO_TICKS(1)) == pdPASS) {
+        void *loc_q = tasks_get_location_queue();
+        if (loc_q &&
+            xQueueReceive((QueueHandle_t)loc_q, &loc_msg, pdMS_TO_TICKS(1)) == pdPASS) {
             /* Location data received — publish to MQTT */
         }
 
         /* Process geofence alerts from plus-tier task */
         geofence_alert_t gf_alert;
-        if (s_geofence_queue &&
-            xQueueReceive(s_geofence_queue, &gf_alert, pdMS_TO_TICKS(1)) == pdPASS) {
+        void *gf_q = tasks_get_geofence_queue();
+        if (gf_q &&
+            xQueueReceive((QueueHandle_t)gf_q, &gf_alert, pdMS_TO_TICKS(1)) == pdPASS) {
             log_warn("Geofence alert forwarded to MQTT: zone %u", gf_alert.zone_id);
         }
 
         /* Process fall alerts from plus-tier task */
         fall_alert_t fall_alert;
-        if (s_fall_queue &&
-            xQueueReceive(s_fall_queue, &fall_alert, pdMS_TO_TICKS(1)) == pdPASS) {
+        void *fall_q = tasks_get_fall_queue();
+        if (fall_q &&
+            xQueueReceive((QueueHandle_t)fall_q, &fall_alert, pdMS_TO_TICKS(1)) == pdPASS) {
             log_error("Fall alert forwarded to MQTT: confidence=%.2f",
                       fall_alert.confidence);
         }
 
         /* Process battery optimization commands */
         batt_opt_msg_t opt_msg;
-        if (s_batt_opt_queue &&
-            xQueueReceive(s_batt_opt_queue, &opt_msg, pdMS_TO_TICKS(1)) == pdPASS) {
+        void *batt_q = tasks_get_batt_opt_queue();
+        if (batt_q &&
+            xQueueReceive((QueueHandle_t)batt_q, &opt_msg, pdMS_TO_TICKS(1)) == pdPASS) {
             log_info("Battery opt applied: GPS=%us PPG=%us tier=%u",
                      opt_msg.gps_interval_s, opt_msg.ppg_interval_s, opt_msg.tier);
             s_batt_opt_applied = true;

@@ -14,9 +14,11 @@ import (
 )
 
 const (
-	maxRetries    = 3
-	retryDelay    = 100 * time.Millisecond
-	subjectPrefix = "eregen.event."
+	maxRetries         = 3
+	retryDelay         = 100 * time.Millisecond
+	subjectPrefix      = "eregen.event."
+	medicalSubjectPrefix = "eregen.medical.wb."
+	communitySubjectPrefix = "eregen.community.wb."
 )
 
 // Client wraps a NATS JetStream connection.
@@ -46,6 +48,7 @@ type Event struct {
 	Payload     json.RawMessage `json:"payload"`
 	Gateway     string          `json:"_gateway"`
 	PublishedAt string          `json:"_published_at"`
+	HospitalID  string          `json:"hospital_id,omitempty"` // community signin cross-hospital tracking
 }
 
 // NewClient creates a NATS JetStream client.
@@ -89,7 +92,7 @@ func (c *Client) Connect() error {
 	if err == natss.ErrStreamNotFound {
 		_, err = c.js.AddStream(&natss.StreamConfig{
 			Name:      c.stream,
-			Subjects:  []string{subjectPrefix + "*"},
+			Subjects:  []string{subjectPrefix + "*", medicalSubjectPrefix + "*", communitySubjectPrefix + "*"},
 			Storage:   natss.FileStorage,
 			Retention: natss.LimitsPolicy,
 			MaxMsgs:   -1,
@@ -120,6 +123,20 @@ func (c *Client) Close() {
 
 // Publish sends a device event to NATS JetStream with retry logic.
 func (c *Client) Publish(ev *Event) error {
+	return c.publishWithSubject(subjectPrefix+ev.Type, ev)
+}
+
+// PublishMedical publishes a medical wristband event under the isolated NATS subject namespace.
+func (c *Client) PublishMedical(ev *Event) error {
+	return c.publishWithSubject(medicalSubjectPrefix+ev.Type, ev)
+}
+
+// PublishCommunity publishes a community wristband event under the isolated NATS subject namespace.
+func (c *Client) PublishCommunity(ev *Event) error {
+	return c.publishWithSubject(communitySubjectPrefix+ev.Type, ev)
+}
+
+func (c *Client) publishWithSubject(subject string, ev *Event) error {
 	data, err := json.Marshal(ev)
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)
@@ -127,7 +144,7 @@ func (c *Client) Publish(ev *Event) error {
 
 	var lastErr error
 	for attempt := 0; attempt < maxRetries; attempt++ {
-		_, err = c.js.Publish(subjectPrefix+ev.Type, data)
+		_, err = c.js.Publish(subject, data)
 		if err == nil {
 			return nil
 		}

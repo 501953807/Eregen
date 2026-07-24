@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"eregen.dev/b2b-insurance-integration/internal/model"
@@ -22,6 +23,14 @@ func NewPostgres(pool *pgxpool.Pool, log *zap.Logger) *Postgres {
 }
 
 // ---------- Insurance Provider ----------
+
+func (s *Postgres) UpdateProvider(ctx context.Context, p *model.InsuranceProvider) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE b2b_insurance_providers SET name=$1, code=$2, api_endpoint=$3, active=$4, updated_at=now() WHERE id=$5`,
+		p.Name, p.Code, p.APIEndpoint, p.Active, p.ID,
+	)
+	return err
+}
 
 func (s *Postgres) CreateProvider(ctx context.Context, p *model.InsuranceProvider) error {
 	p.ID = uuid.New().String()
@@ -113,6 +122,19 @@ func (s *Postgres) GetPoliciesForElderly(ctx context.Context, elderlyID string) 
 	return policies, nil
 }
 
+func (s *Postgres) GetPolicyByID(ctx context.Context, id string) (*model.Policy, error) {
+	p := &model.Policy{}
+	q := `SELECT id, elderly_id, provider_id, plan_name, plan_code, policy_number,
+		   start_date, end_date, coverage_limit, premium, status, created_at
+		   FROM b2b_policies WHERE id = $1`
+	err := s.pool.QueryRow(ctx, q, id).Scan(
+		&p.ID, &p.ElderlyID, &p.ProviderID, &p.PlanName, &p.PlanCode,
+		&p.PolicyNumber, &p.StartDate, &p.EndDate, &p.CoverageLimit,
+		&p.Premium, &p.Status, &p.CreatedAt,
+	)
+	return p, err
+}
+
 // ---------- Claim ----------
 
 func (s *Postgres) CreateClaim(ctx context.Context, claim *model.InsuranceClaim) error {
@@ -130,7 +152,7 @@ func (s *Postgres) CreateClaim(ctx context.Context, claim *model.InsuranceClaim)
 	q := `INSERT INTO b2b_claims (id, elderly_id, family_member_id, provider_id, claim_type, status,
 		   incident_date, claim_amount, coverage_limit, description, evidence_files, created_at, updated_at)
 		   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`
-	_, _ = s.pool.Exec(ctx, q,
+	_, err = s.pool.Exec(ctx, q,
 		claim.ID, claim.ElderlyID, claim.FamilyMemberID, claim.ProviderID,
 		claim.ClaimType, claim.Status, claim.IncidentDate, claim.ClaimAmount,
 		claim.CoverageLimit, claim.Description, data, claim.CreatedAt, claim.UpdatedAt,
@@ -192,6 +214,55 @@ func (s *Postgres) GetClaimByID(ctx context.Context, claimID string) (*model.Ins
 	return c, nil
 }
 
+func (s *Postgres) ListClaims(ctx context.Context, status model.ClaimStatus, page, pageSize int) ([]model.InsuranceClaim, int, error) {
+	offset := (page - 1) * pageSize
+	var q string
+	var args []any
+	if status != "" {
+		q = fmt.Sprintf(`SELECT id, elderly_id, family_member_id, provider_id, claim_type, status, incident_date,
+			   claim_amount, coverage_limit, description, evidence_files, submitted_at, reviewed_at,
+			   reviewer_notes, created_at, updated_at FROM b2b_claims
+			   WHERE status = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`)
+		args = append(args, status, pageSize, offset)
+	} else {
+		q = fmt.Sprintf(`SELECT id, elderly_id, family_member_id, provider_id, claim_type, status, incident_date,
+			   claim_amount, coverage_limit, description, evidence_files, submitted_at, reviewed_at,
+			   reviewer_notes, created_at, updated_at FROM b2b_claims
+			   ORDER BY created_at DESC LIMIT $1 OFFSET $2`)
+		args = append(args, pageSize, offset)
+	}
+
+	rows, err := s.pool.Query(ctx, q, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var claims []model.InsuranceClaim
+	for rows.Next() {
+		var c model.InsuranceClaim
+		var data []byte
+		if err := rows.Scan(&c.ID, &c.ElderlyID, &c.FamilyMemberID, &c.ProviderID,
+			&c.ClaimType, &c.Status, &c.IncidentDate, &c.ClaimAmount, &c.CoverageLimit,
+			&c.Description, &data, &c.SubmittedAt, &c.ReviewedAt, &c.ReviewerNotes,
+			&c.CreatedAt, &c.UpdatedAt); err != nil {
+			return nil, 0, err
+		}
+		json.Unmarshal(data, &c.EvidenceFiles)
+		claims = append(claims, c)
+	}
+
+	var total int
+	countQ := "SELECT COUNT(*) FROM b2b_claims"
+	if status != "" {
+		countQ += " WHERE status = $1"
+		s.pool.QueryRow(ctx, countQ, status).Scan(&total)
+	} else {
+		s.pool.QueryRow(ctx, countQ).Scan(&total)
+	}
+	return claims, total, nil
+}
+
 // ---------- Evidence File ----------
 
 func (s *Postgres) AddEvidenceFile(ctx context.Context, file *model.EvidenceFile) error {
@@ -245,6 +316,29 @@ func (s *Postgres) CreateExport(ctx context.Context, export *model.HealthDataExp
 func (s *Postgres) MarkExportReady(ctx context.Context, exportID string, fileURL string) error {
 	q := `UPDATE b2b_health_exports SET status = 'ready', file_url = $1, updated_at = now() WHERE id = $2`
 	_, err := s.pool.Exec(ctx, q, fileURL, exportID)
+	return err
+}
+
+func (s *Postgres) GetExportByID(ctx context.Context, id string) (*model.HealthDataExport, error) {
+	e := &model.HealthDataExport{}
+	q := `SELECT id, elderly_id, claim_id, export_type, period_start, period_end,
+		   file_url, generated_at, status FROM b2b_health_exports WHERE id = $1`
+	err := s.pool.QueryRow(ctx, q, id).Scan(
+		&e.ID, &e.ElderlyID, &e.ClaimID, &e.ExportType,
+		&e.PeriodStart, &e.PeriodEnd, &e.FileURL, &e.GeneratedAt, &e.Status,
+	)
+	return e, err
+}
+
+func (s *Postgres) UpdatePolicy(ctx context.Context, policy *model.Policy) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE b2b_policies SET plan_name=$1, plan_code=$2, policy_number=$3,
+			 start_date=$4, end_date=$5, coverage_limit=$6, premium=$7, status=$8, updated_at=now()
+		 WHERE id=$9`,
+		policy.PlanName, policy.PlanCode, policy.PolicyNumber,
+		policy.StartDate, policy.EndDate, policy.CoverageLimit,
+		policy.Premium, policy.Status, policy.ID,
+	)
 	return err
 }
 

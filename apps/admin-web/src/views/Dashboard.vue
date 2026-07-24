@@ -1,11 +1,11 @@
 <template>
   <div class="dashboard">
     <!-- KPI Cards -->
-    <el-row :gutter="20" style="margin-bottom: 24px;">
+    <el-row :gutter="12" style="margin-bottom: 16px;">
       <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card">
+        <el-card shadow="hover" class="kpi-card kpi-blue">
           <div class="kpi-content">
-            <div class="kpi-icon" style="background: #4A90D9;">
+            <div class="kpi-icon" style="background: linear-gradient(135deg, #2563EB, #7C3AED);">
               <el-icon :size="28"><Monitor /></el-icon>
             </div>
             <div class="kpi-info">
@@ -13,17 +13,17 @@
               <div class="kpi-label">在线设备</div>
               <div class="kpi-trend up">较昨日 +2.3%</div>
               <svg class="sparkline" viewBox="0 0 120 30">
-                <polyline :points="sparkLinePoints(lineSparkData)" fill="none" stroke="#4A90D9" stroke-width="1.5"/>
-                <circle v-for="(p, i) in lineSparkData" :key="i" :cx="sparkX(i, lineSparkData.length)" :cy="sparkY(p, lineSparkData)" r="2" fill="#4A90D9" opacity="0.6"/>
+                <polyline :points="sparkLinePoints(lineSparkData)" fill="none" stroke="#2563EB" stroke-width="1.5"/>
+                <circle v-for="(p, i) in lineSparkData" :key="i" :cx="sparkX(i, lineSparkData.length)" :cy="sparkY(p, lineSparkData)" r="2" fill="#2563EB" opacity="0.6"/>
               </svg>
             </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card">
+        <el-card shadow="hover" class="kpi-card kpi-green">
           <div class="kpi-content">
-            <div class="kpi-icon" style="background: #67C23A;">
+            <div class="kpi-icon" style="background: linear-gradient(135deg, #16A34A, #22C55E);">
               <el-icon :size="28"><UserFilled /></el-icon>
             </div>
             <div class="kpi-info">
@@ -31,17 +31,17 @@
               <div class="kpi-label">活跃家属</div>
               <div class="kpi-trend up">较昨日 +5.1%</div>
               <svg class="sparkline" viewBox="0 0 120 30">
-                <polyline :points="sparkLinePoints(userSparkData)" fill="none" stroke="#67C23A" stroke-width="1.5"/>
-                <circle v-for="(p, i) in userSparkData" :key="i" :cx="sparkX(i, userSparkData.length)" :cy="sparkY(p, userSparkData)" r="2" fill="#67C23A" opacity="0.6"/>
+                <polyline :points="sparkLinePoints(userSparkData)" fill="none" stroke="#16A34A" stroke-width="1.5"/>
+                <circle v-for="(p, i) in userSparkData" :key="i" :cx="sparkX(i, userSparkData.length)" :cy="sparkY(p, userSparkData)" r="2" fill="#16A34A" opacity="0.6"/>
               </svg>
             </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card">
+        <el-card shadow="hover" class="kpi-card kpi-warning">
           <div class="kpi-content">
-            <div class="kpi-icon" style="background: #E6A23C;">
+            <div class="kpi-icon" style="background: linear-gradient(135deg, #F59E0B, #FBBF24);">
               <el-icon :size="28"><Bell /></el-icon>
             </div>
             <div class="kpi-info">
@@ -49,17 +49,17 @@
               <div class="kpi-label">待处理告警</div>
               <div class="kpi-trend down">较昨日 -12.5%</div>
               <svg class="sparkline" viewBox="0 0 120 30">
-                <polyline :points="sparkLinePoints(alertSparkData)" fill="none" stroke="#E6A23C" stroke-width="1.5"/>
-                <circle v-for="(p, i) in alertSparkData" :key="i" :cx="sparkX(i, alertSparkData.length)" :cy="sparkY(p, alertSparkData)" r="2" fill="#E6A23C" opacity="0.6"/>
+                <polyline :points="sparkLinePoints(alertSparkData)" fill="none" stroke="#F59E0B" stroke-width="1.5"/>
+                <circle v-for="(p, i) in alertSparkData" :key="i" :cx="sparkX(i, alertSparkData.length)" :cy="sparkY(p, alertSparkData)" r="2" fill="#F59E0B" opacity="0.6"/>
               </svg>
             </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card">
+        <el-card shadow="hover" class="kpi-card kpi-danger">
           <div class="kpi-content">
-            <div class="kpi-icon" style="background: #F56C6C;">
+            <div class="kpi-icon" style="background: linear-gradient(135deg, #EF4444, #F87171);">
               <el-icon :size="28"><TrendCharts /></el-icon>
             </div>
             <div class="kpi-info">
@@ -67,8 +67,8 @@
               <div class="kpi-label">设备在线率</div>
               <div class="kpi-trend up">较上周 +1.2%</div>
               <svg class="sparkline" viewBox="0 0 120 30">
-                <polyline :points="sparkLinePoints(onlineRateSparkData)" fill="none" stroke="#F56C6C" stroke-width="1.5"/>
-                <circle v-for="(p, i) in onlineRateSparkData" :key="i" :cx="sparkX(i, onlineRateSparkData.length)" :cy="sparkY(p, onlineRateSparkData)" r="2" fill="#F56C6C" opacity="0.6"/>
+                <polyline :points="sparkLinePoints(onlineRateSparkData)" fill="none" stroke="#EF4444" stroke-width="1.5"/>
+                <circle v-for="(p, i) in onlineRateSparkData" :key="i" :cx="sparkX(i, onlineRateSparkData.length)" :cy="sparkY(p, onlineRateSparkData)" r="2" fill="#EF4444" opacity="0.6"/>
               </svg>
             </div>
           </div>
@@ -77,7 +77,7 @@
     </el-row>
 
     <!-- Device Type Donut Chart Row -->
-    <el-row :gutter="20" style="margin-bottom: 24px;">
+    <el-row :gutter="12" style="margin-bottom: 16px;">
       <el-col :span="8">
         <el-card shadow="hover">
           <template #header><span style="font-weight: 600;">设备类型分布</span></template>
@@ -99,7 +99,7 @@
     </el-row>
 
     <!-- Charts Row -->
-    <el-row :gutter="20" style="margin-bottom: 24px;">
+    <el-row :gutter="12" style="margin-bottom: 16px;">
       <el-col :span="16">
         <el-card shadow="hover">
           <template #header>
@@ -119,7 +119,7 @@
     </el-row>
 
     <!-- Bottom Row -->
-    <el-row :gutter="20">
+    <el-row :gutter="12">
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
@@ -136,7 +136,10 @@
             </el-table-column>
             <el-table-column prop="alert_type" label="类型" width="100">
               <template #default="{ row }">
-                <el-tag :type="alertTypeTag(row.alert_type)" size="small">{{ row.alert_type }}</el-tag>
+                <span class="status-badge" :class="alertBadgeClass(row.alert_type)">
+                  <span class="status-dot" :class="alertDotClass(row.alert_type)"></span>
+                  {{ row.alert_type }}
+                </span>
               </template>
             </el-table-column>
             <el-table-column label="设备" width="120">
@@ -146,7 +149,10 @@
             </el-table-column>
             <el-table-column prop="status" label="状态" width="100">
               <template #default="{ row }">
-                <el-tag :type="statusTag(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
+                <span class="status-badge" :class="statusBadgeClass(row.status)">
+                  <span class="status-dot" :class="statusDotClass(row.status)"></span>
+                  {{ statusLabel(row.status) }}
+                </span>
               </template>
             </el-table-column>
           </el-table>
@@ -215,15 +221,22 @@ function formatTime(dateStr?: string): string {
   return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
-function alertTypeTag(type: string): 'danger' | 'warning' | 'info' {
-  const map: Record<string, 'danger' | 'warning' | 'info'> = {
-    SOS: 'danger', fall: 'warning', heart: 'danger', geofence: 'info', medication: 'warning',
-  }
-  return map[type] || 'info'
+function alertBadgeClass(type: string): string {
+  if (['SOS', 'heart'].includes(type)) return 'badge-danger'
+  if (['fall', 'medication'].includes(type)) return 'badge-warning'
+  return 'badge-primary'
+}
+function alertDotClass(type: string): string {
+  if (['SOS', 'heart'].includes(type)) return 'dot-danger'
+  if (['fall', 'medication'].includes(type)) return 'dot-warning'
+  return 'dot-primary'
 }
 
-function statusTag(status: string): 'danger' | 'warning' | 'success' {
-  return status === 'pending' ? 'danger' : status === 'resolved' ? 'success' : 'warning'
+function statusBadgeClass(status: string): string {
+  return status === 'pending' ? 'badge-danger' : status === 'resolved' ? 'badge-success' : 'badge-warning'
+}
+function statusDotClass(status: string): string {
+  return status === 'pending' ? 'dot-danger' : status === 'resolved' ? 'dot-success' : 'dot-warning'
 }
 
 function statusLabel(status: string): string {
@@ -258,11 +271,11 @@ function renderLineChart() {
     series: [
       {
         name: '手环', type: 'line', smooth: true, data: bracelet.length ? bracelet : [0],
-        itemStyle: { color: '#4A90D9' }, areaStyle: { opacity: 0.1 },
+        itemStyle: { color: '#2563EB' }, areaStyle: { opacity: 0.1 },
       },
       {
         name: '药盒', type: 'line', smooth: true, data: pillbox.length ? pillbox : [0],
-        itemStyle: { color: '#67C23A' }, areaStyle: { opacity: 0.1 },
+        itemStyle: { color: '#16A34A' }, areaStyle: { opacity: 0.1 },
       },
     ],
   })
@@ -281,10 +294,10 @@ function renderPieChart() {
       data: items.length
         ? items.map(i => ({ value: i.value, name: i.name, itemStyle: { color: i.color } }))
         : [
-            { value: 35, name: 'SOS', itemStyle: { color: '#F56C6C' } },
-            { value: 28, name: '跌倒检测', itemStyle: { color: '#E6A23C' } },
-            { value: 22, name: '心率异常', itemStyle: { color: '#4A90D9' } },
-            { value: 15, name: '漏服药物', itemStyle: { color: '#67C23A' } },
+            { value: 35, name: 'SOS', itemStyle: { color: '#EF4444' } },
+            { value: 28, name: '跌倒检测', itemStyle: { color: '#F59E0B' } },
+            { value: 22, name: '心率异常', itemStyle: { color: '#2563EB' } },
+            { value: 15, name: '漏服药物', itemStyle: { color: '#16A34A' } },
           ],
       emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } },
     }],
@@ -309,8 +322,8 @@ function renderBarChart() {
       data: growth.length ? growth.map(g => g.new_users) : [120, 180, 250, 320, 410, 520],
       itemStyle: {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: '#4A90D9' },
-          { offset: 1, color: '#357ABD' },
+          { offset: 0, color: '#2563EB' },
+          { offset: 1, color: '#7C3AED' },
         ]),
       },
     }],
@@ -337,11 +350,11 @@ function renderDonutChart() {
     series: [{
       name: '设备类型', type: 'pie', radius: ['40%', '70%'], center: ['50%', '55%'],
       data: [
-        { value: 480, name: '手环-入门版', itemStyle: { color: '#4A90D9' } },
-        { value: 312, name: '手环-中端版', itemStyle: { color: '#6366F1' } },
-        { value: 148, name: '手环-高端版', itemStyle: { color: '#8B5CF6' } },
-        { value: 220, name: '药盒-智能版', itemStyle: { color: '#67C23A' } },
-        { value: 85, name: '药盒-自动版', itemStyle: { color: '#E6A23C' } },
+        { value: 480, name: '手环-入门版', itemStyle: { color: '#2563EB' } },
+        { value: 312, name: '手环-中端版', itemStyle: { color: '#7C3AED' } },
+        { value: 148, name: '手环-高端版', itemStyle: { color: '#EC4899' } },
+        { value: 220, name: '药盒-智能版', itemStyle: { color: '#16A34A' } },
+        { value: 85, name: '药盒-自动版', itemStyle: { color: '#F59E0B' } },
       ],
       label: { fontSize: 11, formatter: '{b}\n{c}' },
     }],
@@ -357,9 +370,9 @@ function renderPlanChart() {
     series: [{
       name: '套餐', type: 'pie', radius: ['40%', '70%'], center: ['50%', '55%'],
       data: [
-        { value: 189, name: 'Starter ¥29/月', itemStyle: { color: '#A78BFA' } },
-        { value: 312, name: 'Plus ¥59/月', itemStyle: { color: '#409EFF' } },
-        { value: 148, name: 'Pro ¥99/月', itemStyle: { color: '#6366F1' } },
+        { value: 189, name: 'Starter ¥29/月', itemStyle: { color: '#7C3AED' } },
+        { value: 312, name: 'Plus ¥59/月', itemStyle: { color: '#2563EB' } },
+        { value: 148, name: 'Pro ¥99/月', itemStyle: { color: '#EC4899' } },
       ],
       label: { fontSize: 11, formatter: '{b}\n{d}%' },
     }],
@@ -375,9 +388,9 @@ function renderAlertPriorityChart() {
     series: [{
       name: '告警优先级', type: 'pie', radius: ['40%', '70%'], center: ['50%', '55%'],
       data: [
-        { value: 12, name: 'P0 紧急', itemStyle: { color: '#F56C6C' } },
-        { value: 38, name: 'P1 重要', itemStyle: { color: '#E6A23C' } },
-        { value: 156, name: 'P2 一般', itemStyle: { color: '#909399' } },
+        { value: 12, name: 'P0 紧急', itemStyle: { color: '#EF4444' } },
+        { value: 38, name: 'P1 重要', itemStyle: { color: '#F59E0B' } },
+        { value: 156, name: 'P2 一般', itemStyle: { color: '#6B7280' } },
       ],
       label: { fontSize: 11, formatter: '{b}\n{c}条' },
     }],
@@ -398,15 +411,80 @@ window.addEventListener('resize', handleResize)
 </script>
 
 <style scoped>
-.kpi-card :deep(.el-card__body) { padding: 16px 20px; }
-.kpi-content { display: flex; align-items: center; gap: 16px; }
-.kpi-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
-.kpi-info { flex: 1; }
-.kpi-value { font-size: 28px; font-weight: 700; color: #303133; }
-.kpi-label { font-size: 13px; color: #909399; margin-top: 2px; }
-.kpi-trend { font-size: 12px; margin-top: 4px; }
-.kpi-trend.up { color: #67C23A; }
-.kpi-trend.down { color: #F56C6C; }
-.sparkline { width: 120px; height: 30px; margin-top: 4px; }
-.card-header-with-action { display: flex; justify-content: space-between; align-items: center; }
+.dashboard {
+  padding: 0;
+}
+
+.kpi-card :deep(.el-card__body) {
+  padding: 16px 20px;
+}
+.kpi-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.kpi-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+.kpi-info {
+  flex: 1;
+}
+.kpi-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--el-text-color-primary);
+}
+.kpi-label {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  margin-top: 2px;
+}
+.kpi-trend {
+  font-size: 12px;
+  margin-top: 4px;
+}
+.kpi-trend.up { color: #16A34A; }
+.kpi-trend.down { color: #EF4444; }
+.sparkline {
+  width: 120px;
+  height: 30px;
+  margin-top: 4px;
+}
+.card-header-with-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Status badges with dots */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-success { background: #F0FDF4; color: #16A34A; }
+.badge-danger { background: #FEF2F2; color: #DC2626; }
+.badge-warning { background: #FFFBEB; color: #D97706; }
+.badge-primary { background: #EFF6FF; color: #2563EB; }
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot-success { background: #16A34A; }
+.dot-danger { background: #DC2626; }
+.dot-warning { background: #D97706; }
+.dot-primary { background: #2563EB; }
 </style>

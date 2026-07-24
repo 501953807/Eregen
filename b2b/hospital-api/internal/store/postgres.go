@@ -93,6 +93,18 @@ func (s *Postgres) ListInstitutions(ctx context.Context, page, pageSize int) ([]
 	return list, total, nil
 }
 
+func (s *Postgres) UpdateInstitution(ctx context.Context, id string, inst *model.Institution) error {
+	inst.UpdatedAt = time.Now()
+	q := `UPDATE b2b_institutions SET name=$1, type=$2, code=$3, contact_name=$4, contact_phone=$5,
+		   access_level=$6, status=$7, updated_at=$8 WHERE id=$9`
+	_, err := s.pool.Exec(ctx, q,
+		inst.Name, inst.Type, inst.Code,
+		inst.ContactName, inst.ContactPhone, inst.AccessLevel, inst.Status,
+		inst.UpdatedAt, id,
+	)
+	return err
+}
+
 // ---------- API Key ----------
 
 func (s *Postgres) CreateAPIKey(ctx context.Context, key *model.InstitutionAPIKey) error {
@@ -260,4 +272,97 @@ func (s *Postgres) FindElderlyByExternalPatient(ctx context.Context, patientID s
 		`SELECT local_elderly_id FROM b2b_patient_links WHERE external_patient_id = $1`,
 		patientID).Scan(&elderlyID)
 	return elderlyID, err
+}
+
+// ---------- Diagnoses ----------
+
+func (s *Postgres) StoreDiagnoses(ctx context.Context, records []*model.DiagnosisRecord) error {
+	for _, r := range records {
+		if err := s.storeSingleDiagnosis(ctx, r); err != nil {
+			s.log.Warn("store diagnosis", zap.Error(err))
+		}
+	}
+	return nil
+}
+
+func (s *Postgres) storeSingleDiagnosis(ctx context.Context, r *model.DiagnosisRecord) error {
+	r.ID = uuid.New().String()
+	q := `INSERT INTO b2b_diagnoses (id, elderly_id, institution_id, patient_id,
+		   diagnosis_code, diagnosis_name, severity, diagnosed_at)
+		   VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`
+	_, err := s.pool.Exec(ctx, q,
+		r.ID, r.ElderlyID, r.InstitutionID, r.PatientID,
+		r.DiagnosisCode, r.DiagnosisName, r.Severity, r.DiagnosedAt,
+	)
+	return err
+}
+
+func (s *Postgres) GetDiagnosesForElderly(ctx context.Context, elderlyID string, days int) ([]model.DiagnosisRecord, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, elderly_id, institution_id, patient_id, diagnosis_code, diagnosis_name, severity, diagnosed_at
+		   FROM b2b_diagnoses WHERE elderly_id = $1 AND diagnosed_at > now() - interval $2
+		   ORDER BY diagnosed_at DESC`,
+		elderlyID, fmt.Sprintf("%d days", days),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var records []model.DiagnosisRecord
+	for rows.Next() {
+		var r model.DiagnosisRecord
+		if err := rows.Scan(&r.ID, &r.ElderlyID, &r.InstitutionID, &r.PatientID,
+			&r.DiagnosisCode, &r.DiagnosisName, &r.Severity, &r.DiagnosedAt); err != nil {
+			return nil, err
+		}
+		records = append(records, r)
+	}
+	return records, rows.Err()
+}
+
+// ---------- Medications ----------
+
+func (s *Postgres) StoreMedications(ctx context.Context, records []*model.MedicationRecord) error {
+	for _, r := range records {
+		if err := s.storeSingleMedication(ctx, r); err != nil {
+			s.log.Warn("store medication", zap.Error(err))
+		}
+	}
+	return nil
+}
+
+func (s *Postgres) storeSingleMedication(ctx context.Context, r *model.MedicationRecord) error {
+	r.ID = uuid.New().String()
+	q := `INSERT INTO b2b_medications (id, elderly_id, institution_id, patient_id,
+		   medication_name, dose, frequency, route, duration, prescribed_at)
+		   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`
+	_, err := s.pool.Exec(ctx, q,
+		r.ID, r.ElderlyID, r.InstitutionID, r.PatientID,
+		r.MedicationName, r.Dose, r.Frequency, r.Route, r.Duration, r.PrescribedAt,
+	)
+	return err
+}
+
+func (s *Postgres) GetMedicationsForElderly(ctx context.Context, elderlyID string) ([]model.MedicationRecord, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, elderly_id, institution_id, patient_id, medication_name, dose, frequency, route, duration, prescribed_at
+		   FROM b2b_medications WHERE elderly_id = $1 ORDER BY prescribed_at DESC`,
+		elderlyID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var records []model.MedicationRecord
+	for rows.Next() {
+		var r model.MedicationRecord
+		if err := rows.Scan(&r.ID, &r.ElderlyID, &r.InstitutionID, &r.PatientID,
+			&r.MedicationName, &r.Dose, &r.Frequency, &r.Route, &r.Duration, &r.PrescribedAt); err != nil {
+			return nil, err
+		}
+		records = append(records, r)
+	}
+	return records, rows.Err()
 }

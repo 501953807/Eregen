@@ -15,15 +15,15 @@
   <view class="menu-list" style="margin-top: 24rpx;">
     <view class="menu-item">
       <text>推送通知</text>
-      <switch checked="{{settings.pushEnabled}}" bindchange="onPushChange" color="#4A90D9" />
+      <switch checked="{{settings.pushEnabled}}" bindchange="onPushChange" color="#E8734A" />
     </view>
     <view class="menu-item">
       <text>声音提醒</text>
-      <switch checked="{{settings.soundEnabled}}" bindchange="onSoundChange" color="#4A90D9" />
+      <switch checked="{{settings.soundEnabled}}" bindchange="onSoundChange" color="#E8734A" />
     </view>
     <view class="menu-item">
       <text>震动提醒</text>
-      <switch checked="{{settings.vibrationEnabled}}" bindchange="onVibrationChange" color="#4A90D9" />
+      <switch checked="{{settings.vibrationEnabled}}" bindchange="onVibrationChange" color="#E8734A" />
     </view>
     <view class="menu-item" bindtap="saveSettings">
       <text>保存设置</text>

@@ -32,9 +32,9 @@ class EregenFamilyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         fontFamily: null,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4A90D9)),
+        colorScheme: ColorScheme.fromSeed(seedColor: AppTheme.primary),
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF5F6FA),
+        scaffoldBackgroundColor: AppTheme.bgScaffold,
       ),
       home: ApiClient.instance.isAuthenticated
           ? const MainTabScreen()

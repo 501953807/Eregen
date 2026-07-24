@@ -1,251 +1,282 @@
 {{ define "main" }}
+<!-- Navbar -->
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/">
+      <div class="nav-logo">E</div>
+      <div class="nav-name"><span>颐贞</span> Eregen</div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/" class="active">首页</a></li>
+      <li><a href="#products">产品</a></li>
+      <li><a href="#features">功能</a></li>
+      <li><a href="#ecosystem">生态</a></li>
+      <li><a href="#about">关于</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="#" class="btn-outline">登录</a>
+      <a href="#" class="btn-primary">免费下载APP</a>
+    </div>
+  </div>
+</nav>
+
 <!-- Hero Section -->
 <section class="hero">
-    <div class="hero-inner">
-        <div class="hero-content">
-            <div class="hero-badge">
-                <span>新品</span> 第二代智能手环系列 全新发布
-            </div>
-            <h1 class="hero-title">{{ .Site.Params.heroTitle | safeHTML }}</h1>
-            <p class="hero-subtitle">{{ .Site.Params.heroSubtitle }}</p>
-            <div class="hero-actions">
-                <a href="#products" class="btn btn-primary btn-lg">了解产品</a>
-                <a href="#" class="btn btn-outline btn-lg">观看视频</a>
-            </div>
-            <div class="hero-stats">
-                {{ range .Site.Params.heroStats }}
-                <div class="hero-stat">
-                    <div class="num">{{ .number }}</div>
-                    <div class="lbl">{{ .label }}</div>
-                </div>
-                {{ end }}
-            </div>
-        </div>
-        <div class="hero-visual">
-            <div class="product-showcase">
-                <div class="product-img-placeholder">⌚</div>
-                <div class="product-name-display">Eregen 智能手环 Pro</div>
-                <div class="product-price-display">¥599 <small>起</small></div>
-            </div>
-            <div class="float-card fc1">
-                <div class="float-icon success">🆘</div>
-                <div><strong>SOS</strong><br><span style="font-size:11px;color:#6B7280;">一键呼救</span></div>
-            </div>
-            <div class="float-card fc2">
-                <div class="float-icon primary">💊</div>
-                <div><strong>用药提醒</strong><br><span style="font-size:11px;color:#6B7280;">智能药盒联动</span></div>
-            </div>
-            <div class="float-card fc3">
-                <div class="float-icon warning">❤️</div>
-                <div><strong>健康数据</strong><br><span style="font-size:11px;color:#6B7280;">心率·血氧·步数</span></div>
-            </div>
-        </div>
+  <div class="hero-bg-shapes">
+    <div class="hero-shape s1"></div>
+    <div class="hero-shape s2"></div>
+    <div class="hero-shape s3"></div>
+  </div>
+  <div class="hero-inner">
+    <div class="hero-content">
+      <div class="hero-badge">&#128218; {{ .Site.Params.heroBadge | default "技术驱动 · 守护每一刻" }}</div>
+      <h1 class="hero-title">
+        {{ .Site.Params.heroTitle | safeHTML }}
+      </h1>
+      <p class="hero-subtitle">{{ .Site.Params.heroSubtitle }}</p>
+      <div class="hero-cta">
+        <a href="#" class="btn-lg btn-hero-primary">&#128241; 下载家属APP</a>
+        <a href="#products" class="btn-lg btn-hero-secondary">&#8594; 了解更多</a>
+      </div>
+      <div class="hero-trust">
+        <span class="trust-item"><span class="trust-icon">&#128274;</span>医疗级精度</span>
+        <span class="trust-item"><span class="trust-icon">&#9733;</span>ISO认证</span>
+        <span class="trust-item"><span class="trust-icon">&#128100;</span>5000+家庭信赖</span>
+      </div>
     </div>
+    <div class="hero-visual">
+      <div class="hero-device">
+        <div class="device-screen">
+          <div class="device-heart">&#9825;</div>
+          <div class="device-hr">72</div>
+          <div class="device-hr-label">bpm 正常</div>
+          <div class="device-stats">
+            <div class="device-stat">
+              <div class="device-stat-val" style="color:#16A34A;">98%</div>
+              <div class="device-stat-lbl">血氧</div>
+            </div>
+            <div class="device-stat">
+              <div class="device-stat-val" style="color:#F59E0B;">3,456</div>
+              <div class="device-stat-lbl">步数</div>
+            </div>
+            <div class="device-stat">
+              <div class="device-stat-val" style="color:#2563EB;">85%</div>
+              <div class="device-stat-lbl">电量</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="floating-card fc1">
+        <div class="fc-icon green">&#10003;</div>
+        <div>
+          <strong style="font-size:13px;">用药提醒</strong><br>
+          <span style="font-size:11px;color:var(--gray-400);">已播报 · 08:00</span>
+        </div>
+      </div>
+      <div class="floating-card fc2">
+        <div class="fc-icon blue">&#128205;</div>
+        <div>
+          <strong style="font-size:13px;">位置正常</strong><br>
+          <span style="font-size:11px;color:var(--gray-400);">安全区域内</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- Products Section -->
-<section class="section products-section" id="products">
-    <div class="section-inner">
-        <div class="section-header">
-            <div class="section-tag">产品线</div>
-            <h2 class="section-title">三档产品矩阵</h2>
-            <p class="section-desc">从入门到高端，满足不同需求和预算。每档产品共享同一生态，无缝衔接。</p>
-        </div>
-        <div class="products-grid">
-            {{ range .Site.Params.products }}
-            <div class="product-card">
-                <div class="product-card-visual {{ if eq .icon "⌚" }}brandlet{{ else }}pillbox-vis{{ end }}">
-                    {{ .icon }}
-                    <div class="product-tier-badges">
-                        {{ range .tiers }}
-                        <span class="tier-badge {{ if eq .name "Starter" }}starter{{ else if eq .name "Plus" }}plus{{ else }}pro{{ end }}">{{ .name }} {{ .price }}</span>
-                        {{ end }}
-                    </div>
-                </div>
-                <div class="product-card-body">
-                    <h3 class="product-card-title">{{ .name }}</h3>
-                    <p class="product-card-desc">{{ .desc }}</p>
-                    <div class="product-features">
-                        {{ range .features }}
-                        <span class="feature-tag">{{ . }}</span>
-                        {{ end }}
-                    </div>
-                    <div class="product-card-footer">
-                        <span class="price">{{ (index .tiers 0).price }} <small>起</small></span>
-                        <a class="btn btn-primary" style="padding:8px 18px;font-size:13px;">了解详情</a>
-                    </div>
-                </div>
-            </div>
-            {{ end }}
-        </div>
+<section id="products">
+  <div class="section-inner">
+    <div class="section-header fade-in">
+      <div class="section-tag">三档产品线</div>
+      <h2 class="section-title">满足不同需求的智能健康方案</h2>
+      <p class="section-desc">从入门到高端，每款产品都经过精心设计和严格测试</p>
     </div>
+    <div class="products-grid">
+      {{ range .Site.Params.products }}
+      <div class="product-card {{ if $.Site.Params.featuredProduct | eq .name }}featured{{ end }} fade-in">
+        <div class="product-tier {{ lower .tierClass }}">{{ .tier | default "Starter" }}</div>
+        <div class="product-name">{{ .name }}</div>
+        <div class="product-price">{{ (index .tiers 0).price }} <small>/ 起</small></div>
+        <ul class="product-features">
+          {{ range .features }}
+          <li>{{ . }}</li>
+          {{ end }}
+        </ul>
+        <button class="product-btn {{ if $.Site.Params.featuredProduct | eq .name }}primary{{ else }}outline{{ end }}">
+          {{ if $.Site.Params.featuredProduct | eq .name }}最受欢迎{{ else }}了解详情{{ end }}
+        </button>
+      </div>
+      {{ end }}
+    </div>
+  </div>
 </section>
 
 <!-- Features Section -->
-<section class="section" id="features">
-    <div class="section-inner">
-        <div class="section-header">
-            <div class="section-tag">核心功能</div>
-            <h2 class="section-title">全方位守护</h2>
-            <p class="section-desc">从硬件到云端到应用，为老人健康和家庭安全提供完整解决方案。</p>
-        </div>
-        <div class="features-grid">
-            {{ range .Site.Params.features }}
-            <div class="feature-card">
-                <div class="feature-icon">{{ .icon }}</div>
-                <h3>{{ .title }}</h3>
-                <p>{{ .desc }}</p>
-            </div>
-            {{ end }}
-        </div>
+<section class="features-section" id="features">
+  <div class="section-inner">
+    <div class="section-header fade-in">
+      <div class="section-tag">核心功能</div>
+      <h2 class="section-title">全方位的健康守护</h2>
+      <p class="section-desc">从健康监测到紧急救援，从用药管理到数据分析</p>
     </div>
+    <div class="features-grid">
+      {{ range .Site.Params.features }}
+      <div class="feature-card fade-in">
+        <div class="feature-icon {{ .iconColor | default "blue" }}">{{ .icon }}</div>
+        <div class="feature-title">{{ .title }}</div>
+        <div class="feature-desc">{{ .desc }}</div>
+      </div>
+      {{ end }}
+    </div>
+  </div>
 </section>
 
-<!-- About Section -->
-<section class="section" id="about" style="background:#F9FAFB;">
-    <div class="section-inner">
-        <div class="section-header">
-            <div class="section-tag">关于 Eregen</div>
-            <h2 class="section-title">{{ .Site.Params.slogan }}</h2>
-            <p class="section-desc">Eregen = Ease（轻松）+ Regen（再生）。我们相信科技应该让每个人都能有尊严地老去。</p>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;text-align:center;">
-            <div>
-                <div style="font-size:36px;margin-bottom:12px;">🔬</div>
-                <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">自研核心技术</h3>
-                <p style="font-size:13px;color:#6B7280;line-height:1.6;">固件、云平台、APP 全栈自研。申请专利保护，掌握核心技术。</p>
-            </div>
-            <div>
-                <div style="font-size:36px;margin-bottom:12px;">🛡️</div>
-                <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">隐私安全保障</h3>
-                <p style="font-size:13px;color:#6B7280;line-height:1.6;">TLS 传输加密 + AES-256 静态加密。数据境内存储，符合 PIPL 合规要求。</p>
-            </div>
-            <div>
-                <div style="font-size:36px;margin-bottom:12px;">🏥</div>
-                <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">医院社区对接</h3>
-                <p style="font-size:13px;color:#6B7280;line-height:1.6;">标准化 API 对接医院 HIS 系统。健康数据互通，助力智慧养老。</p>
-            </div>
-        </div>
+<!-- Ecosystem Section -->
+<section id="ecosystem">
+  <div class="section-inner">
+    <div class="section-header fade-in">
+      <div class="section-tag">生态系统</div>
+      <h2 class="section-title">软硬件一体的完整生态</h2>
+      <p class="section-desc">从硬件传感器到云端分析，再到家属端应用，全链路自主可控</p>
     </div>
-</section>
-
-<!-- Product Comparison Section -->
-<section class="section" id="comparison" style="background:white;">
-    <div class="section-inner">
-        <div class="section-header">
-            <div class="section-tag">产品对比</div>
-            <h2 class="section-title">选择最适合您的方案</h2>
-            <p class="section-desc">三档手环、三档药盒，每一档都共享同一生态系统，可随时升级。</p>
-        </div>
-        <div class="comparison-table-wrap">
-            <table class="comparison-table">
-                <thead>
-                    <tr>
-                        <th class="feat-col">功能</th>
-                        <th class="tier-col starter-col">Starter<br><span class="price-tag">¥399</span></th>
-                        <th class="tier-col plus-col">Plus<br><span class="price-tag">¥599</span></th>
-                        <th class="tier-col pro-col">Pro<br><span class="price-tag">¥899</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td class="feat-col">心率监测</td><td>✅</td><td>✅</td><td>✅</td></tr>
-                    <tr><td class="feat-col">血氧检测</td><td>✅</td><td>✅</td><td>✅</td></tr>
-                    <tr><td class="feat-col">GPS 定位</td><td>✅</td><td>✅</td><td>高精度多星</td></tr>
-                    <tr><td class="feat-col">跌倒检测</td><td>—</td><td>✅</td><td>✅</td></tr>
-                    <tr><td class="feat-col">电子围栏</td><td>—</td><td>✅</td><td>✅</td></tr>
-                    <tr><td class="feat-col">ECG 心电</td><td>—</td><td>—</td><td>✅</td></tr>
-                    <tr><td class="feat-col">AMOLED 彩屏</td><td>—</td><td>TFT 屏</td><td>AMOLED</td></tr>
-                    <tr><td class="feat-col">金属机身</td><td>—</td><td>塑料</td><td>铝合金</td></tr>
-                    <tr><td class="feat-col">续航</td><td>5 天</td><td>7 天</td><td>10 天</td></tr>
-                </tbody>
-            </table>
-        </div>
+    <div class="ecosystem-flow fade-in">
+      <div class="eco-node">
+        <div class="eco-icon">&#128188;</div>
+        <div class="eco-label">智能手环</div>
+      </div>
+      <span class="eco-arrow">&#8594;</span>
+      <div class="eco-node">
+        <div class="eco-icon">&#128139;</div>
+        <div class="eco-label">智能药盒</div>
+      </div>
+      <span class="eco-arrow">&#8594;</span>
+      <div class="eco-node cloud">
+        <div class="eco-icon">&#9729;</div>
+        <div class="eco-label">云平台</div>
+      </div>
+      <span class="eco-arrow">&#8594;</span>
+      <div class="eco-node">
+        <div class="eco-icon">&#128187;</div>
+        <div class="eco-label">家属APP</div>
+      </div>
+      <span class="eco-arrow">&#8594;</span>
+      <div class="eco-node">
+        <div class="eco-icon">&#128188;</div>
+        <div class="eco-label">管理后台</div>
+      </div>
     </div>
-</section>
-
-<!-- Architecture Section -->
-<section class="section" id="architecture" style="background:var(--gray-50);">
-    <div class="section-inner">
-        <div class="section-header">
-            <div class="section-tag">技术架构</div>
-            <h2 class="section-title">端到端全链路设计</h2>
-            <p class="section-desc">从传感器到云端到应用，每一个环节都是自研。</p>
-        </div>
-        <div class="arch-flow">
-            <div class="arch-step">
-                <div class="arch-icon">⌚</div>
-                <h4>硬件层</h4>
-                <p>GD32 / ESP32<br>FreeRTOS / ESP-IDF</p>
-            </div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-step">
-                <div class="arch-icon">📡</div>
-                <h4>通信层</h4>
-                <p>Cat1 / WiFi<br>MQTT over TLS</p>
-            </div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-step">
-                <div class="arch-icon">☁️</div>
-                <h4>云端层</h4>
-                <p>Go + Gin<br>NATS + PostgreSQL</p>
-            </div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-step">
-                <div class="arch-icon">🤖</div>
-                <h4>AI 引擎</h4>
-                <p>趋势分析<br>异常检测</p>
-            </div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-step">
-                <div class="arch-icon">📱</div>
-                <h4>应用层</h4>
-                <p>Flutter APP<br>Vue 3 管理后台</p>
-            </div>
-        </div>
-    </div>
+  </div>
 </section>
 
 <!-- Testimonials Section -->
-<section class="section" id="testimonials" style="background:white;">
-    <div class="section-inner">
-        <div class="section-header">
-            <div class="section-tag">用户心声</div>
-            <h2 class="section-title">来自真实家庭的反馈</h2>
-        </div>
-        <div class="testimonial-grid">
-            <div class="testimonial-card">
-                <div class="stars">★★★★★</div>
-                <p>"妈妈一个人住在老家，戴上手环后我每天都能看到她的位置和心率。有一次她摔倒了，系统立刻通知了我，及时送到了医院。"</p>
-                <div class="author"><strong>李女士</strong><span>上海 · 子女版用户</span></div>
-            </div>
-            <div class="testimonial-card">
-                <div class="stars">★★★★★</div>
-                <p>"爷爷的用药一直让我担心。智能药盒会语音提醒，如果没吃，APP 上马上会有通知。再也不用每次打电话问了。"</p>
-                <div class="author"><strong>张先生</strong><span>北京 · 智能药盒用户</span></div>
-            </div>
-            <div class="testimonial-card">
-                <div class="stars">★★★★★</div>
-                <p>"作为养老院院长，管理后台让我们能同时监控 200 多位老人的健康数据。电子围栏功能特别实用，老人走出安全范围立刻告警。"</p>
-                <div class="author"><strong>王院长</strong><span>杭州 · 机构版用户</span></div>
-            </div>
-        </div>
+<section class="testimonials-section">
+  <div class="section-inner">
+    <div class="section-header fade-in">
+      <div class="section-tag">用户心声</div>
+      <h2 class="section-title">来自真实家庭的反馈</h2>
     </div>
+    <div class="testimonials-grid fade-in">
+      <div class="testimonial-card">
+        <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <div class="testimonial-text">"自从给父亲买了颐贞手环，我在外地工作也能随时看到他的心率和位置。上次他不小心走出小区，我立刻收到了告警通知。"</div>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">&#128105;</div>
+          <div>
+            <div class="testimonial-name">王先生</div>
+            <div class="testimonial-role">儿子 · 北京</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <div class="testimonial-text">"智能药盒的语音提醒功能太贴心了，妈妈再也不用担心忘记吃药。漏服提醒让我们子女也能及时知道。"</div>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">&#128104;</div>
+          <div>
+            <div class="testimonial-name">李女士</div>
+            <div class="testimonial-role">女儿 · 上海</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9734;</div>
+        <div class="testimonial-text">"作为社区医院的院长，我们和颐贞合作了B2B项目，为辖区内200多位老人提供健康监测服务，效果很好。"</div>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">&#128104;&#65039;</div>
+          <div>
+            <div class="testimonial-name">张院长</div>
+            <div class="testimonial-role">社区医院 · 广州</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- CTA Section -->
-<section class="section cta-section">
-    <div class="section-inner">
-        <h2 class="section-title">开始守护您的家人</h2>
-        <p class="section-desc" style="color:rgba(255,255,255,0.85);">免费注册，绑定设备后即可使用全部基础功能。专业版 ¥29/月起，解锁高级健康分析和告警服务。</p>
-        <div class="cta-actions">
-            <a href="#" class="btn btn-white btn-lg">免费注册试用</a>
-            <a href="#" class="btn btn-ghost btn-lg">联系销售</a>
-        </div>
-        <div class="cta-trust">
-            <span>🔒 数据加密传输</span>
-            <span>🆓 永久免费基础版</span>
-            <span>📞 7×24 技术支持</span>
-        </div>
-    </div>
+<section class="cta-section">
+  <h2 class="cta-title fade-in">开始守护家人的健康</h2>
+  <p class="cta-desc fade-in">下载颐贞家属APP，或前往门店体验我们的产品</p>
+  <div class="cta-buttons fade-in">
+    <button class="btn-white">&#128241; App Store 下载</button>
+    <button class="btn-ghost">&#128230; 安卓 APK 下载</button>
+  </div>
 </section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand-name">颐贞 Eregen</div>
+        <div class="footer-brand-desc">{{ .Site.Params.slogan }}。为每一位长辈打造全链路的智能健康管理方案。</div>
+      </div>
+      <div>
+        <div class="footer-col-title">产品</div>
+        <ul class="footer-links">
+          <li><a href="#products">智能手环</a></li>
+          <li><a href="#products">智能药盒</a></li>
+          <li><a href="#">家属APP</a></li>
+          <li><a href="#">管理后台</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">支持</div>
+        <ul class="footer-links">
+          <li><a href="#">帮助中心</a></li>
+          <li><a href="#">联系客服</a></li>
+          <li><a href="#">开发者API</a></li>
+          <li><a href="#">B2B合作</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">公司</div>
+        <ul class="footer-links">
+          <li><a href="#about">关于我们</a></li>
+          <li><a href="#">新闻动态</a></li>
+          <li><a href="#">加入我们</a></li>
+          <li><a href="#">隐私政策</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Eregen 颐贞. All rights reserved.</span>
+      <span>京ICP备XXXXXXXX号</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Scroll animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// Navbar scroll effect
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20);
+});
+</script>
 {{ end }}

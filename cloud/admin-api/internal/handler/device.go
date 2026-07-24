@@ -12,11 +12,11 @@ import (
 
 // DeviceHandler serves device management endpoints.
 type DeviceHandler struct {
-	store *store.PostgresStore
+	store store.Store
 }
 
 // NewDeviceHandler creates a new DeviceHandler.
-func NewDeviceHandler(s *store.PostgresStore) *DeviceHandler {
+func NewDeviceHandler(s store.Store) *DeviceHandler {
 	return &DeviceHandler{store: s}
 }
 

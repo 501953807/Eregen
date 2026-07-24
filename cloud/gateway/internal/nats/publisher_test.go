@@ -27,3 +27,15 @@ func TestNewClient_CustomStream(t *testing.T) {
 		t.Errorf("stream = %q, want CUSTOM_STREAM", c.stream)
 	}
 }
+
+func TestCommunitySubjectPrefix(t *testing.T) {
+	if communitySubjectPrefix != "eregen.community.wb." {
+		t.Errorf("communitySubjectPrefix = %q, want eregen.community.wb.", communitySubjectPrefix)
+	}
+}
+
+func TestMedicalSubjectPrefix(t *testing.T) {
+	if medicalSubjectPrefix != "eregen.medical.wb." {
+		t.Errorf("medicalSubjectPrefix = %q, want eregen.medical.wb.", medicalSubjectPrefix)
+	}
+}

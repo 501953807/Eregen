@@ -1,0 +1,15 @@
+menuconfig COMMUNITY_WB_OLED
+    bool "Enable OLED display"
+    default y
+    help
+        Enable SSD1306 OLED display for community wristband.
+
+config COMMUNITY_WB_BLE_ADV_INTERVAL
+    int "BLE advertising interval (ms)"
+    range 20 10000
+    default 1000
+    depends on COMMUNITY_WB_BLE
+    help
+        Interval for BLE advertising in milliseconds.
+
+endmenu

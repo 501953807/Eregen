@@ -100,14 +100,16 @@ type ElderlyInstitutionLink struct {
 
 // HealthReport is a standardized output for institutions to consume.
 type HealthReport struct {
-	ElderlyID   string    `json:"elderly_id"`
-	ReportDate  time.Time `json:"report_date"`
-	PeriodStart time.Time `json:"period_start"`
-	PeriodEnd   time.Time `json:"period_end"`
-	Summary     ReportSummary `json:"summary"`
-	VitalsTrend []VitalTrend `json:"vitals_trend"`
-	AlertCount  int `json:"alert_count"`
-	MedAdherence float64 `json:"med_adherence"` // percentage
+	ElderlyID    string               `json:"elderly_id"`
+	ReportDate   time.Time            `json:"report_date"`
+	PeriodStart  time.Time            `json:"period_start"`
+	PeriodEnd    time.Time            `json:"period_end"`
+	Summary      ReportSummary        `json:"summary"`
+	VitalsTrend  []VitalTrend         `json:"vitals_trend"`
+	Diagnoses    []DiagnosisRecord    `json:"diagnoses,omitempty"`
+	Medications  []MedicationRecord   `json:"medications,omitempty"`
+	AlertCount   int                  `json:"alert_count"`
+	MedAdherence float64              `json:"med_adherence"` // percentage
 }
 
 // ReportSummary is a high-level health snapshot.
@@ -158,4 +160,30 @@ type VitalSignRecord struct {
 	Temperature  *float64  `json:"temperature,omitempty"`
 	Steps        *int64    `json:"steps,omitempty"`
 	RecordedAt   time.Time `json:"recorded_at"`
+}
+
+// DiagnosisRecord is a persisted diagnosis from hospital HIS.
+type DiagnosisRecord struct {
+	ID            string     `json:"id"`
+	ElderlyID     string     `json:"elderly_id"`
+	InstitutionID string     `json:"institution_id"`
+	PatientID     string     `json:"patient_id"`
+	DiagnosisCode string     `json:"diagnosis_code"`
+	DiagnosisName string     `json:"diagnosis_name"`
+	Severity      string     `json:"severity"`
+	DiagnosedAt   time.Time  `json:"diagnosed_at"`
+}
+
+// MedicationRecord is a persisted medication prescription from hospital HIS.
+type MedicationRecord struct {
+	ID             string    `json:"id"`
+	ElderlyID      string    `json:"elderly_id"`
+	InstitutionID  string    `json:"institution_id"`
+	PatientID      string    `json:"patient_id"`
+	MedicationName string    `json:"medication_name"`
+	Dose           string    `json:"dose"`
+	Frequency      string    `json:"frequency"`
+	Route          string    `json:"route"`
+	Duration       string    `json:"duration"`
+	PrescribedAt   time.Time `json:"prescribed_at"`
 }

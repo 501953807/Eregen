@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>颐贞 Eregen - 父母福利页</title>
+    <style>
+        :root {
+            --primary-color: #4A90D9;
+            --danger-color: #F56C6C;
+            --warning-color: #E6A23C;
+            --success-color: #67C23A;
+            --bg-gradient-start: #eef6ff;
+            --bg-gradient-end: #f5f9ff;
+            --card-bg: #ffffff;
+            --text-main: #303133;
+            --text-sub: #909399;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(180deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            margin: 0;
+            padding: 0;
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 430px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: linear-gradient(180deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
+            position: relative;
+            padding-bottom: 70px;
+        }
+
+        /* 顶部导航 */
+        .top-bar {
+            background: linear-gradient(135deg, #4A90D9, #357ABD);
+            color: #fff;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-btn {
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .top-actions {
+            width: 24px;
+        }
+
+        /* 头部信息卡片 */
+        .parent-card {
+            background: var(--card-bg);
+            margin: -20px 16px 16px;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .parent-avatar {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #66b1ff, #4A90D9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .parent-info h3 {
+            margin: 0 0 4px;
+            font-size: 18px;
+            color: var(--text-main);
+        }
+
+        .parent-meta {
+            font-size: 13px;
+            color: var(--text-sub);
+        }
+
+        .parent-status {
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #f0f9eb;
+            color: var(--success-color);
+        }
+
+        /* 福利标签区域 */
+        .section {
+            background: var(--card-bg);
+            margin: 0 16px 16px;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-main);
+            border-left: 3px solid var(--primary-color);
+            padding-left: 8px;
+        }
+
+        .section-more {
+            font-size: 13px;
+            color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        /* 福利标签网格 */
+        .welfare-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .welfare-item {
+            background: #fafafa;
+            border-radius: 8px;
+            padding: 16px 12px;
+            text-align: center;
+            border: 1px solid #ebeef5;
+            transition: all 0.2s;
+        }
+
+        .welfare-item:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .welfare-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .welfare-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .welfare-status {
+            font-size: 11px;
+            color: var(--text-sub);
+        }
+
+        .welfare-expired {
+            opacity: 0.5;
+            border-color: #fde2e2;
+        }
+
+        .welfare-expired .welfare-status {
+            color: var(--danger-color);
+        }
+
+        /* 补助领取记录 */
+        .payment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .payment-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #fafafa;
+            border-radius: 8px;
+            border-left: 3px solid transparent;
+        }
+
+        .payment-item.received {
+            border-left-color: var(--success-color);
+        }
+
+        .payment-item.pending {
+            border-left-color: var(--warning-color);
+        }
+
+        .payment-item.failed {
+            border-left-color: var(--danger-color);
+        }
+
+        .payment-info h4 {
+            margin: 0 0 4px;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        .payment-date {
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        .payment-amount {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .payment-amount.success { color: var(--success-color); }
+        .payment-amount.pending { color: var(--warning-color); }
+        .payment-amount.failed { color: var(--danger-color); }
+
+        /* 签到提醒 */
+        .signin-reminder {
+            background: linear-gradient(135deg, #ecf5ff, #d9ecff);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .signin-icon {
+            font-size: 32px;
+        }
+
+        .signin-text h4 {
+            margin: 0 0 4px;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        .signin-text p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        .signin-btn {
+            margin-left: auto;
+            background: var(--primary-color);
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 430px;
+            background: var(--card-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--text-sub);
+            cursor: pointer;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        /* 通知浮层 */
+        .notification {
+            position: absolute;
+            top: 60px;
+            left: 16px;
+            right: 16px;
+            background: #fdf6ec;
+            border: 1px solid #faecd8;
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--warning-color);
+            box-shadow: var(--shadow-md);
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .notification-icon {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 顶部导航 -->
+        <div class="top-bar">
+            <div class="back-btn">←</div>
+            <div class="page-title">父母福利</div>
+            <div class="top-actions"></div>
+        </div>
+
+        <!-- 通知浮层 -->
+        <div class="notification">
+            <span class="notification-icon">⚠️</span>
+            <span>您的母亲有 1 个福利标签即将到期，请及时更新</span>
+        </div>
+
+        <!-- 父母信息卡片 -->
+        <div class="parent-card">
+            <div class="parent-avatar">张</div>
+            <div class="parent-info">
+                <h3>张秀兰</h3>
+                <div class="parent-meta">76 岁 · 女 · 心内科出院</div>
+            </div>
+            <div class="parent-status">
+                <span class="status-badge status-active">● 腕带在线</span>
+            </div>
+        </div>
+
+        <!-- 福利标签 -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">福利标签</span>
+                <span class="section-more">管理 →</span>
+            </div>
+            <div class="welfare-grid">
+                <div class="welfare-item">
+                    <div class="welfare-icon">🏠</div>
+                    <div class="welfare-name">孤寡老人</div>
+                    <div class="welfare-status">有效至 2028-12-31</div>
+                </div>
+                <div class="welfare-item">
+                    <div class="welfare-icon">💰</div>
+                    <div class="welfare-name">特困一级</div>
+                    <div class="welfare-status">有效至 2028-12-31</div>
+                </div>
+                <div class="welfare-item">
+                    <div class="welfare-icon">♿</div>
+                    <div class="welfare-name">残疾二级</div>
+                    <div class="welfare-status">有效至 2027-05-31</div>
+                </div>
+                <div class="welfare-item welfare-expired">
+                    <div class="welfare-icon">🚌</div>
+                    <div class="welfare-name">公交优惠</div>
+                    <div class="welfare-status">已过期 (07-01)</div>
+                </div>
+                <div class="welfare-item">
+                    <div class="welfare-icon">🏥</div>
+                    <div class="welfare-name">医疗救助</div>
+                    <div class="welfare-status">有效至 2028-12-31</div>
+                </div>
+                <div class="welfare-item">
+                    <div class="welfare-icon">📋</div>
+                    <div class="welfare-name">特病门诊</div>
+                    <div class="welfare-status">有效至 2027-01-15</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 补助领取记录 -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">补助领取记录</span>
+                <span class="section-more">全部 →</span>
+            </div>
+            <div class="payment-list">
+                <div class="payment-item received">
+                    <div class="payment-info">
+                        <h4>特困补助 (2026年7月)</h4>
+                        <div class="payment-date">2026-07-01 发放</div>
+                    </div>
+                    <div class="payment-amount success">¥800.00</div>
+                </div>
+                <div class="payment-item received">
+                    <div class="payment-info">
+                        <h4>残疾补贴 (2026年7月)</h4>
+                        <div class="payment-date">2026-07-01 发放</div>
+                    </div>
+                    <div class="payment-amount success">¥400.00</div>
+                </div>
+                <div class="payment-item pending">
+                    <div class="payment-info">
+                        <h4>医疗救助 (2026年6月)</h4>
+                        <div class="payment-date">预计 07-25 发放</div>
+                    </div>
+                    <div class="payment-amount pending">¥1,000.00</div>
+                </div>
+                <div class="payment-item failed">
+                    <div class="payment-info">
+                        <h4>公交补贴 (2026年6月)</h4>
+                        <div class="payment-date">银行处理失败</div>
+                    </div>
+                    <div class="payment-amount failed">¥30.00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 签到提醒 -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">签到提醒</span>
+            </div>
+            <div class="signin-reminder">
+                <div class="signin-icon">🔔</div>
+                <div class="signin-text">
+                    <h4>今日福利签到未完成</h4>
+                    <p>请在社区医院 A 完成今日签到以激活补助</p>
+                </div>
+                <button class="signin-btn">去签到</button>
+            </div>
+        </div>
+
+        <!-- 底部导航栏 -->
+        <nav class="bottom-nav">
+            <div class="nav-item">
+                <span class="nav-icon">🏠</span>
+                <span>首页</span>
+            </div>
+            <div class="nav-item active">
+                <span class="nav-icon">❤️</span>
+                <span>健康</span>
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">💊</span>
+                <span>用药</span>
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">🔔</span>
+                <span>告警</span>
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">👤</span>
+                <span>我的</span>
+            </div>
+        </nav>
+    </div>
+</body>
+</html>

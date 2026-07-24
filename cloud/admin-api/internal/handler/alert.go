@@ -12,11 +12,11 @@ import (
 
 // AlertHandler serves alert management endpoints.
 type AlertHandler struct {
-	store *store.PostgresStore
+	store store.Store
 }
 
 // NewAlertHandler creates a new AlertHandler.
-func NewAlertHandler(s *store.PostgresStore) *AlertHandler {
+func NewAlertHandler(s store.Store) *AlertHandler {
 	return &AlertHandler{store: s}
 }
 

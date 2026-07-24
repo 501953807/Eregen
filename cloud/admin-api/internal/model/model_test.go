@@ -87,3 +87,42 @@ func TestAPIKeySummaryActiveDefault(t *testing.T) {
 		t.Error("zero-value Active should be false")
 	}
 }
+
+func TestNurseAndRegulatorRoleConstants(t *testing.T) {
+	tests := []struct {
+		name string
+		got  Role
+		want string
+	}{
+		{"nurse", RoleNurse, "nurse"},
+		{"regulator", RoleRegulator, "regulator"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if string(tt.got) != tt.want {
+				t.Errorf("Role = %q, want %q", tt.got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRegulatoryAlertSeverityValues(t *testing.T) {
+	a := RegulatoryAlert{RuleCode: "R01", Severity: "high", Status: "pending"}
+	if a.RuleCode != "R01" || a.Severity != "high" || a.Status != "pending" {
+		t.Error("RegulatoryAlert fields not set correctly")
+	}
+}
+
+func TestCommunityElderStatusValues(t *testing.T) {
+	e := CommunityElder{Status: "active"}
+	if e.Status != "active" {
+		t.Error("CommunityElder status should default to active")
+	}
+}
+
+func TestCommunityWelfareTagConfigDefaults(t *testing.T) {
+	w := CommunityWelfareTagConfig{}
+	if w.Enabled {
+		t.Error("zero-value Enabled should be false")
+	}
+}

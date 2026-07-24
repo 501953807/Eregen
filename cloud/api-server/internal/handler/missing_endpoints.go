@@ -115,6 +115,25 @@ func (h *UserListHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": user})
 }
 
+// PUT /api/v1/admin/users/:id/role — update user role
+func (h *UserListHandler) UpdateRole(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		Role string `json:"role" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_REQUEST", "message": "Invalid role"})
+		return
+	}
+
+	if err := h.pg.UpdateUserRole(c.Request.Context(), id, req.Role); err != nil {
+		h.log.Error("update user role", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "QUERY_FAILED", "message": "Failed to update role"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "Role updated"})
+}
+
 // MedicationTakeHandler handles medication confirmation.
 type MedicationTakeHandler struct {
 	pg *store.Postgres

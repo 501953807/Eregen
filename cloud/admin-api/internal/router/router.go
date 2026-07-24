@@ -15,8 +15,8 @@ import (
 )
 
 // Setup wires up the Gin engine with all admin routes.
-func Setup(db *sql.DB, logger *zap.Logger) *gin.Engine {
-	s := store.NewStore(db)
+func Setup(db *sql.DB, logger *zap.Logger, dbType string) *gin.Engine {
+	s := store.NewStore(db, dbType)
 	r := gin.Default()
 
 	jwtSecret := os.Getenv("JWT_SECRET")
@@ -34,6 +34,9 @@ func Setup(db *sql.DB, logger *zap.Logger) *gin.Engine {
 	elderly := handler.NewElderlyHandler(s)
 	firmware := handler.NewFirmwareHandler(s)
 	settings := handler.NewSettingsHandler(s)
+	medical := handler.NewMedicalWristbandHandler(s)
+	regulatory := handler.NewRegulatoryHandler(s)
+	communityWB := handler.NewCommunityWBHandler(s)
 
 	// Rate limiter — fail open if Redis is unavailable
 	rateLimiter, rlErr := middleware.NewAdminRateLimiter()
@@ -99,6 +102,104 @@ func Setup(db *sql.DB, logger *zap.Logger) *gin.Engine {
 			setting.GET("/api-keys", settings.ListAPIKeys)
 			setting.POST("/api-keys", settings.CreateAPIKey)
 			setting.DELETE("/api-keys/:id", settings.RevokeAPIKey)
+		}
+
+		// Medical wristband management
+		med := api.Group("/medical")
+		{
+			// Patient endpoints
+			med.GET("/patients", medical.ListPatients)
+			med.GET("/patients/:id", medical.GetPatient)
+			med.POST("/patients", medical.CreatePatient)
+			med.PUT("/patients/:id", medical.UpdatePatient)
+			med.DELETE("/patients/:id", medical.DeletePatient)
+			med.GET("/patients/by-admission", medical.GetByAdmissionNo)
+			med.POST("/patients/batch-import", medical.BatchImport)
+			med.GET("/patients/:id/history", medical.GetPatientHistory)
+
+			// Wristband device endpoints
+			med.GET("/wristbands", medical.ListWristbands)
+			med.POST("/wristbands/bind", medical.BindWristband)
+			med.POST("/wristbands/:id/unbind", medical.UnbindWristband)
+			med.POST("/wristbands/:id/clear", medical.ClearWristband)
+			med.POST("/wristbands/:id/write", medical.WriteToWristband)
+			med.GET("/wristbands/:id/firmware", medical.GetFirmware)
+
+			// Expense endpoints
+			med.GET("/patients/:id/expenses", medical.ListExpenses)
+			med.POST("/expenses", medical.CreateExpense)
+
+			// Medication endpoints
+			med.GET("/patients/:id/medications", medical.ListMedications)
+			med.POST("/medications", medical.CreateMedication)
+
+			// Test result endpoints
+			med.GET("/patients/:id/test-results", medical.ListTestResults)
+			med.POST("/test-results", medical.CreateTestResult)
+
+			// Daily entry endpoints
+			med.GET("/patients/:id/daily-entries", medical.ListDailyEntries)
+			med.POST("/daily-entries", medical.CreateDailyEntry)
+
+			// Verification endpoints
+			med.GET("/verifications", medical.ListVerifications)
+			med.POST("/verifications", medical.CreateVerification)
+			med.PUT("/verifications/:id/status", medical.UpdateVerificationStatus)
+			med.GET("/verifications/stats/today", medical.GetTodayVerificationStats)
+
+			// Stats and alert tags
+			med.GET("/stats/overview", medical.GetStatsOverview)
+			med.GET("/alert-tags", medical.ListAlertTagConfigs)
+			med.POST("/alert-tags", medical.CreateAlertTagConfig)
+		}
+
+		// Regulatory closure
+		reg := api.Group("/regulatory")
+		{
+			reg.GET("/dashboard/patient-overview", regulatory.GetDashboardOverview)
+			reg.GET("/dashboard/patient-list", regulatory.ListRegulatoryPatients)
+			reg.GET("/alerts", regulatory.ListAlerts)
+			reg.GET("/alerts/:id", regulatory.GetAlert)
+			reg.POST("/alerts/:id/acknowledge", regulatory.AcknowledgeAlert)
+			reg.POST("/alerts/:id/resolve", regulatory.ResolveRegulatoryAlert)
+			reg.POST("/alerts", regulatory.CreateRegulatoryAlert)
+			reg.GET("/audit/patient/:id", regulatory.GetAuditTrail)
+			reg.GET("/rules", regulatory.ListRuleConfigs)
+			reg.PUT("/rules/:code/config", regulatory.UpdateRuleConfig)
+			reg.POST("/fence/config", regulatory.ConfigureFence)
+			reg.GET("/fence/config", regulatory.GetFenceConfig)
+			reg.GET("/compliance/report", regulatory.GetComplianceReport)
+		}
+
+		// Community elderly wristband
+		cwb := api.Group("/community-wb")
+		{
+			// Elders
+			cwb.GET("/elders", communityWB.ListElders)
+			cwb.GET("/elders/:id", communityWB.GetElder)
+			cwb.POST("/elders", communityWB.CreateElder)
+			cwb.PUT("/elders/:id", communityWB.UpdateElder)
+			cwb.DELETE("/elders/:id", communityWB.DeleteElder)
+			cwb.GET("/elders/:id/welfare", communityWB.GetElderWelfareTags)
+			cwb.POST("/elders/:id/welfare/:tag_code", communityWB.AssignWelfareTag)
+			cwb.DELETE("/elders/:id/welfare/:tag_code", communityWB.RevokeWelfareTag)
+			cwb.GET("/elders/stats", communityWB.GetElderStats)
+			// Devices
+			cwb.GET("/devices", communityWB.ListDevices)
+			cwb.POST("/devices/bind", communityWB.BindElderDevice)
+			// Welfare tags config
+			cwb.GET("/welfare-tags", communityWB.ListWelfareTags)
+			// Sign-in
+			cwb.POST("/signin/trigger", communityWB.TriggerSignin)
+			cwb.GET("/signin/records", communityWB.ListSigninRecords)
+			// Pharmacy
+			cwb.POST("/pharmacy/dispense", communityWB.DispenseMedicine)
+			// Minzheng
+			cwb.POST("/minzheng/import", communityWB.ImportMinzhengData)
+			cwb.GET("/minzheng/sync", communityWB.ListMinzhengSync)
+			// Batch payments
+			cwb.POST("/batch-pay/execute", communityWB.ExecuteBatchPayment)
+			cwb.GET("/batch-payments", communityWB.ListBatchPayments)
 		}
 	}
 

@@ -49,3 +49,43 @@ func (h *HealthCheckHandler) GetForElderly(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": records})
 }
+
+// GET /api/v2/b2b/health-checks/:id — get one health check
+func (h *HealthCheckHandler) GetByID(c *gin.Context) {
+	id := c.Param("id")
+	record, err := h.store.GetHealthCheckByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "health check not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": record})
+}
+
+// PUT /api/v2/b2b/health-checks/:id — update a health check
+func (h *HealthCheckHandler) Update(c *gin.Context) {
+	id := c.Param("id")
+	var req model.HealthCheckRecord
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	if err := h.store.UpdateHealthCheck(c.Request.Context(), id, &req); err != nil {
+		h.log.Error("update health check", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update health check"})
+		return
+	}
+	req.ID = id
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": req})
+}
+
+// DELETE /api/v2/b2b/health-checks/:id — delete a health check
+func (h *HealthCheckHandler) Delete(c *gin.Context) {
+	id := c.Param("id")
+	if err := h.store.DeleteHealthCheck(c.Request.Context(), id); err != nil {
+		h.log.Error("delete health check", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete health check"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "Health check deleted"})
+}

@@ -116,7 +116,7 @@ class _SOSButtonState extends State<SOSButton> with SingleTickerProviderStateMix
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFFF6B6B).withValues(alpha: 0.3),
+                    color: AppTheme.statusDanger.withValues(alpha: 0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),

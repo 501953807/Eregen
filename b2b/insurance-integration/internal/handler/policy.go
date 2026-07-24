@@ -50,6 +50,66 @@ func (h *PolicyHandler) GetForElderly(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": policies})
 }
 
+// GET /api/v2/b2b/policies/:id — get one policy
+func (h *PolicyHandler) GetByID(c *gin.Context) {
+	id := c.Param("id")
+	policy, err := h.store.GetPolicyByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "policy not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": policy})
+}
+
+// PUT /api/v2/b2b/policies/:id — update a policy
+func (h *PolicyHandler) Update(c *gin.Context) {
+	id := c.Param("id")
+	var req model.Policy
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	policy, err := h.store.GetPolicyByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "policy not found"})
+		return
+	}
+
+	if req.PlanName != "" {
+		policy.PlanName = req.PlanName
+	}
+	if req.PlanCode != "" {
+		policy.PlanCode = req.PlanCode
+	}
+	if req.PolicyNumber != "" {
+		policy.PolicyNumber = req.PolicyNumber
+	}
+	if !req.StartDate.IsZero() {
+		policy.StartDate = req.StartDate
+	}
+	if !req.EndDate.IsZero() {
+		policy.EndDate = req.EndDate
+	}
+	if req.CoverageLimit > 0 {
+		policy.CoverageLimit = req.CoverageLimit
+	}
+	if req.Premium > 0 {
+		policy.Premium = req.Premium
+	}
+	if req.Status != "" {
+		policy.Status = req.Status
+	}
+
+	if err := h.store.UpdatePolicy(c.Request.Context(), policy); err != nil {
+		h.log.Error("update policy", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update policy"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": policy})
+}
+
 // POST /api/v2/b2b/reminders — schedule a premium reminder
 func (h *PolicyHandler) CreateReminder(c *gin.Context) {
 	var req struct {

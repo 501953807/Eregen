@@ -12,11 +12,11 @@ import (
 
 // UserHandler serves user management endpoints.
 type UserHandler struct {
-	store *store.PostgresStore
+	store store.Store
 }
 
 // NewUserHandler creates a new UserHandler.
-func NewUserHandler(s *store.PostgresStore) *UserHandler {
+func NewUserHandler(s store.Store) *UserHandler {
 	return &UserHandler{store: s}
 }
 

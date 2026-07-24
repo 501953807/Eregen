@@ -11,11 +11,11 @@ import (
 
 // FirmwareHandler serves firmware version management endpoints.
 type FirmwareHandler struct {
-	store *store.PostgresStore
+	store store.Store
 }
 
 // NewFirmwareHandler creates a new FirmwareHandler.
-func NewFirmwareHandler(s *store.PostgresStore) *FirmwareHandler {
+func NewFirmwareHandler(s store.Store) *FirmwareHandler {
 	return &FirmwareHandler{store: s}
 }
 

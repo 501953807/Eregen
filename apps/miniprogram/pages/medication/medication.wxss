@@ -1,15 +1,13 @@
-.page { padding: 16rpx; }
-
-/* Adherence Card */
+/* Adherence Card — 暖色调 */
 .adherence-card {
-  background: linear-gradient(135deg, #F0FDF4, #DCFCE7);
+  background: linear-gradient(135deg, #FFFBEB, #FEF3C7);
   border-radius: 32rpx;
   padding: 40rpx;
   margin-bottom: 32rpx;
   display: flex; align-items: center; justify-content: space-around;
 }
 .adherence-ring { text-align: center; }
-.adherence-value { font-size: 64rpx; font-weight: 700; color: #16A34A; display: block; }
+.adherence-value { font-size: 64rpx; font-weight: 700; color: #D97706; display: block; }
 .adherence-label { font-size: 22rpx; color: #6B7280; display: block; margin-top: 4rpx; }
 .adherence-stats { display: flex; gap: 32rpx; }
 .as-item { text-align: center; }
@@ -30,29 +28,60 @@
 .tl-line {
   position: absolute; left: 16rpx; top: 28rpx;
   width: 4rpx; height: calc(100% - 12rpx);
-  background: #E5E7EB;
+  background: #FFE8D6;
 }
-.tl-line.taken { background: #4CAF50; }
-.tl-line.missed { background: #FF6B6B; }
+.tl-line.taken { background: #10B981; }
+.tl-line.missed { background: #EF4444; }
 .tl-dot {
   position: absolute; left: 4rpx; top: 0;
   width: 24rpx; height: 24rpx; border-radius: 50%;
   border: 4rpx solid white;
 }
-.tl-dot.taken { background: #4CAF50; }
-.tl-dot.missed { background: #FF6B6B; }
-.tl-dot.pending { background: #FFA726; }
+.tl-dot.taken { background: #10B981; }
+.tl-dot.missed { background: #EF4444; }
+.tl-dot.pending { background: #F59E0B; }
 .tl-card {
   margin-left: 40rpx;
   background: white;
   border-radius: 20rpx;
   padding: 24rpx;
-  border: 2rpx solid #E5E7EB;
+  border: 2rpx solid #FFE8D6;
 }
 .tl-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
 .tl-name { font-size: 26rpx; font-weight: 600; color: #1F2937; }
 .tl-type { font-size: 20rpx; color: #9CA3AF; }
 .tl-status { font-size: 22rpx; }
-.tl-status.taken { color: #4CAF50; }
-.tl-status.missed { color: #FF6B6B; }
-.tl-status.pending { color: #FFA726; }
+.tl-status.taken { color: #10B981; }
+.tl-status.missed { color: #EF4444; }
+.tl-status.pending { color: #F59E0B; }
+.btn-take {
+  background: #E8734A !important;
+  color: #fff !important;
+  font-size: 22rpx !important;
+  padding: 0 20rpx !important;
+  height: 44rpx !important;
+  line-height: 44rpx !important;
+  border-radius: 10rpx !important;
+}
+.loading-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 0;
+}
+.loading-spinner {
+  width: 48rpx;
+  height: 48rpx;
+  border: 4rpx solid #FFE8D6;
+  border-top-color: #E8734A;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.loading-text {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: #6B7280;
+}

@@ -76,6 +76,7 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 	alertHandleH := handler.NewAlertHandleHandler(pg, log)
 	dataExportSvc := service.NewDataExportService(pg, log)
 	dataExportH := handler.NewDataExportHandler(dataExportSvc, log)
+	statsH := handler.NewAdminStatsHandler(pg, log)
 
 	// Audit logger and handler
 	auditLogger := service.NewAuditLogger(10000, log)
@@ -188,6 +189,23 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 
 		admin := protected.Group("/admin")
 		{
+			// Dashboard statistics
+			admin.GET("/stats/overview", statsH.Overview)
+			admin.GET("/stats/alert-trend", statsH.AlertTrend)
+			admin.GET("/stats/alert-distribution", statsH.AlertDistribution)
+			admin.GET("/stats/user-growth", statsH.UserGrowth)
+
+			// User management
+			admin.PUT("/users/:id/role", userListH.UpdateRole)
+
+			// Device management (admin)
+			admin.GET("/devices", deviceH.AdminList)
+			admin.GET("/devices/:id", deviceH.AdminGetDevice)
+			admin.PUT("/devices/:id/settings", deviceH.AdminUpdateSettings)
+			admin.DELETE("/devices/:id", deviceH.AdminDeleteDevice)
+			admin.POST("/devices/:id/ota", deviceH.AdminOTAPush)
+			admin.POST("/devices/batch-ota", deviceH.AdminBatchOTAPush)
+
 			firmware := admin.Group("/firmware")
 			{
 				firmware.POST("", auditMW.LogAction(service.ActionAdminAction, "firmware", "", nil), otaH.CreateFirmware)

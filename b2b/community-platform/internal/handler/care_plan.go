@@ -49,6 +49,46 @@ func (h *CarePlanHandler) GetForElderly(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": plans})
 }
 
+// GET /api/v2/b2b/care-plans/:id — get one care plan
+func (h *CarePlanHandler) GetByID(c *gin.Context) {
+	id := c.Param("id")
+	plan, err := h.store.GetCarePlanByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "care plan not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": plan})
+}
+
+// PUT /api/v2/b2b/care-plans/:id — update a care plan
+func (h *CarePlanHandler) Update(c *gin.Context) {
+	id := c.Param("id")
+	var req model.CarePlan
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	if err := h.store.UpdateCarePlan(c.Request.Context(), id, &req); err != nil {
+		h.log.Error("update care plan", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update care plan"})
+		return
+	}
+	req.ID = id
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": req})
+}
+
+// DELETE /api/v2/b2b/care-plans/:id — delete a care plan
+func (h *CarePlanHandler) Delete(c *gin.Context) {
+	id := c.Param("id")
+	if err := h.store.DeleteCarePlan(c.Request.Context(), id); err != nil {
+		h.log.Error("delete care plan", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete care plan"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "Care plan deleted"})
+}
+
 func parseIntParam(c *gin.Context, key string, defaultVal int) (int, bool) {
 	v := c.Query(key)
 	if v == "" {

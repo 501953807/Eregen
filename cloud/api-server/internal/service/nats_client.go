@@ -124,6 +124,8 @@ func (n *NatsClient) routeEvent(ctx context.Context, ev *DeviceEvent, handler *E
 		handler.handleHeartbeat(ctx, ev)
 	case "med_status":
 		handler.handleMedStatus(ctx, ev)
+	case "ota_progress":
+		handler.handleOTAProgress(ctx, ev)
 	default:
 		n.log.Debug("unknown device event type", zap.String("type", ev.Type))
 	}
@@ -159,16 +161,18 @@ type DeviceEvent struct {
 	Conf          *float64  `json:"conf,omitempty"`
 	Compartment   *int      `json:"compartment,omitempty"`
 	Taken         *bool     `json:"taken,omitempty"`
+	Status        string    `json:"status,omitempty"`
 }
 
 // EventHandler routes processed events to storage layers.
 type EventHandler struct {
-	influx  influxDBClient
-	log     *zap.Logger
-	alertCb func(ctx context.Context, a *model.Alert) error
+	influx   influxDBClient
+	log      *zap.Logger
+	alertCb  func(ctx context.Context, a *model.Alert) error
 	healthCb func(ctx context.Context, r *model.HealthRecord) error
-	locCb   func(ctx context.Context, r *model.LocationRecord) error
-	medCb   func(ctx context.Context, r *model.MedStatusRecord) error
+	locCb    func(ctx context.Context, r *model.LocationRecord) error
+	medCb    func(ctx context.Context, r *model.MedStatusRecord) error
+	otaCb    func(ctx context.Context, jobID, deviceID, status string) error
 }
 
 type influxDBClient interface {
@@ -198,6 +202,25 @@ func (h *EventHandler) SetLocationCallback(fn func(ctx context.Context, r *model
 // SetMedStatusCallback sets the callback for storing medication status.
 func (h *EventHandler) SetMedStatusCallback(fn func(ctx context.Context, r *model.MedStatusRecord) error) {
 	h.medCb = fn
+}
+
+// SetOTACallback sets the callback for OTA progress updates from devices.
+func (h *EventHandler) SetOTACallback(fn func(ctx context.Context, jobID, deviceID, status string) error) {
+	h.otaCb = fn
+}
+
+func (h *EventHandler) handleOTAProgress(ctx context.Context, ev *DeviceEvent) {
+	if h.otaCb == nil {
+		return
+	}
+	status := "downloading"
+	if ev.Status != "" {
+		status = ev.Status
+	}
+	// ev.DevID is the device ID; the callback maps it to a job
+	if err := h.otaCb(ctx, "", ev.DevID, status); err != nil {
+		h.log.Error("update OTA progress", zap.String("device", ev.DevID), zap.Error(err))
+	}
 }
 
 func (h *EventHandler) handleHealth(ctx context.Context, ev *DeviceEvent) {

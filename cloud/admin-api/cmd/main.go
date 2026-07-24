@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -19,13 +20,23 @@ import (
 func main() {
 	cfg := config.Load()
 
-	db := store.NewPostgres(cfg.DatabaseURL)
+	var db *sql.DB
+	var err error
+	switch cfg.DatabaseType {
+	case "postgres":
+		db = store.NewPostgres(cfg.DatabaseURL)
+	default: // sqlite (default)
+		db, err = store.NewSqlite(cfg.SQLitePath)
+		if err != nil {
+			log.Fatalf("sqlite init failed: %v", err)
+		}
+	}
 	defer db.Close()
 
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 
-	r := router.Setup(db, logger)
+	r := router.Setup(db, logger, cfg.DatabaseType)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
@@ -36,7 +47,7 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("admin-api starting on :%s", cfg.Port)
+		log.Printf("admin-api starting on :%s (db=%s)", cfg.Port, cfg.DatabaseType)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("server failed: %v", err)
 		}

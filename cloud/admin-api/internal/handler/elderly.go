@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"eregen.dev/admin-api/internal/model"
 	"eregen.dev/admin-api/internal/store"
 	"eregen.dev/shared/validation"
 
@@ -14,11 +15,11 @@ import (
 
 // ElderlyHandler serves elderly person management endpoints.
 type ElderlyHandler struct {
-	store *store.PostgresStore
+	store store.Store
 }
 
 // NewElderlyHandler creates a new ElderlyHandler.
-func NewElderlyHandler(s *store.PostgresStore) *ElderlyHandler {
+func NewElderlyHandler(s store.Store) *ElderlyHandler {
 	return &ElderlyHandler{store: s}
 }
 
@@ -189,7 +190,7 @@ func (h *ElderlyHandler) AlertHistory(c *gin.Context) {
 }
 
 // ConvertToProfileSummary builds a model.ElderlyProfile from DB row values.
-func ConvertToProfileSummary(id, name, userID, avatarURL string, birthDate *time.Time, healthTiersRaw interface{}, createdAt, updatedAt time.Time) store.ElderlySummary {
+func ConvertToProfileSummary(id, name, userID, avatarURL string, birthDate *time.Time, healthTiersRaw interface{}, createdAt, updatedAt time.Time) model.ElderlyProfile {
 	tiers := []string{}
 	switch v := healthTiersRaw.(type) {
 	case []interface{}:
@@ -206,13 +207,14 @@ func ConvertToProfileSummary(id, name, userID, avatarURL string, birthDate *time
 			}
 		}
 	}
-	return store.ElderlySummary{
+	return model.ElderlyProfile{
 		ID:          id,
 		Name:        name,
 		UserID:      userID,
-		AvatarURL:   avatarURL,
+		AvatarURL:   &avatarURL,
+		BirthDate:   birthDate,
 		HealthTiers: tiers,
-		CreatedAt:   createdAt.Format(time.RFC3339),
-		UpdatedAt:   updatedAt.Format(time.RFC3339),
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
 	}
 }

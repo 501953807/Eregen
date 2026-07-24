@@ -3,19 +3,24 @@ package config
 import "os"
 
 type Config struct {
-	Port        string
-	DatabaseURL string
-	RedisURL    string
-	JWTSecret   string
+	Port         string
+	DatabaseType string // "postgres" or "sqlite"
+	DatabaseURL  string
+	SQLitePath   string
+	RedisURL     string
+	JWTSecret    string
 }
 
 func Load() *Config {
+	dbType := getEnv("DATABASE_TYPE", "sqlite")
 	return &Config{
-		Port:        getEnv("PORT", "8085"),
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://localhost/eregen"),
-		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379"),
+		Port:         getEnv("PORT", "8085"),
+		DatabaseType: dbType,
+		DatabaseURL:  getEnv("DATABASE_URL", ""),
+		SQLitePath:   getEnv("SQLITE_PATH", "eregen.db"),
+		RedisURL:     getEnv("REDIS_URL", ""),
 		// JWT_SECRET must be set in production
-		JWTSecret:   getEnv("JWT_SECRET", ""),
+		JWTSecret: getEnv("JWT_SECRET", ""),
 	}
 }
 

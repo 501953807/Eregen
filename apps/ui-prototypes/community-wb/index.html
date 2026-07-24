@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>颐贞 Eregen — 社区老人专区</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body, #app { height: 100%; font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+
+  /* Layout */
+  .layout { display: flex; height: 100vh; }
+  .sidebar { width: 220px; background: #001529; display: flex; flex-direction: column; flex-shrink: 0; }
+  .sidebar-logo { height: 64px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; letter-spacing: 2px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .sidebar-logo span { color: #4A90D9; }
+  .sidebar-nav { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .nav-section { padding: 12px 24px 4px; font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 1px; text-transform: uppercase; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 24px; color: rgba(255,255,255,0.65); cursor: pointer; font-size: 14px; transition: all 0.2s; text-decoration: none; }
+  .nav-item:hover { color: #fff; background: rgba(255,255,255,0.06); }
+  .nav-item.active { color: #fff; background: #4A90D9; border-radius: 0; }
+  .nav-item .icon { width: 18px; text-align: center; font-style: normal; }
+  .sidebar-footer { padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px; }
+  .sidebar-footer .avatar { width: 28px; height: 28px; border-radius: 50%; background: #4A90D9; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+  .sidebar-footer .info { font-size: 12px; line-height: 1.4; }
+  .sidebar-footer .info .name { font-weight: 600; }
+  .sidebar-footer .info .role { color: rgba(255,255,255,0.4); font-size: 11px; }
+
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { height: 64px; background: #fff; border-bottom: 1px solid #e8e8e8; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+  .breadcrumb { font-size: 14px; color: #999; }
+  .breadcrumb span { color: #333; font-weight: 600; }
+  .topbar-right { display: flex; align-items: center; gap: 20px; }
+  .topbar-right .icon-btn { font-size: 18px; cursor: pointer; position: relative; }
+  .topbar-right .badge { position: absolute; top: -6px; right: -8px; background: #F56C6C; color: #fff; font-size: 10px; border-radius: 8px; padding: 0 4px; min-width: 16px; text-align: center; }
+
+  .content { flex: 1; background: #f0f2f5; overflow-y: auto; padding: 24px; }
+
+  /* KPI Cards */
+  .kpi-row { display: flex; gap: 16px; margin-bottom: 20px; }
+  .kpi-card { flex: 1; background: #fff; border-radius: 4px; padding: 20px 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); transition: box-shadow 0.2s; cursor: default; }
+  .kpi-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  .kpi-value { font-size: 28px; font-weight: 600; color: #409eff; }
+  .kpi-value.success { color: #67c23a; }
+  .kpi-value.warning { color: #e6a23c; }
+  .kpi-value.danger { color: #f56c6c; }
+  .kpi-label { font-size: 13px; color: #909399; margin-top: 4px; }
+
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-bar select, .filter-bar input { height: 32px; border: 1px solid #dcdfe6; border-radius: 4px; padding: 0 12px; font-size: 13px; outline: none; }
+  .filter-bar select:focus, .filter-bar input:focus { border-color: #409eff; }
+  .filter-bar input { width: 260px; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 16px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 13px; cursor: pointer; transition: all 0.2s; white-space: nowrap; background: #fff; color: #606266; }
+  .btn:hover { border-color: #409eff; color: #409eff; }
+  .btn-primary { background: #409eff; border-color: #409eff; color: #fff; }
+  .btn-primary:hover { background: #66b1ff; border-color: #66b1ff; color: #fff; }
+  .btn-success { background: #67c23a; border-color: #67c23a; color: #fff; }
+  .btn-success:hover { background: #85ce61; border-color: #85ce61; }
+  .btn-danger { background: #f56c6c; border-color: #f56c6c; color: #fff; }
+  .btn-danger:hover { background: #f78989; border-color: #f78989; }
+  .btn-sm { height: 26px; padding: 0 10px; font-size: 12px; }
+
+  /* Table */
+  .table-wrap { background: #fff; border-radius: 4px; overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: #fafafa; padding: 12px 14px; text-align: left; font-weight: 600; color: #303133; border-bottom: 1px solid #ebeef5; white-space: nowrap; }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid #ebeef5; color: #606266; }
+  tbody tr:hover { background: #f5f7fa; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* Tags (el-tag simulation) */
+  .tag { display: inline-block; padding: 2px 8px; font-size: 11px; border-radius: 3px; border: 1px solid; margin-right: 4px; white-space: nowrap; }
+  .tag-success { background: #f0f9eb; color: #67c23a; border-color: #c2e7b0; }
+  .tag-warning { background: #fdf6ec; color: #e6a23c; border-color: #f5dab1; }
+  .tag-danger { background: #fef0f0; color: #f56c6c; border-color: #fbc4c4; }
+  .tag-info { background: #f4f4f5; color: #909399; border-color: #dcdfe6; }
+  .tag-primary { background: #ecf5ff; color: #409eff; border-color: #b3d8ff; }
+  .tag-purple { background: #f4f4f5; color: #9c27b0; border-color: #ce9bdb; }
+  .tag-blue { background: #e8f4fd; color: #1976d2; border-color: #90caf9; }
+  .tag-orange { background: #fff3e0; color: #e65100; border-color: #ffcc80; }
+  .tag-red { background: #ffebee; color: #c62828; border-color: #ef9a9a; }
+  .tag-green { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+  .tag-yellow { background: #fffde7; color: #f9a825; border-color: #fff176; }
+
+  /* Pagination */
+  .pagination { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 16px 0 8px; }
+  .pagination .page-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 13px; cursor: pointer; background: #fff; }
+  .pagination .page-btn:hover { border-color: #409eff; color: #409eff; }
+  .pagination .page-btn.active { background: #409eff; border-color: #409eff; color: #fff; }
+  .pagination .page-btn.disabled { color: #c0c4cc; cursor: not-allowed; }
+
+  /* Bar chart (CSS only) */
+  .bar-chart { display: flex; align-items: flex-end; gap: 12px; padding: 16px 0; height: 120px; }
+  .bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
+  .bar { width: 32px; background: linear-gradient(180deg, #409eff, #66b1ff); border-radius: 3px 3px 0 0; min-height: 4px; transition: height 0.3s; }
+  .bar-label { font-size: 11px; color: #909399; margin-top: 6px; }
+  .bar-value { font-size: 12px; font-weight: 600; color: #303133; margin-bottom: 4px; }
+
+  /* Horizontal bars */
+  .h-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+  .h-bar-label { width: 80px; text-align: right; color: #606266; flex-shrink: 0; }
+  .h-bar-track { flex: 1; height: 18px; background: #f5f7fa; border-radius: 3px; overflow: hidden; }
+  .h-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+  .h-bar-val { width: 50px; color: #909399; font-size: 12px; flex-shrink: 0; }
+
+  /* Stat boxes */
+  .stat-box { background: #fff; border-radius: 4px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .stat-box h4 { font-size: 14px; color: #303133; margin-bottom: 12px; border-left: 3px solid #409eff; padding-left: 8px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+  .stat-grid .stat-box { margin-bottom: 0; }
+
+  /* Section panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Dialog overlay simulation */
+  .dialog-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
+  .dialog-overlay.show { display: flex; }
+  .dialog { background: #fff; border-radius: 8px; width: 640px; max-width: 90vw; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 24px rgba(0,0,0,0.2); }
+  .dialog-header { padding: 20px 24px 12px; font-size: 16px; font-weight: 600; color: #303133; border-bottom: 1px solid #ebeef5; display: flex; justify-content: space-between; align-items: center; }
+  .dialog-close { cursor: pointer; font-size: 20px; color: #909399; }
+  .dialog-body { padding: 20px 24px; }
+  .dialog-footer { padding: 12px 24px 20px; display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* Form */
+  .form-row { display: flex; gap: 16px; margin-bottom: 16px; }
+  .form-group { flex: 1; }
+  .form-group label { display: block; font-size: 13px; color: #606266; margin-bottom: 6px; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; height: 32px; border: 1px solid #dcdfe6; border-radius: 4px; padding: 0 12px; font-size: 13px; outline: none; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #409eff; }
+  .form-group textarea { height: 60px; padding: 8px 12px; resize: vertical; }
+
+  /* Upload zone */
+  .upload-zone { border: 2px dashed #dcdfe6; border-radius: 4px; padding: 32px; text-align: center; color: #909399; cursor: pointer; transition: border-color 0.2s; }
+  .upload-zone:hover { border-color: #409eff; color: #409eff; }
+  .upload-zone .upload-icon { font-size: 36px; margin-bottom: 8px; }
+  .upload-zone p { font-size: 13px; }
+
+  /* Template table */
+  .template-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
+  .template-table th, .template-table td { padding: 8px 12px; border: 1px solid #ebeef5; text-align: left; }
+  .template-table th { background: #fafafa; font-weight: 600; color: #303133; }
+
+  /* Alert row */
+  .alert-row { display: flex; gap: 24px; padding: 12px 0; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+  .alert-row:last-child { border-bottom: none; }
+
+  /* Detail info grid */
+  .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .detail-item { display: flex; }
+  .detail-item .label { width: 80px; color: #909399; flex-shrink: 0; }
+  .detail-item .value { color: #303133; font-weight: 500; }
+</style>
+</head>
+<body>
+<div id="app" class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo"><span>Eregen</span> 颐贞</div>
+    <div class="sidebar-nav">
+      <div class="nav-section">概览</div>
+      <a class="nav-item active" data-page="elderly" onclick="showPage('elderly')">
+        <i class="icon">👤</i><span>老人档案</span>
+      </a>
+      <a class="nav-item" data-page="welfare" onclick="showPage('welfare')">
+        <i class="icon">🏷️</i><span>福利标签</span>
+      </a>
+      <a class="nav-item" data-page="signin" onclick="showPage('signin')">
+        <i class="icon">📋</i><span>签到总览</span>
+      </a>
+      <div class="nav-section">业务管理</div>
+      <a class="nav-item" data-page="pharmacy" onclick="showPage('pharmacy')">
+        <i class="icon">💊</i><span>药房发药</span>
+      </a>
+      <a class="nav-item" data-page="minzheng" onclick="showPage('minzheng')">
+        <i class="icon">📁</i><span>民政数据导入</span>
+      </a>
+      <div class="nav-section">数据分析</div>
+      <a class="nav-item" data-page="stats" onclick="showPage('stats')">
+        <i class="icon">📊</i><span>统计看板</span>
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="avatar">管</div>
+      <div class="info">
+        <div class="name">管理员</div>
+        <div class="role">超级管理员</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb" id="breadcrumb">社区老人专区 / <span>老人档案管理</span></div>
+      <div class="topbar-right">
+        <span class="icon-btn">🔍</span>
+        <span class="icon-btn"><span class="badge">3</span>🔔</span>
+        <span class="icon-btn">🌙</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ==================== 1. 老人档案管理 ==================== -->
+      <div id="page-elderly" class="panel active">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-value">482</div><div class="kpi-label">登记老人</div></div>
+          <div class="kpi-card"><div class="kpi-value success">312</div><div class="kpi-label">在线腕带</div></div>
+          <div class="kpi-card"><div class="kpi-value">9</div><div class="kpi-label">福利标签</div></div>
+          <div class="kpi-card"><div class="kpi-value warning">28</div><div class="kpi-label">今日签到</div></div>
+          <div class="kpi-card"><div class="kpi-value danger">5</div><div class="kpi-label">待审核民政</div></div>
+          <div class="kpi-card"><div class="kpi-value warning">3</div><div class="kpi-label">异常告警</div></div>
+        </div>
+
+        <div class="filter-bar">
+          <button class="btn btn-primary" onclick="showDialog('elder-dialog')">＋ 新增老人</button>
+          <input type="text" placeholder="搜索姓名 / 身份证号 / 手机号">
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>姓名</th><th>身份证号</th><th>年龄</th><th>性别</th><th>紧急联系人</th><th>福利标签</th><th>状态</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>张秀兰</strong></td><td style="font-family:monospace;font-size:12px;">510101195001011234</td><td>76</td><td>女</td><td>张明（子）</td>
+                <td><span class="tag tag-red">孤寡</span><span class="tag tag-orange">特困一级</span><span class="tag tag-blue">残疾二级</span></td>
+                <td><span class="tag tag-success">正常</span></td>
+                <td><button class="btn btn-sm" onclick="showDialog('detail-dialog')">详情</button> <button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td><strong>李建国</strong></td><td style="font-family:monospace;font-size:12px;">510101194805055678</td><td>78</td><td>男</td><td>李华（女）</td>
+                <td><span class="tag tag-purple">特病门诊</span><span class="tag tag-green">公交优惠</span></td>
+                <td><span class="tag tag-success">正常</span></td>
+                <td><button class="btn btn-sm" onclick="showDialog('detail-dialog')">详情</button> <button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td><strong>王秀英</strong></td><td style="font-family:monospace;font-size:12px;">510101195503127890</td><td>71</td><td>女</td><td>王芳（女）</td>
+                <td><span class="tag tag-primary">医疗救助</span></td>
+                <td><span class="tag tag-info">停用</span></td>
+                <td><button class="btn btn-sm" onclick="showDialog('detail-dialog')">详情</button> <button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td><strong>赵德柱</strong></td><td style="font-family:monospace;font-size:12px;">510101194208153456</td><td>84</td><td>男</td><td>赵强（子）</td>
+                <td><span class="tag tag-red">孤寡</span><span class="tag tag-orange">特困一级</span><span class="tag tag-purple">特病门诊</span></td>
+                <td><span class="tag tag-success">正常</span></td>
+                <td><button class="btn btn-sm" onclick="showDialog('detail-dialog')">详情</button> <button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td><strong>刘美华</strong></td><td style="font-family:monospace;font-size:12px;">510101195812256789</td><td>68</td><td>女</td><td>刘晓（女）</td>
+                <td><span class="tag tag-blue">残疾三级</span><span class="tag tag-green">公交优惠</span></td>
+                <td><span class="tag tag-success">正常</span></td>
+                <td><button class="btn btn-sm" onclick="showDialog('detail-dialog')">详情</button> <button class="btn btn-sm">编辑</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span style="font-size:12px;color:#909399;margin-right:12px;">共 482 条</span>
+          <div class="page-btn disabled">&lt;</div>
+          <div class="page-btn active">1</div>
+          <div class="page-btn">2</div>
+          <div class="page-btn">3</div>
+          <div class="page-btn">4</div>
+          <div class="page-btn">5</div>
+          <div class="page-btn">&gt;</div>
+        </div>
+      </div>
+
+      <!-- ==================== 2. 福利标签管理 ==================== -->
+      <div id="page-welfare" class="panel">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-value">9</div><div class="kpi-label">有效标签</div></div>
+          <div class="kpi-card"><div class="kpi-value warning">3</div><div class="kpi-label">本月到期</div></div>
+          <div class="kpi-card"><div class="kpi-value success">12</div><div class="kpi-label">本月新发</div></div>
+          <div class="kpi-card"><div class="kpi-value">2</div><div class="kpi-label">本月撤销</div></div>
+        </div>
+
+        <div class="filter-bar">
+          <button class="btn btn-primary">＋ 新增标签</button>
+          <button class="btn">批量分配</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>标签代码</th><th>标签名称</th><th>发放机构</th><th>Renewal 周期</th><th>补助金额</th><th>绑定老人</th><th>启用</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-family:monospace;">orphan</td><td>孤寡老人</td><td>民政局</td><td>365 天</td><td>¥0</td><td style="text-align:center;">12</td>
+                <td><span class="tag tag-success">✅</span></td>
+                <td><button class="btn btn-sm">查看绑定</button> <button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td style="font-family:monospace;">poverty_level_1</td><td>特困一级</td><td>民政局</td><td>365 天</td><td>¥800</td><td style="text-align:center;">28</td>
+                <td><span class="tag tag-success">✅</span></td>
+                <td><button class="btn btn-sm">查看绑定</button> <button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td style="font-family:monospace;">poverty_level_2</td><td>特困二级</td><td>民政局</td><td>365 天</td><td>¥500</td><td style="text-align:center;">15</td>
+                <td><span class="tag tag-success">✅</span></td>
+                <td><button class="btn btn-sm">查看绑定</button> <button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td style="font-family:monospace;">disability_1</td><td>残疾一级</td><td>残联</td><td>365 天</td><td>¥600</td><td style="text-align:center;">22</td>
+                <td><span class="tag tag-success">✅</span></td>
+                <td><button class="btn btn-sm">查看绑定</button> <button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td style="font-family:monospace;">disability_2</td><td>残疾二级</td><td>残联</td><td>365 天</td><td>¥400</td><td style="text-align:center;">35</td>
+                <td><span class="tag tag-success">✅</span></td>
+                <td><button class="btn btn-sm">查看绑定</button> <button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td style="font-family:monospace;">disability_3</td><td>残疾三级</td><td>残联</td><td>365 天</td><td>¥200</td><td style="text-align:center;">42</td>
+                <td><span class="tag tag-success">✅</span></td>
+                <td><button class="btn btn-sm">查看绑定</button> <button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td style="font-family:monospace;">special_disease</td><td>特病门诊</td><td>医保局</td><td>180 天</td><td>¥0</td><td style="text-align:center;">89</td>
+                <td><span class="tag tag-success">✅</span></td>
+                <td><button class="btn btn-sm">查看绑定</button> <button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td style="font-family:monospace;">bus_discount</td><td>公交优惠</td><td>交通局</td><td>30 天</td><td>¥0</td><td style="text-align:center;">156</td>
+                <td><span class="tag tag-success">✅</span></td>
+                <td><button class="btn btn-sm">查看绑定</button> <button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td style="font-family:monospace;">medical_assist</td><td>医疗救助</td><td>民政局</td><td>365 天</td><td>¥1,000</td><td style="text-align:center;">67</td>
+                <td><span class="tag tag-success">✅</span></td>
+                <td><button class="btn btn-sm">查看绑定</button> <button class="btn btn-sm">编辑</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== 3. 签到总览 ==================== -->
+      <div id="page-signin" class="panel">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-value">856</div><div class="kpi-label">本月签到</div></div>
+          <div class="kpi-card"><div class="kpi-value success">234</div><div class="kpi-label">本月首次</div></div>
+          <div class="kpi-card"><div class="kpi-value danger">3</div><div class="kpi-label">跨院重复</div></div>
+          <div class="kpi-card"><div class="kpi-value">189</div><div class="kpi-label">医保签到</div></div>
+          <div class="kpi-card"><div class="kpi-value success">667</div><div class="kpi-label">福利签到</div></div>
+          <div class="kpi-card"><div class="kpi-value warning">2</div><div class="kpi-label">异常</div></div>
+        </div>
+
+        <div class="filter-bar">
+          <select><option>2026-07</option><option>2026-06</option><option>2026-05</option></select>
+          <select><option>全部医院</option><option>社区医院 A</option><option>社区医院 B</option><option>社区医院 C</option></select>
+          <button class="btn btn-primary">🔍 查询</button>
+        </div>
+
+        <div class="stat-box" style="margin-bottom: 20px;">
+          <h4>近 7 天签到趋势</h4>
+          <div class="bar-chart">
+            <div class="bar-col"><div class="bar-value">42</div><div class="bar" style="height:68px;"></div><div class="bar-label">周一</div></div>
+            <div class="bar-col"><div class="bar-value">56</div><div class="bar" style="height:90px;"></div><div class="bar-label">周二</div></div>
+            <div class="bar-col"><div class="bar-value">48</div><div class="bar" style="height:77px;"></div><div class="bar-label">周三</div></div>
+            <div class="bar-col"><div class="bar-value">41</div><div class="bar" style="height:66px;"></div><div class="bar-label">周四</div></div>
+            <div class="bar-col"><div class="bar-value">62</div><div class="bar" style="height:100px;"></div><div class="bar-label">周五</div></div>
+            <div class="bar-col"><div class="bar-value">28</div><div class="bar" style="height:45px;"></div><div class="bar-label">周六</div></div>
+            <div class="bar-col"><div class="bar-value">19</div><div class="bar" style="height:30px;"></div><div class="bar-label">周日</div></div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>老人姓名</th><th>身份证号</th><th>医院</th><th>签到时间</th><th>激活标签</th><th>类型</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>张秀兰</strong></td><td style="font-family:monospace;font-size:12px;">...1234</td><td>社区医院 A</td><td>2026-07-23 10:30</td>
+                <td><span class="tag tag-red">孤寡</span><span class="tag tag-orange">特困一级</span><span class="tag tag-blue">残疾二级</span></td>
+                <td><span class="tag tag-green">福利签到</span></td>
+              </tr>
+              <tr>
+                <td><strong>李建国</strong></td><td style="font-family:monospace;font-size:12px;">...5678</td><td>社区医院 B</td><td>2026-07-23 09:15</td>
+                <td><span class="tag tag-purple">特病门诊</span><span class="tag tag-green">公交优惠</span></td>
+                <td><span class="tag tag-primary">医保签到</span></td>
+              </tr>
+              <tr>
+                <td><strong>王秀英</strong></td><td style="font-family:monospace;font-size:12px;">...7890</td><td>社区医院 A</td><td>2026-07-22 14:20</td>
+                <td><span class="tag tag-primary">医疗救助</span></td>
+                <td><span class="tag tag-green">福利签到</span></td>
+              </tr>
+              <tr>
+                <td><strong>赵德柱</strong></td><td style="font-family:monospace;font-size:12px;">...3456</td><td>社区医院 C</td><td>2026-07-22 11:05</td>
+                <td><span class="tag tag-red">孤寡</span><span class="tag tag-orange">特困一级</span><span class="tag tag-purple">特病门诊</span></td>
+                <td><span class="tag tag-green">福利签到</span></td>
+              </tr>
+              <tr>
+                <td><strong>刘美华</strong></td><td style="font-family:monospace;font-size:12px;">...6789</td><td>社区医院 A</td><td>2026-07-21 16:40</td>
+                <td><span class="tag tag-blue">残疾三级</span><span class="tag tag-green">公交优惠</span></td>
+                <td><span class="tag tag-green">福利签到</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== 4. 药房发药记录 ==================== -->
+      <div id="page-pharmacy" class="panel">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-value">34</div><div class="kpi-label">今日发药</div></div>
+          <div class="kpi-card"><div class="kpi-value success">512</div><div class="kpi-label">本月发药</div></div>
+          <div class="kpi-card"><div class="kpi-value">28</div><div class="kpi-label">药品种类</div></div>
+          <div class="kpi-card"><div class="kpi-value warning">¥12,450</div><div class="kpi-label">总金额</div></div>
+        </div>
+
+        <div class="filter-bar">
+          <button class="btn btn-primary">＋ 手动发药</button>
+          <select><option>2026-07</option><option>2026-06</option></select>
+          <input type="text" placeholder="搜索老人姓名 / 药品名">
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>日期</th><th>老人姓名</th><th>医院</th><th>药品清单</th><th>金额</th><th>药师/护士</th><th>签到状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>07-23</td><td><strong>张秀兰</strong></td><td>社区医院 A</td><td>氨氯地平、二甲双胍</td><td>¥45.50</td><td>张护士</td>
+                <td><span class="tag tag-success">已签到</span></td>
+              </tr>
+              <tr>
+                <td>07-23</td><td><strong>李建国</strong></td><td>社区医院 B</td><td>阿司匹林肠溶片</td><td>¥12.00</td><td>李药师</td>
+                <td><span class="tag tag-success">已签到</span></td>
+              </tr>
+              <tr>
+                <td>07-22</td><td><strong>王秀英</strong></td><td>社区医院 A</td><td>硝苯地平缓释片</td><td>¥28.00</td><td>张护士</td>
+                <td><span class="tag tag-warning">未签到</span></td>
+              </tr>
+              <tr>
+                <td>07-22</td><td><strong>赵德柱</strong></td><td>社区医院 C</td><td>格列本脲、二甲双胍</td><td>¥67.30</td><td>王药师</td>
+                <td><span class="tag tag-success">已签到</span></td>
+              </tr>
+              <tr>
+                <td>07-21</td><td><strong>刘美华</strong></td><td>社区医院 A</td><td>氨氯地平</td><td>¥18.50</td><td>张护士</td>
+                <td><span class="tag tag-success">已签到</span></td>
+              </tr>
+              <tr>
+                <td>07-21</td><td><strong>张秀兰</strong></td><td>社区医院 A</td><td>维生素 D 胶囊</td><td>¥35.00</td><td>张护士</td>
+                <td><span class="tag tag-success">已签到</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span style="font-size:12px;color:#909399;margin-right:12px;">共 512 条</span>
+          <div class="page-btn disabled">&lt;</div>
+          <div class="page-btn active">1</div>
+          <div class="page-btn">2</div>
+          <div class="page-btn">3</div>
+          <div class="page-btn">...</div>
+          <div class="page-btn">86</div>
+          <div class="page-btn">&gt;</div>
+        </div>
+      </div>
+
+      <!-- ==================== 5. 民政数据导入 ==================== -->
+      <div id="page-minzheng" class="panel">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-value">12</div><div class="kpi-label">导入批次</div></div>
+          <div class="kpi-card"><div class="kpi-value success">1,234</div><div class="kpi-label">总导入</div></div>
+          <div class="kpi-card"><div class="kpi-value">1,198</div><div class="kpi-label">已匹配</div></div>
+          <div class="kpi-card"><div class="kpi-value warning">36</div><div class="kpi-label">待审核</div></div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="upload-zone" style="flex:1;max-width:500px;">
+            <div class="upload-icon">📁</div>
+            <p>点击或拖拽 CSV/XLSX 文件到此处上传</p>
+            <p style="font-size:11px;margin-top:4px;color:#c0c4cc;">支持民政局标准模板或自定义模板</p>
+          </div>
+          <button class="btn" style="align-self:flex-start;">📥 下载 CSV 模板</button>
+        </div>
+
+        <div class="stat-box" style="margin-bottom:20px;">
+          <h4>CSV 字段说明</h4>
+          <table class="template-table">
+            <thead><tr><th>列名</th><th>必填</th><th>说明</th><th>示例</th></tr></thead>
+            <tbody>
+              <tr><td>姓名</td><td><span class="tag tag-danger">是</span></td><td>老人姓名</td><td>张秀兰</td></tr>
+              <tr><td>身份证号</td><td><span class="tag tag-danger">是</span></td><td>18 位身份证号码</td><td>510101195001011234</td></tr>
+              <tr><td>福利类型</td><td><span class="tag tag-danger">是</span></td><td>orphan / poverty_level_1 / disability_2 / ...</td><td>特困</td></tr>
+              <tr><td>认定等级</td><td><span class="tag tag-danger">是</span></td><td>1 / 2 / 3</td><td>一级</td></tr>
+              <tr><td>有效期开始</td><td><span class="tag tag-danger">是</span></td><td>YYYY-MM-DD</td><td>2025-01-01</td></tr>
+              <tr><td>有效期结束</td><td><span class="tag tag-danger">是</span></td><td>YYYY-MM-DD</td><td>2028-12-31</td></tr>
+              <tr><td>备注</td><td><span class="tag tag-info">否</span></td><td>额外信息</td><td>肢体残疾</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>数据来源</th><th>文件名</th><th>导入数</th><th>匹配数</th><th>待审核</th><th>状态</th><th>创建时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>XX 区民政局</td><td>202607.csv</td><td>234</td><td>230</td><td>4</td>
+                <td><span class="tag tag-success">完成</span></td><td>2026-07-23 10:00</td>
+              </tr>
+              <tr>
+                <td>XX 街道办</td><td>7月数据.xlsx</td><td>156</td><td>155</td><td>1</td>
+                <td><span class="tag tag-success">完成</span></td><td>2026-07-20 14:30</td>
+              </tr>
+              <tr>
+                <td>XX 区残联</td><td>残疾人补贴.csv</td><td>89</td><td>85</td><td>4</td>
+                <td><span class="tag tag-success">完成</span></td><td>2026-07-18 09:15</td>
+              </tr>
+              <tr>
+                <td>XX 市民政局</td><td>特困人员汇总.csv</td><td>312</td><td>298</td><td>14</td>
+                <td><span class="tag tag-warning">处理中</span></td><td>2026-07-24 08:00</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== 6. 统计看板 ==================== -->
+      <div id="page-stats" class="panel">
+        <div class="filter-bar" style="margin-bottom:20px;">
+          <select><option>2026-07</option><option>2026-06</option></select>
+          <select><option>全部医院</option><option>社区医院 A</option><option>社区医院 B</option><option>社区医院 C</option></select>
+          <button class="btn btn-primary">🔄 刷新</button>
+        </div>
+
+        <div class="stat-grid">
+          <!-- Box 1: Elder overview -->
+          <div class="stat-box">
+            <h4>登记老人总数</h4>
+            <div style="text-align:center;padding:12px 0;">
+              <div style="font-size:36px;font-weight:700;color:#409eff;">482</div>
+              <div style="font-size:12px;color:#909399;margin-top:4px;">在线腕带 312 · 离线 170</div>
+            </div>
+          </div>
+          <!-- Box 2: Welfare distribution -->
+          <div class="stat-box">
+            <h4>福利标签分布</h4>
+            <div class="h-bar-row"><span class="h-bar-label">孤寡</span><div class="h-bar-track"><div class="h-bar-fill" style="width:12%;background:#c62828;"></div></div><span class="h-bar-val">12</span></div>
+            <div class="h-bar-row"><span class="h-bar-label">特困一</span><div class="h-bar-track"><div class="h-bar-fill" style="width:28%;background:#e65100;"></div></div><span class="h-bar-val">28</span></div>
+            <div class="h-bar-row"><span class="h-bar-label">特困二</span><div class="h-bar-track"><div class="h-bar-fill" style="width:15%;background:#f57c00;"></div></div><span class="h-bar-val">15</span></div>
+            <div class="h-bar-row"><span class="h-bar-label">残疾一</span><div class="h-bar-track"><div class="h-bar-fill" style="width:22%;background:#1565c0;"></div></div><span class="h-bar-val">22</span></div>
+            <div class="h-bar-row"><span class="h-bar-label">残疾二</span><div class="h-bar-track"><div class="h-bar-fill" style="width:35%;background:#1976d2;"></div></div><span class="h-bar-val">35</span></div>
+            <div class="h-bar-row"><span class="h-bar-label">残疾三</span><div class="h-bar-track"><div class="h-bar-fill" style="width:42%;background:#42a5f5;"></div></div><span class="h-bar-val">42</span></div>
+            <div class="h-bar-row"><span class="h-bar-label">特病</span><div class="h-bar-track"><div class="h-bar-fill" style="width:89%;background:#9c27b0;"></div></div><span class="h-bar-val">89</span></div>
+            <div class="h-bar-row"><span class="h-bar-label">公交</span><div class="h-bar-track"><div class="h-bar-fill" style="width:156%;background:#4caf50;"></div></div><span class="h-bar-val">156</span></div>
+            <div class="h-bar-row"><span class="h-bar-label">医疗</span><div class="h-bar-track"><div class="h-bar-fill" style="width:67%;background:#00897b;"></div></div><span class="h-bar-val">67</span></div>
+          </div>
+          <!-- Box 3: Sign-in activity -->
+          <div class="stat-box">
+            <h4>签到活跃度</h4>
+            <div style="padding:8px 0;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;"><span>本月签到率</span><span style="font-weight:600;color:#409eff;">87%</span></div>
+              <div style="height:8px;background:#f0f2f5;border-radius:4px;overflow:hidden;margin-bottom:12px;"><div style="width:87%;height:100%;background:#409eff;border-radius:4px;"></div></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;"><span>连续签到≥3月</span><span style="font-weight:600;color:#67c23a;">68%</span></div>
+              <div style="height:8px;background:#f0f2f5;border-radius:4px;overflow:hidden;margin-bottom:12px;"><div style="width:68%;height:100%;background:#67c23a;border-radius:4px;"></div></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;"><span>本月首次签到</span><span style="font-weight:600;color:#e6a23c;">234 人</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;"><span>跨院重复</span><span style="font-weight:600;color:#f56c6c;">3 人次</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+          <!-- Hospital distribution -->
+          <div class="stat-box">
+            <h4>医院分布</h4>
+            <div class="h-bar-row"><span class="h-bar-label">社区医院A</span><div class="h-bar-track"><div class="h-bar-fill" style="width:100%;background:#409eff;"></div></div><span class="h-bar-val">234</span></div>
+            <div class="h-bar-row"><span class="h-bar-label">社区医院B</span><div class="h-bar-track"><div class="h-bar-fill" style="width:67%;background:#66b1ff;"></div></div><span class="h-bar-val">156</span></div>
+            <div class="h-bar-row"><span class="h-bar-label">社区医院C</span><div class="h-bar-track"><div class="h-bar-fill" style="width:39%;background:#a0cfff;"></div></div><span class="h-bar-val">92</span></div>
+          </div>
+          <!-- Payment stats -->
+          <div class="stat-box">
+            <h4>补助发放统计</h4>
+            <div style="text-align:center;padding:8px 0;">
+              <div style="font-size:24px;font-weight:700;color:#409eff;">¥45,200</div>
+              <div style="font-size:12px;color:#909399;margin-bottom:12px;">本月发放总额</div>
+              <div style="display:flex;justify-content:space-around;">
+                <div style="text-align:center;"><div style="font-size:18px;font-weight:600;color:#67c23a;">92%</div><div style="font-size:11px;color:#909399;">成功率</div></div>
+                <div style="text-align:center;"><div style="font-size:18px;font-weight:600;color:#f56c6c;">8</div><div style="font-size:11px;color:#909399;">失败笔数</div></div>
+                <div style="text-align:center;"><div style="font-size:18px;font-weight:600;color:#e6a23c;">12</div><div style="font-size:11px;color:#909399;">待发笔数</div></div>
+              </div>
+            </div>
+          </div>
+          <!-- Rule alerts -->
+          <div class="stat-box">
+            <h4>规则引擎告警</h4>
+            <div class="alert-row"><span class="tag tag-danger">R_C01</span> 重复领取 <strong>3</strong></div>
+            <div class="alert-row"><span class="tag tag-danger">R_C02</span> 冒领嫌疑 <strong>1</strong></div>
+            <div class="alert-row"><span class="tag tag-warning">R_C03</span> 异常高频 <strong>2</strong></div>
+            <div class="alert-row"><span class="tag tag-info">R_C04</span> 僵尸账户 <strong>5</strong></div>
+            <div class="alert-row"><span class="tag tag-warning">R_C05</span> 补助未到账 <strong>1</strong></div>
+            <div style="text-align:center;margin-top:8px;"><button class="btn btn-sm">查看全部告警 →</button></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- ==================== Dialogs ==================== -->
+
+<!-- Elder Detail Dialog -->
+<div class="dialog-overlay" id="detail-dialog">
+  <div class="dialog">
+    <div class="dialog-header">
+      <span>老人档案详情 — 张秀兰</span>
+      <span class="dialog-close" onclick="hideDialog('detail-dialog')">×</span>
+    </div>
+    <div class="dialog-body">
+      <h4 style="margin-bottom:12px;color:#303133;">基本信息</h4>
+      <div class="detail-grid">
+        <div class="detail-item"><span class="label">姓名：</span><span class="value">张秀兰</span></div>
+        <div class="detail-item"><span class="label">性别：</span><span class="value">女</span></div>
+        <div class="detail-item"><span class="label">年龄：</span><span class="value">76 岁</span></div>
+        <div class="detail-item"><span class="label">身份证号：</span><span class="value" style="font-family:monospace;">510101195001011234</span></div>
+        <div class="detail-item"><span class="label">地址：</span><span class="value">成都市 XX 区 XX 街道 XX 小区 3 栋 2 单元 501</span></div>
+        <div class="detail-item"><span class="label">紧急联系人：</span><span class="value">张明（子） 138****1234</span></div>
+        <div class="detail-item"><span class="label">腕带设备：</span><span class="value">WB-COMM-00123 <span class="tag tag-success">在线</span></span></div>
+        <div class="detail-item"><span class="label">状态：</span><span class="value"><span class="tag tag-success">正常</span></span></div>
+      </div>
+
+      <h4 style="margin:20px 0 12px;color:#303133;">福利标签</h4>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">
+        <thead><tr><th style="padding:8px;text-align:left;border-bottom:1px solid #ebeef5;">标签</th><th style="padding:8px;text-align:left;border-bottom:1px solid #ebeef5;">发放机构</th><th style="padding:8px;text-align:left;border-bottom:1px solid #ebeef5;">生效日期</th><th style="padding:8px;text-align:left;border-bottom:1px solid #ebeef5;">到期日期</th><th style="padding:8px;text-align:left;border-bottom:1px solid #ebeef5;">状态</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:8px;border-bottom:1px solid #f0f0f0;"><span class="tag tag-red">孤寡</span></td><td style="padding:8px;border-bottom:1px solid #f0f0f0;">民政局</td><td style="padding:8px;border-bottom:1px solid #f0f0f0;">2025-01-01</td><td style="padding:8px;border-bottom:1px solid #f0f0f0;">2028-12-31</td><td style="padding:8px;border-bottom:1px solid #f0f0f0;"><span class="tag tag-success">有效</span></td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #f0f0f0;"><span class="tag tag-orange">特困一级</span></td><td style="padding:8px;border-bottom:1px solid #f0f0f0;">民政局</td><td style="padding:8px;border-bottom:1px solid #f0f0f0;">2025-01-01</td><td style="padding:8px;border-bottom:1px solid #f0f0f0;">2028-12-31</td><td style="padding:8px;border-bottom:1px solid #f0f0f0;"><span class="tag tag-success">有效</span></td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #f0f0f0;"><span class="tag tag-blue">残疾二级</span></td><td style="padding:8px;border-bottom:1px solid #f0f0f0;">残联</td><td style="padding:8px;border-bottom:1px solid #f0f0f0;">2024-06-01</td><td style="padding:8px;border-bottom:1px solid #f0f0f0;">2027-05-31</td><td style="padding:8px;border-bottom:1px solid #f0f0f0;"><span class="tag tag-success">有效</span></td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin:12px 0;color:#303133;">最近签到记录</h4>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr><th style="padding:6px;text-align:left;border-bottom:1px solid #ebeef5;">日期</th><th style="padding:6px;text-align:left;border-bottom:1px solid #ebeef5;">医院</th><th style="padding:6px;text-align:left;border-bottom:1px solid #ebeef5;">类型</th><th style="padding:6px;text-align:left;border-bottom:1px solid #ebeef5;">激活标签</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:6px;border-bottom:1px solid #f0f0f0;">2026-07-23</td><td style="padding:6px;border-bottom:1px solid #f0f0f0;">社区医院 A</td><td style="padding:6px;border-bottom:1px solid #f0f0f0;"><span class="tag tag-green" style="font-size:10px;">福利签到</span></td><td style="padding:6px;border-bottom:1px solid #f0f0f0;">孤寡, 特困一级, 残疾二级</td></tr>
+          <tr><td style="padding:6px;border-bottom:1px solid #f0f0f0;">2026-07-16</td><td style="padding:6px;border-bottom:1px solid #f0f0f0;">社区医院 A</td><td style="padding:6px;border-bottom:1px solid #f0f0f0;"><span class="tag tag-green" style="font-size:10px;">福利签到</span></td><td style="padding:6px;border-bottom:1px solid #f0f0f0;">孤寡, 特困一级, 残疾二级</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="dialog-footer">
+      <button class="btn" onclick="hideDialog('detail-dialog')">关闭</button>
+      <button class="btn btn-primary">编辑档案</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Elder Dialog -->
+<div class="dialog-overlay" id="elder-dialog">
+  <div class="dialog">
+    <div class="dialog-header">
+      <span>新增老人</span>
+      <span class="dialog-close" onclick="hideDialog('elder-dialog')">×</span>
+    </div>
+    <div class="dialog-body">
+      <div class="form-row">
+        <div class="form-group"><label>姓名 *</label><input type="text" placeholder="请输入姓名"></div>
+        <div class="form-group"><label>性别 *</label>
+          <select><option value="">请选择</option><option>男</option><option>女</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>身份证号 *</label><input type="text" placeholder="18 位身份证号码"></div>
+        <div class="form-group"><label>年龄</label><input type="number" placeholder="周岁"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>地址</label><input type="text" placeholder="居住地址"></div>
+        <div class="form-group"><label>紧急联系人</label><input type="text" placeholder="姓名 + 电话"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>所属医院</label>
+          <select><option value="">请选择</option><option>社区医院 A</option><option>社区医院 B</option><option>社区医院 C</option></select>
+        </div>
+        <div class="form-group"><label>福利标签</label>
+          <select multiple style="height:80px;"><option>孤寡老人</option><option>特困一级</option><option>特困二级</option><option>残疾一级</option><option>残疾二级</option><option>残疾三级</option><option>特病门诊</option><option>公交优惠</option><option>医疗救助</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button class="btn" onclick="hideDialog('elder-dialog')">取消</button>
+      <button class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showPage(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelector('[data-page="' + name + '"]').classList.add('active');
+
+  var titles = {
+    elderly: '老人档案管理',
+    welfare: '福利标签管理',
+    signin: '签到总览',
+    pharmacy: '药房发药记录',
+    minzheng: '民政数据导入',
+    stats: '统计看板'
+  };
+  document.getElementById('breadcrumb').innerHTML = '社区老人专区 / <span>' + (titles[name] || name) + '</span>';
+}
+
+function showDialog(id) {
+  document.getElementById(id).classList.add('show');
+}
+function hideDialog(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+// Close dialog on overlay click
+document.querySelectorAll('.dialog-overlay').forEach(function(overlay) {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) overlay.classList.remove('show');
+  });
+});
+</script>
+</body>
+</html>

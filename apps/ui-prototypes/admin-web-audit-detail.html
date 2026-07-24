@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>颐贞 Eregen - 穿透审计详情页</title>
+    <style>
+        :root {
+            --primary-color: #4A90D9;
+            --danger-color: #F56C6C;
+            --warning-color: #E6A23C;
+            --success-color: #67C23A;
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #303133;
+            --text-sub: #909399;
+            --border-color: #ebeef5;
+        }
+
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-main);
+        }
+
+        .layout-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 220px;
+            background-color: #001529;
+            color: #fff;
+            padding: 20px 0;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--primary-color);
+        }
+
+        .menu-item {
+            padding: 15px 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255,255,255,0.65);
+        }
+
+        .menu-item:hover, .menu-item.active {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .header {
+            background: var(--card-bg);
+            padding: 15px 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+
+        .breadcrumb {
+            color: var(--text-sub);
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        /* 患者信息卡片 */
+        .patient-info-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .patient-avatar {
+            width: 80px;
+            height: 80px;
+            background: #ecf5ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: var(--primary-color);
+            flex-shrink: 0;
+        }
+
+        .patient-details {
+            flex-grow: 1;
+        }
+
+        .patient-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .patient-meta {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            font-size: 14px;
+            color: var(--text-sub);
+        }
+
+        .patient-meta span {
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: #fff;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: #fff;
+        }
+
+        /* 时间线布局 */
+        .audit-timeline {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+
+        .timeline-header {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -26px;
+            top: 0;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid var(--card-bg);
+        }
+
+        .timeline-dot.inbound { background: var(--success-color); }
+        .timeline-dot.verify { background: var(--primary-color); }
+        .timeline-dot.medication { background: var(--warning-color); }
+        .timeline-dot.geofence { background: var(--danger-color); }
+        .timeline-dot.discharge { background: #909399; }
+
+        .timeline-content {
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 3px solid transparent;
+        }
+
+        .timeline-item.inbound .timeline-content { border-left-color: var(--success-color); }
+        .timeline-item.verify .timeline-content { border-left-color: var(--primary-color); }
+        .timeline-item.medication .timeline-content { border-left-color: var(--warning-color); }
+        .timeline-item.geofence .timeline-content { border-left-color: var(--danger-color); }
+        .timeline-item.discharge .timeline-content { border-left-color: #909399; }
+
+        .timeline-title {
+            font-weight: bold;
+            font-size: 15px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .timeline-time {
+            font-size: 12px;
+            color: var(--text-sub);
+            font-weight: normal;
+        }
+
+        .timeline-data {
+            font-size: 13px;
+            line-height: 1.8;
+            color: var(--text-sub);
+        }
+
+        .timeline-data strong {
+            color: var(--text-main);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .tag-danger { background: #fef0f0; color: var(--danger-color); border: 1px solid #fde2e2; }
+        .tag-warning { background: #fdf6ec; color: var(--warning-color); border: 1px solid #faecd8; }
+        .tag-success { background: #f0f9eb; color: var(--success-color); border: 1px solid #e1f3d8; }
+        .tag-primary { background: #ecf5ff; color: var(--primary-color); border: 1px solid #d9ecff; }
+
+        /* 数据表格 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            background: #f5f7fa;
+            color: var(--text-sub);
+            font-weight: 600;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1200px) {
+            .patient-meta { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout-container">
+        <!-- 侧边栏 -->
+        <nav class="sidebar">
+            <div class="logo">Eregen 颐贞</div>
+            <div class="menu-item">📊 仪表盘总览</div>
+            <div class="menu-item">🏥 设备管理</div>
+            <div class="menu-item">👥 用户管理</div>
+            <div class="menu-item active">🩺 监管总览看板</div>
+            <div class="menu-item">🔍 穿透审计</div>
+            <div class="menu-item">💍 社区老人专区</div>
+            <div class="menu-item">⚙️ 系统设置</div>
+        </nav>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 顶栏 -->
+            <header class="header">
+                <div class="breadcrumb">
+                    <a href="#">监管总览看板</a> / <span style="color: var(--text-main);">穿透审计详情</span>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-outline">📥 导出审计报告</button>
+                    <button class="btn btn-primary">🔄 刷新状态</button>
+                </div>
+            </header>
+
+            <!-- 患者信息卡片 -->
+            <div class="patient-info-card">
+                <div class="patient-avatar">李</div>
+                <div class="patient-details">
+                    <div class="patient-name">李秀英 <span class="tag tag-primary">ID: 8842</span></div>
+                    <div class="patient-meta">
+                        <div>性别: <span>女</span></div>
+                        <div>年龄: <span>76岁</span></div>
+                        <div>科室: <span>心内科</span></div>
+                        <div>入院日期: <span>2026-07-15</span></div>
+                        <div>主治医生: <span>张医生</span></div>
+                        <div>腕带状态: <span class="tag tag-success">在线正常</span></div>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary">查看实时定位</button>
+                    <button class="btn btn-outline">联系护士站</button>
+                </div>
+            </div>
+
+            <!-- 穿透审计时间线 -->
+            <div class="audit-timeline">
+                <div class="timeline-header">
+                    <span>全链路数据追溯</span>
+                    <span style="font-size: 12px; color: var(--text-sub);">共 12 条记录 | 最后更新: 10:42:15</span>
+                </div>
+
+                <div class="timeline">
+                    <!-- 入院记录 -->
+                    <div class="timeline-item inbound">
+                        <div class="timeline-dot inbound"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">
+                                <span>📋 入院登记</span>
+                                <span class="timeline-time">2026-07-15 09:30:00</span>
+                            </div>
+                            <div class="timeline-data">
+                                <strong>入院科室：</strong>心内科<br>
+                                <strong>主治医生：</strong>张医生<br>
+                                <strong>诊断结果：</strong>高血压三级，心律失常<br>
+                                <strong>腕带绑定：</strong>设备 ID WB-8842-A 已绑定<br>
+                                <strong>初始评估：</strong>跌倒风险: 中 | 压疮风险: 低
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 身份核验 -->
+                    <div class="timeline-item verify">
+                        <div class="timeline-dot verify"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">
+                                <span>✅ 身份核验 (NFC)</span>
+                                <span class="timeline-time">2026-07-15 09:35:22</span>
+                            </div>
+                            <div class="timeline-data">
+                                <strong>核验方式：</strong>NFC近场通信 + 人脸识别<br>
+                                <strong>核验结果：</strong>成功匹配住院档案<br>
+                                <strong>核验人员：</strong>护士 王芳<br>
+                                <strong>关联数据：</strong>病历号 MR-2026-8842
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 用药记录 -->
+                    <div class="timeline-item medication">
+                        <div class="timeline-dot medication"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">
+                                <span>💊 今日用药记录</span>
+                                <span class="timeline-time">2026-07-23 全天</span>
+                            </div>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>时间</th>
+                                        <th>药品名称</th>
+                                        <th>剂量</th>
+                                        <th>执行人</th>
+                                        <th>状态</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>08:00</td>
+                                        <td>氨氯地平片</td>
+                                        <td>5mg</td>
+                                        <td>护士 张丽</td>
+                                        <td><span class="tag tag-success">已服用</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>08:00</td>
+                                        <td>阿司匹林肠溶片</td>
+                                        <td>100mg</td>
+                                        <td>护士 张丽</td>
+                                        <td><span class="tag tag-success">已服用</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>14:00</td>
+                                        <td>美托洛尔缓释片</td>
+                                        <td>47.5mg</td>
+                                        <td>护士 王芳</td>
+                                        <td><span class="tag tag-warning">待服用</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 电子围栏事件 -->
+                    <div class="timeline-item geofence">
+                        <div class="timeline-dot geofence"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">
+                                <span>⚠️ 电子围栏越界告警</span>
+                                <span class="timeline-time">2026-07-23 10:42:15</span>
+                            </div>
+                            <div class="timeline-data">
+                                <strong>告警等级：</strong><span class="tag tag-danger">P0 - 紧急</span><br>
+                                <strong>触发规则：</strong>R01 - 患者离开设定电子围栏范围<br>
+                                <strong>当前位置：</strong>医院北门出口外 50m<br>
+                                <strong>定位源：</strong>GPS (精度 ±5m)<br>
+                                <strong>处理状态：</strong><span class="tag tag-warning">处理中 - 已通知保安</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 历史越界记录 -->
+                    <div class="timeline-item geofence">
+                        <div class="timeline-dot geofence"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">
+                                <span>⚠️ 电子围栏越界告警 (历史)</span>
+                                <span class="timeline-time">2026-07-20 15:20:00</span>
+                            </div>
+                            <div class="timeline-data">
+                                <strong>告警等级：</strong><span class="tag tag-warning">P1 - 重要</span><br>
+                                <strong>当前位置：</strong>医院花园区域 (允许范围外 10m)<br>
+                                <strong>处理结果：</strong>护士确认患者家属陪同外出，已手动解除告警
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 生命体征趋势 -->
+                    <div class="timeline-item verify">
+                        <div class="timeline-dot verify"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">
+                                <span>❤️ 今日生命体征摘要</span>
+                                <span class="timeline-time">2026-07-23</span>
+                            </div>
+                            <div class="timeline-data">
+                                <strong>心率：</strong>平均 78bpm | 最高 105bpm (10:30) | 最低 62bpm (03:00)<br>
+                                <strong>血压：</strong>135/85 mmHg (08:00 测量)<br>
+                                <strong>血氧：</strong>平均 97%<br>
+                                <strong>睡眠质量：</strong>6.5小时 (深睡 2h)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 出院记录 (模拟) -->
+                    <div class="timeline-item discharge">
+                        <div class="timeline-dot discharge"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">
+                                <span>🚪 预计出院日期</span>
+                                <span class="timeline-time">2026-07-28 (预估)</span>
+                            </div>
+                            <div class="timeline-data">
+                                <strong>出院标准：</strong>血压稳定 &lt; 140/90mmHg 持续 48h<br>
+                                <strong>后续随访：</strong>社区医院 A 每周一次复查<br>
+                                <strong>腕带状态：</strong>出院后转为"社区老人"模式
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

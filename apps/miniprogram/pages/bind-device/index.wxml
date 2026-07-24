@@ -48,16 +48,34 @@
           <text>{{item.type === 'bracelet' ? '⌚' : '💊'}}</text>
         </view>
         <view class="device-details">
-          <text class="device-name">{{item.name}}</text>
+          <view class="device-name-row">
+            <text class="device-name">{{item.name}}</text>
+            <view class="status-badge {{item.online ? 'online' : 'offline'}}">
+              <text>{{item.online ? '在线' : '离线'}}</text>
+            </view>
+          </view>
           <text class="device-sn">SN: {{item.serialNumber}}</text>
           <text class="device-bound">绑定于 {{item.boundAt}}</text>
-        </view>
-        <view class="device-actions">
-          <view class="status-badge {{item.online ? 'online' : 'offline'}}">
-            <text>{{item.online ? '在线' : '离线'}}</text>
+          <!-- Firmware version info -->
+          <view class="fw-section" wx:if="{{!_checkingVersions}}">
+            <view class="fw-row">
+              <text class="fw-label">固件版本:</text>
+              <text class="fw-current">v{{item.fwVersion || '0.1'}}</text>
+            </view>
+            <view class="fw-update" wx:if="{{_firmwareVersions[item.id] && _firmwareVersions[item.id].hasUpdate}}">
+              <text class="fw-new">可用更新: {{_firmwareVersions[item.id].latestVersion}}</text>
+              <button class="ota-btn" data-device-id="{{item.id}}" data-firmware-id="{{_firmwareVersions[item.id].firmwareId}}" bindtap="_handlePushOTA">立即更新</button>
+            </view>
+            <text class="fw-latest" wx:else-if="{{_firmwareVersions[item.id] && !_firmwareVersions[item.id].hasUpdate}}">已是最新版本 ✓</text>
           </view>
+        </view>
+        <view class="device-actions-right">
           <text class="unbind-link" data-id="{{item.id}}" bindtap="handleUnbind">解绑</text>
         </view>
+      </view>
+      <!-- Loading indicator during version check -->
+      <view wx:if="{{_checkingVersions}}" class="checking-waiting">
+        <text class="checking-text">正在检查固件版本...</text>
       </view>
     </view>
     <view wx:if="{{boundDevices.length === 0}}" class="empty-state">

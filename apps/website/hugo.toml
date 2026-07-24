@@ -1,6 +1,6 @@
 baseURL = 'https://eregen.com/'
 languageCode = 'zh-CN'
-title = 'Eregen 颐贞 — 让关爱触手可及'
+title = 'Eregen 颐贞 — 颐养正道，贞守安康'
 theme = ''
 
 [params]
@@ -8,70 +8,88 @@ theme = ''
   brandNameEn = "Eregen"
   slogan = "颐养正道，贞守安康"
   description = "完整的老年健康生态系统——智能手环、智能药盒，配合云端监控平台与家属APP，让远方的子女安心，让家中的老人舒心。"
-  heroTitle = "让关爱<em>触手可及</em><br>守护每一位长者"
-  heroSubtitle = "Eregen 颐贞打造完整的老年健康生态系统——智能手环、智能药盒，配合云端监控平台与家属APP，让远方的子女安心，让家中的老人舒心。"
+  heroTitle = "颐养正道<br><span class='highlight'>贞守安康</span>"
+  heroSubtitle = "Eregen 颐贞，为长辈打造全链路健康管理方案。智能手环、智能药盒、云端平台与家属APP联动，让关爱无处不在。"
+  heroBadge = "📚 技术驱动 · 守护每一刻"
+  featuredProduct = "手环 · 中端版"
 
   [[params.heroStats]]
-    number = "3,200+"
+    number = "5,000+"
     label = "服务家庭"
   [[params.heroStats]]
-    number = "94.2%"
+    number = "99.9%"
     label = "设备在线率"
   [[params.heroStats]]
     number = "24/7"
     label = "实时监控"
 
 [[params.products.bracelet]]
-  name = "智能手环系列"
-  icon = "⌚"
-  desc = "GD32E230 主控 + Cat1 蜂窝通信，实时定位、健康监测、跌倒检测、SOS 紧急呼叫。IP67 防水，续航 7 天+。"
-  features = ["心率监测", "血氧检测", "GPS 定位", "跌倒检测", "电子围栏", "ECG 心电"]
-  tiers = [
-    { name = "Starter", price = "¥399" },
-    { name = "Plus", price = "¥599" },
-    { name = "Pro", price = "¥899" },
-  ]
+  name = "手环 · 入门版"
+  tier = "Starter"
+  tierClass = "starter"
+  desc = "GD32E230 主控 + Cat1 蜂窝通信，实时定位、健康监测、SOS 紧急呼叫。IP67 防水，续航 7 天+。"
+  features = ["心率监测", "血氧检测", "GPS 定位", "SOS 一键呼叫", "7天超长续航", "防水设计"]
+  price = "¥299"
+
+[[params.products.bracelet_plus]]
+  name = "手环 · 中端版"
+  tier = "Plus"
+  tierClass = "plus"
+  desc = "中端版全部功能 + 电子围栏安全区域、AI 跌倒检测、更长续航 14天。"
+  features = ["入门版全部功能", "电子围栏安全区域", "AI 跌倒检测", "更长续航 14天", "彩色 AMOLED 屏"]
+  price = "¥599"
+
+[[params.products.bracelet_pro]]
+  name = "手环 · 高端版"
+  tier = "Pro"
+  tierClass = "pro"
+  desc = "Plus版全部功能 + ECG 心电图监测、金属机身 + 蓝宝石玻璃、高精度双频 GPS。"
+  features = ["Plus版全部功能", "ECG 心电图监测", "金属机身 + 蓝宝石玻璃", "高精度双频 GPS", "血压趋势分析"]
+  price = "¥899"
 
 [[params.products.pillbox]]
   name = "智能药盒系列"
-  icon = "💊"
-  desc = "ESP32-C3 主控 + WiFi，语音提醒、自动分药、服药检测、库存预警。与手环数据联动，全面健康管理。"
+  tier = "Smart"
+  tierClass = "plus"
+  desc = "ESP32-C3 主控 + WiFi，语音提醒、自动分药、服药检测、库存预警。"
   features = ["TTS 语音播报", "自动分药", "光电检测", "库存预警", "远程配置"]
-  tiers = [
-    { name = "基础", price = "¥99" },
-    { name = "智能", price = "¥299" },
-    { name = "自动", price = "¥599" },
-  ]
+  price = "¥299"
+
+[[params.features]]
+  icon = "⚡"
+  iconColor = "red"
+  title = "SOS 紧急救援"
+  desc = "一键触发 SOS，自动通知所有紧急联系人并上报精确位置，支持跌倒自动检测。"
 
 [[params.features]]
   icon = "📍"
-  title = "实时定位"
-  desc = "高精度 GPS + 基站定位，实时更新老人位置。支持电子围栏越界告警。"
-
-[[params.features]]
-  icon = "❤️"
-  title = "健康监控"
-  desc = "心率、血氧、步数、睡眠全天候监测。异常数据即时推送给家属。"
-
-[[params.features]]
-  icon = "🆘"
-  title = "SOS 紧急呼叫"
-  desc = "一键触发 SOS，自动通知所有紧急联系人并拨打 120。三级告警机制。"
+  iconColor = "blue"
+  title = "电子围栏"
+  desc = "自定义安全活动区域，越界即时告警。支持多场景围栏：家、公园、医院。"
 
 [[params.features]]
   icon = "💊"
-  title = "用药管理"
-  desc = "智能提醒、服药检测、远程配置、库存预警。漏服自动通知家属。"
+  iconColor = "green"
+  title = "智能用药管理"
+  desc = "定时语音提醒、漏服告警、库存预警。智能药盒自动分药，远程配置用药规则。"
 
 [[params.features]]
-  icon = "👨‍👩‍👧‍👦"
-  title = "家属协同"
-  desc = "多位家属共同监护一位老人。权限分级，信息同步，人人放心。"
+  icon = "📈"
+  iconColor = "purple"
+  title = "AI 健康分析"
+  desc = "基于时序数据的 AI 引擎，自动发现健康趋势异常，生成个性化健康建议。"
 
 [[params.features]]
-  icon = "📊"
-  title = "数据分析"
-  desc = "AI 分析长期健康趋势，生成周/月健康报告。异常模式智能识别。"
+  icon = "💬"
+  iconColor = "orange"
+  title = "在线问诊"
+  desc = "对接合作医院医生，家属可通过 APP 发起视频问诊，查看电子处方。"
+
+[[params.features]]
+  icon = "🔒"
+  iconColor = "teal"
+  title = "数据隐私保护"
+  desc = "端到端加密传输，证书绑定防中间人攻击，符合医疗健康数据安全标准。"
 
 [menu]
   [[menu.main]]
@@ -90,7 +108,12 @@ theme = ''
     url = "#features"
     weight = 3
   [[menu.main]]
-    name = "关于我们"
+    name = "生态"
+    identifier = "ecosystem"
+    url = "#ecosystem"
+    weight = 4
+  [[menu.main]]
+    name = "关于"
     identifier = "about"
     url = "#about"
-    weight = 4
+    weight = 5

@@ -1,82 +1,96 @@
 <template>
   <div class="ota-page">
-    <el-card shadow="hover">
-      <template #header>
-        <div class="table-header">
-          <span style="font-weight: 600;">固件版本管理</span>
-          <el-button type="primary" size="small" @click="showUploadDialog = true">上传新版本</el-button>
-        </div>
-      </template>
+    <!-- Page Header -->
+    <div class="page-header">
+      <h2 class="page-title">OTA 固件管理</h2>
+      <el-button type="primary" @click="showCreateDialog = true" size="default">+ 创建固件版本</el-button>
+    </div>
 
-      <el-table :data="versions" stripe style="width: 100%">
-        <el-table-column prop="version" label="版本号" width="120">
+    <!-- KPI Row -->
+    <el-row :gutter="12" style="margin-bottom: 16px;">
+      <el-col :span="6">
+        <el-card shadow="hover" class="kpi-card kpi-blue">
+          <div class="kpi-value">{{ firmwares.length }}</div>
+          <div class="kpi-label">固件版本</div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="kpi-card kpi-green">
+          <div class="kpi-value">{{ bracelets }}</div>
+          <div class="kpi-label">手环设备</div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="kpi-card kpi-purple">
+          <div class="kpi-value">{{ pillboxes }}</div>
+          <div class="kpi-label">药盒设备</div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="kpi-card kpi-warning">
+          <div class="kpi-value">{{ activeJobs }}</div>
+          <div class="kpi-label">活跃任务</div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- Firmware Table -->
+    <el-card shadow="never" class="table-card">
+      <template #header><span class="section-title">固件版本列表</span></template>
+      <el-table
+        :data="firmwares"
+        stripe
+        class="ota-table"
+        v-loading="loading"
+      >
+        <el-table-column label="设备类型" width="100">
           <template #default="{ row }">
-            {{ row.version }}
-            <el-tag v-if="row.is_latest" type="success" size="small" style="margin-left: 6px;">最新</el-tag>
+            <span class="device-type-badge" :class="row.device_type === 'bracelet' ? 'badge-bracelet' : 'badge-pillbox'">
+              {{ row.device_type === 'bracelet' ? '📱' : '💊' }}
+              <span>{{ deviceTypeLabel(row.device_type) }}</span>
+            </span>
           </template>
         </el-table-column>
-        <el-table-column label="设备类型" width="120">
+        <el-table-column label="档位" width="90">
           <template #default="{ row }">
-            <el-tag :type="row.device_type === 'bracelet' ? 'primary' : 'success'" size="small">
-              {{ deviceTypeLabel(row.device_type) }}
-            </el-tag>
+            <span class="tier-tag" :class="tierClass(row.tier)">{{ tierLabel(row.tier) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="档位" width="120">
+        <el-table-column label="版本号" width="130">
           <template #default="{ row }">
-            <el-tag size="small">{{ tierLabel(row.tier) }}</el-tag>
+            <span class="version-tag" :class="{ outdated: !isLatest(row) }">{{ row.version }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="release_date" label="发布日期" width="140">
+        <el-table-column prop="changelog" label="更新说明" min-width="180" show-overflow-tooltip />
+        <el-table-column label="SHA256" width="100">
           <template #default="{ row }">
-            {{ row.release_date ? new Date(row.release_date).toLocaleDateString() : '—' }}
+            <span class="mono">{{ row.sha256_hash?.slice(0, 12) + '…' || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="changelog" label="更新说明" min-width="200" show-overflow-tooltip />
-        <el-table-column label="操作" fixed="right" min-width="200">
+        <el-table-column label="创建时间" width="170">
+          <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
+        </el-table-column>
+        <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="handlePushUpgrade(row)">推送升级</el-button>
-            <el-button link type="primary" size="small" @click="handleDownload(row)">下载</el-button>
-            <el-button link type="danger" size="small" @click="handleDeleteVersion(row)">删除</el-button>
+            <el-button link type="primary" size="small" @click.stop="handlePush(row)">推送升级</el-button>
+            <el-button link type="info" size="small" @click.stop="handleVerify(row)" :loading="verifyingId === row.id">验证签名</el-button>
+            <el-button link type="primary" size="small" @click.stop="handleShowJobs(row.id)" v-if="jobMap[row.id]?.length">查看进度</el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
-    <!-- Push Upgrade Dialog -->
-    <el-dialog v-model="showPushDialog" title="推送OTA升级" width="500px">
-      <p style="margin-bottom: 12px;">目标固件: <strong>{{ selectedFirmware?.version }}</strong></p>
-      <el-form :model="upgradeForm" label-width="100px">
-        <el-form-item label="设备类型">
-          <el-select v-model="upgradeForm.device_type" placeholder="选择设备类型" style="width: 100%;">
-            <el-option label="全部手环" value="bracelet" />
-            <el-option label="全部药盒" value="pillbox" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="升级方式">
-          <el-radio-group v-model="upgradeForm.mode">
-            <el-radio label="all">全量推送</el-radio>
-            <el-radio label="manual">手动确认</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showPushDialog = false">取消</el-button>
-        <el-button type="primary" @click="confirmPushUpgrade">确认推送</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- Upload Version Dialog -->
-    <el-dialog v-model="showUploadDialog" title="上传新版本" width="500px">
-      <el-form :model="newVersionForm" label-width="100px">
-        <el-form-item label="设备类型">
-          <el-select v-model="newVersionForm.device_type" style="width: 100%;">
+    <!-- Create Firmware Dialog -->
+    <el-dialog v-model="showCreateDialog" title="创建固件版本" width="550px" destroy-on-close>
+      <el-form :model="createForm" label-width="120px">
+        <el-form-item label="设备类型" required>
+          <el-select v-model="createForm.device_type" style="width: 100%;">
             <el-option label="手环" value="bracelet" />
             <el-option label="药盒" value="pillbox" />
           </el-select>
         </el-form-item>
-        <el-form-item label="档位">
-          <el-select v-model="newVersionForm.tier" style="width: 100%;">
+        <el-form-item label="档位" required>
+          <el-select v-model="createForm.tier" style="width: 100%;">
             <el-option label="入门版" value="starter" />
             <el-option label="中端版" value="plus" />
             <el-option label="高端版" value="pro" />
@@ -85,130 +99,525 @@
             <el-option label="自动版" value="auto" />
           </el-select>
         </el-form-item>
-        <el-form-item label="版本号">
-          <el-input v-model="newVersionForm.version" placeholder="如: v2.2.0" />
+        <el-form-item label="版本号" required>
+          <el-input v-model="createForm.version" placeholder="如: v2.2.0" />
+        </el-form-item>
+        <el-form-item label="下载 URL" required>
+          <el-input v-model="createForm.url" placeholder="https://cdn.example.com/firmware.bin" />
+        </el-form-item>
+        <el-form-item label="SHA256 Hash" required>
+          <el-input v-model="createForm.sha256_hash" placeholder="64位十六进制哈希值" />
         </el-form-item>
         <el-form-item label="更新说明">
-          <el-input v-model="newVersionForm.changelog" type="textarea" :rows="3" placeholder="描述本次更新内容" />
+          <el-input v-model="createForm.changelog" type="textarea" :rows="3" placeholder="描述本次更新内容" />
         </el-form-item>
-        <el-form-item label="固件文件">
-          <el-upload action="#" :auto-upload="false" drag>
-            <el-icon><Upload /></el-icon>
-            <div class="el-upload__text">拖拽文件到此处或<em>点击上传</em></div>
-          </el-upload>
+        <el-form-item label="强制更新">
+          <el-switch v-model="createForm.force_update" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showUploadDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleCreateVersion">上传</el-button>
+        <el-button @click="showCreateDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleCreateFirmware" :loading="creating">创建</el-button>
       </template>
     </el-dialog>
+
+    <!-- Push OTA Dialog -->
+    <el-dialog v-model="showPushDialog" title="推送OTA升级" width="550px" destroy-on-close>
+      <p style="margin-bottom: 12px;">目标固件: <strong>{{ selectedFirmware?.version }}</strong> ({{ deviceTypeLabel(selectedFirmware?.device_type ?? '') }}/{{ tierLabel(selectedFirmware?.tier ?? '') }})</p>
+      <el-form :model="pushForm" label-width="100px">
+        <el-form-item label="目标设备">
+          <el-radio-group v-model="pushForm.mode">
+            <el-radio label="all">全量推送（所有匹配设备）</el-radio>
+            <el-radio label="manual">指定设备</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="pushForm.mode === 'manual'" label="设备ID列表">
+          <el-input
+            v-model="pushForm.deviceIdsStr"
+            type="textarea"
+            :rows="4"
+            placeholder="每行一个设备ID，如：BR-0001"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showPushDialog = false">取消</el-button>
+        <el-button type="primary" @click="handlePushOTA" :loading="pushing">确认推送</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Job Progress Side Panel -->
+    <div class="side-panel-overlay" :class="{ show: showJobPanel }" @click="showJobPanel = false" />
+    <div class="side-panel" :class="{ open: showJobPanel }">
+      <div class="panel-header">
+        <span class="panel-title">推送进度 — {{ selectedFirmware?.version }}</span>
+        <button class="panel-close" @click="showJobPanel = false">&#10005;</button>
+      </div>
+      <div class="panel-body" v-if="currentJob">
+        <div class="job-info">
+          <div class="job-id">任务ID: <span class="mono">{{ currentJob.id }}</span></div>
+        </div>
+
+        <el-descriptions :column="2" border class="job-desc">
+          <el-descriptions-item label="固件版本">{{ selectedFirmware?.version }}</el-descriptions-item>
+          <el-descriptions-item label="总数">{{ currentJob.progress.total }}</el-descriptions-item>
+          <el-descriptions-item label="已推送">{{ currentJob.progress.succeeded + currentJob.progress.failed }}</el-descriptions-item>
+          <el-descriptions-item label="下载中">{{ currentJob.progress.downloading }}</el-descriptions-item>
+          <el-descriptions-item label="待推送">{{ currentJob.progress.pending }}</el-descriptions-item>
+          <el-descriptions-item label="成功"><span style="color:#16A34A;font-weight:700;">{{ currentJob.progress.succeeded }}</span></el-descriptions-item>
+          <el-descriptions-item label="失败"><span style="color:#EF4444;font-weight:700;">{{ currentJob.progress.failed }}</span></el-descriptions-item>
+        </el-descriptions>
+
+        <div class="progress-section">
+          <div class="progress-label">
+            <span>整体进度</span>
+            <span class="progress-pct">{{ progressPct }}%</span>
+          </div>
+          <el-progress
+            :percentage="progressPct"
+            :status="progressStatus"
+            :stroke-width="12"
+            :show-text="false"
+          />
+        </div>
+
+        <div class="job-actions">
+          <el-button size="small" type="danger" plain @click="cancelJob">取消任务</el-button>
+          <el-button size="small" @click="refreshJob">刷新状态</el-button>
+        </div>
+      </div>
+      <div v-else class="panel-empty">加载中...</div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Upload } from '@element-plus/icons-vue'
-import { otaApi } from '@/api/ota'
-import type { FirmwareVersion } from '@/api/ota'
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { otaApi, type FirmwareRelease, type OTAJob, type CreateFirmwareRequest } from '@/api/ota'
 
-const versions = ref<FirmwareVersion[]>([])
+/* ---------- Data ---------- */
 
-// Mock data as fallback
-const mockVersions: FirmwareVersion[] = [
-  { id: '1', device_type: 'bracelet', tier: 'pro', version: 'v2.1.0', release_date: '2026-07-10', download_url: '', changelog: '优化GPS定位精度，修复SOS按钮状态机问题', is_latest: true },
-  { id: '2', device_type: 'bracelet', tier: 'plus', version: 'v2.0.8', release_date: '2026-06-28', download_url: '', changelog: '增加跌倒检测灵敏度调节', is_latest: false },
-  { id: '3', device_type: 'pillbox', tier: 'auto', version: 'v1.3.2', release_date: '2026-07-01', download_url: '', changelog: '新增光电检测校准功能', is_latest: true },
-  { id: '4', device_type: 'pillbox', tier: 'smart', version: 'v1.3.0', release_date: '2026-05-15', download_url: '', changelog: 'TTS语音播报优化', is_latest: false },
-]
+const firmwares = ref<FirmwareRelease[]>([])
+const jobMap = ref<Record<string, OTAJob[]>>({})
+const showJobPanel = ref(false)
+const verifyingId = ref('')
+const creating = ref(false)
+const pushing = ref(false)
+const loading = ref(false)
 
-onMounted(async () => {
-  try {
-    const res = await otaApi.listVersions()
-    versions.value = res.data.data || []
-  } catch {
-    versions.value = mockVersions
-  }
+const selectedFirmware = ref<FirmwareRelease | null>(null)
+const currentJob = ref<OTAJob | null>(null)
+
+/* ---------- Create Form ---------- */
+
+const showCreateDialog = ref(false)
+const createForm = ref<Partial<CreateFirmwareRequest>>({
+  device_type: 'bracelet',
+  tier: 'starter',
+  version: '',
+  url: '',
+  sha256_hash: '',
+  changelog: '',
+  force_update: false,
 })
+
+/* ---------- Push Form ---------- */
+
+const showPushDialog = ref(false)
+const pushForm = ref({ mode: 'all', deviceIdsStr: '' })
+
+/* ---------- Computed ---------- */
+
+const bracelets = computed(() => firmwares.value.filter(f => f.device_type === 'bracelet').length)
+const pillboxes = computed(() => firmwares.value.filter(f => f.device_type === 'pillbox').length)
+const activeJobs = computed(() => Object.values(jobMap.value).flat().filter(j => {
+  const p = j.progress
+  return p.pending > 0 || p.downloading > 0
+}).length)
+
+const progressPct = computed(() => {
+  if (!currentJob.value) return 0
+  const p = currentJob.value.progress
+  return Math.round(((p.succeeded + p.failed) / Math.max(p.total, 1)) * 100)
+})
+
+const progressStatus = computed(() => {
+  if (!currentJob.value) return undefined
+  const p = currentJob.value.progress
+  if (p.failed >= p.total) return 'exception'
+  if (p.succeeded + p.failed >= p.total) return 'success'
+  return undefined
+})
+
+/* ---------- Lifecycle ---------- */
+
+onMounted(() => {
+  loadFirmwares()
+})
+
+async function loadFirmwares() {
+  loading.value = true
+  try {
+    const res = await otaApi.listFirmware()
+    firmwares.value = res.data?.data || []
+  } catch {
+    ElMessage.error('加载固件列表失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+/* ---------- Create ---------- */
+
+async function handleCreateFirmware() {
+  if (!createForm.value.version || !createForm.value.url || !createForm.value.sha256_hash) {
+    ElMessage.warning('请填写必填项')
+    return
+  }
+  creating.value = true
+  try {
+    await otaApi.createFirmware(createForm.value as CreateFirmwareRequest)
+    ElMessage.success('固件版本创建成功')
+    showCreateDialog.value = false
+    await loadFirmwares()
+    createForm.value = {
+      device_type: 'bracelet',
+      tier: 'starter',
+      version: '',
+      url: '',
+      sha256_hash: '',
+      changelog: '',
+      force_update: false,
+    }
+  } catch {
+    ElMessage.error('创建失败')
+  } finally {
+    creating.value = false
+  }
+}
+
+/* ---------- Verify ---------- */
+
+async function handleVerify(row: FirmwareRelease) {
+  verifyingId.value = row.id
+  try {
+    const res = await otaApi.verifyFirmware(row.id)
+    const d = res.data?.data ?? {}
+    ElMessage.success(`验证结果: ${d.status} (valid: ${d.valid})`)
+  } catch {
+    ElMessage.error('验证失败')
+  } finally {
+    verifyingId.value = ''
+  }
+}
+
+/* ---------- Push OTA ---------- */
+
+function handlePush(row: FirmwareRelease) {
+  selectedFirmware.value = row
+  pushForm.value = { mode: 'all', deviceIdsStr: '' }
+  showPushDialog.value = true
+}
+
+async function handlePushOTA() {
+  if (!selectedFirmware.value) return
+  pushing.value = true
+  try {
+    const deviceIds = pushForm.value.mode === 'manual'
+      ? pushForm.value.deviceIdsStr.split('\n').map(s => s.trim()).filter(Boolean)
+      : []
+    const res = await otaApi.pushOTA({ firmware_id: selectedFirmware.value.id, device_ids: deviceIds })
+    const data = res.data?.data ?? {}
+    ElMessage.success(`推送已发起，job_id: ${data.job_id}`)
+    showPushDialog.value = false
+    if (data.job_id) {
+      startPolling(data.job_id)
+    }
+  } catch {
+    ElMessage.error('推送失败')
+  } finally {
+    pushing.value = false
+  }
+}
+
+/* ---------- Job Progress ---------- */
+
+let pollTimer: ReturnType<typeof setInterval> | null = null
+
+function handleShowJobs(firmwareId: string) {
+  selectedFirmware.value = firmwares.value.find(f => f.id === firmwareId) ?? null
+  showJobPanel.value = true
+  const jobs = jobMap.value[firmwareId] ?? []
+  if (jobs.length > 0) {
+    currentJob.value = jobs[jobs.length - 1]
+    startPolling(currentJob.value.id)
+  } else {
+    ElMessage.info('暂无推送记录')
+  }
+}
+
+async function startPolling(jobId: string) {
+  stopPolling()
+  const fetchOne = async () => {
+    try {
+      const res = await otaApi.getOTAJob(jobId)
+      currentJob.value = res.data?.data ?? null
+      if (currentJob.value) {
+        const p = currentJob.value.progress
+        if (p.succeeded + p.failed >= p.total) {
+          stopPolling()
+        }
+      }
+    } catch {
+      // ignore polling errors
+    }
+  }
+  await fetchOne()
+  pollTimer = setInterval(fetchOne, 3000)
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+function cancelJob() {
+  ElMessage.info('取消任务功能开发中...')
+}
+
+function refreshJob() {
+  if (currentJob.value) startPolling(currentJob.value.id)
+}
+
+/* ---------- Helpers ---------- */
+
+function isLatest(fw: FirmwareRelease): boolean {
+  return fw.is_latest ?? false
+}
 
 function deviceTypeLabel(type: string): string {
   return type === 'bracelet' ? '手环' : '药盒'
 }
 
 function tierLabel(tier: string): string {
-  const map: Record<string, string> = { starter: '入门版', plus: '中端版', pro: '高端版', basic: '基础版', smart: '智能版', auto: '自动版' }
+  const map: Record<string, string> = {
+    starter: '入门版', plus: '中端版', pro: '高端版',
+    basic: '基础版', smart: '智能版', auto: '自动版',
+  }
   return map[tier] || tier
 }
 
-// Push upgrade
-const showPushDialog = ref(false)
-const selectedFirmware = ref<FirmwareVersion | null>(null)
-const upgradeForm = ref({ device_type: '', mode: 'all' })
-
-function handlePushUpgrade(row: FirmwareVersion) {
-  selectedFirmware.value = row
-  upgradeForm.value = { device_type: row.device_type, mode: 'all' }
-  showPushDialog.value = true
+function tierClass(tier: string): string {
+  const map: Record<string, string> = { starter: 'tier-basic', plus: 'tier-plus', pro: 'tier-pro' }
+  return map[tier] || 'tier-basic'
 }
 
-async function confirmPushUpgrade() {
-  if (!selectedFirmware.value) return
-  try {
-    await otaApi.pushUpgrade([], selectedFirmware.value.id)
-    ElMessage.success('升级推送成功')
-  } catch {
-    ElMessage.success(`已向 ${upgradeForm.value.device_type === 'bracelet' ? '手环' : '药盒'} 用户推送升级`)
-  }
-  showPushDialog.value = false
-}
-
-// Download
-function handleDownload(_row: FirmwareVersion) {
-  ElMessage.info('下载功能开发中')
-}
-
-// Delete version
-async function handleDeleteVersion(row: FirmwareVersion) {
-  if (row.is_latest) {
-    ElMessage.warning('不能删除最新版本')
-    return
-  }
-  try {
-    await ElMessageBox.confirm(`确定要删除版本 ${row.version} 吗？`, '确认', { type: 'warning' })
-    versions.value = versions.value.filter(v => v.id !== row.id)
-    ElMessage.success('已删除')
-  } catch {
-    // cancelled
-  }
-}
-
-// Upload new version
-const showUploadDialog = ref(false)
-const newVersionForm = ref<Partial<FirmwareVersion>>({ device_type: 'bracelet', tier: 'pro', version: '', changelog: '' })
-
-function handleCreateVersion() {
-  if (!newVersionForm.value.version) {
-    ElMessage.warning('请输入版本号')
-    return
-  }
-  const newVer: FirmwareVersion = {
-    id: Date.now().toString(),
-    device_type: newVersionForm.value.device_type || 'bracelet',
-    tier: newVersionForm.value.tier || 'pro',
-    version: newVersionForm.value.version!,
-    release_date: new Date().toISOString().slice(0, 10),
-    download_url: '',
-    changelog: newVersionForm.value.changelog || '',
-    is_latest: true,
-  }
-  versions.value.unshift(newVer)
-  showUploadDialog.value = false
-  newVersionForm.value = { device_type: 'bracelet', tier: 'pro', version: '', changelog: '' }
-  ElMessage.success('版本上传成功')
+function formatDate(ts: string): string {
+  return new Date(ts).toLocaleString('zh-CN')
 }
 </script>
 
 <style scoped>
-.table-header { display: flex; justify-content: space-between; align-items: center; }
+.ota-page {
+  padding: 0;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.page-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--el-text-color-primary);
+  margin: 0;
+}
+
+/* KPI Cards */
+.kpi-card :deep(.el-card__body) {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-radius: 14px;
+}
+.kpi-value {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.kpi-label {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-top: 6px;
+  font-weight: 600;
+}
+.kpi-blue .kpi-value { color: #2563EB; }
+.kpi-green .kpi-value { color: #16A34A; }
+.kpi-purple .kpi-value { color: #7C3AED; }
+.kpi-warning .kpi-value { color: #F59E0B; }
+
+/* Section title */
+.section-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* Table */
+.table-card :deep(.el-card__header) {
+  padding: 16px 20px;
+}
+.ota-table {
+  width: 100%;
+}
+
+/* Device type badge */
+.device-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-bracelet { background: #DBEAFE; color: #2563EB; }
+.badge-pillbox { background: #FCE7F3; color: #EC4899; }
+
+/* Tier tag */
+.tier-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.tier-pro { background: #EDE9FE; color: #7C3AED; }
+.tier-plus { background: #DBEAFE; color: #2563EB; }
+.tier-basic { background: #F3F4F6; color: #6B7280; }
+
+/* Version tag */
+.version-tag {
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #F3F4F6;
+}
+.version-tag.outdated {
+  background: #FFFBEB;
+  color: #D97706;
+}
+
+.mono {
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 12px;
+}
+
+/* ========== Job Side Panel ========== */
+.side-panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  display: none;
+}
+.side-panel-overlay.show {
+  display: block;
+}
+.side-panel {
+  position: fixed;
+  top: 0;
+  right: -520px;
+  bottom: 0;
+  width: 520px;
+  background: white;
+  z-index: 201;
+  transition: right 0.3s ease;
+  overflow-y: auto;
+  box-shadow: -10px 0 40px rgba(0,0,0,0.1);
+}
+.side-panel.open {
+  right: 0;
+}
+.panel-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--el-border-color-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
+}
+.panel-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+.panel-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: var(--el-fill-color-light);
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.panel-close:hover {
+  background: var(--el-border-color-light);
+}
+.panel-body {
+  padding: 20px 24px;
+}
+.panel-empty {
+  padding: 60px 24px;
+  text-align: center;
+  color: var(--el-text-color-placeholder);
+}
+
+.job-info {
+  margin-bottom: 16px;
+}
+.job-id {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.job-desc :deep(.el-descriptions__label) {
+  width: 100px;
+  font-weight: 600;
+}
+
+.progress-section {
+  margin: 20px 0;
+}
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--el-text-color-regular);
+}
+.progress-pct {
+  font-size: 14px;
+  color: var(--el-color-primary);
+}
+
+.job-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
 </style>

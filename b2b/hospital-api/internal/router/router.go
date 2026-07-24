@@ -14,6 +14,7 @@ func Register(r *gin.Engine, pg *store.Postgres, log *zap.Logger) {
 	instH := handler.NewInstitutionHandler(pg, log)
 	healthH := handler.NewHealthDataHandler(pg, log)
 	linkH := handler.NewLinkHandler(pg, log)
+	alertH := handler.NewAlertHandler(pg, log)
 
 	// Public: institution registration (no auth required)
 	r.POST("/api/v2/b2b/institutions", instH.Create)
@@ -27,6 +28,7 @@ func Register(r *gin.Engine, pg *store.Postgres, log *zap.Logger) {
 		{
 			institutions.GET("", instH.List)
 			institutions.GET("/:id", instH.Get)
+			institutions.PUT("/:id", instH.Update)
 			institutions.POST("/:id/api-keys", instH.CreateAPIKey)
 		}
 
@@ -44,6 +46,12 @@ func Register(r *gin.Engine, pg *store.Postgres, log *zap.Logger) {
 			links.POST("", linkH.Create)
 			links.GET("/institutions/:id", linkH.ListByInstitution)
 			links.GET("/elderly/:id", linkH.ListByElderly)
+		}
+
+		// Alert forwarding
+		alerts := b2b.Group("/alerts")
+		{
+			alerts.POST("/forward", alertH.Forward)
 		}
 	}
 }

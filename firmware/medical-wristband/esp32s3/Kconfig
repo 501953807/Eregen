@@ -1,0 +1,49 @@
+menuconfig "Eregen Medical Wristband Configuration"
+
+menu "BLE Settings"
+    config EREGEN_BLE_DEVICE_NAME
+        string "BLE device name"
+        default "Eregen-WB"
+        help
+            Name advertised over BLE during pairing and connection.
+
+    config EREGEN_BLE_SECURITY_LEVEL
+        int "BLE security level (1=none, 2=LE Security Mode 1, 3=LE Security Mode 2)"
+        default 3
+        help
+            Security level for BLE GATT connections. Level 3 enables encrypted links.
+
+    config EREGEN_BLE_PAIRING_CODE
+        string "Default BLE pairing code"
+        default ""
+        help
+            Hardcoded pairing code for development. Leave empty to use runtime-generated codes.
+endmenu
+
+menu "Firmware"
+    config EREGEN_FIRMWARE_VERSION
+        string "Firmware version string"
+        default "0.1.0-dev"
+        help
+            Semantic version displayed during pairing and status queries.
+
+    config EREGEN_FIRMWARE_BUILD_HASH
+        string "Build hash"
+        default "unknown"
+        help
+            Short git commit hash or build identifier.
+endmenu
+
+menu "OTA"
+    config EREGEN_OTA_ENABLED
+        bool "Enable OTA updates"
+        default y
+        help
+            Allow firmware updates over BLE from nurse devices.
+
+    config EREGEN_OTA_MAX_SIZE_KB
+        int "Maximum OTA payload size in KB"
+        default 256
+        help
+            Maximum chunk size for OTA firmware transfer.
+endmenu

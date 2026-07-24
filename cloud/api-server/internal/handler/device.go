@@ -314,3 +314,199 @@ func (h *DeviceHandler) HandleLocation(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "Location saved"})
 }
+
+// AdminListDevices returns all devices (admin endpoint).
+func (h *DeviceHandler) AdminList(c *gin.Context) {
+	deviceType := c.Query("type")
+	tier := c.Query("tier")
+	status := c.Query("status")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	devices, total, err := h.store.AdminDeviceList(c.Request.Context(), deviceType, tier, status, page, pageSize)
+	if err != nil {
+		h.log.Error("admin list devices", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "QUERY_FAILED", "message": "Failed to list devices"})
+		return
+	}
+
+	// Enrich with online status from Redis
+	for i := range devices {
+		online, _ := h.redis.IsDeviceOnline(c.Request.Context(), devices[i].DeviceID)
+		if online {
+			devices[i].Status = model.DeviceOnline
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": gin.H{
+		"devices":   devices,
+		"total":     total,
+		"page":      page,
+		"page_size": pageSize,
+	}})
+}
+
+// AdminGetDevice returns a single device by device_id (admin endpoint).
+func (h *DeviceHandler) AdminGetDevice(c *gin.Context) {
+	deviceID := c.Param("id")
+	device, err := h.store.GetDevice(c.Request.Context(), deviceID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "Device not found"})
+		return
+	}
+
+	online, _ := h.redis.IsDeviceOnline(c.Request.Context(), deviceID)
+	if online {
+		device.Status = model.DeviceOnline
+	}
+
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": device})
+}
+
+// AdminUpdateDeviceSettings updates device settings via admin endpoint.
+func (h *DeviceHandler) AdminUpdateSettings(c *gin.Context) {
+	deviceID := c.Param("id")
+	var req model.DeviceSettingsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_REQUEST", "message": "Invalid request body"})
+		return
+	}
+
+	if err := h.store.UpdateDeviceSettings(c.Request.Context(), deviceID, req.Settings); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "UPDATE_FAILED", "message": "Failed to update device settings"})
+		return
+	}
+
+	// Push settings to device via NATS JetStream
+	cmd := map[string]any{
+		"type":     "config",
+		"settings": req.Settings,
+	}
+	if err := h.nats.PublishCommand(c.Request.Context(), deviceID, cmd); err != nil {
+		h.log.Warn("push device settings via NATS", zap.Error(err))
+	}
+
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "Device settings updated and pushed"})
+}
+
+// AdminDeleteDevice deletes/unbinds a device (admin endpoint).
+func (h *DeviceHandler) AdminDeleteDevice(c *gin.Context) {
+	deviceID := c.Param("id")
+	if err := h.store.AdminDeleteDevice(c.Request.Context(), deviceID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "Device not found"})
+		return
+	}
+
+	h.redis.InvalidateDevice(c.Request.Context(), deviceID)
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "Device unbound"})
+}
+
+// AdminOTAPush triggers an OTA push for a specific device (admin endpoint).
+func (h *DeviceHandler) AdminOTAPush(c *gin.Context) {
+	deviceID := c.Param("id")
+	var req struct {
+		FirmwareID string `json:"firmware_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_REQUEST", "message": "firmware_id required"})
+		return
+	}
+
+	otaSvc := service.NewOTAService(h.store, h.nats, h.log)
+
+	// Get firmware release
+	release, err := otaSvc.GetFirmwareRelease(c.Request.Context(), req.FirmwareID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "Firmware release not found"})
+		return
+	}
+
+	// Create job targeting single device
+	job, err := otaSvc.CreateOTAJob(c.Request.Context(), req.FirmwareID, []string{deviceID})
+	if err != nil {
+		h.log.Error("create OTA job", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "INTERNAL_ERROR", "message": "Failed to create OTA job"})
+		return
+	}
+
+	go func() {
+		ctx := c.Request.Context()
+		if err := otaSvc.PushToDevices(ctx, job, release); err != nil {
+			h.log.Error("push OTA devices", zap.Error(err))
+		}
+	}()
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":    "OK",
+		"message": "OTA push initiated",
+		"data": gin.H{
+			"job_id":           job.ID,
+			"target_count":     1,
+			"firmware_version": release.Version,
+		},
+	})
+}
+
+// AdminBatchOTAPush triggers OTA to multiple devices (admin endpoint).
+func (h *DeviceHandler) AdminBatchOTAPush(c *gin.Context) {
+	var req struct {
+		FirmwareID string   `json:"firmware_id" binding:"required"`
+		DeviceIDs  []string `json:"device_ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_REQUEST", "message": "firmware_id required"})
+		return
+	}
+
+	otaSvc := service.NewOTAService(h.store, h.nats, h.log)
+
+	release, err := otaSvc.GetFirmwareRelease(c.Request.Context(), req.FirmwareID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "Firmware release not found"})
+		return
+	}
+
+	deviceIDs := req.DeviceIDs
+	if len(deviceIDs) == 0 {
+		// Match all devices of same type/tier
+		devices, _ := otaSvc.GetMatchingDevices(c.Request.Context(), release.DeviceType, release.Tier)
+		for _, d := range devices {
+			deviceIDs = append(deviceIDs, d.DeviceID)
+		}
+	}
+
+	if len(deviceIDs) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "NO_TARGET_DEVICES", "message": "No matching devices found"})
+		return
+	}
+
+	job, err := otaSvc.CreateOTAJob(c.Request.Context(), req.FirmwareID, deviceIDs)
+	if err != nil {
+		h.log.Error("create OTA job", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "INTERNAL_ERROR", "message": "Failed to create OTA job"})
+		return
+	}
+
+	go func() {
+		ctx := c.Request.Context()
+		if err := otaSvc.PushToDevices(ctx, job, release); err != nil {
+			h.log.Error("push OTA devices", zap.Error(err))
+		}
+	}()
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":    "OK",
+		"message": "OTA push initiated",
+		"data": gin.H{
+			"job_id":           job.ID,
+			"target_count":     len(deviceIDs),
+			"firmware_version": release.Version,
+		},
+	})
+}

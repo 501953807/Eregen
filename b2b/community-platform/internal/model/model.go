@@ -50,7 +50,7 @@ type EventRegistration struct {
 // HealthCheckRecord stores results from community health checks.
 type HealthCheckRecord struct {
 	ID          string      `json:"id"`
-	ElderlyID   string      `json:"elderly_elderly_id"`
+	ElderlyID   string      `json:"elderly_id"`
 	CheckDate   time.Time   `json:"check_date"`
 	BP_Systolic *float64    `json:"bp_systolic,omitempty"`
 	BP_Diastolic *float64  `json:"bp_diastolic,omitempty"`

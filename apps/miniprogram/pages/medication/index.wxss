@@ -120,13 +120,13 @@
 .tl-status.missed { color: #FF6B6B; }
 .tl-status.pending { color: #FFA726; }
 .btn-take {
-  background: #4A90D9 !important;
+  background: #E8734A !important;
   color: #fff !important;
   font-size: 22rpx !important;
   padding: 0 20rpx !important;
   height: 44rpx !important;
   line-height: 44rpx !important;
-  border-radius: 8rpx !important;
+  border-radius: 10rpx !important;
 }
 .loading-wrap {
   display: flex;
@@ -138,7 +138,7 @@
   width: 48rpx;
   height: 48rpx;
   border: 4rpx solid #f0f0f0;
-  border-top-color: #4A90D9;
+  border-top-color: #E8734A;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

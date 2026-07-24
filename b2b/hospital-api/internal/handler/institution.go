@@ -67,6 +67,24 @@ func (h *InstitutionHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": inst})
 }
 
+// PUT /api/v2/b2b/institutions/:id — update institution
+func (h *InstitutionHandler) Update(c *gin.Context) {
+	id := c.Param("id")
+	var req model.Institution
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	if err := h.store.UpdateInstitution(c.Request.Context(), id, &req); err != nil {
+		h.log.Error("update institution", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update institution"})
+		return
+	}
+	req.ID = id
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": req})
+}
+
 // POST /api/v2/b2b/institutions/:id/api-keys — generate API key for institution
 func (h *InstitutionHandler) CreateAPIKey(c *gin.Context) {
 	instID := c.Param("id")

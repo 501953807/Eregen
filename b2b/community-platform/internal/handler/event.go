@@ -64,6 +64,25 @@ func (h *EventHandler) Register(c *gin.Context) {
 		return
 	}
 
+	// Check capacity
+	count, err := h.store.ActiveRegistrationsCount(c.Request.Context(), eventID)
+	if err != nil {
+		h.log.Error("check capacity", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check capacity"})
+		return
+	}
+
+	event, err := h.store.GetEventByID(c.Request.Context(), eventID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "event not found"})
+		return
+	}
+
+	if count >= event.MaxParticipants {
+		c.JSON(http.StatusConflict, gin.H{"error": "event is full"})
+		return
+	}
+
 	reg := &model.EventRegistration{
 		EventID:     eventID,
 		ElderlyID:   req.ElderlyID,
@@ -79,6 +98,26 @@ func (h *EventHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": reg})
 }
 
+// POST /api/v2/b2b/events/:id/cancel-register — cancel registration
+func (h *EventHandler) CancelRegister(c *gin.Context) {
+	eventID := c.Param("id")
+	var req struct {
+		ElderlyID string `json:"elderly_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	if err := h.store.CancelEventRegistration(c.Request.Context(), eventID, req.ElderlyID); err != nil {
+		h.log.Error("cancel registration", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to cancel registration"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "Registration cancelled"})
+}
+
 // GET /api/v2/b2b/events/:id/registrations — get registrations for an event
 func (h *EventHandler) GetRegistrations(c *gin.Context) {
 	eventID := c.Param("id")
@@ -89,4 +128,26 @@ func (h *EventHandler) GetRegistrations(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": regs})
+}
+
+// GET /api/v2/b2b/events/:id — get one event
+func (h *EventHandler) GetByID(c *gin.Context) {
+	id := c.Param("id")
+ evt, err := h.store.GetEventByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "event not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": evt})
+}
+
+// DELETE /api/v2/b2b/events/:id — delete an event
+func (h *EventHandler) Delete(c *gin.Context) {
+	id := c.Param("id")
+	if err := h.store.DeleteEvent(c.Request.Context(), id); err != nil {
+		h.log.Error("delete event", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete event"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "Event deleted"})
 }

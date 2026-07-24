@@ -11,11 +11,11 @@ import (
 
 // SettingsHandler serves system settings endpoints.
 type SettingsHandler struct {
-	store *store.PostgresStore
+	store store.Store
 }
 
 // NewSettingsHandler creates a new SettingsHandler.
-func NewSettingsHandler(s *store.PostgresStore) *SettingsHandler {
+func NewSettingsHandler(s store.Store) *SettingsHandler {
 	return &SettingsHandler{store: s}
 }
 

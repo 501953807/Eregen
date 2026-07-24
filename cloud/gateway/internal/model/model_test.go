@@ -14,6 +14,13 @@ func TestUpstreamMessageTypeConstants(t *testing.T) {
 		{"sos", TypeSOS, "sos"},
 		{"fall", TypeFall, "fall"},
 		{"med_status", TypeMedStatus, "med_status"},
+		{"patient_register", TypePatientRegister, "patient_register"},
+		{"verification_scan", TypeVerificationScan, "verification_scan"},
+		{"device_status", TypeDeviceStatus, "device_status"},
+		{"alert_tag", TypeAlertTag, "alert_tag"},
+		{"community_signin", TypeCommunitySignin, "community_signin"},
+		{"community_welfare_update", TypeCommunityWelfareUpdate, "community_welfare_update"},
+		{"community_dispense", TypeCommunityDispense, "community_dispense"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

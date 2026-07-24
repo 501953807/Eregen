@@ -79,6 +79,7 @@ set(PRO_SOURCES
     ecg_driver.c
     display_amoled.c
     gps_gnss.c
+    power_optimizer.c
 
     # FreeRTOS task management
     free_rtos_tasks.c

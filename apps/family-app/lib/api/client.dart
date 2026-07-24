@@ -99,4 +99,22 @@ class ApiClient {
     _token = null;
     await _saveToken(null);
   }
+
+  // --- OTA / Firmware --------------------------------------------------------
+
+  /// GET /admin/firmware?device_type=&tier=
+  Future<Response> listFirmware({String? deviceType, String? tier}) async {
+    return _dio.get('/admin/firmware', queryParameters: {
+      if (deviceType != null) 'device_type': deviceType,
+      if (tier != null) 'tier': tier,
+    });
+  }
+
+  /// POST /admin/ota/push — body: {firmware_id, device_ids?: []}
+  Future<Response> pushOTA({required String firmwareId, List<String>? deviceIds}) async {
+    return _dio.post('/admin/ota/push', data: {
+      'firmware_id': firmwareId,
+      if (deviceIds != null && deviceIds.isNotEmpty) 'device_ids': deviceIds,
+    });
+  }
 }

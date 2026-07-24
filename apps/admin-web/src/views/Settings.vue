@@ -6,23 +6,23 @@
         <el-form :model="notifSettings" label-width="160px" style="max-width: 600px;">
           <el-form-item label="SOS推送">
             <el-switch v-model="notifSettings.sos_push" />
-            <span style="margin-left: 12px; color: #909399; font-size: 13px;">开启后家属APP将实时收到SOS告警推送</span>
+            <span style="margin-left: 12px; color: var(--el-text-color-secondary); font-size: 13px;">开启后家属APP将实时收到SOS告警推送</span>
           </el-form-item>
           <el-form-item label="跌倒检测告警">
             <el-switch v-model="notifSettings.fall_alerts" />
-            <span style="margin-left: 12px; color: #909399; font-size: 13px;">检测到跌倒时自动发送告警通知</span>
+            <span style="margin-left: 12px; color: var(--el-text-color-secondary); font-size: 13px;">检测到跌倒时自动发送告警通知</span>
           </el-form-item>
           <el-form-item label="用药提醒推送">
             <el-switch v-model="notifSettings.medication_reminders" />
-            <span style="margin-left: 12px; color: #909399; font-size: 13px;">用药时间到达时向老人设备发送语音播报</span>
+            <span style="margin-left: 12px; color: var(--el-text-color-secondary); font-size: 13px;">用药时间到达时向老人设备发送语音播报</span>
           </el-form-item>
           <el-form-item label="电子围栏告警">
             <el-switch v-model="notifSettings.geofence_alerts" />
-            <span style="margin-left: 12px; color: #909399; font-size: 13px;">老人离开设定区域时发送告警</span>
+            <span style="margin-left: 12px; color: var(--el-text-color-secondary); font-size: 13px;">老人离开设定区域时发送告警</span>
           </el-form-item>
           <el-form-item label="健康异常告警">
             <el-switch v-model="notifSettings.health_alerts" />
-            <span style="margin-left: 12px; color: #909399; font-size: 13px;">心率/血氧等指标异常时触发告警</span>
+            <span style="margin-left: 12px; color: var(--el-text-color-secondary); font-size: 13px;">心率/血氧等指标异常时触发告警</span>
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="saveNotificationSettings">保存设置</el-button>
@@ -40,7 +40,7 @@
           <el-table-column prop="name" label="名称" width="150" />
           <el-table-column prop="key_prefix" label="密钥前缀" width="180">
             <template #default="{ row }">
-              {{ row.key_prefix }}{{ '•'.repeat(24) }}
+              <span class="mono">{{ row.key_prefix }}{{ '•'.repeat(24) }}</span>
             </template>
           </el-table-column>
           <el-table-column prop="created_at" label="创建时间" width="180">
@@ -50,7 +50,10 @@
           </el-table-column>
           <el-table-column label="状态" width="100">
             <template #default="{ row }">
-              <el-tag :type="row.active ? 'success' : 'info'" size="small">{{ row.active ? '启用' : '禁用' }}</el-tag>
+              <span class="status-badge" :class="row.active ? 'badge-success' : 'badge-gray'">
+                <span class="status-dot" :class="row.active ? 'dot-success' : 'dot-gray'"></span>
+                {{ row.active ? '启用' : '禁用' }}
+              </span>
             </template>
           </el-table-column>
           <el-table-column label="操作" width="160">
@@ -87,7 +90,7 @@
           <el-input v-model="newKeyForm.name" placeholder="如：第三方对接密钥" />
         </el-form-item>
         <el-form-item label="过期时间">
-          <el-date-picker v-model="newKeyForm.expires_at" type="date" placeholder="选择过期日期" value-format="YYYY-MM-DD" />
+          <el-date-picker v-model="newKeyForm.expires_at" type="date" placeholder="选择过期日期" value-format="YYYY-MM-DD" style="width: 100%;" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -213,5 +216,39 @@ onMounted(loadNotificationSettings)
 </script>
 
 <style scoped>
-.settings-page { padding: 0; }
+.settings-page {
+  padding: 0;
+}
+
+.mono {
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 12px;
+}
+
+/* Status badges with dots */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-success { background: #F0FDF4; color: #16A34A; }
+.badge-danger { background: #FEF2F2; color: #DC2626; }
+.badge-warning { background: #FFFBEB; color: #D97706; }
+.badge-primary { background: #EFF6FF; color: #2563EB; }
+.badge-gray { background: #F3F4F6; color: #6B7280; }
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot-success { background: #16A34A; }
+.dot-danger { background: #DC2626; }
+.dot-warning { background: #D97706; }
+.dot-primary { background: #2563EB; }
+.dot-gray { background: #6B7280; }
 </style>

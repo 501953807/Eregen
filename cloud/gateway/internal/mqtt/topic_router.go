@@ -31,6 +31,8 @@ func (r *TopicRouter) Start() error {
 	topics := []string{
 		"eregen/device/bracelet/+/up",
 		"eregen/device/pillbox/+/up",
+		"eregen/medical/wb/+/up",
+		"eregen/community/wb/+/up",
 	}
 
 	for _, topic := range topics {

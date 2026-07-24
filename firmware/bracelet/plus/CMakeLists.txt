@@ -39,7 +39,6 @@ set(GD32_SOURCES
 
 # Application sources - entry tier base files
 set(BASE_SOURCES
-    ../entry/main.c
     ../entry/board_init.c
     ../entry/sensors_ppg.c
     ../entry/sensors_imu.c
@@ -50,8 +49,6 @@ set(BASE_SOURCES
     ../entry/sos_button.c
     ../entry/free_rtos_tasks.c
     ../entry/location/gps_manager.c
-    ../entry/location/geofence.c
-    ../entry/algorithms/fall_detect.c
     ../entry/algorithms/sliding_window.c
     ../entry/common/crc16.c
     ../entry/common/ring_buffer.c

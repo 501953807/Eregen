@@ -79,6 +79,17 @@ func (h *ExportHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": export, "report": string(exportJSON)})
 }
 
+// GET /api/v2/b2b/exports/:id — get export status
+func (h *ExportHandler) GetByID(c *gin.Context) {
+	id := c.Param("id")
+	export, err := h.store.GetExportByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "export not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": export})
+}
+
 func generateHealthReport(elderlyID string, periodStart, periodEnd time.Time, exportType string) map[string]interface{} {
 	return map[string]interface{}{
 		"elderly_id":     elderlyID,

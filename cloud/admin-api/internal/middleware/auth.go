@@ -61,7 +61,7 @@ func (j *AdminJWT) AuthMiddleware() gin.HandlerFunc {
 }
 
 func (j *AdminJWT) RequireAdminRole(minRole string) gin.HandlerFunc {
-	roleOrder := map[string]int{"viewer": 1, "operator": 2, "super_admin": 3}
+	roleOrder := map[string]int{"viewer": 1, "operator": 2, "super_admin": 3, "nurse": 2, "regulator": 3}
 	minLevel := roleOrder[minRole]
 
 	return func(c *gin.Context) {

@@ -1,3 +1,7 @@
+const app = getApp()
+const API_BASE = 'https://api.eregen.com/api/v1'
+const { listFirmware } = require('../../utils/api')
+
 Page({
   data: {
     serialNumber: '',
@@ -10,6 +14,9 @@ Page({
       { id: '2', name: '王建国（爷爷）' },
     ],
     boundDevices: [],
+    // Firmware version check
+    _checkingVersions: false,
+    _firmwareVersions: {}, // device_id -> { latestVersion, hasUpdate, firmwareId }
   },
 
   onSerialInput(e) {
@@ -21,6 +28,7 @@ Page({
     if (devices) {
       this.setData({ boundDevices: devices })
     }
+    this._checkFirmwareVersions()
   },
 
   onTypeChange(e) {
@@ -57,7 +65,8 @@ Page({
         id: String(Date.now()),
         name: `颐贞${type}`,
         type: deviceType,
-        model: deviceType === 'bracelet' ? 'GD32E230 标准版' : 'ESP32-C3 智能版',
+        tier: 'starter',
+        fwVersion: '0.1',
         serialNumber: sn,
         boundAt: new Date().toLocaleString('zh-CN'),
         online: false,
@@ -72,6 +81,8 @@ Page({
 
       wx.setStorageSync('boundDevices', devices)
       wx.showToast({ title: '绑定成功', icon: 'success' })
+      // Check firmware for newly bound device
+      this._checkFirmwareVersions()
     }, 1500)
   },
 
@@ -85,10 +96,101 @@ Page({
       success: (res) => {
         if (res.confirm) {
           const devices = this.data.boundDevices.filter(d => d.id !== id)
-          this.setData({ boundDevices: devices })
+          this.setData({
+            boundDevices: devices,
+            [`_firmwareVersions.${id}`]: undefined,
+          })
           wx.setStorageSync('boundDevices', devices)
           wx.showToast({ title: '已解绑', icon: 'success' })
         }
+      },
+    })
+  },
+
+  /**
+   * Check firmware versions for all bound devices.
+   */
+  _checkFirmwareVersions() {
+    const devices = this.data.boundDevices
+    if (!devices || devices.length === 0) return
+
+    this.setData({ _checkingVersions: true })
+
+    // Collect unique device_type+tier combos to query
+    const combos = []
+    for (const dev of devices) {
+      const key = `${dev.type}__${dev.tier || 'starter'}`
+      if (!combos.includes(key)) {
+        combos.push({ key, type: dev.type, tier: dev.tier || 'starter' })
+      }
+    }
+
+    Promise.all(
+      combos.map(c => listFirmware(c.type, c.tier).then(items => ({ ...c, items })))
+    ).then(results => {
+      const versions = {}
+      for (const r of results) {
+        const latest = r.items && r.items.length > 0 ? r.items[0] : null
+        for (const dev of devices) {
+          if (dev.type === r.type && (dev.tier || 'starter') === r.tier) {
+            const currentVer = dev.fwVersion || 'v0.1'
+            const latestVer = latest ? latest.version : null
+            versions[dev.id] = {
+              latestVersion: latestVer,
+              hasUpdate: latestVer && this._isNewer(latestVer, currentVer),
+              firmwareId: latest ? latest.id : '',
+              deviceId: dev.id,
+            }
+          }
+        }
+      }
+      this.setData({
+        _firmwareVersions: versions,
+        _checkingVersions: false,
+      })
+    }).catch(() => {
+      this.setData({ _checkingVersions: false })
+    })
+  },
+
+  /**
+   * Simple semver-like comparison: is newer > current?
+   */
+  _isNewer(newer, current) {
+    const parse = v => (v || '').replace(/^v/, '').split('.').map(Number)
+    const a = parse(newer), b = parse(current)
+    for (let i = 0; i < 3; i++) {
+      if ((a[i] || 0) > (b[i] || 0)) return true
+      if ((a[i] || 0) < (b[i] || 0)) return false
+    }
+    return false
+  },
+
+  /**
+   * Trigger OTA push for a specific device.
+   */
+  _handlePushOTA(e) {
+    const { deviceId, firmwareId } = e.currentTarget.dataset
+    const ver = this.data._firmwareVersions[deviceId]
+    if (!ver || !ver.hasUpdate) return
+
+    wx.showModal({
+      title: '推送OTA升级',
+      content: `即将升级到 ${ver.latestVersion}，确定继续？`,
+      success: (res) => {
+        if (!res.confirm) return
+        wx.showToast({ title: '推送中...', icon: 'loading' })
+        // Note: pushOTA requires importing from api.js
+        const { pushOTA: push } = require('../../utils/api')
+        push(firmwareId, [deviceId])
+          .then(() => {
+            wx.hideLoading()
+            wx.showToast({ title: '推送成功', icon: 'success' })
+          })
+          .catch(() => {
+            wx.hideLoading()
+            wx.showToast({ title: '推送失败', icon: 'none' })
+          })
       },
     })
   },

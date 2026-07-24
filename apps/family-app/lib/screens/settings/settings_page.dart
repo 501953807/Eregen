@@ -18,6 +18,18 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _autoRefresh = true;
   String _selectedElderly = '李秀英 奶奶';
 
+  // Firmware version check
+  List<Map<String, dynamic>> _devices = [];
+  Map<String, String?> _latestVersions = {}; // device_id -> latest version
+  bool _checkingFirmware = false;
+  String? _otaJobId;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFirmwareVersions();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -128,6 +140,16 @@ class _SettingsPageState extends State<SettingsPage> {
                     subtitle: '已绑定 2 台设备',
                     onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => BindDevicePage(onBound: () {}))),
                   ),
+                  const Divider(height: 1),
+                  _SettingsRow(
+                    icon: Icons.system_update,
+                    title: '固件版本',
+                    subtitle: _checkingFirmware ? '检查中...' : (_latestVersions.isEmpty ? '未绑定设备' : '已是最新'),
+                    trailing: _checkingFirmware
+                        ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC)),
+                    onTap: _checkingFirmware ? null : () => _checkFirmwareVersions(),
+                  ),
                 ],
               ),
             ),
@@ -190,6 +212,46 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _checkFirmwareVersions() async {
+    setState(() => _checkingFirmware = true);
+    try {
+      // Fetch bound devices
+      final devicesResp = await ApiClient.instance.get('/devices');
+      final devicesList = (devicesResp.data as List)?.map((d) => {
+        'id': d['device_id'] as String? ?? '',
+        'type': d['device_type'] as String? ?? '',
+        'tier': d['tier'] as String? ?? '',
+        'fw_version': d['fw_version'] as String? ?? '',
+      }).toList() ?? [];
+      setState(() => _devices = devicesList);
+
+      // Check latest firmware for each device type+tier combo
+      final versions = <String, String?>{};
+      for (final dev in devicesList) {
+        final key = '${dev['type']}/${dev['tier']}';
+        if (versions.containsKey(key)) continue;
+        try {
+          final fwResp = await ApiClient.instance.listFirmware(
+            deviceType: dev['type'] as String?,
+            tier: dev['tier'] as String?,
+          );
+          final items = (fwResp.data as Map<String, dynamic>)['data'] as List?;
+          if (items != null && items.isNotEmpty) {
+            versions[key] = items.first['version'] as String?;
+          }
+        } catch (_) {
+          // skip
+        }
+      }
+      setState(() {
+        _latestVersions = versions;
+        _checkingFirmware = false;
+      });
+    } catch (_) {
+      setState(() => _checkingFirmware = false);
+    }
   }
 
   void _showLogoutDialog(BuildContext context) {

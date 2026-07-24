@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"eregen.dev/b2b-insurance-integration/internal/model"
 	"eregen.dev/b2b-insurance-integration/internal/store"
@@ -66,6 +67,22 @@ func (h *ClaimHandler) UpdateStatus(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "Claim status updated"})
+}
+
+// GET /api/v2/b2b/claims — list claims with optional status filter
+func (h *ClaimHandler) List(c *gin.Context) {
+	status := model.ClaimStatus(c.Query("status"))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	list, total, err := h.store.ListClaims(c.Request.Context(), status, page, pageSize)
+	if err != nil {
+		h.log.Error("list claims", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list claims"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": list, "total": total, "page": page})
 }
 
 // GET /api/v2/b2b/claims/elderly/:elderly_id — get all claims for an elderly person

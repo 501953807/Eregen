@@ -14,8 +14,8 @@ class RecentAlertsList extends StatelessWidget {
     ];
 
     final borderColors = {
-      'critical': const Color(0xFFFF6B6B),
-      'warning': const Color(0xFFFFA726),
+      'critical': AppTheme.statusDanger,
+      'warning': AppTheme.statusWarning,
       'info': AppTheme.primary,
     };
 

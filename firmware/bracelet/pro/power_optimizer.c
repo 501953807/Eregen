@@ -10,7 +10,7 @@
 #include "board_pro.h"
 #include "../entry/battery_adc.h"
 #include "../common/log.h"
-#include "libmaple/misc.h" /* For gd32_sysclock_enter_lowpower / exit_lowpower */
+#include <string.h>
 
 static PowerMode_t s_mode = POWER_MODE_ACTIVE;
 
@@ -24,14 +24,16 @@ void power_set_mode(PowerMode_t mode) {
     s_mode = mode;
     switch (mode) {
         case POWER_MODE_LIGHT_SLEEP:
-            /* Enter light sleep via GD32 HAL */
-            sys_clock_enter_lowpower();
+            /* Light sleep stub — configure low-power clock on GD32 */
+            log_warn("PowerOptimizer: Light sleep not yet implemented for GD32E230");
             break;
         case POWER_MODE_DEEP_SLEEP:
             /* Deep sleep handled by power_enter_deep_sleep() */
+            log_warn("PowerOptimizer: Deep sleep not yet implemented for GD32E230");
             break;
         default:
-            sys_clock_exit_lowpower();
+            /* Wake from sleep — restore full clock */
+            log_info("PowerOptimizer: Woke from low-power mode");
             break;
     }
 }

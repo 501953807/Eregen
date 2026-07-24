@@ -199,3 +199,100 @@ func (s *Postgres) GetCarePlansForElderly(ctx context.Context, elderlyID string)
 	}
 	return plans, nil
 }
+
+// ---------- Event CRUD ----------
+
+func (s *Postgres) GetEventByID(ctx context.Context, id string) (*model.CommunityEvent, error) {
+	e := &model.CommunityEvent{}
+	q := `SELECT id, name, description, service_type, location, start_time, end_time,
+		   max_participants, status, created_at FROM b2b_events WHERE id = $1`
+	err := s.pool.QueryRow(ctx, q, id).Scan(
+		&e.ID, &e.Name, &e.Description, &e.ServiceType, &e.Location,
+		&e.StartTime, &e.EndTime, &e.MaxParticipants, &e.Status, &e.CreatedAt,
+	)
+	return e, err
+}
+
+func (s *Postgres) DeleteEvent(ctx context.Context, id string) error {
+	_, err := s.pool.Exec(ctx, `DELETE FROM b2b_events WHERE id = $1`, id)
+	return err
+}
+
+func (s *Postgres) CancelEventRegistration(ctx context.Context, eventID, elderlyID string) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE b2b_event_registrations SET status = 'cancelled' WHERE event_id = $1 AND elderly_id = $2 AND status = 'confirmed'`,
+		eventID, elderlyID,
+	)
+	return err
+}
+
+func (s *Postgres) ActiveRegistrationsCount(ctx context.Context, eventID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM b2b_event_registrations WHERE event_id = $1 AND status = 'confirmed'`,
+		eventID,
+	).Scan(&count)
+	return count, err
+}
+
+// ---------- Care Plan CRUD ----------
+
+func (s *Postgres) GetCarePlanByID(ctx context.Context, id string) (*model.CarePlan, error) {
+	p := &model.CarePlan{}
+	q := `SELECT id, elderly_id, title, description, tasks, assigned_to, status, start_date, end_date, created_at
+		   FROM b2b_care_plans WHERE id = $1`
+	var data []byte
+	err := s.pool.QueryRow(ctx, q, id).Scan(
+		&p.ID, &p.ElderlyID, &p.Title, &p.Description, &data,
+		&p.AssignedTo, &p.Status, &p.StartDate, &p.EndDate, &p.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	json.Unmarshal(data, &p.Tasks)
+	return p, nil
+}
+
+func (s *Postgres) UpdateCarePlan(ctx context.Context, id string, plan *model.CarePlan) error {
+	plan.CreatedAt = time.Now() // reuse CreatedAt as UpdatedAt placeholder
+	tasksData, _ := json.Marshal(plan.Tasks)
+	_, err := s.pool.Exec(ctx,
+		`UPDATE b2b_care_plans SET title=$1, description=$2, tasks=$3, status=$4, start_date=$5, end_date=$6, created_at=$7 WHERE id=$8`,
+		plan.Title, plan.Description, tasksData, plan.Status, plan.StartDate, plan.EndDate, plan.CreatedAt, id,
+	)
+	return err
+}
+
+func (s *Postgres) DeleteCarePlan(ctx context.Context, id string) error {
+	_, err := s.pool.Exec(ctx, `DELETE FROM b2b_care_plans WHERE id = $1`, id)
+	return err
+}
+
+// ---------- Health Check CRUD ----------
+
+func (s *Postgres) GetHealthCheckByID(ctx context.Context, id string) (*model.HealthCheckRecord, error) {
+	r := &model.HealthCheckRecord{}
+	q := `SELECT id, elderly_id, check_date, bp_systolic, bp_diastolic, hr, spo2,
+		   weight, height, glucose, notes, checked_by FROM b2b_health_checks WHERE id = $1`
+	err := s.pool.QueryRow(ctx, q, id).Scan(
+		&r.ID, &r.ElderlyID, &r.CheckDate,
+		&r.BP_Systolic, &r.BP_Diastolic, &r.HR, &r.SPO2,
+		&r.Weight, &r.Height, &r.Glucose, &r.Notes, &r.CheckedBy,
+	)
+	return r, err
+}
+
+func (s *Postgres) UpdateHealthCheck(ctx context.Context, id string, record *model.HealthCheckRecord) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE b2b_health_checks SET check_date=$1, bp_systolic=$2, bp_diastolic=$3, hr=$4, spo2=$5,
+		   weight=$6, height=$7, glucose=$8, notes=$9, checked_by=$10 WHERE id=$11`,
+		record.CheckDate, record.BP_Systolic, record.BP_Diastolic, record.HR, record.SPO2,
+		record.Weight, record.Height, record.Glucose, record.Notes, record.CheckedBy, id,
+	)
+	return err
+}
+
+func (s *Postgres) DeleteHealthCheck(ctx context.Context, id string) error {
+	_, err := s.pool.Exec(ctx, `DELETE FROM b2b_health_checks WHERE id = $1`, id)
+	return err
+}

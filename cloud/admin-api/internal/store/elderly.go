@@ -6,86 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"eregen.dev/admin-api/internal/model"
 )
 
-// ElderlySummary is a lightweight row for the elderly list view.
-type ElderlySummary struct {
-	ID          string     `json:"id"`
-	Name        string     `json:"name"`
-	UserID      string     `json:"user_id"`
-	AvatarURL   string     `json:"avatar_url,omitempty"`
-	BirthDate   *time.Time `json:"birth_date,omitempty"`
-	HealthTiers []string   `json:"health_tiers"`
-	CreatedAt   string     `json:"created_at"`
-	UpdatedAt   string     `json:"updated_at"`
-}
-
-// HealthStats aggregates recent health metrics for an elderly person.
-type HealthStats struct {
-	ElderlyID string    `json:"elderly_id"`
-	AvgHR     *float64  `json:"avg_hr,omitempty"`
-	MaxHR     *int      `json:"max_hr,omitempty"`
-	AvgSpO2   *float64  `json:"avg_spo2,omitempty"`
-	TotalSteps *int64   `json:"total_steps,omitempty"`
-	LastSeen  time.Time `json:"last_seen"`
-}
-
-// HealthRecordRow represents a single health record from the database.
-type HealthRecordRow struct {
-	ID        string    `json:"id"`
-	ElderlyID string    `json:"elderly_id"`
-	Timestamp time.Time `json:"timestamp"`
-	HR        *int      `json:"hr,omitempty"`
-	SpO2      *int      `json:"spo2,omitempty"`
-	Steps     *int64    `json:"steps,omitempty"`
-	SleepHours *float64  `json:"sleep_hours,omitempty"`
-}
-
-// MedicationRuleRow represents a medication rule.
-type MedicationRuleRow struct {
-	ID         string   `json:"id"`
-	ElderlyID  string   `json:"elderly_id"`
-	ScheduleTime string `json:"schedule_time"`
-	DoseCount  int      `json:"dose_count"`
-	PillType   string   `json:"pill_type"`
-	DaysOfWeek []int    `json:"days_of_week"`
-	Active     bool     `json:"active"`
-	CreatedAt  string   `json:"created_at"`
-}
-
-// DeviceSummaryRow is a device linked to an elderly person.
-type DeviceSummaryRow struct {
-	ID          string    `json:"id"`
-	DeviceID    string    `json:"device_id"`
-	Type        string    `json:"type"`
-	Tier        string    `json:"tier"`
-	Status      string    `json:"status"`
-	FirmwareVer string    `json:"firmware_version"`
-	LastSeen    time.Time `json:"last_seen"`
-}
-
-// LocationPoint represents a location record.
-type LocationPoint struct {
-	ID        string    `json:"id"`
-	ElderlyID string    `json:"elderly_id"`
-	Lat       float64   `json:"lat"`
-	Lon       float64   `json:"lon"`
-	Accuracy  *float64  `json:"accuracy,omitempty"`
-	Timestamp time.Time `json:"timestamp"`
-}
-
-// AlertSummaryRow represents an alert.
-type AlertSummaryRow struct {
-	ID        string    `json:"id"`
-	ElderlyID string    `json:"elderly_id"`
-	AlertType string    `json:"alert_type"`
-	Severity  string    `json:"severity"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
 // ListElderly returns paginated elderly profiles.
-func (s *PostgresStore) ListElderly(ctx context.Context, page, pageSize int) ([]ElderlySummary, error) {
+func (s *PostgresStore) ListElderly(ctx context.Context, page, pageSize int) ([]model.ElderlyProfile, error) {
 	query := `SELECT id, name, COALESCE(user_id, ''), COALESCE(avatar_url, ''),
 		COALESCE(birth_date, '0001-01-01'), health_tiers, created_at, updated_at
 		FROM elderly_profiles ORDER BY created_at DESC LIMIT $1 OFFSET $2`
@@ -96,9 +22,9 @@ func (s *PostgresStore) ListElderly(ctx context.Context, page, pageSize int) ([]
 	}
 	defer rows.Close()
 
-	var profiles []ElderlySummary
+	var profiles []model.ElderlyProfile
 	for rows.Next() {
-		var p ElderlySummary
+		var p model.ElderlyProfile
 		var zeroTime time.Time
 		var tiersRaw interface{}
 		err := rows.Scan(&p.ID, &p.Name, &p.UserID, &p.AvatarURL, &p.BirthDate, &tiersRaw, &p.CreatedAt, &p.UpdatedAt)
@@ -108,7 +34,6 @@ func (s *PostgresStore) ListElderly(ctx context.Context, page, pageSize int) ([]
 		if p.BirthDate != nil && *p.BirthDate == zeroTime {
 			p.BirthDate = nil
 		}
-		// Parse health_tiers from JSON array
 		switch v := tiersRaw.(type) {
 		case []byte:
 			json.Unmarshal(v, &p.HealthTiers)
@@ -121,8 +46,8 @@ func (s *PostgresStore) ListElderly(ctx context.Context, page, pageSize int) ([]
 }
 
 // GetElderly returns a single elderly profile by ID.
-func (s *PostgresStore) GetElderly(ctx context.Context, id string) (*ElderlySummary, error) {
-	var p ElderlySummary
+func (s *PostgresStore) GetElderly(ctx context.Context, id string) (*model.ElderlyProfile, error) {
+	var p model.ElderlyProfile
 	var tiersRaw interface{}
 	var zeroTime time.Time
 
@@ -150,7 +75,7 @@ func (s *PostgresStore) GetElderly(ctx context.Context, id string) (*ElderlySumm
 }
 
 // CreateElderly inserts a new elderly profile.
-func (s *PostgresStore) CreateElderly(ctx context.Context, name, birthDate, userID string, healthTiers []string, avatarURL string) (*ElderlySummary, error) {
+func (s *PostgresStore) CreateElderly(ctx context.Context, name, birthDate, userID string, healthTiers []string, avatarURL string) (*model.ElderlyProfile, error) {
 	tiersJSON, _ := json.Marshal(healthTiers)
 	var bd *time.Time
 	if birthDate != "" {
@@ -160,8 +85,8 @@ func (s *PostgresStore) CreateElderly(ctx context.Context, name, birthDate, user
 		}
 	}
 
-	now := time.Now().Format(time.RFC3339)
-	var p ElderlySummary
+	now := time.Now()
+	var p model.ElderlyProfile
 	err := s.db.QueryRowContext(ctx, `
 		INSERT INTO elderly_profiles (name, birth_date, user_id, health_tiers, avatar_url, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
@@ -171,7 +96,7 @@ func (s *PostgresStore) CreateElderly(ctx context.Context, name, birthDate, user
 	}
 	p.Name = name
 	p.UserID = userID
-	p.AvatarURL = avatarURL
+	p.AvatarURL = &avatarURL
 	p.HealthTiers = healthTiers
 	p.CreatedAt = now
 	p.UpdatedAt = now
@@ -182,7 +107,7 @@ func (s *PostgresStore) CreateElderly(ctx context.Context, name, birthDate, user
 }
 
 // UpdateElderly updates an existing elderly profile.
-func (s *PostgresStore) UpdateElderly(ctx context.Context, id, name, birthDate, userID string, healthTiers []string, avatarURL string) (*ElderlySummary, error) {
+func (s *PostgresStore) UpdateElderly(ctx context.Context, id, name, birthDate, userID string, healthTiers []string, avatarURL string) (*model.ElderlyProfile, error) {
 	tiersJSON, _ := json.Marshal(healthTiers)
 	var bd *time.Time
 	if birthDate != "" {
@@ -192,8 +117,8 @@ func (s *PostgresStore) UpdateElderly(ctx context.Context, id, name, birthDate, 
 		}
 	}
 
-	now := time.Now().Format(time.RFC3339)
-	var p ElderlySummary
+	now := time.Now()
+	var p model.ElderlyProfile
 	err := s.db.QueryRowContext(ctx, `
 		UPDATE elderly_profiles SET name=$1, birth_date=$2, user_id=$3, health_tiers=$4,
 			avatar_url=$5, updated_at=$6 WHERE id=$7 RETURNING id`,
@@ -203,7 +128,7 @@ func (s *PostgresStore) UpdateElderly(ctx context.Context, id, name, birthDate, 
 	}
 	p.Name = name
 	p.UserID = userID
-	p.AvatarURL = avatarURL
+	p.AvatarURL = &avatarURL
 	p.HealthTiers = healthTiers
 	p.CreatedAt = now
 	p.UpdatedAt = now
@@ -223,8 +148,8 @@ func (s *PostgresStore) DeleteElderly(ctx context.Context, id string) error {
 }
 
 // GetElderlyHealthStats returns aggregated health statistics.
-func (s *PostgresStore) GetElderlyHealthStats(ctx context.Context, elderlyID string) (*HealthStats, error) {
-	var stats HealthStats
+func (s *PostgresStore) GetElderlyHealthStats(ctx context.Context, elderlyID string) (*model.HealthStats, error) {
+	var stats model.HealthStats
 	stats.ElderlyID = elderlyID
 
 	err := s.db.QueryRowContext(ctx, `
@@ -238,7 +163,7 @@ func (s *PostgresStore) GetElderlyHealthStats(ctx context.Context, elderlyID str
 }
 
 // GetElderlyHealthRecords returns recent health records.
-func (s *PostgresStore) GetElderlyHealthRecords(ctx context.Context, elderlyID string, limit int) ([]HealthRecordRow, error) {
+func (s *PostgresStore) GetElderlyHealthRecords(ctx context.Context, elderlyID string, limit int) ([]model.HealthRecordRow, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT id, elderly_id, timestamp, hr, spo2, steps, sleep_hours
 		FROM health_records WHERE elderly_id = $1 ORDER BY timestamp DESC LIMIT $2`,
@@ -248,9 +173,9 @@ func (s *PostgresStore) GetElderlyHealthRecords(ctx context.Context, elderlyID s
 	}
 	defer rows.Close()
 
-	var records []HealthRecordRow
+	var records []model.HealthRecordRow
 	for rows.Next() {
-		var r HealthRecordRow
+		var r model.HealthRecordRow
 		if err := rows.Scan(&r.ID, &r.ElderlyID, &r.Timestamp, &r.HR, &r.SpO2, &r.Steps, &r.SleepHours); err != nil {
 			return nil, fmt.Errorf("scan health record: %w", err)
 		}
@@ -260,7 +185,7 @@ func (s *PostgresStore) GetElderlyHealthRecords(ctx context.Context, elderlyID s
 }
 
 // GetElderlyMedicationRules returns medication rules.
-func (s *PostgresStore) GetElderlyMedicationRules(ctx context.Context, elderlyID string) ([]MedicationRuleRow, error) {
+func (s *PostgresStore) GetElderlyMedicationRules(ctx context.Context, elderlyID string) ([]model.MedicationRuleRow, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT id, elderly_id, schedule_time, dose_count, pill_type, days_of_week, active, created_at
 		FROM medication_rules WHERE elderly_id = $1 ORDER BY schedule_time`, elderlyID)
@@ -269,9 +194,9 @@ func (s *PostgresStore) GetElderlyMedicationRules(ctx context.Context, elderlyID
 	}
 	defer rows.Close()
 
-	var rules []MedicationRuleRow
+	var rules []model.MedicationRuleRow
 	for rows.Next() {
-		var r MedicationRuleRow
+		var r model.MedicationRuleRow
 		var daysRaw interface{}
 		if err := rows.Scan(&r.ID, &r.ElderlyID, &r.ScheduleTime, &r.DoseCount, &r.PillType, &daysRaw, &r.Active, &r.CreatedAt); err != nil {
 			return nil, fmt.Errorf("scan med rule: %w", err)
@@ -288,7 +213,7 @@ func (s *PostgresStore) GetElderlyMedicationRules(ctx context.Context, elderlyID
 }
 
 // GetElderlyDevices returns devices linked to an elderly person.
-func (s *PostgresStore) GetElderlyDevices(ctx context.Context, elderlyID string) ([]DeviceSummaryRow, error) {
+func (s *PostgresStore) GetElderlyDevices(ctx context.Context, elderlyID string) ([]model.DeviceSummaryRow, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT d.id, d.device_id, d.device_type, d.tier, d.status,
 			COALESCE(d.settings->>'fw_version', 'v0.1'),
@@ -300,9 +225,9 @@ func (s *PostgresStore) GetElderlyDevices(ctx context.Context, elderlyID string)
 	}
 	defer rows.Close()
 
-	var devices []DeviceSummaryRow
+	var devices []model.DeviceSummaryRow
 	for rows.Next() {
-		var d DeviceSummaryRow
+		var d model.DeviceSummaryRow
 		var zeroTime time.Time
 		if err := rows.Scan(&d.ID, &d.DeviceID, &d.Type, &d.Tier, &d.Status, &d.FirmwareVer, &d.LastSeen); err != nil {
 			return nil, fmt.Errorf("scan device: %w", err)
@@ -316,19 +241,19 @@ func (s *PostgresStore) GetElderlyDevices(ctx context.Context, elderlyID string)
 }
 
 // GetElderlyLocationHistory returns location history.
-func (s *PostgresStore) GetElderlyLocationHistory(ctx context.Context, elderlyID string, limit int) ([]LocationPoint, error) {
+func (s *PostgresStore) GetElderlyLocationHistory(ctx context.Context, elderlyID string, limit int) ([]model.LocationPoint, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT id, elderly_id, lat, lon, accuracy, timestamp
-		FROM location_records WHERE elderly_id = $1 ORDER BY timestamp DESC LIMIT $2`,
+		FROM location_history WHERE elderly_id = $1 ORDER BY timestamp DESC LIMIT $2`,
 		elderlyID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("location history: %w", err)
 	}
 	defer rows.Close()
 
-	var locations []LocationPoint
+	var locations []model.LocationPoint
 	for rows.Next() {
-		var l LocationPoint
+		var l model.LocationPoint
 		if err := rows.Scan(&l.ID, &l.ElderlyID, &l.Lat, &l.Lon, &l.Accuracy, &l.Timestamp); err != nil {
 			return nil, fmt.Errorf("scan location: %w", err)
 		}
@@ -338,7 +263,7 @@ func (s *PostgresStore) GetElderlyLocationHistory(ctx context.Context, elderlyID
 }
 
 // GetElderlyAlertHistory returns alert history.
-func (s *PostgresStore) GetElderlyAlertHistory(ctx context.Context, elderlyID string, limit int) ([]AlertSummaryRow, error) {
+func (s *PostgresStore) GetElderlyAlertHistory(ctx context.Context, elderlyID string, limit int) ([]model.AlertSummaryRow, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT id, elderly_id, alert_type, severity, status, created_at
 		FROM alerts WHERE elderly_id = $1 ORDER BY created_at DESC LIMIT $2`,
@@ -348,9 +273,9 @@ func (s *PostgresStore) GetElderlyAlertHistory(ctx context.Context, elderlyID st
 	}
 	defer rows.Close()
 
-	var alerts []AlertSummaryRow
+	var alerts []model.AlertSummaryRow
 	for rows.Next() {
-		var a AlertSummaryRow
+		var a model.AlertSummaryRow
 		if err := rows.Scan(&a.ID, &a.ElderlyID, &a.AlertType, &a.Severity, &a.Status, &a.CreatedAt); err != nil {
 			return nil, fmt.Errorf("scan alert: %w", err)
 		}

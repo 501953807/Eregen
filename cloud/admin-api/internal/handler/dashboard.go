@@ -11,11 +11,11 @@ import (
 
 // DashboardHandler serves dashboard statistics endpoints.
 type DashboardHandler struct {
-	store *store.PostgresStore
+	store store.Store
 }
 
 // NewDashboardHandler creates a new DashboardHandler.
-func NewDashboardHandler(s *store.PostgresStore) *DashboardHandler {
+func NewDashboardHandler(s store.Store) *DashboardHandler {
 	return &DashboardHandler{store: s}
 }
 

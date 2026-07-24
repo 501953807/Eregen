@@ -1,112 +1,134 @@
+<!--pages/home/home.wxml-->
 <view class="page">
-  <!-- Elder Selector -->
-  <view class="elder-selector">
-    <view wx:for="{{elderlyList}}" wx:key="id"
-          class="elder-chip {{activeElderly === index ? 'active' : ''}}"
-          data-index="{{index}}" bindtap="switchElderly">
-      <view class="elder-avatar">{{item.avatar}}</view>
-      <text>{{item.name}}</text>
-      <view class="online-dot {{item.online ? 'on' : 'off'}}"></view>
+  <!-- Header with gradient background -->
+  <view class="page-header">
+    <view class="header-top">
+      <view class="brand">
+        <text class="app-name">颐贞 Eregen</text>
+        <text class="app-subtitle">守护家人健康</text>
+      </view>
     </view>
-  </view>
-
-  <!-- Quick Status -->
-  <view class="quick-status">
-    <view class="qs-header">
-      <text class="qs-title">{{elderlyList[activeElderly].name}} · 健康状态</text>
-      <text class="qs-time">更新于 2 分钟前</text>
-    </view>
-    <view class="qs-grid">
-      <view class="qs-item">
-        <text class="qs-icon">❤️</text>
-        <text class="qs-val">{{healthData.hr}}</text>
-        <text class="qs-lbl">心率 bpm</text>
-      </view>
-      <view class="qs-item">
-        <text class="qs-icon">🫁</text>
-        <text class="qs-val">{{healthData.spo2}}%</text>
-        <text class="qs-lbl">血氧</text>
-      </view>
-      <view class="qs-item">
-        <text class="qs-icon">🚶</text>
-        <text class="qs-val">{{healthData.steps}}</text>
-        <text class="qs-lbl">今日步数</text>
-      </view>
-      <view class="qs-item">
-        <text class="qs-icon">🔋</text>
-        <text class="qs-val">{{healthData.battery}}%</text>
-        <text class="qs-lbl">电量</text>
+    <view class="elder-selector-mini">
+      <view wx:for="{{elderlyList}}" wx:key="id"
+            class="elder-chip {{activeElderly === index ? 'active' : ''}}"
+            data-index="{{index}}" bindtap="switchElderly">
+        <view class="elder-chip-avatar">{{item.avatar}}</view>
+        <text>{{item.name}}</text>
       </view>
     </view>
   </view>
 
-  <!-- Location Mini Card -->
-  <view class="location-mini">
-    <view class="location-map">
-      <view class="map-pin"></view>
+  <!-- Quick Stats Card -->
+  <view class="quick-card">
+    <view class="quick-card-title">
+      <text>实时状态</text>
+      <navigator url="/pages/health/index" class="quick-card-more">详情 →</navigator>
     </view>
-    <view class="location-info">
-      <view class="loc-text">
-        <text>{{location.address}}</text>
-        <text class="loc-sub">{{location.updated}}</text>
+    <view class="quick-stats">
+      <view class="quick-stat good">
+        <text class="quick-stat-icon">❤️</text>
+        <text class="quick-stat-value">{{healthData.hr || '--'}}</text>
+        <text class="quick-stat-label">心率 bpm</text>
       </view>
-      <navigator url="/pages/map/index" class="loc-link">查看地图 →</navigator>
+      <view class="quick-stat good">
+        <text class="quick-stat-icon">🫁</text>
+        <text class="quick-stat-value">{{healthData.spo2 || '--'}}%</text>
+        <text class="quick-stat-label">血氧</text>
+      </view>
+      <view class="quick-stat warn">
+        <text class="quick-stat-icon">🚶</text>
+        <text class="quick-stat-value">{{_formatSteps(healthData.steps)}}</text>
+        <text class="quick-stat-label">今日步数</text>
+      </view>
+      <view class="quick-stat">
+        <text class="quick-stat-icon">🔋</text>
+        <text class="quick-stat-value">{{healthData.battery || '--'}}%</text>
+        <text class="quick-stat-label">设备电量</text>
+      </view>
     </view>
   </view>
 
-  <!-- Quick Actions -->
-  <view class="section-label">快捷操作</view>
-  <view class="quick-actions">
-    <view class="qa-item" style="background:#FEF2F2;">
-      <text class="qa-icon">⚠️</text>
-      <text class="qa-label">一键呼叫</text>
+  <!-- SOS Banner -->
+  <view class="sos-banner">
+    <view class="sos-icon">⚡</view>
+    <view class="sos-text">
+      <text class="sos-title">紧急联系人一键呼叫</text>
+      <text class="sos-desc">{{elderlyList[activeElderly]?.name || '长辈'}}设备异常时自动通知</text>
     </view>
-    <view class="qa-item" style="background:#DBEAFE;">
-      <text class="qa-icon">📞</text>
-      <text class="qa-label">语音通话</text>
-    </view>
-    <view class="qa-item" style="background:#F0FDF4;">
-      <text class="qa-icon">💊</text>
-      <text class="qa-label">用药提醒</text>
-    </view>
-    <view class="qa-item" style="background:#FFFBEB;">
-      <text class="qa-icon">📋</text>
-      <text class="qa-label">历史记录</text>
+    <button class="sos-btn" bindtap="goToSettings">设置</button>
+  </view>
+
+  <!-- Location Section -->
+  <view class="location-section">
+    <view class="location-card">
+      <view class="location-map">
+        <text class="map-pin">📍</text>
+        <view class="map-label">{{location.address}}</view>
+      </view>
+      <view class="location-info">
+        <view>
+          <text class="location-text">当前位置正常，在安全区域内</text>
+          <text class="location-time">{{location.updated}}</text>
+        </view>
+      </view>
     </view>
   </view>
 
-  <!-- Medication -->
-  <view class="section-label">
-    今日用药
-    <navigator url="/pages/medication/index" class="more">查看全部 →</navigator>
-  </view>
-  <view class="med-list">
-    <view wx:for="{{medications}}" wx:key="time" class="med-item">
-      <view class="med-check {{item.status === 'taken' ? 'done' : (item.status === 'pending' ? 'soon' : 'pending')}}">
-        <text wx:if="{{item.status === 'taken'}}">✓</text>
-        <text wx:elif="{{item.status === 'pending'}}">⏳</text>
-        <text wx:else>○</text>
+  <!-- Medication Reminder -->
+  <view class="med-section">
+    <view class="med-card">
+      <view class="med-card-header">
+        <text class="med-card-title">💊 今日用药</text>
+        <view class="med-ring-wrap">
+          <text class="med-ring-text">{{_medRatio()}}</text>
+        </view>
       </view>
-      <view class="med-info">
-        <text class="med-name">{{item.name}}</text>
-        <text class="med-detail">{{item.time}} {{item.status === 'taken' ? '· 已服用 · ' + item.takenTime : (item.status === 'pending' ? '· 即将到时间' : '· 待服用')}}</text>
+      <view class="med-list">
+        <view wx:for="{{medications}}" wx:key="time" class="med-row">
+          <text class="med-time-tag">{{item.time}}</text>
+          <view class="med-name-wrap">
+            <text class="med-name">{{item.name}}</text>
+            <text class="med-dose">1粒</text>
+          </view>
+          <view class="med-check {{item.status === 'taken' ? 'done' : ''}}" bindtap="toggleMed" data-index="{{index}}">
+            <text wx:if="{{item.status === 'taken'}}">✓</text>
+          </view>
+        </view>
       </view>
-      <text class="med-tag {{item.status === 'taken' ? 'done' : (item.status === 'pending' ? 'soon' : 'pending')}}">
-        {{item.status === 'taken' ? '已服' : (item.status === 'pending' ? '待服' : '未服')}}
-      </text>
     </view>
   </view>
 
-  <!-- Recent Alerts -->
-  <view class="section-label">
-    最近告警
-    <navigator url="/pages/alerts/index" class="more">全部 →</navigator>
+  <!-- Health Tip -->
+  <view class="health-tip">
+    <text class="tip-icon">💡</text>
+    <text class="tip-text">
+      <text class="tip-title">今日健康提示</text><text>\n</text>
+      爷爷今日步数略低于目标（5000步），建议傍晚散步30分钟。
+    </text>
   </view>
-  <view class="alert-mini">
-    <view wx:for="{{alerts}}" wx:key="type" class="alert-mini-item {{item.level}}">
-      <view class="alert-mini-title">{{item.title}}</view>
-      <view class="alert-mini-desc">{{item.desc}}</view>
-      <view class="alert-mini-time">{{item.time}}</view>
+
+  <!-- Bottom Actions -->
+  <view class="bottom-actions">
+    <view class="action-btn" bindtap="goHealthReport">
+      <text class="action-icon">📊</text>
+      <text class="action-label">健康报告</text>
     </view>
+    <view class="action-btn" bindtap="goConsult">
+      <text class="action-icon">💬</text>
+      <text class="action-label">在线问诊</text>
+    </view>
+    <view class="action-btn" bindtap="goMedShop">
+      <text class="action-icon">💊</text>
+      <text class="action-label">药品购买</text>
+    </view>
+    <view class="action-btn" bindtap="goDevice">
+      <text class="action-icon">⚙️</text>
+      <text class="action-label">设备管理</text>
+    </view>
+  </view>
+
+  <view class="footer">
+    颐贞 Eregen · 守护每一位长辈<br>
+    <text style="opacity:0.6;">版本 {{version}}</text>
   </view>
 </view>

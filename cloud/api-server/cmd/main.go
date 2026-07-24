@@ -87,6 +87,12 @@ func main() {
 			return pg.CreateMedStatusRecord(ctx, r)
 		})
 
+		// Create OTA service and wire progress callback
+		otaSvc := service.NewOTAService(pg, natsClient, log)
+		eventHandler.SetOTACallback(func(ctx context.Context, jobID, deviceID, status string) error {
+			return otaSvc.UpdateProgress(ctx, jobID, deviceID, status)
+		})
+
 		go func() {
 			ctx := context.Background()
 			if err := natsClient.SubscribeDeviceEvents(ctx, eventHandler); err != nil {

@@ -1157,15 +1157,225 @@ func (p *Postgres) DeleteUser(ctx context.Context, userID string) error {
 	return tx.Commit(ctx)
 }
 
-func join(seps []string, sep string) string {
-	if len(seps) == 0 {
-		return "1=0"
+// AdminDeviceList returns all devices without owner filtering.
+func (p *Postgres) AdminDeviceList(ctx context.Context, deviceType, tier, status string, page, pageSize int) ([]model.Device, int, error) {
+	where := "1=1"
+	var args []any
+	idx := 1
+
+	if deviceType != "" {
+		where += fmt.Sprintf(" AND device_type = $%d", idx)
+		args = append(args, deviceType)
+		idx++
 	}
-	s := seps[0]
-	for i := 1; i < len(seps); i++ {
-		s += sep + seps[i]
+	if tier != "" {
+		where += fmt.Sprintf(" AND tier = $%d", idx)
+		args = append(args, tier)
+		idx++
 	}
-	return s
+	if status != "" {
+		where += fmt.Sprintf(" AND status = $%d", idx)
+		args = append(args, status)
+		idx++
+	}
+
+	offset := (page - 1) * pageSize
+	args = append(args, pageSize, offset)
+	q := fmt.Sprintf("SELECT id, device_id, device_type, tier, owner_user_id, status, last_seen, created_at, updated_at, settings FROM devices WHERE %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d", where, idx, idx+1)
+
+	rows, err := p.pool.Query(ctx, q, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var devices []model.Device
+	for rows.Next() {
+		d, scanErr := scanDevice(rows)
+		if scanErr != nil {
+			return nil, 0, scanErr
+		}
+		devices = append(devices, *d)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	countQ := fmt.Sprintf("SELECT COUNT(*) FROM devices WHERE %s", where)
+	var count int
+	if err := p.pool.QueryRow(ctx, countQ, args[:len(args)-2]...).Scan(&count); err != nil {
+		return nil, 0, err
+	}
+
+	return devices, count, nil
+}
+
+// AdminStatsOverview returns aggregate KPIs for the dashboard.
+type StatsOverview struct {
+	OnlineDevices    int     `json:"online_devices"`
+	TotalUsers       int     `json:"total_users"`
+	AlertCount       int     `json:"alert_count"`
+	SubscriptionRate float64 `json:"subscription_rate"`
+}
+
+func (p *Postgres) AdminStatsOverview(ctx context.Context) (*StatsOverview, error) {
+	var s StatsOverview
+
+	// Online devices (seen within last 5 minutes)
+	if err := p.pool.QueryRow(ctx, `
+		SELECT COUNT(*) FROM devices WHERE status = 'online' AND last_seen > now() - interval '5 minutes'
+	`).Scan(&s.OnlineDevices); err != nil {
+		return nil, err
+	}
+
+	// Total users (exclude internal service accounts)
+	if err := p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE role IN ('family', 'elderly', 'institution')`).Scan(&s.TotalUsers); err != nil {
+		return nil, err
+	}
+
+	// Pending alerts
+	if err := p.pool.QueryRow(ctx, `SELECT COUNT(*)::int FROM alerts WHERE status = 'pending'`).Scan(&s.AlertCount); err != nil {
+		return nil, err
+	}
+
+	// Subscription rate: premium+enterprise / total family users
+	var subRate float64
+	if err := p.pool.QueryRow(ctx, `
+		SELECT CASE WHEN COUNT(*) = 0 THEN 0.0
+			ELSE ROUND(COUNT(CASE WHEN plan_tier IN ('premium','enterprise') THEN 1 END)::numeric / COUNT(*)::numeric, 4)
+		END FROM subscriptions WHERE status = 'active'
+	`).Scan(&subRate); err != nil {
+		return nil, err
+	}
+	s.SubscriptionRate = subRate * 100 // percentage
+
+	return &s, nil
+}
+
+// AlertTrendPoint represents a single point in the alert trend chart.
+type AlertTrendPoint struct {
+	Date          string `json:"date"`
+	BraceletCount int    `json:"bracelet_count"`
+	PillboxCount  int    `json:"pillbox_count"`
+}
+
+func (p *Postgres) AdminStatsAlertTrend(ctx context.Context, days int) ([]AlertTrendPoint, error) {
+	if days <= 0 {
+		days = 7
+	}
+	rows, err := p.pool.Query(ctx, `
+		SELECT date_trunc('day', a.created_at)::text AS day,
+			   COALESCE(SUM(CASE WHEN d.device_type = 'bracelet' THEN 1 ELSE 0 END), 0)::int,
+			   COALESCE(SUM(CASE WHEN d.device_type = 'pillbox' THEN 1 ELSE 0 END), 0)::int
+		FROM alerts a
+		JOIN devices d ON d.device_id = a.metadata->>'device_id'
+		WHERE a.created_at >= now() - ($1 || ' days')::interval
+		GROUP BY day ORDER BY day
+	`, days)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []AlertTrendPoint
+	for rows.Next() {
+		var p2 AlertTrendPoint
+		if err := rows.Scan(&p2.Date, &p2.BraceletCount, &p2.PillboxCount); err != nil {
+			return nil, err
+		}
+		result = append(result, p2)
+	}
+	return result, rows.Err()
+}
+
+// AlertDistributionItem represents a bar in the alert distribution chart.
+type AlertDistributionItem struct {
+	Name  string `json:"name"`
+	Value int    `json:"value"`
+	Color string `json:"color"`
+}
+
+var alertColorMap = map[string]string{
+	"sos":                "#F44336",
+	"fall":               "#FF9800",
+	"med_missed":         "#2196F3",
+	"device_offline":     "#9E9E9E",
+	"geofence_breach":    "#9C27B0",
+	"low_battery":        "#FFC107",
+	"abnormal_heart_rate": "#E91E63",
+}
+
+func (p *Postgres) AdminStatsAlertDistribution(ctx context.Context) ([]AlertDistributionItem, error) {
+	rows, err := p.pool.Query(ctx, `
+		SELECT alert_type, COUNT(*)::int
+		FROM alerts GROUP BY alert_type ORDER BY COUNT(*) DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []AlertDistributionItem
+	for rows.Next() {
+		var item AlertDistributionItem
+		if err := rows.Scan(&item.Name, &item.Value); err != nil {
+			return nil, err
+		}
+		item.Color = alertColorMap[item.Name]
+		if item.Color == "" {
+			item.Color = "#607D8B"
+		}
+		result = append(result, item)
+	}
+	return result, rows.Err()
+}
+
+// UserGrowthPoint represents a monthly user growth data point.
+type UserGrowthPoint struct {
+	Month     string `json:"month"`
+	NewUsers  int    `json:"new_users"`
+}
+
+func (p *Postgres) AdminStatsUserGrowth(ctx context.Context, months int) ([]UserGrowthPoint, error) {
+	if months <= 0 {
+		months = 6
+	}
+	rows, err := p.pool.Query(ctx, `
+		SELECT to_char(date_trunc('month', created_at), 'YYYY-MM') AS month,
+			   COUNT(*)::int
+		FROM users
+		WHERE created_at >= date_trunc('month', now()) - ($1 || ' months')::interval
+		  AND role IN ('family', 'elderly', 'institution')
+		GROUP BY month ORDER BY month
+	`, months)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []UserGrowthPoint
+	for rows.Next() {
+		var pg UserGrowthPoint
+		if err := rows.Scan(&pg.Month, &pg.NewUsers); err != nil {
+			return nil, err
+		}
+		result = append(result, pg)
+	}
+	return result, rows.Err()
+}
+
+// UpdateUserRole changes a user's role.
+func (p *Postgres) UpdateUserRole(ctx context.Context, userID, role string) error {
+	q := `UPDATE users SET role = $1, updated_at = now() WHERE id = $2`
+	_, err := p.pool.Exec(ctx, q, role, userID)
+	return err
+}
+
+// AdminDeleteDevice removes a device by device_id (admin operation).
+func (p *Postgres) AdminDeleteDevice(ctx context.Context, deviceID string) error {
+	q := `DELETE FROM devices WHERE device_id = $1`
+	_, err := p.pool.Exec(ctx, q, deviceID)
+	return err
 }
 
 func scanDevice(row any) (*model.Device, error) {

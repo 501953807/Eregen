@@ -58,6 +58,42 @@ func (h *HealthDataHandler) Receive(c *gin.Context) {
 		_ = h.store.LinkElderlyToExternalPatient(ctx, eregenID, req.PatientID, eregenID)
 	}
 
+	// Store diagnoses if present
+	if len(req.Diagnoses) > 0 && eregenID != "" {
+		diagRecords := make([]*model.DiagnosisRecord, 0, len(req.Diagnoses))
+		for _, d := range req.Diagnoses {
+			diagRecords = append(diagRecords, &model.DiagnosisRecord{
+				ElderlyID:     eregenID,
+				InstitutionID: instStr,
+				PatientID:     req.PatientID,
+				DiagnosisCode: d.Code,
+				DiagnosisName: d.Name,
+				Severity:      d.Severity,
+				DiagnosedAt:   req.Timestamp,
+			})
+		}
+		h.store.StoreDiagnoses(ctx, diagRecords)
+	}
+
+	// Store medications if present
+	if len(req.Medications) > 0 && eregenID != "" {
+		medRecords := make([]*model.MedicationRecord, 0, len(req.Medications))
+		for _, m := range req.Medications {
+			medRecords = append(medRecords, &model.MedicationRecord{
+				ElderlyID:      eregenID,
+				InstitutionID:  instStr,
+				PatientID:      req.PatientID,
+				MedicationName: m.Name,
+				Dose:           m.Dose,
+				Frequency:      m.Freq,
+				Route:          m.Route,
+				Duration:       m.Duration,
+				PrescribedAt:   req.Timestamp,
+			})
+		}
+		h.store.StoreMedications(ctx, medRecords)
+	}
+
 	// Convert incoming vitals to stored records
 	now := time.Now()
 	for _, v := range req.Vitals {
@@ -126,6 +162,10 @@ func (h *HealthDataHandler) GetReport(c *gin.Context) {
 		if v.HeartRate != nil {
 			hrSum += float64(*v.HeartRate)
 			hrCount++
+			trends = append(trends, model.VitalTrend{
+				Type: "heart_rate",
+				Values: []model.TrendPoint{{Time: v.RecordedAt, Value: float64(*v.HeartRate)}},
+			})
 		}
 		if v.SPO2 != nil {
 			spo2Sum += float64(*v.SPO2)
@@ -136,6 +176,10 @@ func (h *HealthDataHandler) GetReport(c *gin.Context) {
 			stepsCount++
 		}
 	}
+
+	// Fetch diagnoses and medications for the report
+	diagnoses, _ := h.store.GetDiagnosesForElderly(c.Request.Context(), eregenID, days)
+	medications, _ := h.store.GetMedicationsForElderly(c.Request.Context(), eregenID)
 
 	report := model.HealthReport{
 		ElderlyID:   eregenID,
@@ -149,6 +193,8 @@ func (h *HealthDataHandler) GetReport(c *gin.Context) {
 			RiskLevel: determineRiskLevel(vitals),
 		},
 		VitalsTrend:  trends,
+		Diagnoses:    diagnoses,
+		Medications:  medications,
 		AlertCount:   0,
 		MedAdherence: 85.0,
 	}
