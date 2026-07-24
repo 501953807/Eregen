@@ -618,6 +618,51 @@ type DeptAlertCount struct {
 	Count      int    `json:"count"`
 }
 
+// ========== Clinical Workflow Models ==========
+
+// HospitalAdmission represents a patient's hospital stay record.
+type HospitalAdmission struct {
+	ID                  string     `json:"id"`
+	PatientID           string     `json:"patient_id"`
+	AdmissionNo         string     `json:"admission_no"`
+	BedNo               string     `json:"bed_no"`
+	Department          string     `json:"department"`
+	Diagnosis           string     `json:"diagnosis,omitempty"`
+	EmergencyContact    string     `json:"emergency_contact,omitempty"`
+	Allergies           string     `json:"allergies,omitempty"`
+	AdmittedAt          time.Time  `json:"admitted_at"`
+	ExpectedDischargeAt *time.Time `json:"expected_discharge_at,omitempty"`
+	DischargedAt        *time.Time `json:"discharged_at,omitempty"`
+	DischargeType       string     `json:"discharge_type,omitempty"` // "discharged", "transferred", "deceased"
+	TransferredTo       string     `json:"transferred_to,omitempty"`
+	Notes               string     `json:"notes,omitempty"`
+}
+
+// WardRoundEntry represents a nursing round visit with vitals.
+type WardRoundEntry struct {
+	ID             string    `json:"id"`
+	PatientID      string    `json:"patient_id"`
+	NurseID        string    `json:"nurse_id"`
+	BloodPressure  string    `json:"blood_pressure,omitempty"` // e.g. "120/80"
+	HeartRate      int       `json:"heart_rate,omitempty"`
+	SpO2           int       `json:"spo2,omitempty"`
+	Temperature    float64   `json:"temperature,omitempty"`
+	Weight         float64   `json:"weight,omitempty"`
+	Notes          string    `json:"notes,omitempty"`
+	Observations   string    `json:"observations,omitempty"` // JSON array of checkboxes
+	CompletedAt    time.Time `json:"completed_at"`
+}
+
+// RegulatoryRuleResult holds the outcome of a single rule evaluation.
+type RegulatoryRuleResult struct {
+	RuleCode    string    `json:"rule_code"` // "R01"..."R08"
+	Severity    string    `json:"severity"`  // "P0", "P1", "P2"
+	PatientID   string    `json:"patient_id,omitempty"`
+	Message     string    `json:"message"`
+	TriggeredAt time.Time `json:"triggered_at"`
+	Resolved    bool      `json:"resolved"`
+}
+
 // RegulatoryAuditTrail is the full audit trail for a single patient.
 type RegulatoryAuditTrail struct {
 	Patient         *MedicalPatient       `json:"patient"`
