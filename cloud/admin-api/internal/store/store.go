@@ -80,6 +80,15 @@ type Store interface {
 	CreateAlertTagConfig(ctx context.Context, c *model.MedicalAlertTagConfig) error
 	ListAlertTagConfigs(ctx context.Context) ([]model.MedicalAlertTagConfig, error)
 
+	// Clinical workflow
+	CreateAdmission(ctx context.Context, a *model.HospitalAdmission) error
+	GetAdmission(ctx context.Context, id string) (*model.HospitalAdmission, error)
+	ListAdmissions(ctx context.Context, page, pageSize int, department, status string) ([]model.HospitalAdmission, error)
+	CompleteAdmission(ctx context.Context, id string, dischargeType, notes, transferredTo string) error
+	CreateWardRound(ctx context.Context, w *model.WardRoundEntry) error
+	ListWardRounds(ctx context.Context, patientID string) ([]model.WardRoundEntry, error)
+	EvaluateRegulatoryRules(ctx context.Context, event string, data map[string]string) ([]*model.RegulatoryRuleResult, error)
+
 	// ===== Regulatory closure =====
 	CreateFenceConfig(ctx context.Context, fc *model.RegulatoryFenceConfig) error
 	GetFenceConfig(ctx context.Context, hospitalID string) (*model.RegulatoryFenceConfig, error)
