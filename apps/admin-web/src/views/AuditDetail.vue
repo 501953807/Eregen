@@ -105,6 +105,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Refresh, Download } from '@element-plus/icons-vue'
 import { regulatoryApi } from '@/api/regulatory'
+import type { AuditTrail } from '@/api/regulatory'
 
 const route = useRoute()
 const patientId = computed(() => route.params.patientId as string)
@@ -121,95 +122,8 @@ const patientData = ref({
 
 const lastUpdateTime = ref(formatTime(new Date().toISOString()))
 
-// Timeline data matching prototype
-const timeline = ref([
-  {
-    type: 'inbound',
-    icon: '📋',
-    title: '入院登记',
-    time: '2026-07-15T09:30:00Z',
-    lines: [
-      { label: '入院科室', value: '心内科' },
-      { label: '主治医生', value: '张医生' },
-      { label: '诊断结果', value: '高血压三级，心律失常' },
-      { label: '腕带绑定', value: '设备 ID WB-8842-A 已绑定' },
-      { label: '初始评估', value: '跌倒风险: 中 | 压疮风险: 低' },
-    ],
-  },
-  {
-    type: 'verify',
-    icon: '✅',
-    title: '身份核验 (NFC)',
-    time: '2026-07-15T09:35:22Z',
-    lines: [
-      { label: '核验方式', value: 'NFC近场通信 + 人脸识别' },
-      { label: '核验结果', value: '成功匹配住院档案' },
-      { label: '核验人员', value: '护士 王芳' },
-      { label: '关联数据', value: '病历号 MR-2026-8842' },
-    ],
-  },
-  {
-    type: 'medication',
-    icon: '💊',
-    title: '今日用药记录',
-    time: '2026-07-23',
-    table: {
-      headers: ['时间', '药品名称', '剂量', '执行人', '状态'],
-      rows: [
-        ['08:00', '氨氯地平片', '5mg', '护士 张丽', { text: '已服用', tagType: 'success' }],
-        ['08:00', '阿司匹林肠溶片', '100mg', '护士 张丽', { text: '已服用', tagType: 'success' }],
-        ['14:00', '美托洛尔缓释片', '47.5mg', '护士 王芳', { text: '待服用', tagType: 'warning' }],
-      ],
-    },
-  },
-  {
-    type: 'geofence',
-    icon: '⚠️',
-    title: '电子围栏越界告警',
-    time: '2026-07-23T10:42:15Z',
-    lines: [
-      { label: '告警等级', value: { text: 'P0 - 紧急', tagType: 'danger' } },
-      { label: '触发规则', value: 'R01 - 患者离开设定电子围栏范围' },
-      { label: '当前位置', value: '医院北门出口外 50m' },
-      { label: '定位源', value: 'GPS (精度 ±5m)' },
-      { label: '处理状态', value: { text: '处理中 - 已通知保安', tagType: 'warning' } },
-    ],
-  },
-  {
-    type: 'geofence',
-    icon: '⚠️',
-    title: '电子围栏越界告警 (历史)',
-    time: '2026-07-20T15:20:00Z',
-    lines: [
-      { label: '告警等级', value: { text: 'P1 - 重要', tagType: 'warning' } },
-      { label: '当前位置', value: '医院花园区域 (允许范围外 10m)' },
-      { label: '处理结果', value: '护士确认患者家属陪同外出，已手动解除告警' },
-    ],
-  },
-  {
-    type: 'verify',
-    icon: '❤️',
-    title: '今日生命体征摘要',
-    time: '2026-07-23',
-    lines: [
-      { label: '心率', value: '平均 78bpm | 最高 105bpm (10:30) | 最低 62bpm (03:00)' },
-      { label: '血压', value: '135/85 mmHg (08:00 测量)' },
-      { label: '血氧', value: '平均 97%' },
-      { label: '睡眠质量', value: '6.5小时 (深睡 2h)' },
-    ],
-  },
-  {
-    type: 'discharge',
-    icon: '🚪',
-    title: '预计出院日期',
-    time: '2026-07-28',
-    lines: [
-      { label: '出院标准', value: '血压稳定 < 140/90mmHg 持续 48h' },
-      { label: '后续随访', value: '社区医院 A 每周一次复查' },
-      { label: '腕带状态', value: '出院后转为"社区老人"模式' },
-    ],
-  },
-])
+// Real API-driven audit trail data
+const auditTrail = ref<AuditTrail | null>(null)
 
 function renderCell(value: any): string {
   if (typeof value === 'object' && value !== null) return value.text || ''
@@ -219,6 +133,114 @@ function renderCell(value: any): string {
 function getAvatarBg(): string {
   return 'linear-gradient(135deg, #fce7f3, #fbcfe8)'
 }
+
+// Build timeline from real audit trail data
+const timeline = computed(() => {
+  const items: any[] = []
+  if (!auditTrail.value) return []
+
+  const at = auditTrail.value
+
+  // Node 1: Admission (入院登记)
+  if (at.patient) {
+    items.push({
+      type: 'inbound',
+      icon: '📋',
+      title: '入院登记',
+      time: at.patient.admission_date || '',
+      lines: [
+        { label: '入院科室', value: at.patient.department || '—' },
+        { label: '主治医生', value: at.patient.doctor || '—' },
+        { label: '诊断结果', value: at.patient.diagnosis || '—' },
+        { label: '腕带绑定', value: at.binding ? `设备 ID ${at.binding.device_id || '—'} 已绑定` : '未绑定腕带' },
+      ],
+    })
+  }
+
+  // Node 2: Verification records
+  if (at.verifications && at.verifications.length > 0) {
+    const latest = at.verifications[0]
+    items.push({
+      type: 'verify',
+      icon: '✅',
+      title: '身份核验记录',
+      time: latest.timestamp || '',
+      lines: [
+        { label: '核验方式', value: latest.scan_type || '—' },
+        { label: '核验结果', value: latest.result === 'matched' ? '匹配成功' : latest.result === 'unmatched' ? '不匹配' : '未找到' },
+        { label: '核验人员', value: latest.verified_by || '—' },
+      ],
+    })
+  }
+
+  // Node 3: Medication records
+  if (at.medications && at.medications.length > 0) {
+    items.push({
+      type: 'medication',
+      icon: '💊',
+      title: '用药记录',
+      time: at.medications[0]?.time || '',
+      table: {
+        headers: ['时间', '药品名称', '剂量', '执行人', '状态'],
+        rows: at.medications.slice(0, 5).map((m: any) => [
+          m.time || '—',
+          m.medication_name || '—',
+          m.dosage || '—',
+          m.administered_by || '—',
+          { text: m.status === 'given' ? '已服用' : '待服用', tagType: m.status === 'given' ? 'success' : 'warning' },
+        ]),
+      },
+    })
+  }
+
+  // Node 4: Geofence alerts
+  if (at.alerts_generated && at.alerts_generated.length > 0) {
+    const alert = at.alerts_generated[0]
+    items.push({
+      type: 'geofence',
+      icon: '⚠️',
+      title: '电子围栏告警',
+      time: alert.triggered_at || '',
+      lines: [
+        { label: '告警等级', value: { text: alert.severity || 'P1', tagType: alert.severity === 'high' ? 'danger' : 'warning' } },
+        { label: '触发规则', value: alert.rule_code || '—' },
+        { label: '处理状态', value: { text: alert.status === 'resolved' ? '已处理' : '处理中', tagType: alert.status === 'resolved' ? 'success' : 'warning' } },
+      ],
+    })
+  }
+
+  // Node 5: Ward round / vital signs
+  if (at.daily_entries && at.daily_entries.length > 0) {
+    const entry = at.daily_entries.find((e: any) => e.entry_type === 'ward_round' || e.entry_type === 'vitals') || at.daily_entries[0]
+    items.push({
+      type: 'verify',
+      icon: '❤️',
+      title: '生命体征摘要',
+      time: entry.timestamp || '',
+      lines: [
+        { label: '心率', value: entry.content || '—' },
+        { label: '血压', value: '—' },
+        { label: '血氧', value: '—' },
+      ],
+    })
+  }
+
+  // Node 6: Discharge
+  if (at.patient?.discharge_date) {
+    items.push({
+      type: 'discharge',
+      icon: '🚪',
+      title: '出院记录',
+      time: at.patient.discharge_date,
+      lines: [
+        { label: '出院类型', value: at.patient.discharge_type || '—' },
+        { label: '后续随访', value: '—' },
+      ],
+    })
+  }
+
+  return items
+})
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return '—'
@@ -238,9 +260,22 @@ function handleRefresh() {
 
 async function loadAuditTrail() {
   try {
-    await regulatoryApi.getAuditTrail(patientId.value)
-  } catch {
-    // Mock data is already set
+    const res = await regulatoryApi.getAuditTrail(patientId.value)
+    auditTrail.value = res.data?.data || null
+    // Update patient info from trail
+    if (auditTrail.value?.patient) {
+      patientName.value = auditTrail.value.patient.name || patientName.value
+      patientData.value = {
+        ...patientData.value,
+        gender: auditTrail.value.patient.gender || patientData.value.gender,
+        age: auditTrail.value.patient.age || patientData.value.age,
+        department: auditTrail.value.patient.department || patientData.value.department,
+        admissionDate: auditTrail.value.patient.admission_date || patientData.value.admissionDate,
+        doctor: auditTrail.value.patient.doctor || patientData.value.doctor,
+      }
+    }
+  } catch (e: any) {
+    ElMessage.error('加载审计数据失败: ' + (e.message || 'unknown error'))
   }
 }
 
