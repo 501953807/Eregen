@@ -462,6 +462,30 @@ func (h *MedicalWristbandHandler) CreateAlertTagConfig(c *gin.Context) {
 
 // ---------- Clinical workflow endpoints ----------
 
+// ListAdmissions returns paginated admission list (aliases ListPatients with status filter).
+func (h *MedicalWristbandHandler) ListAdmissions(c *gin.Context) {
+	page, _ := strconv.Atoi(c.Query("page"))
+	pageSize, _ := strconv.Atoi(c.Query("page_size"))
+	page, pageSize, err := validation.ValidatePagination(page, pageSize, 100)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	department := c.Query("department")
+	status := c.Query("status")
+	admissions, err := h.store.ListAdmissions(c.Request.Context(), page, pageSize, department, status)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data":      admissions,
+		"page":      page,
+		"page_size": pageSize,
+	})
+}
+
 // AdmitPatient registers a new hospital admission with wristband binding.
 func (h *MedicalWristbandHandler) AdmitPatient(c *gin.Context) {
 	var req struct {

@@ -151,6 +151,13 @@ func Setup(db *sql.DB, logger *zap.Logger, dbType string) *gin.Engine {
 			med.GET("/stats/overview", medical.GetStatsOverview)
 			med.GET("/alert-tags", medical.ListAlertTagConfigs)
 			med.POST("/alert-tags", medical.CreateAlertTagConfig)
+
+			// Clinical workflow endpoints
+			med.POST("/admissions", medical.AdmitPatient)
+			med.GET("/admissions", medical.ListAdmissions)
+			med.POST("/admissions/:id/discharge", medical.DischargePatient)
+			med.GET("/patients/:id/ward-round", medical.GetWardRound)
+			med.POST("/patients/:id/ward-round", medical.CompleteWardRound)
 		}
 
 		// Regulatory closure
