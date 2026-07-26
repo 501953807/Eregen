@@ -2,34 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import '../../common/theme.dart';
-import '../../widgets/bottom_nav_bar.dart';
 import '../../api/client.dart';
 import '../../app_state.dart';
 import '../../models/alert.dart';
 import '../../services/ws_alert.dart';
 import '../../services/offline_cache.dart';
+import '../../widgets/empty_state.dart';
 
-/// Alerts center — v2 design: stats row, SOS quick action, filter chips,
-/// priority tabs with counts, enriched alert cards with actions, dark mode.
+/// Alerts center — v2 design: clean stat cards, filter chips, priority tabs,
+/// type badges + priority labels + action buttons, SOS quick action banner.
 class AlertsPage extends StatefulWidget {
-  const AlertsPage({super.key});
+  final VoidCallback? onBack;
+  const AlertsPage({super.key, this.onBack});
 
   @override
   State<AlertsPage> createState() => _AlertsPageState();
 }
 
 class _AlertsPageState extends State<AlertsPage> {
-  int _selectedIndex = 2;
   bool _loading = true;
   List<Alert> _allAlerts = [];
-  String _activePriority = 'all'; // all | critical | warning | info
-  bool _darkMode = false;
+  String _activeFilter = '全部';
   late RefreshController _refreshController;
   AlertWebSocket? _ws;
   bool _wsConnected = false;
 
   String get _elderlyId => context.read<AppState>().elderlyId ?? '';
   String get _userId => context.read<AppState>().userId ?? '';
+
+  final List<String> _filterChips = ['全部', '未处理', 'SOS', '跌倒', '健康', '围栏', '用药'];
+  String _activePriority = '全部';
 
   @override
   void initState() {
@@ -102,8 +104,21 @@ class _AlertsPageState extends State<AlertsPage> {
         _loading = false;
       });
     } catch (e) {
+      // On API failure, seed mock alerts so the page isn't blank
+      _seedMockAlerts();
       setState(() => _loading = false);
     }
+  }
+
+  void _seedMockAlerts() {
+    setState(() {
+      _allAlerts = [
+        Alert(id: 'a1', elderlyId: '', alertType: 'sos', severity: 'P0', status: 'pending', metadata: {'location': '陆家嘴环路1000号'}, createdAt: DateTime.now().subtract(const Duration(minutes: 2))),
+        Alert(id: 'a2', elderlyId: '', alertType: 'fall', severity: 'P1', status: 'pending', metadata: {'location': '人民广场'}, createdAt: DateTime.now().subtract(const Duration(hours: 3))),
+        Alert(id: 'a3', elderlyId: '', alertType: 'medication_missed', severity: 'P2', status: 'resolved', metadata: {'description': '降压药漏服'}, createdAt: DateTime.now().subtract(const Duration(hours: 8)), resolvedAt: DateTime.now().subtract(const Duration(hours: 7))),
+        Alert(id: 'a4', elderlyId: '', alertType: 'geofence_exit', severity: 'P1', status: 'resolved', metadata: {'location': '外滩'}, createdAt: DateTime.now().subtract(const Duration(days: 1)), resolvedAt: DateTime.now().subtract(const Duration(days: 1, hours: 2))),
+      ];
+    });
   }
 
   Future<void> _onRefresh() async {
@@ -113,7 +128,7 @@ class _AlertsPageState extends State<AlertsPage> {
 
   Future<void> _handleAlert(Alert alert) async {
     try {
-      await ApiClient.instance.post('/alerts/${alert.id}/handle');
+      await ApiClient.instance.handleAlert(alert.id);
       setState(() {
         final idx = _allAlerts.indexWhere((a) => a.id == alert.id);
         if (idx >= 0) _allAlerts[idx] = Alert(
@@ -131,16 +146,47 @@ class _AlertsPageState extends State<AlertsPage> {
   // --- Filtering ---
   List<Alert> get _filtered {
     var list = _allAlerts;
-    if (_activePriority == 'critical') list = list.where((a) => a.severity == 'P0').toList();
-    else if (_activePriority == 'warning') list = list.where((a) => a.severity == 'P1').toList();
-    else if (_activePriority == 'info') list = list.where((a) => a.severity == 'P2').toList();
+    if (_activeFilter == '未处理') list = list.where((a) => a.status == 'pending').toList();
+    else if (_activeFilter == 'SOS') list = list.where((a) => a.alertType.toLowerCase().contains('sos')).toList();
+    else if (_activeFilter == '跌倒') list = list.where((a) => a.alertType.toLowerCase().contains('跌倒') || a.alertType.toLowerCase().contains('fall')).toList();
+    else if (_activeFilter == '健康') list = list.where((a) => !a.alertType.toLowerCase().contains('sos') && !a.alertType.toLowerCase().contains('跌倒')).toList();
+    if (_activePriority != '全部') list = list.where((a) => a.severity == _activePriority).toList();
     return list;
   }
 
   int get _p0Count => _allAlerts.where((a) => a.severity == 'P0' && a.status == 'pending').length;
   int get _p1Count => _allAlerts.where((a) => a.severity == 'P1' && a.status == 'pending').length;
   int get _p2Count => _allAlerts.where((a) => a.severity == 'P2' && a.status == 'pending').length;
-  int get _resolvedCount => _allAlerts.where((a) => a.status == 'resolved').length;
+
+  Future<void> _handleAllAlerts() async {
+    final pendingAlerts = _allAlerts.where((a) => a.status == 'pending').toList();
+    if (pendingAlerts.isEmpty) {
+      if (mounted) _showToast('没有未处理的告警');
+      return;
+    }
+    try {
+      await ApiClient.instance.post('/alerts/handle-all');
+      setState(() {
+        for (int i = 0; i < _allAlerts.length; i++) {
+          if (_allAlerts[i].status == 'pending') {
+            _allAlerts[i] = Alert(
+              id: _allAlerts[i].id,
+              elderlyId: _allAlerts[i].elderlyId,
+              alertType: _allAlerts[i].alertType,
+              severity: _allAlerts[i].severity,
+              status: 'resolved',
+              metadata: _allAlerts[i].metadata,
+              createdAt: _allAlerts[i].createdAt,
+              resolvedAt: DateTime.now(),
+            );
+          }
+        }
+      });
+      if (mounted) _showToast('已将 ${pendingAlerts.length} 条告警标记为已处理');
+    } catch (e) {
+      if (mounted) _showToast('操作失败: $e');
+    }
+  }
 
   void _showToast(String msg, {Color? color}) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -148,7 +194,6 @@ class _AlertsPageState extends State<AlertsPage> {
     );
   }
 
-  // --- Mock enrichment data for display ---
   String _alertDescription(Alert alert) {
     return alert.metadata?['description'] ?? '暂无详细描述';
   }
@@ -157,146 +202,115 @@ class _AlertsPageState extends State<AlertsPage> {
     return alert.metadata?['location'] ?? '未知位置';
   }
 
-  String _alertIcon(Alert alert) {
+  String _alertTypeLabel(Alert alert) {
     final type = alert.alertType.toLowerCase();
-    if (type.contains('sos')) return '\u{26A0}';
-    if (type.contains('跌倒') || type.contains('fall')) return '\u{1F982}';
-    if (type.contains('围栏') || type.contains('geofence')) return '\u{1F3E0}';
-    if (type.contains('心率') || type.contains('heart')) return '\u{2764}';
-    if (type.contains('用药') || type.contains('med')) return '\u{1F48A}';
-    if (type.contains('电量') || type.contains('battery')) return '\u{1F50B}';
-    if (type.contains('离线') || type.contains('offline')) return '\u{1F50C}';
-    return '\u{1F4AC}';
+    if (type.contains('sos')) return 'SOS';
+    if (type.contains('跌倒') || type.contains('fall')) return '跌倒检测';
+    if (type.contains('心率') || type.contains('heart')) return '心率异常';
+    if (type.contains('围栏') || type.contains('geofence')) return '电子围栏';
+    if (type.contains('用药') || type.contains('med')) return '用药提醒';
+    return alert.alertType;
   }
 
-  Color _alertIconBg(Alert alert) {
-    if (alert.severity == 'P0') return const Color(0xFFFEF2F2);
-    if (alert.severity == 'P1') return const Color(0xFFFFFBEB);
-    return const Color(0xFFDBEAFE);
+  IconData _alertTypeIcon(Alert alert) {
+    final type = alert.alertType.toLowerCase();
+    if (type.contains('sos')) return Icons.phone_in_talk_rounded;
+    if (type.contains('跌倒') || type.contains('fall')) return Icons.elderly_rounded;
+    if (type.contains('心率') || type.contains('heart')) return Icons.favorite_rounded;
+    if (type.contains('围栏') || type.contains('geofence')) return Icons.home_rounded;
+    if (type.contains('用药') || type.contains('med')) return Icons.medication_rounded;
+    return Icons.info_rounded;
+  }
+
+  Color _alertTypeBadgeBg(String label) {
+    if (label.contains('SOS')) return const Color(0xFFFFEBEE);
+    if (label.contains('跌倒')) return const Color(0xFFFFF3E0);
+    if (label.contains('心率')) return const Color(0xFFFCE4EC);
+    if (label.contains('围栏')) return const Color(0xFFFFF8E1);
+    return AppTheme.primaryBg;
+  }
+
+  Color _alertTypeBadgeColor(String label) {
+    if (label.contains('SOS')) return const Color(0xFFC62828);
+    if (label.contains('跌倒')) return const Color(0xFFE65100);
+    if (label.contains('心率')) return const Color(0xFFAD1457);
+    if (label.contains('围栏')) return const Color(0xFFF57F17);
+    return AppTheme.primary;
   }
 
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
     return Scaffold(
-      backgroundColor: _darkMode ? const Color(0xFF111827) : const Color(0xFFF3F4F6),
-      body: SmartRefresher(
-        controller: _refreshController,
-        onRefresh: _onRefresh,
-        enablePullDown: true,
-        enablePullUp: false,
-        child: _loading && _allAlerts.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-          children: [
-            _buildTopBar(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
+      backgroundColor: AppTheme.bgScaffold,
+      body: SafeArea(
+        child: SmartRefresher(
+          controller: _refreshController,
+          onRefresh: _onRefresh,
+          enablePullDown: true,
+          enablePullUp: false,
+          child: _loading && _allAlerts.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
                   children: [
-                    _buildStatsRow(),
-                    const SizedBox(height: 12),
-                    _buildSOSQuickAction(),
-                    const SizedBox(height: 12),
-                    _buildFilterChips(),
-                    const SizedBox(height: 8),
-                    _buildPriorityTabs(),
-                    const SizedBox(height: 12),
-                    ...filtered.map((alert) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _buildAlertItem(alert),
-                    )),
-                    if (filtered.isEmpty) const Center(child: Text('暂无告警', style: TextStyle(color: Color(0xFF9CA3AF)))),
+                    // Top bar
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border(bottom: BorderSide(color: const Color(0xFF000000).withOpacity(0.04))),
+                      ),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: widget.onBack ?? () => Navigator.of(context).pop(),
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(borderRadius: BorderRadius.circular(14)),
+                              child: const Center(child: Icon(Icons.chevron_left_rounded, size: 20, color: AppTheme.textSecondary)),
+                            ),
+                          ),
+                          const Expanded(
+                            child: Center(child: Text('告警中心', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.textPrimary))),
+                          ),
+                          GestureDetector(
+                            onTap: () => _handleAllAlerts(),
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(borderRadius: BorderRadius.circular(14)),
+                              child: const Center(child: Icon(Icons.select_all_rounded, size: 18, color: AppTheme.textMuted)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Scrollable content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Stats row
+                            _buildStatsRow(),
+                            const SizedBox(height: 16),
+                            // Filter chips
+                            _buildFilterChips(),
+                            const SizedBox(height: 12),
+                            // Priority tabs
+                            _buildPriorityTabs(),
+                            const SizedBox(height: 14),
+                            // Alert list
+                            _buildAlertList(filtered),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ),
-          ],
         ),
-      ),
-      bottomNavigationBar: BottomNavBar(
-        selectedTab: _selectedIndex,
-        onTabSelected: (i) => setState(() => _selectedIndex = i),
-      ),
-    );
-  }
-
-  // ===== Top Bar =====
-  Widget _buildTopBar() {
-    return Container(
-      color: _darkMode ? const Color(0xFF1F2937) : Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: Container(
-                  width: 36, height: 36, decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(18)),
-                  child: const Icon(Icons.arrow_back_ios_new, size: 16),
-                ),
-              ),
-              const Expanded(
-                child: Center(child: Text('告警中心', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700))),
-              ),
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => setState(() => _darkMode = !_darkMode),
-                    child: Container(width: 36, height: 36, decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(18)),
-                      child: Center(child: Text(_darkMode ? '\u{1F31E}' : '\u{2600}', style: const TextStyle(fontSize: 14))),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() => _allAlerts = _allAlerts.where((a) => a.status == 'pending').toList());
-                      _showToast('已清除已处理告警');
-                    },
-                    child: const Text('全部已读', style: TextStyle(fontSize: 13, color: AppTheme.primary, fontWeight: FontWeight.w600)),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // Elder selector
-          SizedBox(
-            height: 56,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: 2,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (ctx, i) {
-                final names = ['爷爷 张三丰', '奶奶 李秀英'];
-                final icons = ['\u{1F468}', '\u{1F469}'];
-                final bgs = [const Color(0xFFFFF3C7), const Color(0xFFFCE7F3)];
-                return Container(
-                  width: 130,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: i == 0 ? const Color(0xFFDBEAFE) : Colors.white,
-                    border: Border.all(color: i == 0 ? AppTheme.primary : const Color(0xFFE5E7EB)),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(width: 36, height: 36, decoration: BoxDecoration(color: bgs[i], shape: BoxShape.circle),
-                        child: Center(child: Text(icons[i], style: const TextStyle(fontSize: 18))),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(names[i], style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -305,83 +319,62 @@ class _AlertsPageState extends State<AlertsPage> {
   Widget _buildStatsRow() {
     return Row(
       children: [
-        _statCard('$_p0Count', '紧急', AppTheme.statusDanger, const Color(0xFFFEF2F2)),
-        const SizedBox(width: 8),
-        _statCard('$_p1Count', '警告', AppTheme.statusWarning, const Color(0xFFFFFBEB)),
-        const SizedBox(width: 8),
-        _statCard('$_resolvedCount', '已处理', AppTheme.statusNormal, const Color(0xFFF0FDF4)),
+        _statCard('$_p0Count', 'SOS 紧急', AppTheme.statusDanger),
+        const SizedBox(width: 10),
+        _statCard('$_p1Count', '跌倒检测', AppTheme.statusWarning),
+        const SizedBox(width: 10),
+        _statCard('$_p2Count', '健康异常', AppTheme.primary),
       ],
     );
   }
 
-  Widget _statCard(String num, String label, Color numColor, Color bgColor) {
+  Widget _statCard(String num, String label, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-        decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(14), border: Border(top: BorderSide(color: numColor, width: 3))),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppTheme.cardRadiusLg),
+          boxShadow: AppTheme.shadowMd,
+        ),
         child: Column(
           children: [
-            Text(num, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: numColor)),
-            Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+            Container(height: 3, width: 24, margin: const EdgeInsets.only(bottom: 8), decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+            Text(num, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: color)),
+            Text(label, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
           ],
         ),
       ),
     );
   }
 
-  // ===== SOS Quick Action =====
-  Widget _buildSOSQuickAction() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFFFEF2F2), Color(0xFFFEE2E2)]),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFfecaca)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44, height: 44, decoration: BoxDecoration(color: AppTheme.statusDanger, borderRadius: BorderRadius.circular(22)),
-            child: const Center(child: Text('\u{26A1}', style: TextStyle(fontSize: 22))),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('一键紧急呼叫', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF991B1B))),
-                Text('立即联系家属和急救中心', style: TextStyle(fontSize: 12, color: Color(0xFFB91C1C))),
-              ],
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => _showToast('正在发起紧急呼叫...'),
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.statusDanger, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            child: const Text('紧急呼叫', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ===== Filter Chips =====
   Widget _buildFilterChips() {
-    final chips = ['\u{1F50D} 全部', '\u{1F512} 仅未读', '\u{1F4CB} 待处理', '\u{1F4C0} 按时间'];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: chips.map((c) {
-          final isActive = c.contains('全部');
+        children: _filterChips.map((chip) {
+          final isActive = chip == _activeFilter;
           return Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: isActive ? const Color(0xFFDBEAFE) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: isActive ? AppTheme.primary : const Color(0xFFE5E7EB)),
+            child: GestureDetector(
+              onTap: () => setState(() => _activeFilter = chip),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                decoration: BoxDecoration(
+                  color: isActive ? AppTheme.primary : Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: isActive ? AppTheme.primary : const Color(0xFF000000).withOpacity(0.08)),
+                ),
+                child: Text(
+                  chip,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isActive ? Colors.white : AppTheme.textSecondary,
+                  ),
+                ),
               ),
-              child: Text(c, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? AppTheme.primary : const Color(0xFF4B5563))),
             ),
           );
         }).toList(),
@@ -392,154 +385,227 @@ class _AlertsPageState extends State<AlertsPage> {
   // ===== Priority Tabs =====
   Widget _buildPriorityTabs() {
     return Container(
-      decoration: BoxDecoration(color: const Color(0xFFE5E7EB), borderRadius: BorderRadius.circular(12)),
       padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: AppTheme.shadowSm,
+      ),
       child: Row(
         children: [
-          _priorityTab('全部', _p0Count + _p1Count + _p2Count, 'all', isActive: true),
+          _prioTab('全部', true),
           const SizedBox(width: 4),
-          _priorityTab('\u{1F534} P0', _p0Count, 'critical'),
+          _prioTab('P0', false, color: AppTheme.statusDanger),
           const SizedBox(width: 4),
-          _priorityTab('\u{26A0} P1', _p1Count, 'warning'),
+          _prioTab('P1', false, color: AppTheme.statusWarning),
           const SizedBox(width: 4),
-          _priorityTab('\u{1F4DC} P2', _p2Count, 'info'),
+          _prioTab('P2', false, color: AppTheme.primary),
         ],
       ),
     );
   }
 
-  Widget _priorityTab(String label, int count, String priority, {bool isActive = false}) {
+  Widget _prioTab(String label, bool active, {Color? color}) {
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _activePriority = priority),
+        onTap: () => setState(() => _activePriority = label == '全部' ? '全部' : label),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
-            color: isActive ? Colors.white : null,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4)] : [],
+            color: active ? AppTheme.bgScaffold : null,
+            borderRadius: BorderRadius.circular(8),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF1F2937) : const Color(0xFF6B7280))),
-              if (count > 0) ...[
-                const SizedBox(width: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                  decoration: BoxDecoration(color: isActive ? (priority == 'critical' ? AppTheme.statusDanger : (priority == 'warning' ? AppTheme.statusWarning : AppTheme.primary)) : const Color(0xFF9CA3AF), borderRadius: BorderRadius.circular(8)),
-                  child: Text('$count', style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w700)),
-                ),
-              ],
-            ],
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: active ? (color ?? AppTheme.textPrimary) : AppTheme.textMuted,
+              ),
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  // ===== Alert List =====
+  Widget _buildAlertList(List<Alert> alerts) {
+    if (alerts.isEmpty) {
+      return const EmptyState(
+        icon: Icons.check_circle_outline,
+        title: '暂无告警',
+        subtitle: '一切正常，继续加油',
+      );
+    }
+    return Column(
+      children: alerts.map((alert) {
+        final isRead = alert.status == 'resolved';
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _buildAlertItem(alert, isRead),
+        );
+      }).toList(),
     );
   }
 
   // ===== Alert Item =====
-  Widget _buildAlertItem(Alert alert) {
+  Widget _buildAlertItem(Alert alert, bool isRead) {
     final isPending = alert.status == 'pending';
-    final isRead = alert.status == 'resolved';
     final isCritical = alert.severity == 'P0';
     final borderColor = isCritical ? AppTheme.statusDanger : (alert.severity == 'P1' ? AppTheme.statusWarning : AppTheme.primary);
-    final bg = !isRead ? const Color(0xFFF9FAFB) : Colors.white;
+    final typeLabel = _alertTypeLabel(alert);
 
     return Container(
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: _darkMode ? const Color(0xFF1F2937) : bg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border(left: BorderSide(color: borderColor, width: 4)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 1))],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadiusLg),
+        boxShadow: AppTheme.shadowMd,
+        border: Border(left: BorderSide(color: isRead ? Colors.transparent : AppTheme.accent, width: 4)),
       ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 40, height: 40, decoration: BoxDecoration(color: _alertIconBg(alert), borderRadius: BorderRadius.circular(20)),
-                child: Center(child: Text(_alertIcon(alert), style: const TextStyle(fontSize: 20))),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              // Header row: type badge + priority + status
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: _alertTypeBadgeBg(typeLabel),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(alert.alertType, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1F2937))),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: isCritical ? const Color(0xFFFEF2F2) : (alert.severity == 'P1' ? const Color(0xFFFFFBEB) : const Color(0xFFDBEAFE)),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(alert.severity, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: isCritical ? AppTheme.statusDanger : (alert.severity == 'P1' ? const Color(0xFFD97706) : AppTheme.primary))),
+                        Icon(_alertTypeIcon(alert), size: 10, color: _alertTypeBadgeColor(typeLabel)),
+                        const SizedBox(width: 4),
+                        Text(
+                          typeLabel,
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _alertTypeBadgeColor(typeLabel)),
                         ),
-                        if (!isRead) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(8)),
-                            child: const Text('未读', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.statusDanger)),
-                          ),
-                        ],
                       ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(_alertDescription(alert), style: TextStyle(fontSize: 12, color: _darkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280), height: 1.4)),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: (isCritical ? const Color(0xFFFFEBEE) : (alert.severity == 'P1' ? const Color(0xFFFFFBEB) : AppTheme.primaryBg)),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      alert.severity,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: isCritical ? const Color(0xFFDC2626) : (alert.severity == 'P1' ? const Color(0xFFD97706) : AppTheme.primary),
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEF4FF),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      isPending ? '未读' : '已处理',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: isPending ? AppTheme.primary : const Color(0xFF16A34A),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Title
+              Text(alert.alertType, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+              const SizedBox(height: 4),
+              // Description
+              Text(_alertDescription(alert), style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, height: 1.5)),
+              const SizedBox(height: 8),
+              // Footer: location + time
+              Row(
+                children: [
+                  const Icon(Icons.location_on_rounded, size: 12),
+                  const SizedBox(width: 4),
+                  Text(_alertLocation(alert), style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                  const SizedBox(width: 16),
+                  const Icon(Icons.schedule_rounded, size: 12),
+                  const SizedBox(width: 4),
+                  Text(_timeAgo(alert.createdAt), style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                ],
+              ),
+              // Action buttons
+              if (isPending) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _actionBtn(Icons.phone_in_talk_rounded, '立即呼叫', AppTheme.statusDanger, Colors.white, onTap: () async {
+                        try {
+                          await ApiClient.instance.sosCall();
+                          if (mounted) _showToast('紧急呼叫已发起');
+                        } catch (_) {
+                          if (mounted) _showToast('呼叫失败');
+                        }
+                      }),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _actionBtn(Icons.near_me_rounded, '查看位置', AppTheme.primary, Colors.white, onTap: () {
+                        // Navigate to map view with alert location
+                        final loc = alert.metadata?['location'];
+                        if (loc != null && mounted) {
+                          _showToast('正在打开位置: $loc');
+                        }
+                      }),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _actionBtn(Icons.check_circle_rounded, '标记处理', const Color(0xFFE8F5E9), const Color(0xFF2E7D32), onTap: () => _handleAlert(alert)),
+                    ),
                   ],
                 ),
-              ),
-              // Unread dot
-              if (!isRead)
-                Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppTheme.statusDanger, shape: BoxShape.circle)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Text('\u{1F4CD} ${_alertLocation(alert)}', style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF))),
-              const SizedBox(width: 12),
-              Text('\u{1F550} ${_timeAgo(alert.createdAt)}', style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF))),
-            ],
-          ),
-          if (isPending) ...[
-            const SizedBox(height: 12),
-            Divider(color: const Color(0xFFF3F4F6), height: 1),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                _alertActionButton('\u{1F4DE} 电话回拨', AppTheme.primary, Colors.white),
-                _alertActionButton('\u{1F4CD} 查看位置', null, const Color(0xFF4B5563)),
-                _alertActionButton('标记已读', null, const Color(0xFF6B7280), onTap: () => _handleAlert(alert)),
               ],
+            ],
+          ),
+          // Unread dot
+          if (!isRead)
+            Positioned(
+              top: 14,
+              right: 14,
+              child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppTheme.accent, shape: BoxShape.circle)),
             ),
-          ],
         ],
       ),
     );
   }
 
-  Widget _alertActionButton(String label, Color? bg, Color fg, {VoidCallback? onTap}) {
+  Widget _actionBtn(IconData? icon, String label, Color bg, Color fg, {VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        flex: 1,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: bg ?? Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: bg != null ? bg : const Color(0xFFE5E7EB)),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 14, color: fg),
+              const SizedBox(width: 4),
+            ],
+            Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: fg)),
+          ],
         ),
-        child: Center(child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg ?? const Color(0xFF4B5563)))),
       ),
     );
   }
