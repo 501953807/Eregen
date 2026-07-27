@@ -167,12 +167,12 @@ go_start() {
   write_pid "$service" "$pid"
   log_info "Started $service (PID $pid) on port $port"
 
-  # Wait for the port to become available (skip for gateway / port=0)
+  # Wait for the port to become available AND health check passes (skip for gateway / port=0)
   if [ "$service" != "gateway" ] && [ "$port" -gt 0 ] 2>/dev/null; then
     log_info "Waiting for $service to be ready on port $port..."
     local waited=0
     while [ $waited -lt 30 ]; do
-      if check_ports_conflict >/dev/null 2>&1 && check_process_running "$port"; then
+      if wait_for_health "$port" "/api/v1/health" 30 "$service"; then
         log_success "$service is ready on port $port (PID $pid)"
         log_info "Log: $log_file"
         return 0

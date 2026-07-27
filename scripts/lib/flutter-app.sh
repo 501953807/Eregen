@@ -58,9 +58,14 @@ flutter_start() {
 
   # Build device flag
   local device_flag=""
+  local port=5173  # Default for web
   case "$target" in
     device:*)
       device_flag="-d ${target#device:}"
+      ;;
+    chrome)
+      device_flag="-d $target"
+      port=5173
       ;;
     *)
       device_flag="-d $target"
@@ -78,8 +83,25 @@ flutter_start() {
   local pid=$!
   write_pid "$app" "$pid"
 
-  log_success "$app starting on $target (PID $pid)"
-  log_info "Logs: tail -f $PID_DIR/${app}.log"
+  if [ "$target" = "chrome" ]; then
+    # Wait for web server to respond with index.html
+    log_info "Waiting for $app web server on port $port..."
+    local waited=0
+    while [ $waited -lt 30 ]; do
+      if wait_for_health "$port" "/" 30 "$app"; then
+        log_success "$app started on http://localhost:$port (PID $pid)"
+        break
+      fi
+      sleep 1
+      waited=$((waited + 1))
+    done
+    if [ $waited -ge 30 ]; then
+      log_warn "$app web server may still be starting (PID $pid alive)"
+    fi
+  else
+    log_success "$app starting on $target (PID $pid)"
+    log_info "Logs: tail -f $PID_DIR/${app}.log"
+  fi
 }
 
 flutter_stop() {

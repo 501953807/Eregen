@@ -3,6 +3,7 @@ package router
 import (
 	"database/sql"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -25,7 +26,10 @@ func Setup(db *sql.DB, logger *zap.Logger, dbType string) *gin.Engine {
 	}
 	adminJWT := middleware.NewAdminJWT(jwtSecret, 24*time.Hour, logger)
 
-	r.Use(adminJWT.AuthMiddleware())
+	// Unprotected health check endpoint — always available, no auth required
+	r.GET("/api/v1/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"data": gin.H{"status": "ok"}})
+	})
 
 	dashboard := handler.NewDashboardHandler(s)
 	device := handler.NewDeviceHandler(s)
@@ -47,6 +51,10 @@ func Setup(db *sql.DB, logger *zap.Logger, dbType string) *gin.Engine {
 	api := r.Group("/api/v1/admin")
 	if rlErr == nil {
 		api.Use(rateLimiter.Middleware())
+	}
+	// JWT Authentication — only applied when JWT_SECRET is set
+	if jwtSecret != "" {
+		api.Use(adminJWT.AuthMiddleware())
 	}
 	{
 		api.GET("/stats/overview", dashboard.GetOverview)

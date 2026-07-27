@@ -76,10 +76,10 @@ vue_start() {
   local pid=$!
   write_pid "$app_name" "$pid"
 
-  # Wait for port to become available (up to 30s)
+  # Wait for app to be ready - validate both port and HTML response
   local waited=0
   while [ $waited -lt 30 ]; do
-    if check_process_running "$port"; then
+    if wait_for_health "$port" "/index.html" 30 "$app_name"; then
       log_success "$app_name started on http://localhost:$port (PID $pid)"
       return 0
     fi

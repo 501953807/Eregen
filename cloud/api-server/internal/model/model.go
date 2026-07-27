@@ -317,3 +317,34 @@ type VerifyFirmwareRequest struct {
 	PublicKey string `json:"public_key" binding:"required"` // Ed25519 public key in base64
 	Signature string `json:"signature" binding:"required"`  // Ed25519 signature in base64
 }
+
+// UserSummary is a lightweight row returned by the user list endpoint.
+type UserSummary struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Role      string    `json:"role"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// DeviceSummary is a lightweight row returned by the device list endpoint.
+type DeviceSummary struct {
+	ID          string    `json:"id"`
+	DeviceID    string    `json:"device_id"`
+	Type        string    `json:"type"`
+	Tier        string    `json:"tier"`
+	Status      string    `json:"status"`
+	LastSeen    time.Time `json:"last_seen"`
+	OwnerName   string    `json:"owner_name"`
+	FirmwareVer string    `json:"firmware_version"`
+}
+
+// AlertSummary is a lightweight row returned by the alert list endpoint.
+type AlertSummary struct {
+	ID         string `json:"id"`
+	ElderlyID  string `json:"elderly_id"`
+	AlertType  string `json:"alert_type"`
+	Severity   string `json:"severity"`
+	Status     string `json:"status"`
+	CreatedAt  time.Time `json:"created_at"`
+	DeviceID   string `json:"device_id"`
+}

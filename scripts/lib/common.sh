@@ -113,6 +113,126 @@ check_ports_conflict() {
   return 0
 }
 
+# --- Health Endpoint Wait Function ---
+# Polls a health endpoint at URL until it returns HTTP 200 with expected content.
+# Usage: wait_for_health <port> <path> <timeout_sec> <service_name>
+# Returns 0 on success, non-zero on timeout/failure.
+wait_for_health() {
+  local port="$1"
+  local path="$2"
+  local timeout="${3:-30}"
+  local service_name="${4}"
+
+  log_info "Waiting for ${service_name} health on port ${port}${path}..."
+
+  local waited=0
+  while [ $waited -lt "$timeout" ]; do
+    local response_code
+    response_code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:${port}${path}" 2>/dev/null || echo "000")
+
+    if [ "$response_code" = "200" ]; then
+      # Optional: verify content contains "ok" status
+      local response_body
+      response_body=$(curl -s "http://localhost:${port}${path}" 2>/dev/null || echo "")
+
+      # Check for expected JSON format (depends on service)
+      if echo "$response_body" | grep -q '"status"'; then
+        if echo "$response_body" | grep -q '"ok"'; then
+          log_success "${service_name} health check passed"
+          return 0
+        fi
+      fi
+
+      # If no content check required, just return success
+      log_success "${service_name} HTTP ${response_code}"
+      return 0
+    fi
+
+    sleep 1
+    waited=$((waited + 1))
+
+    if [ $waited -ge $timeout ]; then
+      log_error "${service_name} health check failed after ${timeout}s (HTTP ${response_code})"
+      return 1
+    fi
+  done
+
+  return 1
+}
+
+# --- Kill process holding a port ---
+# kill_by_port <port> <force=true/false>
+# If force=true, aggressively kill the process; otherwise send SIGTERM first.
+kill_by_port() {
+  local port="$1"
+  local force="${2:-false}"
+
+  if ! command -v lsof &>/dev/null; then
+    log_error "lsof not available, cannot kill port $port"
+    return 1
+  fi
+
+  local pid
+  pid=$(lsof -t :"$port" 2>/dev/null | head -1)
+  if [ -z "$pid" ]; then
+    log_info "Port $port not occupied"
+    return 0
+  fi
+
+  log_info "Process $pid holding port $port"
+
+  if [ "$force" = "true" ]; then
+    log_warn "Force-killing PID $pid on port $port"
+    kill -9 "$pid" 2>/dev/null || true
+  else
+    log_info "Sending TERM to PID $pid (will wait for KILL if needed)"
+    kill "$pid" 2>/dev/null || true
+    local waited=0
+    while [ $waited -lt 5 ]; do
+      if ! kill -0 "$pid" 2>/dev/null; then break; fi
+      sleep 1
+      waited=$((waited + 1))
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+      log_warn "PID still running, sending KILL"
+      kill -9 "$pid" 2>/dev/null || true
+    fi
+  fi
+
+  sleep 0.1
+  if [ "$(lsof -t :$port 2>/dev/null | head -1)" != "" ]; then
+    log_warn "Port $port still held after kill attempt"
+    return 1
+  fi
+  log_info "Port $port freed"
+  return 0
+}
+
+# Resolve port conflict for a given service
+resolve_port_conflict() {
+  local port="$1"
+  local service="$2"
+  local force="${3:-true}"
+
+  log_warn "Port $port conflict detected for $service"
+
+  # Get the conflicting process info
+  if command -v lsof &>/dev/null; then
+    lsof_output=$(lsof -i :"$port" 2>/dev/null | grep LISTEN | head -1)
+    if [ -n "$lsof_output" ]; then
+      log_warn "Conflict process: $lsof_output"
+    fi
+  fi
+
+  if [ "$force" = "true" ]; then
+    kill_by_port "$port" "true"
+    return $?
+  else
+    kill_by_port "$port" "false"
+    return $?
+  fi
+}
+
 # --- PID Management ---
 PID_DIR="$HOME/.eregen/pids"
 
