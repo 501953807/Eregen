@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eregen 颐贞 — 管理后台仪表盘 (Enhanced)</title>
+<style>
+  :root {
+    --primary: #2563EB;
+    --primary-light: #EFF6FF;
+    --success: #16A34A;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-400: #9CA3AF;
+    --gray-500: #6B7280;
+    --gray-600: #4B5563;
+    --gray-700: #374151;
+    --gray-800: #1F2937;
+    --gray-900: #111827;
+    --sidebar-w: 240px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; background: var(--gray-100); color: var(--gray-800); }
+
+  /* Sidebar */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; width: var(--sidebar-w);
+    background: var(--gray-900); color: white; z-index: 100;
+    display: flex; flex-direction: column;
+  }
+  .sidebar-brand {
+    padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .brand-logo {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary), #7C3AED);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 800;
+  }
+  .brand-text { font-size: 16px; font-weight: 700; }
+  .brand-sub { font-size: 10px; opacity: 0.5; }
+  .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+  .nav-section { padding: 8px 20px 6px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.4; margin-top: 8px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 20px; font-size: 13px; cursor: pointer;
+    color: rgba(255,255,255,0.6); transition: all 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+  .nav-item.active {
+    background: rgba(37,99,235,0.15); color: white;
+    border-left-color: var(--primary);
+  }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-badge {
+    margin-left: auto; background: var(--danger); color: white;
+    font-size: 10px; padding: 1px 6px; border-radius: 8px; font-weight: 700;
+  }
+  .sidebar-footer {
+    padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .avatar-sm {
+    width: 32px; height: 32px; border-radius: 16px;
+    background: linear-gradient(135deg, #60A5FA, #A78BFA);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .user-info { flex: 1; }
+  .user-name { font-size: 12px; font-weight: 600; }
+  .user-role { font-size: 10px; opacity: 0.5; }
+
+  /* Main Content */
+  .main { margin-left: var(--sidebar-w); min-height: 100vh; }
+
+  /* Top Bar */
+  .topbar {
+    background: white; padding: 12px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--gray-200);
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .search-box {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--gray-100); border-radius: 8px; padding: 8px 14px;
+    width: 300px;
+  }
+  .search-box input {
+    border: none; background: none; outline: none;
+    font-size: 13px; flex: 1; color: var(--gray-700);
+  }
+  .search-icon { color: var(--gray-400); font-size: 14px; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .topbar-btn {
+    width: 36px; height: 36px; border-radius: 8px; border: none;
+    background: var(--gray-100); cursor: pointer; font-size: 16px;
+    position: relative; transition: background 0.15s;
+  }
+  .topbar-btn:hover { background: var(--gray-200); }
+  .notif-dot {
+    position: absolute; top: 6px; right: 6px;
+    width: 8px; height: 8px; border-radius: 50%; background: var(--danger);
+  }
+
+  /* Page Content */
+  .page-content { padding: 24px; }
+  .page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .page-title { font-size: 22px; font-weight: 800; color: var(--gray-900); }
+  .page-subtitle { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
+  .refresh-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px; border: 1px solid var(--gray-200);
+    background: white; font-size: 13px; color: var(--gray-600);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .refresh-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;
+  }
+  .kpi-card {
+    background: white; border-radius: 14px; padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+  .kpi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .kpi-label { font-size: 13px; color: var(--gray-500); }
+  .kpi-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .kpi-icon.blue { background: var(--primary-light); }
+  .kpi-icon.green { background: #F0FDF4; }
+  .kpi-icon.orange { background: #FFFBEB; }
+  .kpi-icon.red { background: #FEF2F2; }
+  .kpi-value { font-size: 28px; font-weight: 800; color: var(--gray-900); line-height: 1; }
+  .kpi-change { font-size: 11px; margin-top: 6px; font-weight: 600; }
+  .kpi-change.up { color: var(--success); }
+  .kpi-change.down { color: var(--danger); }
+  .kpi-sparkline { margin-top: 10px; height: 30px; }
+
+  /* Charts Row */
+  .charts-row {
+    display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px;
+  }
+  .chart-card {
+    background: white; border-radius: 14px; padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .chart-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .chart-title { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+  .chart-filter {
+    display: flex; gap: 4px;
+  }
+  .filter-btn {
+    padding: 4px 10px; border-radius: 6px; border: none;
+    font-size: 11px; background: var(--gray-100); color: var(--gray-500);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .filter-btn.active { background: var(--primary); color: white; }
+  .chart-svg { width: 100%; }
+
+  /* Device Status */
+  .device-status-list { display: flex; flex-direction: column; gap: 10px; }
+  .device-status-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px; border-radius: 10px; background: var(--gray-50);
+  }
+  .ds-icon { font-size: 20px; }
+  .ds-info { flex: 1; }
+  .ds-name { font-size: 13px; font-weight: 600; }
+  .ds-detail { font-size: 11px; color: var(--gray-400); }
+  .ds-bar-wrap { width: 80px; height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden; }
+  .ds-bar { height: 100%; border-radius: 3px; }
+  .ds-value { font-size: 12px; font-weight: 700; width: 36px; text-align: right; }
+
+  /* Bottom Grid */
+  .bottom-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;
+  }
+  .list-card {
+    background: white; border-radius: 14px; padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .list-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+  .list-more { font-size: 12px; color: var(--primary); cursor: pointer; font-weight: 500; }
+  .alert-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--gray-100);
+    font-size: 12px;
+  }
+  .alert-row:last-child { border: none; }
+  .alert-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .alert-dot.p0 { background: var(--danger); }
+  .alert-dot.p1 { background: var(--warning); }
+  .alert-dot.p2 { background: var(--primary); }
+  .alert-text { flex: 1; color: var(--gray-700); }
+  .alert-time { color: var(--gray-400); font-size: 11px; white-space: nowrap; }
+
+  .user-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--gray-100);
+    font-size: 12px;
+  }
+  .user-row:last-child { border: none; }
+  .user-avatar-xs {
+    width: 28px; height: 28px; border-radius: 14px;
+    background: var(--gray-200); display: flex; align-items: center;
+    justify-content: center; font-size: 12px; flex-shrink: 0;
+  }
+  .user-name-xs { flex: 1; font-weight: 600; }
+  .user-tier { font-size: 10px; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
+  .tier-pro { background: #EDE9FE; color: #7C3AED; }
+  .tier-plus { background: #DBEAFE; color: #2563EB; }
+  .tier-basic { background: var(--gray-100); color: var(--gray-500); }
+
+  .order-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--gray-100);
+    font-size: 12px;
+  }
+  .order-row:last-child { border: none; }
+  .order-id { font-weight: 600; color: var(--gray-700); width: 80px; }
+  .order-product { flex: 1; color: var(--gray-600); }
+  .order-amount { font-weight: 700; color: var(--gray-800); }
+  .order-status { font-size: 10px; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
+  .status-pending { background: #FFFBEB; color: #D97706; }
+  .status-done { background: #F0FDF4; color: var(--success); }
+
+  /* Subscription Funnel */
+  .funnel { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 8px; }
+  .funnel-step {
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; font-size: 12px; font-weight: 600;
+    color: white; transition: transform 0.15s;
+  }
+  .funnel-step:hover { transform: scale(1.02); }
+  .funnel-count { font-size: 10px; opacity: 0.8; margin-left: 6px; }
+
+  /* Live Indicator */
+  .live-dot {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; color: var(--success); font-weight: 600;
+  }
+  .live-dot::before {
+    content: '';
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--success);
+    animation: livePulse 1.5s infinite;
+  }
+  @keyframes livePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-logo">E</div>
+    <div>
+      <div class="brand-text">颐贞 Eregen</div>
+      <div class="brand-sub">运营管理后台</div>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section">核心功能</div>
+    <div class="nav-item active"><span class="nav-icon">&#128200;</span>仪表盘</div>
+    <div class="nav-item"><span class="nav-icon">&#128187;</span>设备管理<span class="nav-badge">12</span></div>
+    <div class="nav-item"><span class="nav-icon">&#128100;</span>用户管理</div>
+    <div class="nav-item"><span class="nav-icon">&#128139;</span>用药管理</div>
+    <div class="nav-item"><span class="nav-icon">&#9888;</span>告警中心<span class="nav-badge">3</span></div>
+    <div class="nav-section">业务运营</div>
+    <div class="nav-item"><span class="nav-icon">&#128176;</span>订阅管理</div>
+    <div class="nav-item"><span class="nav-icon">&#128230;</span>订单管理</div>
+    <div class="nav-item"><span class="nav-icon">&#128149;</span>数据分析</div>
+    <div class="nav-item"><span class="nav-icon">&#128227;</span>消息推送</div>
+    <div class="nav-section">系统</div>
+    <div class="nav-item"><span class="nav-icon">&#9881;&#65039;</span>系统设置</div>
+    <div class="nav-item"><span class="nav-icon">&#128274;</span>安全审计</div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="avatar-sm">&#128104;</div>
+    <div class="user-info">
+      <div class="user-name">管理员</div>
+      <div class="user-role">超级管理员</div>
+    </div>
+    <span style="cursor:pointer;opacity:0.5;">&#8604;</span>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="search-box">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" placeholder="搜索设备、用户、订单...">
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="live-dot">实时数据</span>
+      <button class="topbar-btn">&#128270;</button>
+      <button class="topbar-btn">&#9993;<span class="notif-dot"></span></button>
+    </div>
+  </div>
+
+  <!-- Page Content -->
+  <div class="page-content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">仪表盘总览</div>
+        <div class="page-subtitle">最后更新: 2025-07-14 14:35 · <span class="live-dot">实时同步中</span></div>
+      </div>
+      <button class="refresh-btn">&#8635; 刷新数据</button>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">在线设备总数</span>
+          <div class="kpi-icon blue">&#128187;</div>
+        </div>
+        <div class="kpi-value">2,847</div>
+        <div class="kpi-change up">&#8593; +12.5% 较上月</div>
+        <svg class="kpi-sparkline" viewBox="0 0 200 30">
+          <polyline points="0,25 20,22 40,20 60,18 80,15 100,16 120,12 140,10 160,8 180,6 200,5" fill="none" stroke="#2563EB" stroke-width="2"/>
+          <polyline points="0,25 20,22 40,20 60,18 80,15 100,16 120,12 140,10 160,8 180,6 200,5 200,30 0,30" fill="url(#blueGrad)" opacity="0.2"/>
+          <defs><linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563EB"/><stop offset="100%" stop-color="transparent"/></linearGradient></defs>
+        </svg>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">活跃用户数</span>
+          <div class="kpi-icon green">&#128100;</div>
+        </div>
+        <div class="kpi-value">5,234</div>
+        <div class="kpi-change up">&#8593; +8.3% 较上月</div>
+        <svg class="kpi-sparkline" viewBox="0 0 200 30">
+          <polyline points="0,20 20,18 40,22 60,15 80,14 100,12 120,10 140,11 160,8 180,7 200,6" fill="none" stroke="#16A34A" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">今日告警数</span>
+          <div class="kpi-icon orange">&#9888;</div>
+        </div>
+        <div class="kpi-value">47</div>
+        <div class="kpi-change down">&#8595; -15.2% 较昨日（改善）</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">月营收 (元)</span>
+          <div class="kpi-icon red">&#128176;</div>
+        </div>
+        <div class="kpi-value">¥86.4k</div>
+        <div class="kpi-change up">&#8593; +22.1% 较上月</div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">设备在线率趋势</span>
+          <div class="chart-filter">
+            <button class="filter-btn">7天</button>
+            <button class="filter-btn active">30天</button>
+            <button class="filter-btn">90天</button>
+          </div>
+        </div>
+        <svg class="chart-svg" viewBox="0 0 600 200" height="200">
+          <!-- Grid -->
+          <line x1="50" y1="20" x2="580" y2="20" stroke="#E5E7EB" stroke-width="0.5"/>
+          <line x1="50" y1="60" x2="580" y2="60" stroke="#E5E7EB" stroke-width="0.5"/>
+          <line x1="50" y1="100" x2="580" y2="100" stroke="#E5E7EB" stroke-width="0.5"/>
+          <line x1="50" y1="140" x2="580" y2="140" stroke="#E5E7EB" stroke-width="0.5"/>
+          <line x1="50" y1="180" x2="580" y2="180" stroke="#E5E7EB" stroke-width="0.5"/>
+          <!-- Y labels -->
+          <text x="44" y="24" text-anchor="end" fill="#9CA3AF" font-size="10">100%</text>
+          <text x="44" y="64" text-anchor="end" fill="#9CA3AF" font-size="10">95%</text>
+          <text x="44" y="104" text-anchor="end" fill="#9CA3AF" font-size="10">90%</text>
+          <text x="44" y="144" text-anchor="end" fill="#9CA3AF" font-size="10">85%</text>
+          <text x="44" y="184" text-anchor="end" fill="#9CA3AF" font-size="10">80%</text>
+          <!-- Target line -->
+          <line x1="50" y1="40" x2="580" y2="40" stroke="#16A34A" stroke-width="1" stroke-dasharray="6 3" opacity="0.5"/>
+          <text x="580" y="36" text-anchor="end" fill="#16A34A" font-size="9">目标 97%</text>
+          <!-- Online rate area + line -->
+          <path d="M50,50 L96,48 142,52 188,45 234,42 280,44 326,40 372,38 418,42 464,36 510,38 556,35 556,180 50,180 Z" fill="#2563EB" opacity="0.08"/>
+          <polyline points="50,50 96,48 142,52 188,45 234,42 280,44 326,40 372,38 418,42 464,36 510,38 556,35" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- Offline rate area + line -->
+          <path d="M50,160 L96,155 142,158 188,150 234,148 280,152 326,145 372,142 418,148 464,140 510,142 556,138 556,180 50,180 Z" fill="#EF4444" opacity="0.06"/>
+          <polyline points="50,160 96,155 142,158 188,150 234,148 280,152 326,145 372,142 418,148 464,140 510,142 556,138" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 3"/>
+          <!-- X labels -->
+          <text x="50" y="196" text-anchor="middle" fill="#9CA3AF" font-size="10">7/1</text>
+          <text x="142" y="196" text-anchor="middle" fill="#9CA3AF" font-size="10">7/5</text>
+          <text x="234" y="196" text-anchor="middle" fill="#9CA3AF" font-size="10">7/9</text>
+          <text x="326" y="196" text-anchor="middle" fill="#9CA3AF" font-size="10">7/13</text>
+          <text x="418" y="196" text-anchor="middle" fill="#9CA3AF" font-size="10">7/17</text>
+          <text x="510" y="196" text-anchor="middle" fill="#9CA3AF" font-size="10">7/21</text>
+          <!-- Legend -->
+          <circle cx="440" cy="12" r="4" fill="#2563EB"/>
+          <text x="448" y="15" fill="#6B7280" font-size="10">在线设备</text>
+          <circle cx="520" cy="12" r="4" fill="#EF4444"/>
+          <text x="528" y="15" fill="#6B7280" font-size="10">离线设备</text>
+        </svg>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">设备类型分布</span>
+        </div>
+        <svg viewBox="0 0 200 200" width="200" height="200" style="display:block;margin:0 auto;">
+          <!-- Donut chart -->
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#DBEAFE" stroke-width="30"/>
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#2563EB" stroke-width="30"
+            stroke-dasharray="175 440" stroke-dashoffset="0" transform="rotate(-90 100 100)"/>
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#86EFAC" stroke-width="30"
+            stroke-dasharray="110 440" stroke-dashoffset="-175" transform="rotate(-90 100 100)"/>
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#FCD34D" stroke-width="30"
+            stroke-dasharray="88 440" stroke-dashoffset="-285" transform="rotate(-90 100 100)"/>
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#FCA5A5" stroke-width="30"
+            stroke-dasharray="66 440" stroke-dashoffset="-373" transform="rotate(-90 100 100)"/>
+          <text x="100" y="95" text-anchor="middle" fill="#1F2937" font-size="20" font-weight="800">2,847</text>
+          <text x="100" y="113" text-anchor="middle" fill="#9CA3AF" font-size="10">总设备</text>
+        </svg>
+        <div class="device-status-list" style="margin-top:12px;">
+          <div class="device-status-item">
+            <span class="ds-icon">&#128188;</span>
+            <div class="ds-info"><div class="ds-name">手环 Pro</div></div>
+            <span style="font-size:11px;font-weight:700;color:#2563EB;width:36px;text-align:right;">40%</span>
+          </div>
+          <div class="device-status-item">
+            <span class="ds-icon">&#128188;</span>
+            <div class="ds-info"><div class="ds-name">手环 Plus</div></div>
+            <span style="font-size:11px;font-weight:700;color:#16A34A;width:36px;text-align:right;">25%</span>
+          </div>
+          <div class="device-status-item">
+            <span class="ds-icon">&#128139;</span>
+            <div class="ds-info"><div class="ds-name">药盒 Smart</div></div>
+            <span style="font-size:11px;font-weight:700;color:#D97706;width:36px;text-align:right;">20%</span>
+          </div>
+          <div class="device-status-item">
+            <span class="ds-icon">&#128139;</span>
+            <div class="ds-info"><div class="ds-name">药盒 Auto</div></div>
+            <span style="font-size:11px;font-weight:700;color:#EF4444;width:36px;text-align:right;">15%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Grid -->
+    <div class="bottom-grid">
+      <!-- Recent Alerts -->
+      <div class="list-card">
+        <div class="list-title">
+          最新告警
+          <span class="list-more">查看全部 &rarr;</span>
+        </div>
+        <div class="alert-row">
+          <span class="alert-dot p0"></span>
+          <span class="alert-text">SOS按钮触发 - 张三丰</span>
+          <span class="alert-time">3分钟前</span>
+        </div>
+        <div class="alert-row">
+          <span class="alert-dot p0"></span>
+          <span class="alert-text">跌倒检测告警 - 李秀英</span>
+          <span class="alert-time">12分钟前</span>
+        </div>
+        <div class="alert-row">
+          <span class="alert-dot p1"></span>
+          <span class="alert-text">电子围栏越界 - 王建国</span>
+          <span class="alert-time">25分钟前</span>
+        </div>
+        <div class="alert-row">
+          <span class="alert-dot p1"></span>
+          <span class="alert-text">心率异常 - 赵淑华</span>
+          <span class="alert-time">45分钟前</span>
+        </div>
+        <div class="alert-row">
+          <span class="alert-dot p2"></span>
+          <span class="alert-text">设备电量低 - BR-0034</span>
+          <span class="alert-time">2小时前</span>
+        </div>
+      </div>
+
+      <!-- New Users -->
+      <div class="list-card">
+        <div class="list-title">
+          新增用户
+          <span class="list-more">查看全部 &rarr;</span>
+        </div>
+        <div class="user-row">
+          <div class="user-avatar-xs">&#128105;</div>
+          <span class="user-name-xs">张明</span>
+          <span class="user-tier tier-pro">Pro</span>
+          <span style="font-size:11px;color:var(--gray-400);">今天</span>
+        </div>
+        <div class="user-row">
+          <div class="user-avatar-xs">&#128104;</div>
+          <span class="user-name-xs">刘芳</span>
+          <span class="user-tier tier-plus">Plus</span>
+          <span style="font-size:11px;color:var(--gray-400);">昨天</span>
+        </div>
+        <div class="user-row">
+          <div class="user-avatar-xs">&#128105;</div>
+          <span class="user-name-xs">陈伟</span>
+          <span class="user-tier tier-basic">Starter</span>
+          <span style="font-size:11px;color:var(--gray-400);">2天前</span>
+        </div>
+        <div class="user-row">
+          <div class="user-avatar-xs">&#128104;</div>
+          <span class="user-name-xs">孙丽</span>
+          <span class="user-tier tier-pro">Pro</span>
+          <span style="font-size:11px;color:var(--gray-400);">3天前</span>
+        </div>
+        <div class="user-row">
+          <div class="user-avatar-xs">&#128105;</div>
+          <span class="user-name-xs">周强</span>
+          <span class="user-tier tier-plus">Plus</span>
+          <span style="font-size:11px;color:var(--gray-400);">3天前</span>
+        </div>
+      </div>
+
+      <!-- Subscription Funnel -->
+      <div class="list-card">
+        <div class="list-title">
+          订阅转化漏斗
+          <span class="list-more">详细分析 &rarr;</span>
+        </div>
+        <div class="funnel">
+          <div class="funnel-step" style="background:var(--primary);width:100%;padding:10px;">注册家属 <span class="funnel-count">5,234</span></div>
+          <div class="funnel-step" style="background:#3B82F6;width:80%;padding:10px;">绑定设备 <span class="funnel-count">3,891</span></div>
+          <div class="funnel-step" style="background:#60A5FA;width:60%;padding:10px;">查看健康数据 <span class="funnel-count">2,456</span></div>
+          <div class="funnel-step" style="background:#93C5FD;width:40%;padding:10px;">开通付费订阅 <span class="funnel-count">847</span></div>
+        </div>
+        <div style="margin-top:14px;padding:10px;background:var(--gray-50);border-radius:10px;text-align:center;">
+          <div style="font-size:11px;color:var(--gray-500);">整体转化率</div>
+          <div style="font-size:22px;font-weight:800;color:var(--primary);">16.2%</div>
+          <div style="font-size:10px;color:var(--success);">&#8593; +2.1% 较上月</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

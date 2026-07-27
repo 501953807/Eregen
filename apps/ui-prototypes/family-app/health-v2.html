@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Eregen 颐贞 — 健康数据</title>
+<style>
+  :root {
+    --primary: #1B3A5C;
+    --primary-mid: #2D5F8A;
+    --primary-light: #5B8DB8;
+    --primary-bg: #EEF4FA;
+    --accent: #22C55E;
+    --accent-mid: #4ADE80;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --bg-scaffold: #F6F7FB;
+    --bg-card: #FFFFFF;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+    --shadow-sm: 0 1px 3px rgba(22,163,74,0.04), 0 1px 2px rgba(22,163,74,0.06);
+    --shadow-md: 0 4px 12px rgba(22,163,74,0.06), 0 2px 4px rgba(22,163,74,0.04);
+    --shadow-lg: 0 12px 28px rgba(22,163,74,0.08), 0 4px 12px rgba(22,163,74,0.04);
+    --radius-md: 14px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+    --radius-pill: 9999px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    background: var(--bg-scaffold);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ===== Top Bar ===== */
+  .top-bar {
+    background: var(--bg-card);
+    padding: 12px 16px;
+    z-index: 100;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+  }
+  .top-bar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .back-btn {
+    width: 36px; height: 36px;
+    border: none; background: none;
+    font-size: 20px; color: var(--text-secondary);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-md);
+  }
+  .back-btn:active { background: var(--bg-scaffold); }
+  .page-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+  .share-btn {
+    width: 36px; height: 36px;
+    border: none; background: none;
+    font-size: 18px; color: var(--text-secondary);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-md);
+  }
+  .share-btn:active { background: var(--bg-scaffold); }
+
+  /* ===== Scrollable Content ===== */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ===== Risk Score Card (Soft Green Gradient) ===== */
+  .risk-card {
+    background: linear-gradient(135deg, #F0FDF4, #DCFCE7, #BBF7D0);
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+  }
+  .risk-card::after {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 100px; height: 100px;
+    background: rgba(34,197,94,0.08);
+    border-radius: 50%;
+  }
+  .risk-title {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+  }
+  .risk-body { display: flex; align-items: center; gap: 18px; }
+  .risk-ring {
+    width: 80px; height: 80px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .risk-ring svg { transform: rotate(-90deg); }
+  .risk-ring-bg { fill: none; stroke: rgba(34,197,94,0.15); stroke-width: 7; }
+  .risk-ring-fill {
+    fill: none;
+    stroke: url(#riskGrad);
+    stroke-width: 7;
+    stroke-linecap: round;
+    stroke-dasharray: 214;
+    stroke-dashoffset: 75;
+  }
+  .risk-score-text {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .risk-score-num { font-size: 22px; font-weight: 800; color: var(--text-primary); line-height: 1; }
+  .risk-score-total { font-size: 10px; color: var(--text-muted); }
+  .risk-info { flex: 1; min-width: 0; }
+  .risk-level {
+    font-size: 15px; font-weight: 700; color: var(--text-primary);
+    margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+  }
+  .risk-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px; }
+  .risk-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .risk-pill {
+    padding: 3px 10px; border-radius: 12px;
+    font-size: 10px; font-weight: 600;
+  }
+  .risk-pill.good { background: rgba(34,197,94,0.12); color: #15803D; }
+  .risk-pill.warn { background: rgba(245,158,11,0.12); color: #B45309; }
+  .risk-pill.bad { background: rgba(239,68,68,0.12); color: #DC2626; }
+
+  /* ===== Time Selector ===== */
+  .time-selector {
+    display: flex; gap: 8px; margin-bottom: 16px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .time-selector::-webkit-scrollbar { display: none; }
+  .time-btn {
+    flex-shrink: 0; padding: 7px 18px; border-radius: 20px;
+    border: 1.5px solid var(--text-muted); background: var(--bg-card);
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; color: var(--text-secondary);
+    transition: all 0.2s;
+  }
+  .time-btn.active {
+    background: var(--primary); color: white;
+    border-color: var(--primary);
+  }
+
+  /* ===== AI Insight Banner ===== */
+  .ai-insight {
+    background: linear-gradient(135deg, #F0FDF4, #DCFCE7);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex; align-items: flex-start; gap: 12px;
+    box-shadow: var(--shadow-sm);
+  }
+  .ai-icon {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-mid));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+    color: white;
+  }
+  .ai-content { flex: 1; }
+  .ai-label {
+    font-size: 11px; font-weight: 700; color: var(--accent);
+    margin-bottom: 3px; letter-spacing: 0.5px;
+  }
+  .ai-text { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+
+  /* ===== Chart Cards (Modern glassmorphism) ===== */
+  .health-chart-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow-md);
+  }
+  .chart-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 4px;
+  }
+  .chart-title-group { display: flex; align-items: center; gap: 8px; }
+  .chart-icon {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+  .chart-icon.blue { background: linear-gradient(135deg, #EEF2FF, #C7D2FE); color: #4F46E5; }
+  .chart-icon.green { background: linear-gradient(135deg, #F0FDF4, #BBF7D0); color: #16A34A; }
+  .chart-icon.amber { background: linear-gradient(135deg, #FFFBEB, #FDE68A); color: #D97706; }
+  .chart-icon.purple { background: linear-gradient(135deg, #F5F3FF, #DDD6FE); color: #7C3AED; }
+  .chart-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .chart-value-badge {
+    display: flex; align-items: baseline; gap: 4px;
+  }
+  .chart-value { font-size: 22px; font-weight: 800; color: var(--text-primary); }
+  .chart-unit { font-size: 12px; color: var(--text-muted); }
+  .chart-trend {
+    font-size: 12px; font-weight: 700;
+    padding: 4px 10px; border-radius: var(--radius-pill);
+    letter-spacing: 0.3px;
+  }
+  .trend-good { background: rgba(34,197,94,0.12); color: #15803D; }
+  .trend-warn { background: rgba(245,158,11,0.12); color: #B45309; }
+  .chart-svg { width: 100%; height: 80px; }
+  .chart-hint { font-size: 11px; color: var(--text-muted); padding: 4px 0 6px 0; }
+
+  /* ===== Metric Summary Row ===== */
+  .metric-summary-row {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin-bottom: 16px;
+  }
+  .metric-summary-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 14px 10px;
+    text-align: center;
+    box-shadow: var(--shadow-md);
+  }
+  .metric-summary-icon { font-size: 20px; margin-bottom: 4px; color: var(--text-secondary); }
+  .metric-summary-value { font-size: 18px; font-weight: 800; color: var(--text-primary); }
+  .metric-summary-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ===== Anomaly List ===== */
+  .anomaly-list { margin-bottom: 16px; }
+  .section-title {
+    font-size: 15px; font-weight: 700; color: var(--text-primary);
+    margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .section-more { font-size: 12px; color: var(--primary-light); font-weight: 600; cursor: pointer; }
+  .anomaly-item {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid transparent;
+  }
+  .anomaly-item.p0 { border-left-color: var(--danger); }
+  .anomaly-item.p1 { border-left-color: var(--warning); }
+  .anomaly-item.p2 { border-left-color: var(--primary); }
+  .anomaly-priority {
+    padding: 2px 8px; border-radius: 6px;
+    font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+  .p0 { background: #FEF2F2; color: #DC2626; }
+  .p1 { background: #FFFBEB; color: #D97706; }
+  .p2 { background: var(--primary-bg); color: var(--primary); }
+  .anomaly-text { flex: 1; font-size: 13px; color: var(--text-secondary); line-height: 1.4; }
+  .anomaly-time { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+
+  /* ===== Generational Comparison ===== */
+  .gen-compare {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 16px;
+  }
+  .gen-toggle {
+    display: flex; background: var(--bg-scaffold);
+    border-radius: 10px; padding: 3px; margin-bottom: 12px;
+  }
+  .gen-toggle-btn {
+    flex: 1; padding: 6px 0; border: none; border-radius: 8px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    background: none; color: var(--text-muted); transition: all 0.2s;
+  }
+  .gen-toggle-btn.active {
+    background: var(--bg-card); color: var(--text-primary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .gen-bars { display: flex; flex-direction: column; gap: 10px; }
+  .gen-bar-row { display: flex; align-items: center; gap: 10px; }
+  .gen-bar-label { width: 40px; font-size: 11px; color: var(--text-muted); text-align: right; flex-shrink: 0; }
+  .gen-bar-track {
+    flex: 1; height: 20px; background: var(--bg-scaffold);
+    border-radius: 10px; overflow: hidden; position: relative;
+  }
+  .gen-bar-fill {
+    height: 100%; border-radius: 10px; transition: width 0.6s ease;
+  }
+  .gen-bar-fill.elder { background: linear-gradient(90deg, var(--primary), var(--primary-light)); }
+  .gen-bar-fill.avg { background: linear-gradient(90deg, #A78BFA, #C4B5FD); opacity: 0.5; }
+  .gen-bar-val { width: 40px; font-size: 12px; font-weight: 600; color: var(--text-primary); flex-shrink: 0; }
+
+  /* ===== Bottom Nav ===== */
+  .bottom-nav-wrapper { flex-shrink: 0; z-index: 100; }
+  .bottom-nav-inner {
+    display: flex; align-items: center;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(0,0,0,0.06);
+    padding: 6px 0 calc(var(--safe-bottom) + 6px);
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; padding: 6px 0 4px;
+    gap: 2px; cursor: pointer;
+    color: var(--text-muted); font-size: 10px;
+    border: none; background: none;
+    transition: color 0.15s; position: relative;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-item:active { opacity: 0.7; }
+  .nav-icon { font-size: 20px; line-height: 1; transition: transform 0.2s; }
+  .nav-label { font-weight: 500; }
+  .nav-badge {
+    position: absolute; top: 2px; right: 50%;
+    transform: translateX(14px);
+    min-width: 16px; height: 16px;
+    background: var(--danger); border-radius: 8px;
+    border: 2px solid white;
+    font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    color: white; padding: 0 4px;
+  }
+
+  /* ===== Glassmorphism Card ===== */
+  .action-glass {
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 6px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(255,255,255,0.5);
+    cursor: pointer; transition: transform 0.15s;
+  }
+  .action-glass:active { transform: scale(0.95); }
+  .action-icon-wrap {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .action-icon-wrap.emergency { background: linear-gradient(135deg, #FEF2F2, #FECACA); color: #DC2626; }
+  .action-icon-wrap.call { background: linear-gradient(135deg, #EFF6FF, #BFDBFE); color: #2563EB; }
+  .action-icon-wrap.trajectory { background: linear-gradient(135deg, #EEF2FF, #E0E7FF); color: #4F46E5; }
+  .action-icon-wrap.welfare { background: linear-gradient(135deg, #FFFBEB, #FDE68A); color: #D97706; }
+  .action-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+
+  /* ===== Section Header ===== */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 10px 0; }
+  .section-title-text { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="top-bar">
+  <div class="top-bar-inner">
+    <button class="back-btn">&#8249;</button>
+    <span class="page-title">健康数据</span>
+    <button class="share-btn">&#9783;</button>
+  </div>
+</div>
+
+<!-- Scrollable Content -->
+<div class="content">
+
+  <!-- Risk Score Card -->
+  <div class="risk-card">
+    <div class="risk-title">综合健康风险评估</div>
+    <div class="risk-body">
+      <div class="risk-ring">
+        <svg viewBox="0 0 72 72" width="80" height="80">
+          <defs>
+            <linearGradient id="riskGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#4ADE80"/>
+              <stop offset="100%" style="stop-color:#22C55E"/>
+            </linearGradient>
+          </defs>
+          <circle class="risk-ring-bg" cx="36" cy="36" r="32"/>
+          <circle class="risk-ring-fill" cx="36" cy="36" r="32"/>
+        </svg>
+        <div class="risk-score-text">
+          <span class="risk-score-num">35</span>
+          <span class="risk-score-total">/100</span>
+        </div>
+      </div>
+      <div class="risk-info">
+        <div class="risk-level">&#9889; 低风险</div>
+        <div class="risk-desc">各项指标基本正常，步数略低于目标值</div>
+        <div class="risk-pills">
+          <span class="risk-pill good">&#9829; 心率正常</span>
+          <span class="risk-pill good">&#9699; 血氧正常</span>
+          <span class="risk-pill warn">&#128077; 步数偏低</span>
+          <span class="risk-pill warn">&#9881; 血压偏高</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Time Selector -->
+  <div class="time-selector">
+    <button class="time-btn" onclick="selectTime(this)">今日</button>
+    <button class="time-btn active" onclick="selectTime(this)">本周</button>
+    <button class="time-btn" onclick="selectTime(this)">本月</button>
+    <button class="time-btn" onclick="selectTime(this)">近90天</button>
+    <button class="time-btn" onclick="selectTime(this)">自定义</button>
+  </div>
+
+  <!-- AI Insight -->
+  <div class="ai-insight">
+    <div class="ai-icon">&#9921;</div>
+    <div class="ai-content">
+      <div class="ai-label">AI 健康洞察</div>
+      <div class="ai-text">爷爷本周平均静息心率较上周下降 5%，与睡眠质量改善相关。建议继续保持当前运动习惯。</div>
+    </div>
+  </div>
+
+  <!-- Heart Rate Chart -->
+  <div class="health-chart-card">
+    <div class="chart-header">
+      <div class="chart-title-group">
+        <div class="chart-icon blue">&#9829;</div>
+        <span class="chart-name">心率</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="chart-value-badge">
+          <span class="chart-value">72</span>
+          <span class="chart-unit">bpm</span>
+        </div>
+        <span class="chart-trend trend-good">&#8595; -5</span>
+      </div>
+    </div>
+    <div class="chart-hint">正常范围 60–100 bpm</div>
+    <svg class="chart-svg" viewBox="0 0 300 80" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="hrGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#1B3A5C" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#1B3A5C" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="hrLine" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#4ADE80"/>
+          <stop offset="100%" stop-color="#16A34A"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="15" width="300" height="35" fill="rgba(22,163,74,0.04)" rx="4"/>
+      <path d="M0,45 C15,42 30,50 45,38 S75,42 90,30 S120,35 135,25 S165,28 180,20 S210,25 225,18 S255,22 270,15 L300,18 L300,80 L0,80Z" fill="url(#hrGrad)"/>
+      <path d="M0,45 C15,42 30,50 45,38 S75,42 90,30 S120,35 135,25 S165,28 180,20 S210,25 225,18 S255,22 270,15 L300,18" fill="none" stroke="url(#hrLine)" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="300" cy="18" r="4" fill="#16A34A" stroke="white" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <!-- SpO2 Chart -->
+  <div class="health-chart-card" style="margin-top:8px;">
+    <div class="chart-header">
+      <div class="chart-title-group">
+        <div class="chart-icon green">&#9699;</div>
+        <span class="chart-name">血氧</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="chart-value-badge">
+          <span class="chart-value">98</span>
+          <span class="chart-unit">%</span>
+        </div>
+        <span class="chart-trend trend-good">&#8596; 稳定</span>
+      </div>
+    </div>
+    <div class="chart-hint">正常范围 95–100%</div>
+    <svg class="chart-svg" viewBox="0 0 300 80" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="spo2Grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#22C55E" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#22C55E" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="spo2Line" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#22C55E"/>
+          <stop offset="100%" stop-color="#16A34A"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="10" width="300" height="40" fill="rgba(34,197,94,0.04)" rx="4"/>
+      <path d="M0,30 C20,28 40,32 60,25 S100,28 120,22 S160,24 180,20 S220,22 240,18 S280,20 300,19 L300,80 L0,80Z" fill="url(#spo2Grad)"/>
+      <path d="M0,30 C20,28 40,32 60,25 S100,28 120,22 S160,24 180,20 S220,22 240,18 S280,20 300,19" fill="none" stroke="url(#spo2Line)" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="300" cy="19" r="4" fill="#16A34A" stroke="white" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <!-- Steps Summary Row -->
+  <div class="metric-summary-row">
+    <div class="metric-summary-card">
+      <div class="metric-summary-icon">&#128077;</div>
+      <div class="metric-summary-value">3,456</div>
+      <div class="metric-summary-label">今日步数</div>
+    </div>
+    <div class="metric-summary-card">
+      <div class="metric-summary-icon">&#128293;</div>
+      <div class="metric-summary-value">186</div>
+      <div class="metric-summary-label">千卡消耗</div>
+    </div>
+    <div class="metric-summary-card">
+      <div class="metric-summary-icon">&#9201;</div>
+      <div class="metric-summary-value">42</div>
+      <div class="metric-summary-label">活动分钟</div>
+    </div>
+  </div>
+
+  <!-- Steps Chart -->
+  <div class="health-chart-card">
+    <div class="chart-header">
+      <div class="chart-title-group">
+        <div class="chart-icon amber">&#128077;</div>
+        <span class="chart-name">步数</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="chart-value-badge">
+          <span class="chart-value">3,456</span>
+          <span class="chart-unit">步</span>
+        </div>
+        <span class="chart-trend trend-warn">&#8595; -12%</span>
+      </div>
+    </div>
+    <div class="chart-hint" style="color:#B45309;">目标 8,000 步</div>
+    <svg class="chart-svg" viewBox="0 0 300 80" preserveAspectRatio="none" style="height:60px;">
+      <defs>
+        <linearGradient id="stepGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#22C55E" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#22C55E" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <line x1="0" y1="10" x2="300" y2="10" stroke="#EF4444" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>
+      <rect x="10" y="35" width="14" height="40" fill="url(#stepGrad)" rx="4"/>
+      <rect x="34" y="45" width="14" height="30" fill="url(#stepGrad)" rx="4"/>
+      <rect x="58" y="30" width="14" height="45" fill="url(#stepGrad)" rx="4"/>
+      <rect x="82" y="50" width="14" height="25" fill="url(#stepGrad)" rx="4"/>
+      <rect x="106" y="28" width="14" height="47" fill="url(#stepGrad)" rx="4"/>
+      <rect x="130" y="40" width="14" height="35" fill="url(#stepGrad)" rx="4"/>
+      <rect x="154" y="55" width="14" height="20" fill="url(#stepGrad)" rx="4"/>
+      <rect x="178" y="32" width="14" height="43" fill="url(#stepGrad)" rx="4"/>
+      <rect x="202" y="48" width="14" height="27" fill="url(#stepGrad)" rx="4"/>
+      <rect x="226" y="38" width="14" height="37" fill="url(#stepGrad)" rx="4"/>
+    </svg>
+  </div>
+
+  <!-- Blood Pressure -->
+  <div class="health-chart-card" style="margin-top:8px;">
+    <div class="chart-header">
+      <div class="chart-title-group">
+        <div class="chart-icon purple">&#9881;</div>
+        <span class="chart-name">血压</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="chart-value-badge">
+          <span class="chart-value" style="font-size:18px;">128/82</span>
+          <span class="chart-unit">mmHg</span>
+        </div>
+        <span class="chart-trend trend-warn">&#8595; 偏高</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:10px;">
+      <div class="metric-summary-card" style="flex:1;padding:10px;">
+        <div class="metric-summary-value" style="font-size:16px;">128</div>
+        <div class="metric-summary-label">收缩压</div>
+      </div>
+      <div class="metric-summary-card" style="flex:1;padding:10px;">
+        <div class="metric-summary-value" style="font-size:16px;">82</div>
+        <div class="metric-summary-label">舒张压</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sleep Quality -->
+  <div class="health-chart-card" style="margin-top:8px;">
+    <div class="chart-header">
+      <div class="chart-title-group">
+        <div class="chart-icon" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE);color:#7C3AED;">&#128452;</div>
+        <span class="chart-name">睡眠质量</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="chart-value-badge">
+          <span class="chart-value">7.2</span>
+          <span class="chart-unit">小时</span>
+        </div>
+        <span class="chart-trend trend-good">&#8595; 改善</span>
+      </div>
+    </div>
+    <div style="height:10px;border-radius:5px;display:flex;overflow:hidden;margin-top:10px;background:var(--bg-scaffold);">
+      <div style="width:29%;background:#5C6BC0;border-radius:5px 0 0 5px;"></div>
+      <div style="width:53%;background:#7986CB;"></div>
+      <div style="width:18%;background:#9FA8DA;border-radius:0 5px 5px 0;"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--text-muted);">
+      <span>深睡 2.1h</span><span>浅睡 3.8h</span><span>REM 1.3h</span>
+    </div>
+  </div>
+
+  <!-- Anomaly Alerts -->
+  <div class="anomaly-list">
+    <div class="section-title">异常提醒 <span class="section-more">查看全部 &rarr;</span></div>
+    <div class="anomaly-item p1">
+      <span class="anomaly-priority p1">P1</span>
+      <span class="anomaly-text">静息心率连续10分钟高于100bpm</span>
+      <span class="anomaly-time">45分钟前</span>
+    </div>
+    <div class="anomaly-item p2">
+      <span class="anomaly-priority p2">P2</span>
+      <span class="anomaly-text">血压值 128/82 mmHg 略高于标准</span>
+      <span class="anomaly-time">2小时前</span>
+    </div>
+    <div class="anomaly-item p2">
+      <span class="anomaly-priority p2">P2</span>
+      <span class="anomaly-text">今日步数未达到目标值（3,456/8,000）</span>
+      <span class="anomaly-time">3小时前</span>
+    </div>
+  </div>
+
+  <!-- Generational Comparison -->
+  <div class="gen-compare">
+    <div class="section-title" style="margin-bottom:12px;">代际对比</div>
+    <div class="gen-toggle">
+      <button class="gen-toggle-btn active" onclick="toggleGen(this)">爷爷 vs 同龄</button>
+      <button class="gen-toggle-btn" onclick="toggleGen(this)">爷爷 vs 平均值</button>
+    </div>
+    <div class="gen-bars">
+      <div class="gen-bar-row">
+        <span class="gen-bar-label">心率</span>
+        <div class="gen-bar-track">
+          <div class="gen-bar-fill elder" style="width:72%"></div>
+        </div>
+        <span class="gen-bar-val">72</span>
+      </div>
+      <div class="gen-bar-row">
+        <span class="gen-bar-label">血氧</span>
+        <div class="gen-bar-track">
+          <div class="gen-bar-fill elder" style="width:97%"></div>
+        </div>
+        <span class="gen-bar-val">97%</span>
+      </div>
+      <div class="gen-bar-row">
+        <span class="gen-bar-label">步数</span>
+        <div class="gen-bar-track">
+          <div class="gen-bar-fill elder" style="width:43%"></div>
+        </div>
+        <span class="gen-bar-val">3.5k</span>
+      </div>
+      <div class="gen-bar-row">
+        <span class="gen-bar-label">睡眠</span>
+        <div class="gen-bar-track">
+          <div class="gen-bar-fill elder" style="width:80%"></div>
+        </div>
+        <span class="gen-bar-val">7.2h</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav-wrapper">
+  <div class="bottom-nav-inner">
+    <button class="nav-item">
+      <span class="nav-icon">&#9755;</span>
+      <span class="nav-label">首页</span>
+    </button>
+    <button class="nav-item active">
+      <span class="nav-icon">&#9829;</span>
+      <span class="nav-label">健康</span>
+    </button>
+    <button class="nav-item">
+      <span class="nav-icon">&#9888;</span>
+      <span class="nav-label">告警</span>
+      <span class="nav-badge">3</span>
+    </button>
+    <button class="nav-item">
+      <span class="nav-icon">&#10013;</span>
+      <span class="nav-label">用药</span>
+    </button>
+    <button class="nav-item">
+      <span class="nav-icon">&#9878;</span>
+      <span class="nav-label">福利</span>
+    </button>
+    <button class="nav-item" style="cursor:pointer;">
+      <span class="nav-icon">&#128100;</span>
+      <span class="nav-label">我的</span>
+    </button>
+  </div>
+</div>
+
+<script>
+  function selectTime(btn) {
+    btn.parentElement.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  function toggleGen(btn) {
+    btn.parentElement.querySelectorAll('.gen-toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+</script>
+</body>
+</html>

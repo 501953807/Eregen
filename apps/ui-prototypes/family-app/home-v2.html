@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Eregen 颐贞 — 家属APP 3.0</title>
+<style>
+  :root {
+    /* Brand Colors — Deep Blue + Health Green */
+    --primary: #1B3A5C;
+    --primary-mid: #2D5F8A;
+    --primary-light: #5B8DB8;
+    --primary-bg: #EEF4FA;
+    --accent: #22C55E;
+    --accent-mid: #4ADE80;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+
+    /* Neutrals */
+    --bg-scaffold: #F6F7FB;
+    --bg-card: #FFFFFF;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+
+    /* Shadows — Green-tinted */
+    --shadow-sm: 0 1px 3px rgba(22,163,74,0.04), 0 1px 2px rgba(22,163,74,0.06);
+    --shadow-md: 0 4px 12px rgba(22,163,74,0.06), 0 2px 4px rgba(22,163,74,0.04);
+    --shadow-lg: 0 12px 28px rgba(22,163,74,0.08), 0 4px 12px rgba(22,163,74,0.04);
+
+    /* Radii */
+    --radius-md: 14px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+    --radius-pill: 9999px;
+
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    background: var(--bg-scaffold);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== Scrollable Content ===== */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 0 calc(80px + var(--safe-bottom));
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ===== Status Card (Hero Section) — Soft Mint Green ===== */
+  .hero-card {
+    margin: 16px 16px 0;
+    background: linear-gradient(145deg, #F0FDF4 0%, #DCFCE7 40%, #BBF7D0 70%, #F0FDF4 100%);
+    border-radius: var(--radius-xl);
+    padding: 20px 20px 18px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(34,197,94,0.08);
+  }
+  .hero-card::before {
+    content: '';
+    position: absolute;
+    top: -30%; right: -15%;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(34,197,94,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero-card::after {
+    content: '';
+    position: absolute;
+    bottom: -25%; left: -10%;
+    width: 150px; height: 150px;
+    background: radial-gradient(circle, rgba(34,197,94,0.05) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  /* Elder Selector Row */
+  .elder-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+  }
+  .elder-selected {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .elder-avatar-lg {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.8);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255,255,255,0.9);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    position: relative;
+  }
+  .online-indicator {
+    position: absolute; bottom: -1px; right: -1px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2.5px solid #16A34A;
+  }
+  .online-indicator.online { background: var(--accent); }
+  .online-indicator.offline { background: var(--text-muted); }
+  .elder-meta { color: var(--text-primary); }
+  .elder-name-lg { font-size: 16px; font-weight: 700; line-height: 1.2; }
+  .elder-device { font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+  .device-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .device-dot.online { background: var(--accent); }
+  .device-dot.offline { background: var(--text-muted); }
+  .elder-switch {
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.9);
+    color: var(--text-primary);
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  /* Hero Stats Row */
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-stat {
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.9);
+    border-radius: var(--radius-md);
+    padding: 10px 8px;
+    text-align: center;
+    color: var(--text-primary);
+  }
+  .hero-stat-icon { font-size: 16px; margin-bottom: 4px; }
+  .hero-stat-value {
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+  .hero-stat-label { font-size: 10px; opacity: 0.7; }
+  .hero-stat.good .hero-stat-value { color: var(--accent); }
+  .hero-stat.warn .hero-stat-value { color: var(--warning); }
+  .hero-stat.bad .hero-stat-value { color: var(--danger); }
+
+  /* Heart Rate Mini Sparkline SVG */
+  .hr-sparkline {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 30px;
+    opacity: 0.15;
+    z-index: 0;
+  }
+
+  /* ===== SOS Alert Banner ===== */
+  .sos-banner {
+    margin: 12px 16px 0;
+    background: linear-gradient(135deg, #DC2626, #EF4444);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 6px 20px rgba(239,68,68,0.25);
+    position: relative;
+    overflow: hidden;
+  }
+  .sos-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 80% 50%, rgba(255,255,255,0.1), transparent 60%);
+  }
+  @keyframes sosPulse {
+    0%, 100% { box-shadow: 0 6px 20px rgba(239,68,68,0.25); }
+    50% { box-shadow: 0 6px 28px rgba(239,68,68,0.4); }
+  }
+  .sos-banner { animation: sosPulse 2s ease-in-out infinite; }
+  .sos-icon-circle {
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .sos-text { flex: 1; position: relative; z-index: 1; }
+  .sos-text strong { font-size: 14px; font-weight: 700; display: block; color: white; }
+  .sos-text small { font-size: 11px; color: rgba(255,255,255,0.8); }
+  .sos-btn {
+    background: white;
+    color: var(--danger);
+    border: none;
+    padding: 8px 18px;
+    border-radius: var(--radius-pill);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+  }
+
+  /* ===== Map Section ===== */
+  .map-section {
+    margin: 12px 16px 0;
+    height: 170px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(160deg, #DBEAFE 0%, #BFDBFE 40%, #93C5FD 100%);
+    box-shadow: var(--shadow-md);
+  }
+  .map-grid-lines {
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(255,255,255,0.3) 49px, rgba(255,255,255,0.3) 50px),
+      repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(255,255,255,0.3) 49px, rgba(255,255,255,0.3) 50px);
+  }
+  .map-roads {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(0deg, transparent 30%, rgba(255,255,255,0.5) 30%, rgba(255,255,255,0.5) 31.5%, transparent 31.5%),
+      linear-gradient(0deg, transparent 60%, rgba(255,255,255,0.4) 60%, rgba(255,255,255,0.4) 61.5%, transparent 61.5%),
+      linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.5) 20%, rgba(255,255,255,0.5) 21.5%, transparent 21.5%),
+      linear-gradient(90deg, transparent 55%, rgba(255,255,255,0.4) 55%, rgba(255,255,255,0.4) 56.5%, transparent 56.5%),
+      linear-gradient(90deg, transparent 80%, rgba(255,255,255,0.3) 80%, rgba(255,255,255,0.3) 81%, transparent 81%);
+  }
+  .map-geofence {
+    position: absolute;
+    top: 25%; left: 20%;
+    width: 60%; height: 45%;
+    border: 2px dashed rgba(34,197,94,0.6);
+    border-radius: var(--radius-xl);
+    background: rgba(34,197,94,0.06);
+    z-index: 3;
+  }
+  .map-geofence-label {
+    position: absolute; top: -16px; left: 8px;
+    font-size: 9px; color: #16A34A;
+    background: rgba(255,255,255,0.85);
+    padding: 1px 8px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  .map-pin-wrap {
+    position: absolute;
+    top: 45%; left: 55%;
+    transform: translate(-50%, -100%);
+    z-index: 5;
+  }
+  .pin-dot {
+    width: 22px; height: 22px;
+    background: var(--primary);
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(27,58,92,0.3);
+    position: relative;
+  }
+  .pin-ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px; height: 44px;
+    background: rgba(27,58,92,0.1);
+    border-radius: 50%;
+    animation: pinPulse 2s ease-in-out infinite;
+  }
+  @keyframes pinPulse {
+    0%, 100% { transform: translate(-50%,-50%) scale(1); opacity: 0.6; }
+    50% { transform: translate(-50%,-50%) scale(1.6); opacity: 0; }
+  }
+  .map-info {
+    position: absolute;
+    bottom: 10px; left: 10px; right: 10px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+  }
+  .map-chip {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(8px);
+    padding: 5px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 10px;
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-sm);
+    white-space: nowrap;
+  }
+  .map-chip strong { color: var(--text-primary); }
+
+  /* ===== Section Headers ===== */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 16px 10px;
+  }
+  .section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section-more {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ===== Quick Actions (Glass Cards) ===== */
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 0 16px 4px;
+  }
+  .action-glass {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 14px 8px 12px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(22,163,74,0.04);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  .action-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(22,163,74,0.03), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .action-glass:active {
+    transform: scale(0.94);
+    box-shadow: var(--shadow-md);
+  }
+  .action-glass:active::before { opacity: 1; }
+  .action-icon-wrap {
+    width: 42px; height: 42px;
+    border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    margin: 0 auto 8px;
+    position: relative;
+    z-index: 1;
+  }
+  .action-icon-wrap.emergency {
+    background: linear-gradient(135deg, #FEE2E2, #FECACA);
+    color: var(--danger);
+  }
+  .action-icon-wrap.call {
+    background: linear-gradient(135deg, #F0FDF4, #DCFCE7);
+    color: #16A34A;
+  }
+  .action-icon-wrap.trajectory {
+    background: linear-gradient(135deg, #EEF2FF, #E0E7FF);
+    color: #4F46E5;
+  }
+  .action-icon-wrap.welfare {
+    background: linear-gradient(135deg, #FFFBEB, #FEF3C7);
+    color: var(--warning);
+  }
+  .action-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ===== Health Chart Card ===== */
+  .health-chart-card {
+    margin: 0 16px 0;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 18px 16px 14px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(22,163,74,0.04);
+  }
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .chart-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chart-icon {
+    width: 32px; height: 32px;
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .chart-icon.blue { background: linear-gradient(135deg, #F0FDF4, #DCFCE7); }
+  .chart-icon.green { background: linear-gradient(135deg, #F0FDF4, #DCFCE7); }
+  .chart-name { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+  .chart-value-badge {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+  .chart-value { font-size: 24px; font-weight: 800; color: var(--text-primary); }
+  .chart-unit { font-size: 12px; color: var(--text-muted); }
+  .chart-trend {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    letter-spacing: 0.3px;
+  }
+  .trend-good {
+    background: rgba(34, 197, 94, 0.12);
+    color: #15803D;
+  }
+  .trend-warn {
+    background: rgba(245, 158, 11, 0.12);
+    color: #B45309;
+  }
+  .chart-svg { width: 100%; height: 80px; }
+  .chart-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 4px 0 6px 0;
+  }
+
+  /* ===== Recent Alerts (Modern List) ===== */
+  .alerts-list {
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .alert-item-modern {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(22,163,74,0.04);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .alert-item-modern:active { transform: scale(0.98); }
+  .alert-priority-bar {
+    width: 4px;
+    height: 36px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .alert-priority-bar.critical { background: var(--danger); }
+  .alert-priority-bar.warning { background: var(--warning); }
+  .alert-priority-bar.info { background: #4ADE80; }
+  .alert-icon-wrap {
+    width: 40px; height: 40px;
+    border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .alert-icon-wrap.sos { background: linear-gradient(135deg, #FEE2E2, #FECACA); }
+  .alert-icon-wrap.geo { background: linear-gradient(135deg, #FFFBEB, #FEF3C7); }
+  .alert-icon-wrap.hr { background: linear-gradient(135deg, #F0FDF4, #DCFCE7); }
+  .alert-body { flex: 1; min-width: 0; }
+  .alert-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+  .alert-desc { font-size: 11px; color: var(--text-muted); }
+  .alert-time { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+  .alert-arrow { color: var(--text-muted); font-size: 14px; flex-shrink: 0; }
+
+  /* ===== Bottom Nav ===== */
+  .bottom-nav-wrapper {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+  }
+  .bottom-nav-inner {
+    display: flex;
+    align-items: stretch;
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-top: 1px solid rgba(22,163,74,0.06);
+    padding: 6px 6px calc(var(--safe-bottom) + 4px);
+    margin: 0 8px;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 -4px 20px rgba(22,163,74,0.06);
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 0;
+    gap: 2px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 9.5px;
+    border: none;
+    background: none;
+    transition: all 0.2s;
+    border-radius: 10px;
+    position: relative;
+    min-width: 0;
+  }
+  .nav-item.active {
+    color: var(--accent);
+  }
+  .nav-item.active .nav-icon {
+    transform: scale(1.1);
+  }
+  .nav-icon { font-size: 20px; line-height: 1; transition: transform 0.2s; }
+  .nav-label { font-weight: 500; line-height: 1; }
+  .nav-badge {
+    position: absolute;
+    top: 0; right: 50%;
+    transform: translateX(14px);
+    min-width: 15px; height: 15px;
+    background: var(--danger);
+    border-radius: 7.5px;
+    border: 2px solid white;
+    font-size: 8.5px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    padding: 0 3px;
+  }
+  .nav-my {
+    flex: 0.75;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    border: none;
+    background: none;
+    transition: all 0.2s;
+  }
+  .nav-my.active { color: var(--accent); }
+  .nav-my-icon {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--bg-scaffold);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .nav-my.active .nav-my-icon {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+  }
+</style>
+</head>
+<body>
+
+<!-- Scrollable Content -->
+<div class="content">
+
+  <!-- Hero Card — Elder Status -->
+  <div class="hero-card">
+    <div class="elder-row">
+      <div class="elder-selected">
+        <div class="elder-avatar-lg">&#128105;
+          <div class="online-indicator online"></div>
+        </div>
+        <div class="elder-meta">
+          <div class="elder-name-lg">爷爷 张三丰</div>
+          <div class="elder-device">
+            <span class="device-dot online"></span>
+            手环Pro · 在线
+          </div>
+        </div>
+      </div>
+      <button class="elder-switch">&#9776; 切换</button>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat good">
+        <div class="hero-stat-icon">&#9829;</div>
+        <div class="hero-stat-value">72</div>
+        <div class="hero-stat-label">心率 bpm</div>
+      </div>
+      <div class="hero-stat good">
+        <div class="hero-stat-icon">&#9689;</div>
+        <div class="hero-stat-value">98</div>
+        <div class="hero-stat-label">血氧 %</div>
+      </div>
+      <div class="hero-stat warn">
+        <div class="hero-stat-icon">&#128077;</div>
+        <div class="hero-stat-value">3.5k</div>
+        <div class="hero-stat-label">今日步数</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-icon">&#9901;</div>
+        <div class="hero-stat-value">85</div>
+        <div class="hero-stat-label">电池</div>
+      </div>
+    </div>
+    <svg class="hr-sparkline" viewBox="0 0 300 30" preserveAspectRatio="none">
+      <polyline points="0,15 20,12 40,18 60,10 80,14 100,8 120,16 140,11 160,15 180,9 200,13 220,10 240,17 260,12 280,14 300,11"
+                fill="none" stroke="#22C55E" stroke-width="1.5" opacity="0.2"/>
+    </svg>
+  </div>
+
+  <!-- SOS Alert Banner -->
+  <div class="sos-banner">
+    <div class="sos-icon-circle">&#10071;</div>
+    <div class="sos-text">
+      <strong>爷爷 SOS 紧急呼叫</strong>
+      <small>2分钟前 · 陆家嘴环路1000号</small>
+    </div>
+    <button class="sos-btn">立即处理</button>
+  </div>
+
+  <!-- Map Section -->
+  <div class="map-section">
+    <div class="map-grid-lines"></div>
+    <div class="map-roads"></div>
+    <div class="map-geofence">
+      <div class="map-geofence-label">&#128274; 安全区域 500m</div>
+    </div>
+    <div class="map-pin-wrap">
+      <div class="pin-ring"></div>
+      <div class="pin-dot"></div>
+    </div>
+    <div class="map-info">
+      <div class="map-chip"><strong>陆家嘴金融中心</strong></div>
+      <div class="map-chip">&#128205; 距家 2.3km</div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="section-header">
+    <span class="section-title">&#9889; 快捷操作</span>
+  </div>
+  <div class="quick-actions">
+    <div class="action-glass">
+      <div class="action-icon-wrap emergency">&#9889;</div>
+      <div class="action-label">一键呼叫</div>
+    </div>
+    <div class="action-glass">
+      <div class="action-icon-wrap call">&#9742;</div>
+      <div class="action-label">语音通话</div>
+    </div>
+    <div class="action-glass">
+      <div class="action-icon-wrap trajectory">&#128205;</div>
+      <div class="action-label">历史轨迹</div>
+    </div>
+    <div class="action-glass">
+      <div class="action-icon-wrap welfare">&#9878;</div>
+      <div class="action-label">福利专区</div>
+    </div>
+  </div>
+
+  <!-- Heart Rate Chart -->
+  <div class="section-header">
+    <span class="section-title">&#128200; 健康趋势</span>
+    <span class="section-more">查看全部 &rarr;</span>
+  </div>
+  <div class="health-chart-card">
+    <div class="chart-header">
+      <div class="chart-title-group">
+        <div class="chart-icon blue">&#9829;</div>
+        <span class="chart-name">心率</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="chart-value-badge">
+          <span class="chart-value">72</span>
+          <span class="chart-unit">bpm</span>
+        </div>
+        <span class="chart-trend trend-good">&#8595; -5</span>
+      </div>
+    </div>
+    <!-- Chart hint label — outside SVG for proper styling -->
+    <div class="chart-hint">正常范围 60–100 bpm</div>
+    <svg class="chart-svg" viewBox="0 0 300 80" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="hrGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#1B3A5C" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#1B3A5C" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="hrLine" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#4ADE80"/>
+          <stop offset="100%" stop-color="#16A34A"/>
+        </linearGradient>
+      </defs>
+      <!-- Normal range band -->
+      <rect x="0" y="15" width="300" height="35" fill="rgba(22,163,74,0.04)" rx="4"/>
+      <!-- Area fill -->
+      <path d="M0,45 C15,42 30,50 45,38 S75,42 90,30 S120,35 135,25 S165,28 180,20 S210,25 225,18 S255,22 270,15 L300,18 L300,80 L0,80Z"
+            fill="url(#hrGrad)"/>
+      <!-- Line -->
+      <path d="M0,45 C15,42 30,50 45,38 S75,42 90,30 S120,35 135,25 S165,28 180,20 S210,25 225,18 S255,22 270,15 L300,18"
+            fill="none" stroke="url(#hrLine)" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Data point -->
+      <circle cx="300" cy="18" r="4" fill="#16A34A" stroke="white" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <!-- Steps Chart -->
+  <div class="health-chart-card" style="margin-top:8px;">
+    <div class="chart-header">
+      <div class="chart-title-group">
+        <div class="chart-icon green">&#128077;</div>
+        <span class="chart-name">步数</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="chart-value-badge">
+          <span class="chart-value">3,456</span>
+          <span class="chart-unit">步</span>
+        </div>
+        <span class="chart-trend trend-warn">&#8595; -12%</span>
+      </div>
+    </div>
+    <div class="chart-hint" style="color:#B45309;">目标 8,000 步</div>
+    <svg class="chart-svg" viewBox="0 0 300 80" preserveAspectRatio="none" style="height:60px;">
+      <defs>
+        <linearGradient id="stepGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#22C55E" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#22C55E" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <!-- Target line -->
+      <line x1="0" y1="10" x2="300" y2="10" stroke="#EF4444" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>
+      <!-- Bars -->
+      <rect x="10" y="35" width="14" height="40" fill="url(#stepGrad)" rx="4"/>
+      <rect x="34" y="45" width="14" height="30" fill="url(#stepGrad)" rx="4"/>
+      <rect x="58" y="30" width="14" height="45" fill="url(#stepGrad)" rx="4"/>
+      <rect x="82" y="50" width="14" height="25" fill="url(#stepGrad)" rx="4"/>
+      <rect x="106" y="28" width="14" height="47" fill="url(#stepGrad)" rx="4"/>
+      <rect x="130" y="40" width="14" height="35" fill="url(#stepGrad)" rx="4"/>
+      <rect x="154" y="55" width="14" height="20" fill="url(#stepGrad)" rx="4"/>
+      <rect x="178" y="32" width="14" height="43" fill="url(#stepGrad)" rx="4"/>
+      <rect x="202" y="48" width="14" height="27" fill="url(#stepGrad)" rx="4"/>
+      <rect x="226" y="38" width="14" height="37" fill="url(#stepGrad)" rx="4"/>
+      <rect x="250" y="30" width="14" height="45" fill="url(#stepGrad)" rx="4"/>
+      <rect x="274" y="52" width="14" height="23" fill="url(#stepGrad)" rx="4"/>
+    </svg>
+  </div>
+
+  <!-- Recent Alerts -->
+  <div class="section-header">
+    <span class="section-title">&#9888; 最近告警</span>
+    <span class="section-more">查看全部 &rarr;</span>
+  </div>
+  <div class="alerts-list">
+    <div class="alert-item-modern">
+      <div class="alert-priority-bar critical"></div>
+      <div class="alert-icon-wrap sos">&#128165;</div>
+      <div class="alert-body">
+        <div class="alert-title">SOS紧急按钮触发</div>
+        <div class="alert-desc">爷爷于 14:32 主动按下手环 SOS 按钮</div>
+        <div class="alert-time">&#128336; 3分钟前</div>
+      </div>
+      <span class="alert-arrow">&rsaquo;</span>
+    </div>
+    <div class="alert-item-modern">
+      <div class="alert-priority-bar warning"></div>
+      <div class="alert-icon-wrap geo">&#127970;</div>
+      <div class="alert-body">
+        <div class="alert-title">电子围栏越界</div>
+        <div class="alert-desc">离开安全区域（幸福家园周边500m）</div>
+        <div class="alert-time">&#128336; 25分钟前</div>
+      </div>
+      <span class="alert-arrow">&rsaquo;</span>
+    </div>
+    <div class="alert-item-modern">
+      <div class="alert-priority-bar info"></div>
+      <div class="alert-icon-wrap hr">&#9829;</div>
+      <div class="alert-body">
+        <div class="alert-title">心率持续偏高</div>
+        <div class="alert-desc">静息心率连续10分钟高于100bpm</div>
+        <div class="alert-time">&#128336; 45分钟前</div>
+      </div>
+      <span class="alert-arrow">&rsaquo;</span>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav-wrapper">
+  <div class="bottom-nav-inner">
+    <button class="nav-item active">
+      <span class="nav-icon">&#9755;</span>
+      <span class="nav-label">首页</span>
+    </button>
+    <button class="nav-item">
+      <span class="nav-icon">&#9829;</span>
+      <span class="nav-label">健康</span>
+    </button>
+    <button class="nav-item">
+      <span class="nav-icon">&#9888;</span>
+      <span class="nav-label">告警</span>
+      <span class="nav-badge">3</span>
+    </button>
+    <button class="nav-item">
+      <span class="nav-icon">✙</span>
+      <span class="nav-label">用药</span>
+    </button>
+    <button class="nav-item">
+      <span class="nav-icon">&#9878;</span>
+      <span class="nav-label">福利</span>
+    </button>
+    <button class="nav-my active">
+      <div class="nav-my-icon">&#128100;</div>
+    </button>
+  </div>
+</div>
+
+<script>
+  // Elder switcher
+  document.querySelector('.elder-switch').addEventListener('click', () => {
+    // Placeholder for elder switching logic
+  });
+
+  // Dark mode toggle
+  function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+  }
+</script>
+</body>
+</html>

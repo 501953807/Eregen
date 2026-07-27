@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Eregen 颐贞 — 告警中心</title>
+<style>
+  :root {
+    --primary: #1B3A5C;
+    --primary-mid: #2D5F8A;
+    --primary-light: #5B8DB8;
+    --primary-bg: #EEF4FA;
+    --accent: #22C55E;
+    --accent-mid: #4ADE80;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --bg-scaffold: #F6F7FB;
+    --bg-card: #FFFFFF;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+    --shadow-sm: 0 1px 3px rgba(22,163,74,0.04), 0 1px 2px rgba(22,163,74,0.06);
+    --shadow-md: 0 4px 12px rgba(22,163,74,0.06), 0 2px 4px rgba(22,163,74,0.04);
+    --shadow-lg: 0 12px 28px rgba(22,163,74,0.08), 0 4px 12px rgba(22,163,74,0.04);
+    --radius-md: 14px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+    --radius-pill: 9999px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    background: var(--bg-scaffold);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ===== Top Bar ===== */
+  .top-bar {
+    background: var(--bg-card);
+    padding: 12px 16px;
+    z-index: 100;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+  }
+  .top-bar-inner {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .back-btn {
+    width: 36px; height: 36px; border: none; background: none;
+    font-size: 20px; color: var(--text-secondary); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-md);
+  }
+  .back-btn:active { background: var(--bg-scaffold); }
+  .page-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+  .filter-btn {
+    width: 36px; height: 36px; border: none; background: none;
+    font-size: 18px; color: var(--text-secondary); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-md);
+  }
+  .filter-btn:active { background: var(--bg-scaffold); }
+
+  /* ===== Scrollable Content ===== */
+  .content { flex: 1; overflow-y: auto; padding: 16px; -webkit-overflow-scrolling: touch; }
+
+  /* ===== Stats Row ===== */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin-bottom: 16px;
+  }
+  .stat-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 14px 10px;
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .stat-card.sos::before { background: var(--danger); }
+  .stat-card.fall::before { background: var(--warning); }
+  .stat-card.health::before { background: var(--primary); }
+  .stat-num { font-size: 28px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+  .stat-card.sos .stat-num { color: var(--danger); }
+  .stat-card.fall .stat-num { color: var(--warning); }
+  .stat-card.health .stat-num { color: var(--primary); }
+  .stat-label { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+
+  /* ===== SOS Quick Action Banner ===== */
+  .sos-banner {
+    background: linear-gradient(135deg, #FEF2F2, #FECACA);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: var(--shadow-md);
+    position: relative; overflow: hidden;
+  }
+  .sos-banner::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 30% 50%, rgba(239,68,68,0.06), transparent 60%);
+    animation: sosPulse 2s ease-in-out infinite;
+  }
+  @keyframes sosPulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.7; }
+  }
+  .sos-icon-circle {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, #EF4444, #DC2626);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: white; flex-shrink: 0;
+    position: relative; z-index: 1;
+  }
+  .sos-text { flex: 1; position: relative; z-index: 1; }
+  .sos-text strong { font-size: 14px; font-weight: 700; color: var(--text-primary); display: block; }
+  .sos-text small { font-size: 11px; color: var(--text-secondary); }
+  .sos-call-btn {
+    background: linear-gradient(135deg, var(--danger), #DC2626);
+    color: white; border: none;
+    padding: 8px 16px; border-radius: 20px;
+    font-size: 13px; font-weight: 700;
+    cursor: pointer; position: relative; z-index: 1;
+    transition: transform 0.15s; flex-shrink: 0;
+  }
+  .sos-call-btn:active { transform: scale(0.95); }
+
+  /* ===== Filter Chips ===== */
+  .filter-chips {
+    display: flex; gap: 8px; margin-bottom: 12px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .filter-chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0; padding: 7px 16px; border-radius: 18px;
+    border: 1.5px solid rgba(0,0,0,0.08);
+    background: var(--bg-card);
+    font-size: 12px; font-weight: 600; color: var(--text-secondary);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .chip.active {
+    background: var(--primary); color: white;
+    border-color: var(--primary);
+  }
+
+  /* ===== Priority Tabs ===== */
+  .priority-tabs {
+    display: flex; gap: 4px; margin-bottom: 14px;
+    background: var(--bg-card); border-radius: 10px;
+    padding: 3px; box-shadow: var(--shadow-sm);
+  }
+  .prio-tab {
+    flex: 1; padding: 6px 0; border: none; border-radius: 8px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    background: none; color: var(--text-muted); transition: all 0.2s;
+  }
+  .prio-tab.active {
+    background: var(--bg-scaffold); color: var(--text-primary);
+  }
+
+  /* ===== Alert List ===== */
+  .alerts-list { display: flex; flex-direction: column; gap: 10px; }
+  .alert-item {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 14px;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    transition: transform 0.15s;
+    position: relative;
+    border-left: 4px solid transparent;
+  }
+  .alert-item:active { transform: scale(0.98); }
+  .alert-item.unread { border-left-color: var(--accent); }
+  .alert-item.resolved { opacity: 0.65; }
+  .alert-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+  .alert-type-badge {
+    padding: 3px 10px; border-radius: 12px;
+    font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+  .badge-sos { background: #FEF2F2; color: #DC2626; }
+  .badge-fall { background: #FFF3E0; color: #E65100; }
+  .badge-hr { background: #FCE4EC; color: #AD1457; }
+  .badge-geo { background: #FFFBEB; color: #D97706; }
+  .badge-med { background: var(--primary-bg); color: var(--primary); }
+  .alert-priority {
+    padding: 2px 8px; border-radius: 6px;
+    font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+  .p0 { background: #FEF2F2; color: #DC2626; }
+  .p1 { background: #FFFBEB; color: #D97706; }
+  .p2 { background: var(--primary-bg); color: var(--primary); }
+  .alert-status-tag {
+    margin-left: auto; padding: 2px 8px; border-radius: 6px;
+    font-size: 10px; font-weight: 600; flex-shrink: 0;
+  }
+  .status-unread { background: var(--primary-bg); color: var(--primary); }
+  .status-processing { background: #FFFBEB; color: #D97706; }
+  .status-resolved { background: #F0FDF4; color: #16A34A; }
+  .alert-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .alert-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px; }
+  .alert-footer { display: flex; align-items: center; justify-content: space-between; }
+  .alert-time { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+  .alert-actions { display: flex; gap: 6px; }
+  .alert-action-btn {
+    padding: 4px 12px; border-radius: 14px;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    background: none; font-size: 11px; font-weight: 600;
+    color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
+  }
+  .alert-action-btn.primary {
+    background: var(--primary); color: white; border-color: var(--primary);
+  }
+  .alert-action-btn.danger {
+    color: var(--danger); border-color: rgba(239,68,68,0.3);
+  }
+  .unread-dot {
+    position: absolute; top: 14px; right: 14px;
+    width: 8px; height: 8px;
+    background: var(--accent); border-radius: 50%;
+  }
+
+  /* ===== Bottom Sheet Modal ===== */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4); z-index: 500;
+    display: none; align-items: flex-end;
+  }
+  .modal-overlay.show { display: flex; }
+  .bottom-sheet {
+    width: 100%; max-height: 80vh;
+    background: var(--bg-card);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    overflow-y: auto;
+    animation: sheetSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes sheetSlideUp {
+    from { transform: translateY(100%); } to { transform: translateY(0); }
+  }
+  .sheet-handle {
+    width: 36px; height: 4px; background: var(--text-muted);
+    border-radius: 2px; margin: 12px auto 0; opacity: 0.4;
+  }
+  .sheet-content { padding: 16px; }
+  .sheet-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  }
+  .sheet-title { font-size: 18px; font-weight: 700; color: var(--text-primary); flex: 1; }
+  .sheet-close {
+    width: 32px; height: 32px; border: none;
+    background: var(--bg-scaffold); border-radius: 16px;
+    font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-secondary);
+  }
+  .sheet-detail { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+  .sheet-detail-row { display: flex; justify-content: space-between; font-size: 13px; }
+  .sheet-detail-label { color: var(--text-muted); }
+  .sheet-detail-value { color: var(--text-primary); font-weight: 600; }
+  .sheet-actions { display: flex; gap: 10px; padding-bottom: 16px; }
+  .sheet-btn {
+    flex: 1; padding: 12px 0; border-radius: 12px; border: none;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .sheet-btn:active { transform: scale(0.97); }
+  .sheet-btn.primary { background: var(--primary); color: white; }
+  .sheet-btn.secondary { background: var(--bg-scaffold); color: var(--text-secondary); }
+  .sheet-btn.danger { background: var(--danger); color: white; }
+
+  /* ===== Bottom Nav ===== */
+  .bottom-nav-wrapper { flex-shrink: 0; z-index: 100; }
+  .bottom-nav-inner {
+    display: flex; align-items: center;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(0,0,0,0.06);
+    padding: 6px 0 calc(var(--safe-bottom) + 6px);
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; padding: 6px 0 4px; gap: 2px;
+    cursor: pointer; color: var(--text-muted); font-size: 10px;
+    border: none; background: none;
+    transition: color 0.15s; position: relative;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-item:active { opacity: 0.7; }
+  .nav-icon { font-size: 20px; line-height: 1; }
+  .nav-label { font-weight: 500; }
+  .nav-badge {
+    position: absolute; top: 2px; right: 50%;
+    transform: translateX(14px);
+    min-width: 16px; height: 16px;
+    background: var(--danger); border-radius: 8px;
+    border: 2px solid white;
+    font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    color: white; padding: 0 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="top-bar">
+  <div class="top-bar-inner">
+    <button class="back-btn">&#8249;</button>
+    <span class="page-title">告警中心</span>
+    <button class="filter-btn">&#128269;</button>
+  </div>
+</div>
+
+<!-- Scrollable Content -->
+<div class="content">
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card sos">
+      <div class="stat-num">1</div>
+      <div class="stat-label">SOS 紧急</div>
+    </div>
+    <div class="stat-card fall">
+      <div class="stat-num">2</div>
+      <div class="stat-label">跌倒检测</div>
+    </div>
+    <div class="stat-card health">
+      <div class="stat-num">3</div>
+      <div class="stat-label">健康异常</div>
+    </div>
+  </div>
+
+  <!-- SOS Quick Action -->
+  <div class="sos-banner">
+    <div class="sos-icon-circle">&#10071;</div>
+    <div class="sos-text">
+      <strong>爷爷 SOS 未处理</strong>
+      <small>触发于 3 分钟前 · 陆家嘴环路1000号</small>
+    </div>
+    <button class="sos-call-btn" onclick="document.getElementById('modal').classList.add('show')">&#9742; 立即呼叫</button>
+  </div>
+
+  <!-- Filter Chips -->
+  <div class="filter-chips">
+    <button class="chip active" onclick="selectChip(this)">全部</button>
+    <button class="chip" onclick="selectChip(this)">未处理</button>
+    <button class="chip" onclick="selectChip(this)">SOS</button>
+    <button class="chip" onclick="selectChip(this)">跌倒</button>
+    <button class="chip" onclick="selectChip(this)">健康</button>
+    <button class="chip" onclick="selectChip(this)">围栏</button>
+    <button class="chip" onclick="selectChip(this)">用药</button>
+  </div>
+
+  <!-- Priority Tabs -->
+  <div class="priority-tabs">
+    <button class="prio-tab active" onclick="selectPrio(this)">全部</button>
+    <button class="prio-tab" style="color:var(--danger)" onclick="selectPrio(this)">P0</button>
+    <button class="prio-tab" style="color:var(--warning)" onclick="selectPrio(this)">P1</button>
+    <button class="prio-tab" style="color:var(--primary)" onclick="selectPrio(this)">P2</button>
+  </div>
+
+  <!-- Alerts List -->
+  <div class="alerts-list">
+    <div class="alert-item unread" onclick="openDetail('sos')">
+      <div class="unread-dot"></div>
+      <div class="alert-header">
+        <span class="alert-type-badge badge-sos">&#10071; SOS</span>
+        <span class="alert-priority p0">P0</span>
+        <span class="alert-status-tag status-unread">未读</span>
+      </div>
+      <div class="alert-title">SOS紧急按钮触发</div>
+      <div class="alert-desc">爷爷于 14:32 主动按下手环 SOS 按钮，已自动通知所有紧急联系人。</div>
+      <div class="alert-footer">
+        <span class="alert-time">&#128336; 3分钟前</span>
+        <div class="alert-actions">
+          <button class="alert-action-btn danger">立即呼叫</button>
+          <button class="alert-action-btn primary">查看位置</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert-item unread" onclick="openDetail('fall')">
+      <div class="unread-dot"></div>
+      <div class="alert-header">
+        <span class="alert-type-badge badge-fall">&#127811; 跌倒</span>
+        <span class="alert-priority p0">P0</span>
+        <span class="alert-status-tag status-unread">未读</span>
+      </div>
+      <div class="alert-title">检测到疑似跌倒</div>
+      <div class="alert-desc">加速度传感器检测到剧烈碰撞，置信度 0.95，当前位置：世纪大道地铁站出口。</div>
+      <div class="alert-footer">
+        <span class="alert-time">&#128336; 15分钟前</span>
+        <div class="alert-actions">
+          <button class="alert-action-btn danger">立即呼叫</button>
+          <button class="alert-action-btn primary">标记处理</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert-item" onclick="openDetail('geo')">
+      <div class="alert-header">
+        <span class="alert-type-badge badge-geo">&#127970; 围栏</span>
+        <span class="alert-priority p1">P1</span>
+        <span class="alert-status-tag status-processing">处理中</span>
+      </div>
+      <div class="alert-title">电子围栏越界</div>
+      <div class="alert-desc">离开安全区域（幸福家园周边500m），已持续偏离 25 分钟。</div>
+      <div class="alert-footer">
+        <span class="alert-time">&#128336; 25分钟前</span>
+        <div class="alert-actions">
+          <button class="alert-action-btn">查看位置</button>
+          <button class="alert-action-btn">标记处理</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert-item resolved">
+      <div class="alert-header">
+        <span class="alert-type-badge badge-hr">&#9829; 心率</span>
+        <span class="alert-priority p1">P1</span>
+        <span class="alert-status-tag status-resolved">已处理</span>
+      </div>
+      <div class="alert-title">心率持续偏高</div>
+      <div class="alert-desc">静息心率连续10分钟高于100bpm，已自动建议就医。</div>
+      <div class="alert-footer">
+        <span class="alert-time">&#128336; 45分钟前</span>
+        <div class="alert-actions">
+          <button class="alert-action-btn">查看详情</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert-item resolved">
+      <div class="alert-header">
+        <span class="alert-type-badge badge-med">&#10013; 用药</span>
+        <span class="alert-priority p2">P2</span>
+        <span class="alert-status-tag status-resolved">已处理</span>
+      </div>
+      <div class="alert-title">降压药漏服提醒</div>
+      <div class="alert-desc">爷爷今日 08:00 降压药未在 30 分钟内服用，已发送语音提醒。</div>
+      <div class="alert-footer">
+        <span class="alert-time">&#128336; 6小时前</span>
+        <div class="alert-actions">
+          <button class="alert-action-btn">查看详情</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Alert Detail Bottom Sheet -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="bottom-sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-content">
+      <div class="sheet-header">
+        <span class="sheet-title" id="sheetTitle">告警详情</span>
+        <button class="sheet-close" onclick="document.getElementById('modal').classList.remove('show')">&#10005;</button>
+      </div>
+      <div class="sheet-detail" id="sheetDetail">
+        <div class="sheet-detail-row">
+          <span class="sheet-detail-label">告警类型</span>
+          <span class="sheet-detail-value" id="sheetType">SOS紧急按钮</span>
+        </div>
+        <div class="sheet-detail-row">
+          <span class="sheet-detail-label">优先级</span>
+          <span class="sheet-detail-value"><span class="alert-priority p0">P0</span></span>
+        </div>
+        <div class="sheet-detail-row">
+          <span class="sheet-detail-label">触发时间</span>
+          <span class="sheet-detail-value" id="sheetTime">2026-07-25 14:32:15</span>
+        </div>
+        <div class="sheet-detail-row">
+          <span class="sheet-detail-label">触发设备</span>
+          <span class="sheet-detail-value">手环Pro (BR-0042)</span>
+        </div>
+        <div class="sheet-detail-row">
+          <span class="sheet-detail-label">当前位置</span>
+          <span class="sheet-detail-value">上海市浦东新区陆家嘴环路1000号</span>
+        </div>
+        <div class="sheet-detail-row">
+          <span class="sheet-detail-label">通知状态</span>
+          <span class="sheet-detail-value" style="color:var(--accent);">已通知 3 位紧急联系人</span>
+        </div>
+      </div>
+      <div class="sheet-actions">
+        <button class="sheet-btn secondary" onclick="document.getElementById('modal').classList.remove('show')">标记已读</button>
+        <button class="sheet-btn danger" onclick="document.getElementById('modal').classList.remove('show')">标记处理</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav-wrapper">
+  <div class="bottom-nav-inner">
+    <button class="nav-item">
+      <span class="nav-icon">&#9755;</span>
+      <span class="nav-label">首页</span>
+    </button>
+    <button class="nav-item">
+      <span class="nav-icon">&#9829;</span>
+      <span class="nav-label">健康</span>
+    </button>
+    <button class="nav-item active">
+      <span class="nav-icon">&#9888;</span>
+      <span class="nav-label">告警</span>
+      <span class="nav-badge">3</span>
+    </button>
+    <button class="nav-item">
+      <span class="nav-icon">&#10013;</span>
+      <span class="nav-label">用药</span>
+    </button>
+    <button class="nav-item">
+      <span class="nav-icon">&#9878;</span>
+      <span class="nav-label">福利</span>
+    </button>
+    <button class="nav-item" style="cursor:pointer;">
+      <span class="nav-icon">&#128100;</span>
+      <span class="nav-label">我的</span>
+    </button>
+  </div>
+</div>
+
+<script>
+  function selectChip(btn) {
+    btn.parentElement.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  function selectPrio(btn) {
+    btn.parentElement.querySelectorAll('.prio-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  const alertDetails = {
+    sos: { title: 'SOS紧急按钮', type: 'SOS紧急按钮', time: '2026-07-25 14:32:15' },
+    fall: { title: '跌倒检测告警', type: '跌倒检测', time: '2026-07-25 14:20:03' },
+    geo: { title: '电子围栏越界', type: '电子围栏', time: '2026-07-25 14:07:45' },
+  };
+  function openDetail(type) {
+    const d = alertDetails[type];
+    if (!d) return;
+    document.getElementById('sheetTitle').textContent = d.title;
+    document.getElementById('sheetType').textContent = d.type;
+    document.getElementById('sheetTime').textContent = d.time;
+    document.getElementById('modal').classList.add('show');
+  }
+  function closeModal(e) {
+    if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
+  }
+</script>
+</body>
+</html>
