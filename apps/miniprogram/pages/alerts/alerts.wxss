@@ -51,6 +51,9 @@
 .alert-priority.P2 { background: #EFF6FF; color: #4A90D9; }
 .alert-device { font-size: 22rpx; color: #6B7280; display: block; }
 .alert-time { font-size: 20rpx; color: #9CA3AF; margin-top: 4rpx; display: block; }
+.alert-location { margin-top: 12rpx; font-size: 20rpx; color: #4B5563; }
+.location-label { font-weight: 600; margin-right: 6rpx; }
+.location-text { color: #4A90D9; cursor: pointer; text-decoration: underline; }
 .alert-actions { display: flex; gap: 12rpx; margin-top: 16rpx; }
 .btn-call { background: #EF4444; color: white; border: none; font-size: 22rpx; border-radius: 8rpx; }
 .btn-location { background: #4A90D9; color: white; border: none; font-size: 22rpx; border-radius: 8rpx; }
@@ -59,4 +62,21 @@
   position: absolute; top: 24rpx; right: 24rpx;
   width: 16rpx; height: 16rpx; border-radius: 50%;
   background: #FF6B6B;
+}
+.empty-state {
+  text-align: center; padding: 60rpx 24rpx; color: #9CA3AF;
+}
+.empty-icon { font-size: 80rpx; display: block; margin-bottom: 16rpx; }
+.empty-text { font-size: 28rpx; font-weight: 600; margin-bottom: 8rpx; }
+.empty-sub { font-size: 20rpx; }
+.loading-state {
+  text-align: center; padding: 40rpx; color: #6B7280;
+}
+.loading-icon { font-size: 40rpx; display: block; margin-bottom: 12rpx; }
+.acknowledged-tag {
+  margin-top: 12rpx; font-size: 18rpx; color: #10B981;
+  background: #D1FAE5;
+  padding: 8rpx 16rpx;
+  border-radius: 12rpx;
+  display: inline-block;
 }

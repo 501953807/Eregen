@@ -1,16 +1,78 @@
+const api = require('../../utils/api.js');
+
 Page({
   data: {
     filterTab: 0,
-    filters: ['全部', '未处理', 'SOS', '跌倒', '健康'],
-    alerts: [
-      { id: 1, type: 'sos', icon: '🆘', title: 'SOS 紧急呼叫', device: 'BR-0042', time: '2026-07-16 14:32', status: 'unread', priority: 'P0' },
-      { id: 2, type: 'fall', icon: '⚠️', title: '跌倒检测触发', device: 'BR-0017', time: '2026-07-16 13:18', status: 'processing', priority: 'P0' },
-      { id: 3, type: 'heart', icon: '💓', title: '心率异常偏高', device: 'BR-0089', time: '2026-07-16 12:05', status: 'resolved', priority: 'P1' },
-      { id: 4, type: 'geofence', icon: '📍', title: '电子围栏越界', device: 'BR-0033', time: '2026-07-16 11:42', status: 'unread', priority: 'P1' },
-      { id: 5, type: 'med', icon: '💊', title: '用药漏服提醒', device: 'PX-0012', time: '2026-07-16 10:15', status: 'resolved', priority: 'P2' },
-    ],
+    filters: ['全部', '未处理', 'SOS', '跌倒'],
+    alerts: [],
+    loading: true,
   },
+
+  /**
+   * Page load — fetch alerts from backend API.
+   */
+  async onLoad() {
+    this.setData({ loading: true });
+    try {
+      // Fetch unread alerts first; fall back to all if endpoint not ready
+      const resp = await api.request('/api/v1/alerts', { method: 'GET', query: { unread: 'true' } });
+      this.setData({ alerts: resp.data || [], loading: false });
+    } catch (e) {
+      // If alert endpoint is not available yet, show empty state with warning
+      console.warn('Alert endpoint not ready:', e);
+      this.setData({ alerts: [], loading: false });
+    }
+  },
+
+  /**
+   * Switch filter tab.
+   */
   switchFilter(e) {
-    this.setData({ filterTab: e.currentTarget.dataset.index })
+    const index = e.currentTarget.dataset.index;
+    this.setData({ filterTab: index });
+  },
+
+  /**
+   * Acknowledge a single alert (mark as read/processed).
+   * @param {string} alertId
+   */
+  async handleAcknowledge(alertId) {
+    try {
+      await api.request(`/api/v1/alerts/${alertId}/acknowledge`, { method: 'POST' });
+      // Remove from local list or update status
+      const alerts = this.data.alerts.map(a => a.id === alertId ? { ...a, status: 'read', acknowledgedAt: new Date().toISOString() } : a);
+      this.setData({ alerts });
+      wx.showToast({ title: '已标记为已处理', icon: 'success', duration: 1500 });
+    } catch (e) {
+      wx.showToast({ title: '操作失败', icon: 'none' });
+      console.error('Acknowledge alert failed:', e);
+    }
+  },
+
+  /**
+   * Open system map at the alert location.
+   * @param {string} alertId
+   */
+  async handleOpenLocation(alertId) {
+    const alert = this.data.alerts.find(a => a.id === alertId);
+    if (!alert) return;
+
+    // In production, get lat/lon from alert data and call openLocation
+    wx.openLocation({
+      latitude: alert.lat || 0,
+      longitude: alert.lon || 0,
+      name: alert.title || '告警位置',
+      scale: 15,
+    });
+  },
+
+  /**
+   * Format timestamp for display (HH:mm).
+   * @param {string|number} ts
+   */
+  formatTime(ts) {
+    const date = typeof ts === 'string' ? new Date(ts) : new Date(ts * 1000);
+    return date.toLocaleString('en-US', { hour: '2-digit', minute: '2-digit' });
   },
 })
+

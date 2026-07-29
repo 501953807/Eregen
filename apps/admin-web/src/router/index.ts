@@ -15,6 +15,7 @@ const router = createRouter({
     { path: '/settings', component: () => import('@/views/Settings.vue') },
     { path: '/ota', component: () => import('@/views/OTA.vue') },
     { path: '/elderly', component: () => import('@/views/Elderly.vue') },
+    { path: '/medication', component: () => import('@/views/Medication.vue'), name: 'Medication' },
     { path: '/medical', component: () => import('@/views/MedicalWristband.vue') },
     { path: '/regulatory', component: () => import('@/views/RegulatoryDashboard.vue') },
     { path: '/audit/:patientId', name: 'AuditDetail', component: () => import('@/views/AuditDetail.vue') },

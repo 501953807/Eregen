@@ -341,6 +341,11 @@ async function initCharts() {
   renderAlertPriorityChart()
 }
 
+// Initialize charts on mount
+onMounted(() => {
+  initCharts()
+})
+
 // Device type donut — v2 prototype enhancement
 function renderDonutChart() {
   if (!donutChartRef.value) return

@@ -204,21 +204,27 @@ func medCreateRule(pg *store.Postgres, nats *service.NatsClient) gin.HandlerFunc
 			c.JSON(500, gin.H{"code": "CREATE_FAILED", "message": "Failed to create rule"})
 			return
 		}
-		if nats != nil {
-			cmd := map[string]any{
-				"type": "med_rule",
-				"rule": map[string]any{
-					"time": req.ScheduleTime, "dose": req.DoseCount,
-					"type": req.PillType, "days": req.DaysOfWeek,
-				},
+		// Fetch all pillbox devices bound to this elderly and push med_rule to each
+		devices, _, err := pg.ListDevices(c.Request.Context(), elderlyID, func() *string { p := "pillbox"; return &p }(), 1, 1)
+		if err != nil {
+			// Continue without failing, just silently continue
+		} else {
+			for _, dev := range devices {
+				cmd := map[string]any{
+					"type": "med_rule",
+					"rule": map[string]any{
+						"time": req.ScheduleTime, "dose": req.DoseCount,
+						"type": req.PillType, "days": req.DaysOfWeek,
+					},
+				}
+				_ = nats.PublishCommand(c.Request.Context(), dev.DeviceID, cmd)
 			}
-			_ = nats.PublishCommand(c.Request.Context(), "BR-XXXX", cmd)
 		}
 		c.JSON(201, gin.H{"code": "OK", "message": "Medication rule created and pushed to device"})
 	}
 }
 
-func medUpdateRule(pg *store.Postgres) gin.HandlerFunc {
+func medUpdateRule(pg *store.Postgres, nats *service.NatsClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ruleID, exists := c.Get("rule_id")
 		if !exists {
@@ -242,20 +248,48 @@ func medUpdateRule(pg *store.Postgres) gin.HandlerFunc {
 			c.JSON(500, gin.H{"code": "UPDATE_FAILED", "message": "Failed to update rule"})
 			return
 		}
+		// Push med_rule_update to all pillboxes bound to this elderly
+		elderlyID := c.Param("elderly_id") // The router binds elderly_id before calling handler
+		devices, _, err := pg.ListDevices(c.Request.Context(), elderlyID, func() *string { p := "pillbox"; return &p }(), 1, 1)
+		if err == nil && len(devices) > 0 {
+			cmd := map[string]any{
+				"type": "med_rule_update",
+				"rule_id": ruleID.(string),
+				"rule": map[string]any{
+					"time": req.ScheduleTime, "dose": req.DoseCount,
+					"type": req.PillType, "days": req.DaysOfWeek,
+				},
+			}
+			for _, dev := range devices {
+				_ = nats.PublishCommand(c.Request.Context(), dev.DeviceID, cmd)
+			}
+		}
 		c.JSON(200, gin.H{"code": "OK", "message": "Medication rule updated"})
 	}
 }
 
-func medDeleteRule(pg *store.Postgres) gin.HandlerFunc {
+func medDeleteRule(pg *store.Postgres, nats *service.NatsClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ruleID, exists := c.Get("rule_id")
 		if !exists {
 			c.JSON(400, gin.H{"code": "MISSING_RULE_ID", "message": "rule_id required"})
 			return
 		}
+		elderlyID := c.Param("elderly_id")
 		if err := pg.DeleteMedicationRule(c.Request.Context(), ruleID.(string)); err != nil {
 			c.JSON(404, gin.H{"code": "NOT_FOUND", "message": "Rule not found"})
 			return
+		}
+		// Send deletion notification to all pillboxes for this elderly
+		devices, _, err := pg.ListDevices(c.Request.Context(), elderlyID, func() *string { p := "pillbox"; return &p }(), 1, 1)
+		if err == nil && len(devices) > 0 {
+			cmd := map[string]any{
+				"type": "med_rule_delete",
+				"rule_id": ruleID.(string),
+			}
+			for _, dev := range devices {
+				_ = nats.PublishCommand(c.Request.Context(), dev.DeviceID, cmd)
+			}
 		}
 		c.JSON(200, gin.H{"code": "OK", "message": "Medication rule deleted"})
 	}

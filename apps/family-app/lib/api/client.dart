@@ -163,4 +163,96 @@ class ApiClient {
       if (deviceIds != null && deviceIds.isNotEmpty) 'device_ids': deviceIds,
     });
   }
+
+  // ========== Family App Specific Endpoints ========== //
+
+  /// GET /api/v1/users/me — get current user profile
+  Future<Response> getUserProfile() async {
+    return _dio.get('/api/v1/users/me');
+  }
+
+  /// PUT /api/v1/users/me — update profile
+  Future<Response> updateUserProfile(Map<String, dynamic> data) async {
+    return _dio.put('/api/v1/users/me', data: data);
+  }
+
+  /// GET /api/v1/devices — list devices for current elder
+  Future<Response> listDevices() async {
+    return _dio.get('/api/v1/devices');
+  }
+
+  /// POST /api/v1/devices — register new device
+  Future<Response> registerDevice(Map<String, dynamic> deviceData) async {
+    return _dio.post('/api/v1/devices', data: deviceData);
+  }
+
+  /// GET /api/v1/location/current?dev_id=BR-XXXX — get last location
+  Future<Response> getLocation(String deviceId) async {
+    return _dio.get('/api/v1/location/current', queryParameters: {'dev_id': deviceId});
+  }
+
+  /// GET /api/v1/health/history?dev_id=BR-XXXX&from=...&to=... — health history
+  Future<Response> getHealthHistory({
+    required String deviceId,
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    return _dio.get('/api/v1/health/history', queryParameters: {
+      'dev_id': deviceId,
+      'from': from.toIso8601String(),
+      'to': to.toIso8601String(),
+    });
+  }
+
+  /// POST /api/v1/alerts/sos — report SOS alert
+  Future<Response> createSOSAlert({required double lat, required double lon}) async {
+    return _dio.post('/api/v1/alerts/sos', data: {'lat': lat, 'lon': lon});
+  }
+
+  /// GET /api/v1/alerts?unread=true — list unread alerts
+  Future<Response> listAlerts({bool unreadOnly = false}) async {
+    return _dio.get('/api/v1/alerts', queryParameters: {'unread': unreadOnly});
+  }
+
+  /// POST /api/v1/alerts/{id}/acknowledge — acknowledge alert
+  Future<Response> acknowledgeAlert(String alertId) async {
+    return _dio.post('/api/v1/alerts/$alertId/acknowledge');
+  }
+
+  /// GET /api/v1/elderly/{elder_id}/medication/rules — get medication rules
+  Future<Response> listMedications(String elderId) async {
+    return _dio.get('/api/v1/elderly/$elderId/medication/rules');
+  }
+
+  /// ALIAS: listMeds — get medication rules by elder ID
+  Future<Response> listMeds(String elderId) async {
+    return listMedications(elderId);
+  }
+
+  /// POST /api/v1/elderly/{elder_id}/medication/rules — create rule
+  Future<Response> saveMediationRule(Map<String, dynamic> rule) async {
+    final elderId = rule['elderId'] ?? rule['elderly_id'];
+    if (elderId == null) throw ArgumentError('elderId required in rule data');
+    return _dio.post('/api/v1/elderly/$elderId/medication/rules', data: rule);
+  }
+
+  /// ALIAS: updateMedRule — update/create medication rule
+  Future<Response> updateMedRule(Map<String, dynamic> rule) async {
+    return saveMediationRule(rule);
+  }
+
+  /// POST /api/v1/medication/:rule_id/take — mark rule as taken manually
+  Future<Response> takeMedicationRule(String ruleId) async {
+    return _dio.post('/api/v1/medication/$ruleId/take');
+  }
+
+  /// GET /api/v1/settings/get — get system settings (including fence config)
+  Future<Response> getSettings() async {
+    return _dio.get('/api/v1/settings/get');
+  }
+
+  /// PUT /api/v1/settings/update — update settings
+  Future<Response> updateSettings(Map<String, dynamic> settings) async {
+    return _dio.put('/api/v1/settings/update', data: settings);
+  }
 }

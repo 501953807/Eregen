@@ -230,8 +230,8 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 
 				elderly.GET("/medication/rules", medRules(pg))
 				elderly.POST("/medication/rules", auditMW.LogAction(service.ActionMedicationRule, "medication_rule", "", nil), medCreateRule(pg, nats))
-				elderly.PUT("/medication/rules/:rule_id", auditMW.LogAction(service.ActionMedicationRule, "medication_rule", "", nil), auth.ResolveRuleID(), medUpdateRule(pg))
-				elderly.DELETE("/medication/rules/:rule_id", auditMW.LogAction(service.ActionMedicationRule, "medication_rule", "", nil), auth.ResolveRuleID(), medDeleteRule(pg))
+				elderly.PUT("/medication/rules/:rule_id", auditMW.LogAction(service.ActionMedicationRule, "medication_rule", "", nil), auth.ResolveRuleID(), medUpdateRule(pg, nats))
+				elderly.DELETE("/medication/rules/:rule_id", auditMW.LogAction(service.ActionMedicationRule, "medication_rule", "", nil), auth.ResolveRuleID(), medDeleteRule(pg, nats))
 				elderly.GET("/medication/today", medToday(pg))
 				elderly.GET("/medication/history", medHistory(pg))
 				elderly.POST("/medication/check-interactions", interactionH.CheckInteractions)

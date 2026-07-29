@@ -461,6 +461,7 @@ async function handleDisableUser(user: any) {
 
 onMounted(async () => {
   await usersStore.fetchFamily({ page_size: 50 })
+  await usersStore.fetchElderly({ page_size: 50 })
 })
 </script>
 

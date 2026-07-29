@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../common/theme.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../api/client.dart';
 import '../../models/medication.dart';
+import '../../app_state.dart';
 
 /// Medication management — v2 design: today summary card with ring, period tabs,
 /// timeline with icons/status badges/actions, inventory bars, remote config toggles,
@@ -33,7 +35,13 @@ class _MedicationPageState extends State<MedicationPage> {
 
   Future<void> _fetchData() async {
     try {
-      final resp = await ApiClient.instance.get('/medication/rules');
+      // Get current elderly ID from AppState
+      final elderlyId = context.read<AppState>().elderlyId;
+      if (elderlyId == null || elderlyId.isEmpty) {
+        setState(() => _loading = false);
+        return;
+      }
+      final resp = await ApiClient.instance.listMeds(elderlyId);
       final list = resp.data as List;
       setState(() {
         _rules = list.map((r) => MedicationRule.fromJson(r as Map<String, dynamic>)).toList();
@@ -51,9 +59,11 @@ class _MedicationPageState extends State<MedicationPage> {
       _showSuccess = true;
     });
     try {
-      await ApiClient.instance.post('/medication/$ruleId/take');
+      await ApiClient.instance.takeMedicationRule(ruleId);
       setState(() => _takenIds.add(ruleId));
-    } catch (_) {}
+    } catch (e) {
+      print('Failed to mark medication as taken: $e');
+    }
     Future.delayed(const Duration(milliseconds: 1200), () {
       setState(() {
         _showSuccess = false;

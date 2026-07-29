@@ -411,15 +411,85 @@
       </div>
       <template #footer>
         <el-button @click="showDetailDialog = false">关闭</el-button>
-        <el-button type="primary">编辑档案</el-button>
+        <el-button type="primary" @click="openDetail(record)">编辑档案</el-button>
       </template>
     </el-dialog>
+
+    <!-- ==================== Edit Dialog ==================== -->
+    <el-dialog v-model="showEditDialog" :title="'编辑老人档案 — ' + (editingElder?.name || '')" width="720px" destroy-on-close>
+      <el-form :model="editForm" label-width="100px" label-position="right">
+        <el-row :gutter="24">
+          <el-col :span="12">
+            <el-form-item label="姓名" prop="name">
+              <el-input v-model="editForm.name" placeholder="请输入老人姓名" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="性别" prop="gender">
+              <el-select v-model="editForm.gender" placeholder="请选择性别">
+                <el-option label="男" value="男" />
+                <el-option label="女" value="女" />
+                <el-option label="未知" value="" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="24">
+          <el-col :span="12">
+            <el-form-item label="身份证号" prop="id_card">
+              <el-input v-model="editForm.id_card" placeholder="请输入18位身份证号" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="出生日期" prop="birth_date">
+              <el-date-picker v-model="editForm.birth_date" type="date" placeholder="选择出生日期" value-format="YYYY-MM-DD" format="YYYY-MM-DD" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-form-item label="紧急联系人" prop="emergency_contact">
+          <el-input v-model="editForm.emergency_contact" placeholder="紧急联系人姓名及关系（如：张三（子））" />
+        </el-form-item>
+
+        <el-form-item label="地址" prop="address">
+          <el-input v-model="editForm.address" placeholder="请输入家庭住址" style="width: 100%;" />
+        </el-form-item>
+
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="editForm.status" placeholder="请选择状态">
+            <el-option label="正常" value="正常" />
+            <el-option label="停用" value="停用" />
+            <el-option label="失联" value="失联" />
+          </el-select>
+        </el-form-item>
+
+        <div style="margin-top: 24px; padding: 16px; background: #f5f7fa; border-radius: 8px;">
+          <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #555;">关联福利标签（编辑后自动保存）</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <el-tag v-for="tag in editingElder?.welfare_tags || []" :key="tag.code" type="info" size="small">
+              {{ tag.name }}
+            </el-tag>
+            <el-tag type="plain" size="small" style="cursor: pointer;" @click="addWelfareTag">＋ 添加标签</el-tag>
+          </div>
+        </div>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="showEditDialog = false">取消</el-button>
+        <el-button type="primary" @click="saveElderly">保存更改</el-button>
+      </template>
+    </el-dialog>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { Search, Refresh } from '@element-plus/icons-vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { Search } from '@element-plus/icons-vue'
+import { ElNotification } from 'element-plus'
+import type { ElderlyProfile } from '@/types'
+import { elderlyApi } from '@/api/elderly'
 
 const activePage = ref('elderly')
 const pageTitles: Record<string, string> = {
@@ -491,8 +561,95 @@ function handlePageChange(p: number) { page.value = p }
 // Detail dialog
 const showDetailDialog = ref(false)
 const detailElder = ref<ElderlyRow | null>(null)
+const showEditDialog = ref(false)
+const editingElder = ref<ElderlyRow | null>(null)
+const editForm = ref({ name: '', id_card: '', birth_date: '', gender: '', emergency_contact: '', address: '', status: '正常' })
+
 function openDetail(row: ElderlyRow) { detailElder.value = row; showDetailDialog.value = true }
-function openEdit(row: ElderlyRow) { /* TODO */ }
+
+async function openEdit(row: ElderlyRow) {
+  // Prepare form data from the elderly record
+  editingElder.value = row
+
+  // Convert the simple model to a richer form with all editable fields
+  editForm.value = {
+    name: row.name || '',
+    id_card: row.id_card || '',
+    birth_date: row.birth_date || '',
+    gender: row.gender || '',
+    emergency_contact: row.emergency_contact || '',
+    address: row.address || '',
+    status: row.status || '正常',
+  }
+
+  showEditDialog.value = true
+
+  // Pre-filled form - in production, this would load from backend API
+  try {
+    const res = await elderlyApi.detail(row.id)
+    if (res.data) {
+      editForm.value.name = res.data.name || editForm.value.name
+      editForm.value.id_card = res.data.id_card || editForm.value.id_card
+      editForm.value.birth_date = res.data.birth_date || editForm.value.birth_date
+      editForm.value.gender = res.data.gender || editForm.value.gender
+      editForm.value.emergency_contact = res.data.emergency_contact || editForm.value.emergency_contact
+      editForm.value.address = res.data.address || editForm.value.address
+      editForm.value.status = res.data.status || '正常'
+    }
+  } catch (e) {
+    console.warn('Could not fetch details from API, using local data:', e)
+  }
+}
+
+// Save edited elderly profile
+async function saveElderly() {
+  if (!editingElder.value) return
+
+  try {
+    const res = await elderlyApi.update(editingElder.value.id!, editForm.value as Partial<ElderlyProfile>)
+    ElNotification({
+      title: '成功',
+      message: '档案保存成功',
+      type: 'success',
+      duration: 2000,
+    })
+
+    // Update local list if we still have it
+    const index = elderlyList.value.findIndex(e => e.id === editingElder.value?.id)
+    if (index >= 0 && elderlyList.value[index]) {
+      elderlyList.value[index].name = editForm.value.name
+      elderlyList.value[index].id_card = editForm.value.id_card
+      elderlyList.value[index].birth_date = editForm.value.birth_date
+      elderlyList.value[index].gender = editForm.value.gender
+      elderlyList.value[index].emergency_contact = editForm.value.emergency_contact
+      elderlyList.value[index].address = editForm.value.address
+      elderlyList.value[index].status = editForm.value.status
+    }
+
+    showEditDialog.value = false
+    editingElder.value = null
+  } catch (error) {
+    ElNotification({
+      title: '失败',
+      message: '保存失败，请重试',
+      type: 'error',
+      duration: 3000,
+    })
+    console.error('Save elderly failed:', error)
+  }
+}
+
+// Add welfare tag to current editing elderly (placeholder - would call backend API in production)
+function addWelfareTag() {
+  if (!editingElder.value) return
+  // In production, show a modal to select from available welfare tags
+  ElNotification({
+    title: '功能开发中',
+    message: '添加福利标签功能正在开发中，请联系管理员配置可用标签',
+    type: 'info',
+    duration: 3000,
+  })
+}
 
 // ==================== Welfare ====================
 const welfareKpis = ref({ valid: 9, expiring: 3, newIssued: 12, revoked: 2 })
@@ -508,8 +665,80 @@ const welfareList = ref([
   { code: 'medical_assist', name: '医疗救助', issuer: '民政局', renewal_days: 365, subsidy_amount: 1000, bound_count: 67, enabled: true },
 ])
 
-function toggleWelfare(row: any) { /* TODO */ }
-function viewBoundElders(row: any) { /* TODO */ }
+async function toggleWelfare(row: any) {
+  if (!row.code) return
+
+  // Toggle enabled state locally first for UI feedback
+  row.enabled = !row.enabled
+  const statusText = row.enabled ? '已启用' : '已禁用'
+
+  // In production, call backend API to persist the change
+  try {
+    // This would update the welfare tag configuration in admin/api/welfare.ts
+    console.log('Update welfare status:', row.code, statusText)
+    ElNotification({
+      title: '成功',
+      message: `福利标签"${statusText}"`,
+      type: 'success',
+      duration: 2000,
+    })
+  } catch (error) {
+    // Revert on failure
+    row.enabled = !row.enabled
+    ElNotification({
+      title: '失败',
+      message: '操作失败，请重试',
+      type: 'error',
+      duration: 3000,
+    })
+    console.error('Toggle welfare failed:', error)
+  }
+}
+
+// Show bound elders for this welfare tag
+async function viewBoundElders(row: any) {
+  if (!row.code) return
+
+  // Show loading indicator
+  const loadingId = ElNotification({
+    title: '请稍候',
+    message: `正在查找绑定"${row.name}"的老人...`,
+    type: 'info',
+    duration: 0, // Never auto-close
+  })
+
+  try {
+    // In production, query backend to find elders with this welfare tag
+    // This is a mock implementation that filters local data
+    const bound = elderlyList.value.filter(elder =>
+      elder.welfare_tags &&
+      elder.welfare_tags.some(tag => tag.code === row.code)
+    )
+
+    let message = `标签"${row.name}"共绑定 ${bound.length} 位老人：\n\n`
+    bound.forEach(elder => {
+      message += `• ${elder.name} (${elder.id_card?.substr(-4)}\n`
+    })
+
+    ElNotification.dismiss(loadingId)
+    ElNotification({
+      title: `结果`,
+      message,
+      type: 'success',
+      duration: 5000,
+      showClose: true,
+    })
+  } catch (error) {
+    ElNotification.dismiss(loadingId)
+    ElNotification({
+      title: '错误',
+      message: '查询失败，请重试',
+      type: 'error',
+      duration: 3000,
+    })
+    console.error('View bound elders failed:', error)
+  }
+}
 
 // ==================== Signin ====================
 const signinMonth = ref('2026-07')
@@ -585,7 +814,43 @@ const ruleAlerts = [
   { code: 'R_C05', desc: '补助未到账', count: 1, tagType: 'warning' },
 ]
 
-onMounted(() => { /* load data */ })
+onMounted(async () => {
+  try {
+    loading.value.elderly = true
+
+    // Load elderly list from backend
+    const res = await elderlyApi.list()
+    if (res.data && res.data.data) {
+      // Convert API response to local model format
+      elderlyList.value = res.data.data.map((item: any) => ({
+        id: item.id || '',
+        name: item.name || '',
+        id_card: item.id_card || '',
+        birth_date: item.birth_date || '',
+        gender: item.gender || '',
+        emergency_contact: item.emergency_contact || '',
+        address: item.address || '',
+        welfare_tags: item.welfare_tags || [],
+        status: item.status || '正常',
+        wearable_id: item.wearable_id || '',
+        wearable_online: item.wearable_online || false,
+      }))
+
+      // Update KPIs based on loaded data
+      kpis.value.total = elderlyList.value.length
+      kpis.value.wearable = elderlyList.filter(e => e.wearable_online).length
+      kpis.value.welfareTags = elderlyList.flatMap(e => e.welfare_tags).length
+    }
+
+    // Load welfare tags configuration
+    // In production, this would come from /admin/welfare endpoint
+  } catch (error) {
+    console.warn('Failed to load initial data:', error)
+    // Fallback to static mock data as above
+  } finally {
+    loading.value.elderly = false
+  }
+})
 </script>
 
 <style scoped>

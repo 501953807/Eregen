@@ -176,11 +176,11 @@ func (h *DeviceHandler) Bind(c *gin.Context) {
 	})
 }
 
-// POST /api/v1/devices/telemetry — device sends health/location data
+// POST /api/v1/devices/telemetry — device sends health/location/med_status data
 func (h *DeviceHandler) HandleTelemetry(c *gin.Context) {
 	var req struct {
 		DeviceID string `json:"device_id" binding:"required"`
-		Type     string `json:"type" binding:"required"` // health, location, sos
+		Type     string `json:"type" binding:"required"` // health, location, med_status
 		Data     map[string]any `json:"data"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -202,7 +202,7 @@ func (h *DeviceHandler) HandleTelemetry(c *gin.Context) {
 		return
 	}
 
-	// Extract elderly_id from payload for both health and location types
+	// Extract elderly_id from payload for all types
 	elderlyID, ok := req.Data["elderly_id"].(string)
 	if !ok || elderlyID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "MISSING_ELDERLY_ID", "message": "elderly_id required in telemetry data"})
@@ -277,8 +277,32 @@ func (h *DeviceHandler) HandleTelemetry(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"code": "FAILED", "message": "Failed to save location"})
 			return
 		}
+		case "med_status":
+			taken, ok := req.Data["taken"].(bool)
+			if !ok {
+				c.JSON(http.StatusBadRequest, gin.H{"code": "MISSING_TAKEN", "message": "taken required"})
+				return
+			}
+			// Record medication status event
+		now := time.Now()
+		r := &model.MedStatusRecord{
+			ElderlyID: elderlyID,
+			Taken:     taken,
+			TakenAt:   &time.Time{},
+			MissedAt:  &time.Time{},
+		}
+		if taken {
+	r.TakenAt = &now
+		} else {
+	r.MissedAt = &now
+		}
+		if err := h.store.CreateMedStatusRecord(c.Request.Context(), r); err != nil {
+		h.log.Error("create med status record", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, gin.H{"code": "FAILED", "message": "Failed to save medication status"})
+			return
+		}
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_TYPE", "message": "type must be health or location"})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_TYPE", "message": "type must be health, location, or med_status"})
 		return
 	}
 
