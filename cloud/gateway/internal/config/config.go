@@ -79,19 +79,29 @@ func Load() Config {
 
 	data, err := os.ReadFile("./config/gateway.yaml")
 	if err != nil {
-		return cfg
-	}
-
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		// Config file is optional; use defaults but will validate critical values below
+	} else if err := yaml.Unmarshal(data, &cfg); err != nil {
 		panic(fmt.Sprintf("failed to parse config file: %v", err))
 	}
 
+	// Override from environment variables (optional overrides)
 	overrideString(&cfg.MQTT.Broker, "GATEWAY_MQTT_BROKER")
 	overrideString(&cfg.NATS.URL, "GATEWAY_NATS_URL")
 	overrideString(&cfg.Postgres.DSN, "GATEWAY_POSTGRES_DSN")
 	overrideString(&cfg.Redis.Address, "GATEWAY_REDIS_ADDRESS")
 	overrideString(&cfg.InfluxDB.URL, "GATEWAY_INFLUXDB_URL")
-	overrideString(&cfg.Auth.SecretKey, "GATEWAY_AUTH_SECRET")
+
+	// CRITICAL: Auth secret MUST be set via environment variable — no default allowed
+	authSecret := os.Getenv("GATEWAY_AUTH_SECRET")
+	if authSecret == "" {
+		panic("GATEWAY_AUTH_SECRET environment variable is required. JWT secret cannot be left at development default.")
+	}
+	cfg.Auth.SecretKey = authSecret
+
+	// Final validation check
+	if cfg.Auth.SecretKey == "dev-secret-key-change-in-production" || len(cfg.Auth.SecretKey) < 32 {
+		panic("invalid or missing JWT secret key — must be a strong, randomly-generated value of at least 32 characters")
+	}
 
 	return cfg
 }

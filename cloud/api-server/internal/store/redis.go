@@ -103,16 +103,20 @@ func (r *Redis) SetRefreshToken(ctx context.Context, token string, userID string
 	return r.client.Set(ctx, key, userID, ttl).Err()
 }
 
-// ValidateRefreshToken checks if a refresh token exists and returns its user ID.
+// ValidateRefreshToken checks if a refresh token exists, consumes it (one-time use),
+// and returns its associated user ID. After successful validation, the token is
+// deleted from Redis to prevent replay attacks.
 func (r *Redis) ValidateRefreshToken(ctx context.Context, token string) (string, error) {
 	key := "token:refresh:" + token
 	val, err := r.client.Get(ctx, key).Result()
 	if err == redis.Nil {
-		return "", nil // token not found, will be treated as invalid
+		return "", nil // token not found, treated as invalid
 	}
 	if err != nil {
 		return "", err
 	}
+	// Consume the token — delete after one successful use
+	r.client.Del(ctx, key)
 	return val, nil
 }
 

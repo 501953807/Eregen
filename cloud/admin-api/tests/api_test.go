@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"eregen.dev/admin-api/internal/router"
@@ -17,6 +18,9 @@ import (
 )
 
 func TestAPIV1Endpoints(t *testing.T) {
+	// Set JWT_SECRET for router setup
+	os.Setenv("JWT_SECRET", "test-secret-key-for-testing")
+
 	// Create in-memory SQLite DB
 	db, err := store.NewSqlite("/tmp/regen-test.db")
 	if err != nil {
@@ -47,25 +51,25 @@ func TestAPIV1Endpoints(t *testing.T) {
 		{
 			name:     "GET /api/v1/elderly",
 			method:   http.MethodGet,
-			path:     "/api/v1/elderly",
+			path:     "/api/v1/admin/elderly",
 			wantStatus: http.StatusOK,
 		},
 		{
 			name:     "GET /api/v1/users?role=family",
 			method:   http.MethodGet,
-			path:     "/api/v1/users?role=family",
+			path:     "/api/v1/admin/users?role=family",
 			wantStatus: http.StatusOK,
 		},
 		{
 			name:     "GET /api/v1/devices",
 			method:   http.MethodGet,
-			path:     "/api/v1/devices",
+			path:     "/api/v1/admin/devices",
 			wantStatus: http.StatusOK,
 		},
 		{
 			name:     "GET /api/v1/alerts",
 			method:   http.MethodGet,
-			path:     "/api/v1/alerts",
+			path:     "/api/v1/admin/alerts",
 			wantStatus: http.StatusOK,
 		},
 	}
@@ -73,6 +77,10 @@ func TestAPIV1Endpoints(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest(tc.method, tc.path, nil)
+			// Add Authorization header for protected endpoints (except health)
+			if tc.path != "/api/v1/health" {
+				req.Header.Set("Authorization", "Bearer test-jwt-token-for-testing")
+			}
 			rec := httptest.NewRecorder()
 
 			r.ServeHTTP(rec, req)
@@ -117,14 +125,14 @@ func TestAPIV1Endpoints(t *testing.T) {
 func seedTestData(db *sql.DB) {
 	// Insert test users
 	users := []struct {
-		id, name, email, role, phone string
+		id, name, email, role, phone, password_hash string
 	}{
-		{"usr-family-1", "张伟", "zhangwei@example.com", "family", "12345678900"},
-		{"usr-family-2", "李娜", "lina@example.com", "family", "13800138000"},
+		{"usr-family-1", "张伟", "zhangwei@example.com", "family", "12345678900", "$2a$10$92Ub3fyY.sN1LZ2s8QyLmOZ4j3Kp5q7r8t9u0i1o2p3s4t5u6v7w8x9y0z1"},
+		{"usr-family-2", "李娜", "lina@example.com", "family", "13800138000", "$2a$10$92Ub3fyY.sN1LZ2s8QyLmOZ4j3Kp5q7r8t9u0i1o2p3s4t5u6v7w8x9y0z1"},
 	}
 	for _, u := range users {
-		_, err := db.Exec(`INSERT OR REPLACE INTO users (id, name, email, role, phone) VALUES (?, ?, ?, ?, ?)`,
-			u.id, u.name, u.email, u.role, u.phone)
+		_, err := db.Exec(`INSERT OR REPLACE INTO users (id, name, email, role, phone, password_hash) VALUES (?, ?, ?, ?, ?, ?)`,
+			u.id, u.name, u.email, u.role, u.phone, u.password_hash)
 		if err != nil {
 			log.Printf("failed to insert user %s: %v", u.id, err)
 		}

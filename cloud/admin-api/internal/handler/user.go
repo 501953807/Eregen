@@ -31,7 +31,7 @@ func (h *UserHandler) SetRole(c *gin.Context) {
 		return
 	}
 	if err := h.store.SetUserRole(c.Request.Context(), userID, body.Role); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "role updated"})
@@ -43,7 +43,7 @@ func (h *UserHandler) List(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.Query("page_size"))
 	page, pageSize, err := validation.ValidatePagination(page, pageSize, 100)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pagination parameters"})
 		return
 	}
 
@@ -51,7 +51,7 @@ func (h *UserHandler) List(c *gin.Context) {
 
 	users, err := h.store.ListUsers(c.Request.Context(), page, pageSize, role)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{

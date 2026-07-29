@@ -24,7 +24,7 @@ func NewAlertHandler(s store.Store) *AlertHandler {
 func (h *AlertHandler) Resolve(c *gin.Context) {
 	alertID := c.Param("id")
 	if err := h.store.ResolveAlert(c.Request.Context(), alertID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "alert resolved"})
@@ -55,7 +55,7 @@ func (h *AlertHandler) List(c *gin.Context) {
 
 	alerts, err := h.store.ListAlerts(c.Request.Context(), sev, status, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": alerts})

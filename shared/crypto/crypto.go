@@ -12,6 +12,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -56,6 +58,23 @@ func GenerateSalt() ([]byte, error) {
 		return nil, err
 	}
 	return salt, nil
+}
+
+// HashPasswordBCrypt hashes a password using bcrypt with default cost (10).
+// This is the recommended function for user password hashing in production.
+func HashPasswordBCrypt(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
+}
+
+// CheckPasswordBCrypt verifies a password against a bcrypt hash.
+// Returns true if the password matches the hash.
+func CheckPasswordBCrypt(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(password), []byte(hash))
+	return err == nil
 }
 
 // EncryptAES encrypts plaintext using AES-256-GCM.

@@ -25,7 +25,7 @@ func (h *RegulatoryHandler) GetDashboardOverview(c *gin.Context) {
 	dept := c.Query("department")
 	ov, err := h.store.GetRegulatoryOverview(c.Request.Context(), dept)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": ov})
@@ -37,13 +37,13 @@ func (h *RegulatoryHandler) ListRegulatoryPatients(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.Query("page_size"))
 	page, pageSize, err := validation.ValidatePagination(page, pageSize, 100)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pagination parameters"})
 		return
 	}
 	dept := c.Query("department")
 	patients, err := h.store.ListRegulatoryPatients(c.Request.Context(), dept, page, pageSize)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": patients, "page": page, "page_size": pageSize})
@@ -55,13 +55,13 @@ func (h *RegulatoryHandler) ListAlerts(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.Query("page_size"))
 	page, pageSize, err := validation.ValidatePagination(page, pageSize, 200)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pagination parameters"})
 		return
 	}
 	alerts, err := h.store.ListRegulatoryAlerts(c.Request.Context(),
 		c.Query("rule_code"), c.Query("level"), c.Query("status"), c.Query("department"), page, pageSize)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": alerts, "page": page, "page_size": pageSize})
@@ -83,11 +83,11 @@ func (h *RegulatoryHandler) AcknowledgeAlert(c *gin.Context) {
 		UserID string `json:"user_id" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 	if err := h.store.AcknowledgeAlert(c.Request.Context(), c.Param("id"), body.UserID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "acknowledged"})
@@ -100,11 +100,11 @@ func (h *RegulatoryHandler) ResolveRegulatoryAlert(c *gin.Context) {
 		Notes  string `json:"notes"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 	if err := h.store.ResolveRegulatoryAlert(c.Request.Context(), c.Param("id"), body.UserID, body.Notes); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "resolved"})
@@ -114,11 +114,11 @@ func (h *RegulatoryHandler) ResolveRegulatoryAlert(c *gin.Context) {
 func (h *RegulatoryHandler) CreateRegulatoryAlert(c *gin.Context) {
 	var alert model.RegulatoryAlert
 	if err := c.ShouldBindJSON(&alert); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 	if err := h.store.CreateRegulatoryAlert(c.Request.Context(), &alert); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": alert})
@@ -138,7 +138,7 @@ func (h *RegulatoryHandler) GetAuditTrail(c *gin.Context) {
 func (h *RegulatoryHandler) ListRuleConfigs(c *gin.Context) {
 	configs, err := h.store.ListRuleConfigs(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": configs})
@@ -151,12 +151,12 @@ func (h *RegulatoryHandler) UpdateRuleConfig(c *gin.Context) {
 		Config map[string]interface{} `json:"config" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 	configJSON, _ := json.Marshal(body.Config)
 	if err := h.store.UpdateRuleConfig(c.Request.Context(), ruleCode, string(configJSON)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "updated"})
@@ -166,11 +166,11 @@ func (h *RegulatoryHandler) UpdateRuleConfig(c *gin.Context) {
 func (h *RegulatoryHandler) ConfigureFence(c *gin.Context) {
 	var fc model.RegulatoryFenceConfig
 	if err := c.ShouldBindJSON(&fc); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 	if err := h.store.CreateFenceConfig(c.Request.Context(), &fc); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": fc, "status": "configured"})
@@ -190,9 +190,9 @@ func (h *RegulatoryHandler) GetFenceConfig(c *gin.Context) {
 // GetComplianceReport returns periodic compliance report.
 func (h *RegulatoryHandler) GetComplianceReport(c *gin.Context) {
 	report, err := h.store.GetComplianceReport(c.Request.Context(),
-		c.Query("hospital_id"), c.Query("start_date"), c.Query("end_date"))
+		c.Query("hospital_id"), c.Query("start_date"), c.Query("end-date"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": report})

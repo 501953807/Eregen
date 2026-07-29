@@ -140,7 +140,7 @@ func (h *DeviceHandler) Bind(c *gin.Context) {
 
 	// Input validation: device ID format
 	if err := validation.DeviceID(req.DeviceID); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_DEVICE_ID", "message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_DEVICE_ID", "message": "Invalid device ID format"})
 		return
 	}
 
@@ -180,7 +180,7 @@ func (h *DeviceHandler) Bind(c *gin.Context) {
 func (h *DeviceHandler) HandleTelemetry(c *gin.Context) {
 	var req struct {
 		DeviceID string `json:"device_id" binding:"required"`
-		Type     string `json:"type" binding:"required"` // health, location
+		Type     string `json:"type" binding:"required"` // health, location, sos
 		Data     map[string]any `json:"data"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -188,19 +188,45 @@ func (h *DeviceHandler) HandleTelemetry(c *gin.Context) {
 		return
 	}
 
-	// Mark device online
+	// Verify device ownership and elderly binding BEFORE processing
+	userID, _ := c.Get(string(middleware.ContextUserID))
+	device, err := h.store.GetDevice(c.Request.Context(), req.DeviceID)
+	if err != nil || device == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"code": "DEVICE_NOT_FOUND", "message": "Device not found or unauthorized"})
+		return
+	}
+
+	// Check: device owner must match current user
+	if device.OwnerUserID != userID {
+		c.JSON(http.StatusUnauthorized, gin.H{"code": "UNAUTHORIZED_DEVICE", "message": "Device does not belong to authenticated user"})
+		return
+	}
+
+	// Extract elderly_id from payload for both health and location types
+	elderlyID, ok := req.Data["elderly_id"].(string)
+	if !ok || elderlyID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "MISSING_ELDERLY_ID", "message": "elderly_id required in telemetry data"})
+		return
+	}
+
+	// Verify: this user owns the elderly profile
+	var ownsElderly bool
+	err = h.store.Pool().QueryRow(c.Request.Context(),
+		"SELECT EXISTS(SELECT 1 FROM elderly_profiles WHERE id = $1 AND user_id = $2)",
+		elderlyID, userID).Scan(&ownsElderly)
+	if err != nil || !ownsElderly {
+		c.JSON(http.StatusUnauthorized, gin.H{"code": "ACCESS_DENIED", "message": "User does not have access to this elderly profile"})
+		return
+	}
+
+	// Mark device online (after all validations pass)
 	h.redis.SetDeviceOnline(c.Request.Context(), req.DeviceID)
 
 	switch req.Type {
 	case "health":
-		elderlyID, _ := req.Data["elderly_id"].(string)
-		if elderlyID == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"code": "MISSING_ELDERLY_ID", "message": "elderly_id required"})
-			return
-		}
 		record := &model.HealthRecord{
-			ElderlyID: elderlyID,
-			Timestamp: time.Now(),
+			ElderlyID:   elderlyID,
+			Timestamp:   time.Now(),
 		}
 		if hr, ok := req.Data["hr"].(float64); ok {
 			v := int(hr)
@@ -231,11 +257,10 @@ func (h *DeviceHandler) HandleTelemetry(c *gin.Context) {
 			return
 		}
 	case "location":
-		elderlyID, _ := req.Data["elderly_id"].(string)
 		lat, _ := req.Data["lat"].(float64)
 		lon, _ := req.Data["lon"].(float64)
-		if elderlyID == "" || lat == 0 || lon == 0 {
-			c.JSON(http.StatusBadRequest, gin.H{"code": "MISSING_LOCATION", "message": "elderly_id, lat, lon required"})
+		if lat == 0 || lon == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"code": "MISSING_LOCATION", "message": "lat, lon required"})
 			return
 		}
 		record := &model.LocationRecord{

@@ -118,7 +118,7 @@ func (h *AlertHandler) SOSCall(c *gin.Context) {
 	}
 
 	if err := validation.Location(req.Lat, req.Lon); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_LOCATION", "message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_LOCATION", "message": "Invalid location data"})
 		return
 	}
 

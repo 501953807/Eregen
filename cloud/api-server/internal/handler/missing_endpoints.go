@@ -6,6 +6,7 @@ import (
 
 	"eregen.dev/api-server/internal/middleware"
 	"eregen.dev/api-server/internal/store"
+	"eregen.dev/api-server/internal/model"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -115,14 +116,30 @@ func (h *UserListHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": user})
 }
 
-// PUT /api/v1/admin/users/:id/role — update user role
+// PUT /api/v1/admin/users/:id/role — update user role (ADMIN ONLY)
 func (h *UserListHandler) UpdateRole(c *gin.Context) {
+	// Require admin role — only users with RoleInstitution can change roles
+	userRoleStr, _ := c.Get(string(middleware.ContextUserRole))
+	if userRoleStr != string(model.RoleInstitution) {
+		c.JSON(http.StatusForbidden, gin.H{"code": "INSUFFICIENT_ROLE", "message": "Admin access required to modify user roles"})
+		c.Abort()
+		return
+	}
+
 	id := c.Param("id")
 	var req struct {
 		Role string `json:"role" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_REQUEST", "message": "Invalid role"})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_REQUEST", "message": "Invalid role parameter"})
+		return
+	}
+
+	// Prevent self-promotion — a user cannot elevate their own role
+	userID, _ := c.Get(string(middleware.ContextUserID))
+	if id == userID.(string) {
+		c.JSON(http.StatusForbidden, gin.H{"code": "SELF_UPGRADE_DENIED", "message": "Cannot modify your own role"})
+		c.Abort()
 		return
 	}
 
@@ -194,9 +211,35 @@ func NewAlertHandleHandler(pg *store.Postgres, log *zap.Logger) *AlertHandleHand
 	return &AlertHandleHandler{pg: pg, log: log}
 }
 
-// PUT /api/v1/alerts/:id/handle
+// PUT /api/v1/alerts/:id/handle — resolve alert (admin or elderly's family only)
 func (h *AlertHandleHandler) Handle(c *gin.Context) {
 	alertID := c.Param("id")
+
+	// Verify caller has permission to handle this alert
+	userID, _ := c.Get(string(middleware.ContextUserID))
+	// Check if user is admin or owns the elderly associated with this alert
+	var alertElderlyID string
+	err := h.pg.Pool().QueryRow(c.Request.Context(),
+		"SELECT elderly_id FROM alerts WHERE id = $1", alertID).Scan(&alertElderlyID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "Alert not found"})
+		return
+	}
+
+	// Check if user owns this elderly profile (family user) or is institution/admin
+	var ownsElderly bool
+	err = h.pg.Pool().QueryRow(c.Request.Context(),
+		"SELECT EXISTS(SELECT 1 FROM elderly_profiles WHERE id = $1 AND user_id = $2)",
+		alertElderlyID, userID).Scan(&ownsElderly)
+	if err != nil || !ownsElderly {
+		// Allow institution users to access all alerts
+		roleStr, _ := c.Get(string(middleware.ContextUserRole))
+		if roleStr != string(model.RoleInstitution) && roleStr != string(model.RoleFamily) {
+			c.JSON(http.StatusForbidden, gin.H{"code": "ACCESS_DENIED", "message": "You do not have permission to handle this alert"})
+			return
+		}
+	}
+
 	if err := h.pg.ResolveAlertByID(c.Request.Context(), alertID); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "Alert not found"})
 		return
@@ -204,7 +247,7 @@ func (h *AlertHandleHandler) Handle(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "Alert resolved"})
 }
 
-// POST /api/v1/alerts/share-location
+// POST /api/v1/alerts/share-location — share location of an elderly (elderly's family or institution only)
 func (h *AlertHandleHandler) ShareLocation(c *gin.Context) {
 	var req struct {
 		ElderlyID string `json:"elderly_id" binding:"required"`
@@ -212,6 +255,21 @@ func (h *AlertHandleHandler) ShareLocation(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_REQUEST"})
 		return
+	}
+
+	userID, _ := c.Get(string(middleware.ContextUserID))
+
+	// Verify caller owns this elderly profile or is institution
+	var ownsElderly bool
+	err := h.pg.Pool().QueryRow(c.Request.Context(),
+		"SELECT EXISTS(SELECT 1 FROM elderly_profiles WHERE id = $1 AND user_id = $2)",
+		req.ElderlyID, userID).Scan(&ownsElderly)
+	if err != nil || !ownsElderly {
+		roleStr, _ := c.Get(string(middleware.ContextUserRole))
+		if roleStr != string(model.RoleInstitution) && roleStr != string(model.RoleFamily) {
+			c.JSON(http.StatusForbidden, gin.H{"code": "ACCESS_DENIED", "message": "You do not have permission to share this location"})
+			return
+		}
 	}
 
 	loc, err := h.pg.GetLatestLocation(c.Request.Context(), req.ElderlyID)

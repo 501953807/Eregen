@@ -29,13 +29,13 @@ func (h *ElderlyHandler) List(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.Query("page_size"))
 	page, pageSize, err := validation.ValidatePagination(page, pageSize, 100)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pagination parameters"})
 		return
 	}
 
 	profiles, err := h.store.ListElderly(c.Request.Context(), page, pageSize)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -72,7 +72,7 @@ func (h *ElderlyHandler) Create(c *gin.Context) {
 
 	profile, err := h.store.CreateElderly(c.Request.Context(), body.Name, body.BirthDate, body.UserID, body.HealthTiers, body.AvatarURL)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": profile})
@@ -95,7 +95,7 @@ func (h *ElderlyHandler) Update(c *gin.Context) {
 
 	profile, err := h.store.UpdateElderly(c.Request.Context(), id, body.Name, body.BirthDate, body.UserID, body.HealthTiers, body.AvatarURL)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": profile})
@@ -105,7 +105,7 @@ func (h *ElderlyHandler) Update(c *gin.Context) {
 func (h *ElderlyHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 	if err := h.store.DeleteElderly(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
@@ -131,7 +131,7 @@ func (h *ElderlyHandler) HealthRecords(c *gin.Context) {
 	}
 	records, err := h.store.GetElderlyHealthRecords(c.Request.Context(), elderlyID, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": records})
@@ -142,7 +142,7 @@ func (h *ElderlyHandler) MedicationRules(c *gin.Context) {
 	elderlyID := c.Param("id")
 	rules, err := h.store.GetElderlyMedicationRules(c.Request.Context(), elderlyID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": rules})
@@ -153,7 +153,7 @@ func (h *ElderlyHandler) DeviceList(c *gin.Context) {
 	elderlyID := c.Param("id")
 	devices, err := h.store.GetElderlyDevices(c.Request.Context(), elderlyID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": devices})
@@ -168,7 +168,7 @@ func (h *ElderlyHandler) LocationHistory(c *gin.Context) {
 	}
 	locations, err := h.store.GetElderlyLocationHistory(c.Request.Context(), elderlyID, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": locations})
@@ -183,7 +183,7 @@ func (h *ElderlyHandler) AlertHistory(c *gin.Context) {
 	}
 	alerts, err := h.store.GetElderlyAlertHistory(c.Request.Context(), elderlyID, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": alerts})

@@ -20,9 +20,44 @@ func Setup(db *sql.DB, logger *zap.Logger, dbType string) *gin.Engine {
 	s := store.NewStore(db, dbType)
 	r := gin.Default()
 
+	// CORS middleware - allow admin-web and other trusted origins
+	r.Use(func(c *gin.Context) {
+		origins := []string{
+			"http://localhost:3000",
+			"http://localhost:5173",
+			"http://127.0.0.1:3000",
+			"http://127.0.0.1:5173",
+		}
+		origin := c.Request.Header.Get("Origin")
+		allowed := false
+		for _, o := range origins {
+			if o == origin || origin == "" { // empty origin is acceptable (same-origin or direct calls)
+				allowed = true
+				break
+			}
+		}
+		if allowed {
+			if origin == "" {
+				origin = origins[0] // default
+			}
+			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+			c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Device-Token")
+			c.Header("Access-Control-Max-Age", "86400")
+		}
+
+		// Handle preflight
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	})
+
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
-		jwtSecret = "change-me-in-production"
+		log.Fatal("JWT_SECRET environment variable is required — admin API cannot start without secure authentication")
 	}
 	adminJWT := middleware.NewAdminJWT(jwtSecret, 24*time.Hour, logger)
 

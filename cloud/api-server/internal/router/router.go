@@ -2,8 +2,11 @@ package router
 
 import (
 	"net/http"
+	"strings"
+
 	"eregen.dev/api-server/internal/handler"
 	"eregen.dev/api-server/internal/middleware"
+	"eregen.dev/api-server/internal/model"
 	"eregen.dev/api-server/internal/service"
 	"eregen.dev/api-server/internal/store"
 	"eregen.dev/api-server/internal/ws"
@@ -15,6 +18,33 @@ import (
 // New creates the full Gin engine with all route groups.
 func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth *middleware.JWTAuth, deviceAuth *middleware.DeviceAuth, sms *service.SMSProvider, push *service.PushProvider, log *zap.Logger, wsHub *ws.Hub, corsOrigins []string) *gin.Engine {
 	r := gin.Default()
+
+	// Security Headers Middleware - protects against common web vulnerabilities
+	r.Use(func(c *gin.Context) {
+		// Only apply to API paths that serve the admin UI (or all paths if needed)
+		path := c.Request.URL.Path
+		if strings.HasPrefix(path, "/api/v1/") || strings.HasPrefix(path, "/admin") {
+			// Strict Transport Security - enforce HTTPS
+			c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+			// X-Frame-DENY - prevent clickjacking
+			c.Header("X-Frame-Options", "DENY")
+			// X-Content-Type-Options - prevent MIME sniffing
+			c.Header("X-Content-Type-Options", "nosniff")
+			// XSS Protection - enable browser XSS filter
+			c.Header("X-XSS-Protection", "1; mode=block")
+			// Referrer Policy - control referrer information
+			c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+			// Content-Security-Policy - configured per environment
+			// Development allows localhost; production should be strict
+			if c.Request.Host == "localhost:8080" || c.Request.Host == "127.0.0.1:8080" {
+				c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';")
+			} else {
+				// Production - restrict to actual domains
+				c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; object-src 'none';")
+			}
+		}
+		c.Next()
+	})
 
 	r.Use(corsMiddleware(corsOrigins))
 
@@ -30,8 +60,55 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 		c.Next()
 	})
 
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"code": "OK", "message": "Eregen API server is running"})
+	// Health check endpoint - returns simple OK without exposing internal details
+	r.GET("/api/v1/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"data": gin.H{"status": "ok", "component": "api-server"}})
+	})
+
+	// Full health check with dependency probing - protected internally or via special auth
+	// This endpoint checks all downstream dependencies. Used by Kubernetes liveness probes.
+	// In production, this should only be accessible within the cluster network.
+	r.GET("/api/v1/health/ready", func(c *gin.Context) {
+		checks := make(map[string]string)
+
+		// Check PostgreSQL connection
+		if err := pg.Pool().Ping(c.Request.Context()); err == nil {
+			checks["database"] = "ok"
+		} else {
+			checks["database"] = "unavailable"
+		}
+
+		// Check Redis connection
+		checks["redis"] = "unknown"
+		if redis != nil {
+			if _, err := redis.IsDeviceOnline(c.Request.Context(), "health_check"); err == nil {
+				checks["redis"] = "ok"
+			} else {
+				checks["redis"] = "unavailable"
+			}
+		}
+
+		// Check NATS connection using the Ping method
+		checks["nats"] = "unknown"
+		if nats != nil {
+			// Simplified: just report connected/unavailable, hide error details
+			if err := nats.Ping(c.Request.Context()); err == nil {
+				checks["nats"] = "connected"
+			} else {
+				checks["nats"] = "unavailable"
+			}
+		}
+
+		// Determine overall status (simplified, no error details exposed)
+		overallStatus := "ok"
+		for _, checkResult := range checks {
+			if checkResult != "ok" && checkResult != "connected" && checkResult != "unknown" {
+				overallStatus = "degraded"
+				break
+			}
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": gin.H{"status": overallStatus, "checks": checks}})
 	})
 
 	r.GET("/ws/alerts", func(c *gin.Context) {
@@ -95,6 +172,7 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 	{
 		pub.POST("/register", auditMW.LogAction(service.ActionUserRegister, "user", "", nil), authH.Register)
 		pub.POST("/login", auditMW.LogAction(service.ActionUserLogin, "user", "", nil), authH.Login)
+		pub.GET("/csrf/get", authH.GetCSRFToken) // New endpoint for CSRF token - no CSRF required since it's idempotent
 		pub.POST("/logout", auditMW.LogAction(service.ActionUserLogout, "user", "", nil), authH.Logout)
 		pub.POST("/revoke-all-sessions", auditMW.LogAction(service.ActionUserLogout, "user", "all-sessions", nil), authH.RevokeAllSessions)
 		pub.POST("/device/register", authH.RegisterDevice)
@@ -111,6 +189,10 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 		protected.Use(rateLimiter.Authenticated())
 	}
 	{
+		// Add CSRF protection for state-changing requests (POST/PUT/DELETE)
+		protected.Use(auth.CSRFCheck())
+
+		// GET endpoints that are safe/read-only don't require CSRF
 		protected.GET("/users/me", userH.GetMe)
 		protected.PUT("/users/me", auditMW.LogAction(service.ActionUserUpdate, "user", "", nil), userH.UpdateMe)
 
@@ -188,6 +270,7 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 		}
 
 		admin := protected.Group("/admin")
+		admin.Use(auth.RequireRole(model.RoleInstitution))
 		{
 			// Dashboard statistics
 			admin.GET("/stats/overview", statsH.Overview)
@@ -256,7 +339,7 @@ func corsMiddleware(origins []string) gin.HandlerFunc {
 		}
 
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Device-Token")
+		c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Device-Token, X-CSRF-Token")
 		c.Header("Access-Control-Max-Age", "86400")
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)

@@ -59,8 +59,9 @@ func migrate(db *sql.DB) error {
 			id TEXT PRIMARY KEY,
 			name TEXT NOT NULL,
 			email TEXT UNIQUE,
-			role TEXT DEFAULT 'user',
-			password_hash TEXT,
+			phone TEXT UNIQUE,
+			role TEXT DEFAULT 'family' CHECK (role IN ('family', 'elderly', 'institution', 'admin')),
+			password_hash TEXT NOT NULL,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
@@ -178,6 +179,11 @@ func migrate(db *sql.DB) error {
 			department TEXT,
 			bed_number TEXT,
 			blood_type TEXT,
+			last_verify_at DATETIME,
+			verify_gap_hours INTEGER DEFAULT 0,
+			fence_status TEXT DEFAULT 'inside',
+			fence_exit_at DATETIME,
+			fence_exit_duration_sec INTEGER DEFAULT 0,
 			allergies TEXT,
 			special_conditions TEXT,
 			tag_ids TEXT DEFAULT '[]',
@@ -185,12 +191,6 @@ func migrate(db *sql.DB) error {
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
-		// Regulatory: extend medical_wristband_patients with fence/verify fields
-		`ALTER TABLE medical_wristband_patients ADD COLUMN last_verify_at DATETIME`,
-		`ALTER TABLE medical_wristband_patients ADD COLUMN verify_gap_hours INTEGER DEFAULT 0`,
-		`ALTER TABLE medical_wristband_patients ADD COLUMN fence_status TEXT DEFAULT 'inside'`,
-		`ALTER TABLE medical_wristband_patients ADD COLUMN fence_exit_at DATETIME`,
-		`ALTER TABLE medical_wristband_patients ADD COLUMN fence_exit_duration_sec INTEGER DEFAULT 0`,
 		`CREATE TABLE IF NOT EXISTS medical_wristband_devices (
 			id TEXT PRIMARY KEY,
 			device_id TEXT UNIQUE NOT NULL,

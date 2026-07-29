@@ -168,13 +168,42 @@ go_start() {
   log_info "Started $service (PID $pid) on port $port"
 
   # Wait for the port to become available AND health check passes (skip for gateway / port=0)
+  # Services that do not have a health endpoint will fall back to port-only check after waiting briefly.
+  local service_has_health="false"
+  local health_path="/api/v1/health"
+  case "$service" in
+    api-server|admin-api) service_has_health="true" ;;
+    push-service)
+      service_has_health="true"
+      health_path="/health"
+      ;;
+    *) service_has_health="false" ;;
+  esac
+
   if [ "$service" != "gateway" ] && [ "$port" -gt 0 ] 2>/dev/null; then
     log_info "Waiting for $service to be ready on port $port..."
     local waited=0
-    while [ $waited -lt 30 ]; do
-      if wait_for_health "$port" "/api/v1/health" 30 "$service"; then
-        log_success "$service is ready on port $port (PID $pid)"
-        log_info "Log: $log_file"
+
+    # First, try health check if service supports it
+    if [ "$service_has_health" = "true" ]; then
+      while [ $waited -lt 30 ]; do
+        if wait_for_health "$port" "$health_path" 30 "$service"; then
+          log_success "$service is ready on port $port (PID $pid)"
+          log_info "Log: $log_file"
+          return 0
+        fi
+        sleep 1
+        waited=$((waited + 1))
+      done
+      log_warn "$service health check may still be starting (PID $pid alive)"
+      return 0
+    fi
+
+    # For services without health endpoint, wait for port to be open
+    waited=0
+    while [ $waited -lt 15 ]; do
+      if check_process_running "$port"; then
+        log_success "$service started on port $port (PID $pid)"
         return 0
       fi
       sleep 1
@@ -187,7 +216,7 @@ go_start() {
       return 0
     fi
 
-    log_error "$service failed to start on port $port within 30s"
+    log_error "$service failed to start on port $port within timeout"
     log_info "Check log: $log_file"
     return 1
   else

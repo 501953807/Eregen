@@ -29,7 +29,7 @@ func (h *DeviceHandler) UpdateConfig(c *gin.Context) {
 		return
 	}
 	if err := h.store.UpdateDeviceConfig(c.Request.Context(), deviceID, body); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "config updated"})
@@ -47,7 +47,7 @@ func (h *DeviceHandler) TriggerOTA(c *gin.Context) {
 		return
 	}
 	if err := h.store.TriggerOTA(c.Request.Context(), deviceID, body.URL, body.Hash256); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "OTA scheduled"})
@@ -59,7 +59,7 @@ func (h *DeviceHandler) List(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.Query("page_size"))
 	page, pageSize, err := validation.ValidatePagination(page, pageSize, 100)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pagination parameters"})
 		return
 	}
 
@@ -69,7 +69,7 @@ func (h *DeviceHandler) List(c *gin.Context) {
 
 	devices, err := h.store.ListDevices(c.Request.Context(), page, pageSize, status, devType, tier)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -84,7 +84,7 @@ func (h *DeviceHandler) Detail(c *gin.Context) {
 	id := c.Param("id")
 	detail, err := h.store.GetDeviceByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": detail})
@@ -94,7 +94,7 @@ func (h *DeviceHandler) Detail(c *gin.Context) {
 func (h *DeviceHandler) Unbind(c *gin.Context) {
 	deviceID := c.Param("id")
 	if err := h.store.UnbindDevice(c.Request.Context(), deviceID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "device unbound"})
@@ -120,7 +120,7 @@ func (h *DeviceHandler) BatchOTA(c *gin.Context) {
 		urls[i] = body.URL
 	}
 	if err := h.store.BatchTriggerOTA(c.Request.Context(), deviceIDs, urls, hashes); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "batch OTA scheduled"})

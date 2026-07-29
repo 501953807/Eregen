@@ -53,12 +53,12 @@ func (h *MedicationHandler) CreateRule(c *gin.Context) {
 	}
 
 	if err := validation.Medication(req.DoseCount, req.PillType); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_MEDICATION", "message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_MEDICATION", "message": "Invalid medication parameters"})
 		return
 	}
 
 	if err := validation.DaysOfWeek(req.DaysOfWeek); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_DAYS", "message": "days_of_week: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_DAYS", "message": "days_of_week: invalid parameter"})
 		return
 	}
 
@@ -87,7 +87,7 @@ func (h *MedicationHandler) UpdateRule(c *gin.Context) {
 	}
 
 	if err := validation.Medication(req.DoseCount, req.PillType); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_MEDICATION", "message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_MEDICATION", "message": "Invalid medication parameters"})
 		return
 	}
 

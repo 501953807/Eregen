@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"eregen.dev/api-server/internal/model"
@@ -162,7 +164,7 @@ func (p *Postgres) GetElderlyProfile(ctx context.Context, elderlyID string) (*mo
 func (p *Postgres) UpdateElderlyProfile(ctx context.Context, elderlyID string, req *model.UpdateElderlyRequest) error {
 	parts := []string{"updated_at = now()"}
 	var args []any
-	idx := 1
+	idx := 2 // Start at $2 since $1 will be used for elderlyID in WHERE clause
 
 	if req.Name != "" {
 		parts = append(parts, fmt.Sprintf("name = $%d", idx))
@@ -170,7 +172,10 @@ func (p *Postgres) UpdateElderlyProfile(ctx context.Context, elderlyID string, r
 		idx++
 	}
 	if req.BirthDate != nil {
-		t, _ := time.Parse("2006-01-02", *req.BirthDate)
+		t, err := time.Parse("2006-01-02", *req.BirthDate)
+		if err != nil {
+			return fmt.Errorf("invalid birth date format: %w", err)
+		}
 		parts = append(parts, fmt.Sprintf("birth_date = $%d", idx))
 		args = append(args, t)
 		idx++
@@ -186,13 +191,10 @@ func (p *Postgres) UpdateElderlyProfile(ctx context.Context, elderlyID string, r
 		args = append(args, pq.Array(data))
 		idx++
 	}
-	args = append(args, elderlyID)
-	parts = append(parts, "id = $"+fmt.Sprintf("%d", idx))
 
-	q := "UPDATE elderly_profiles SET " + parts[0]
-	for i := 1; i < len(parts); i++ {
-		q += ", " + parts[i]
-	}
+	// Build the UPDATE query with proper WHERE clause
+	q := "UPDATE elderly_profiles SET " + strings.Join(parts, ", ") + " WHERE id = $" + strconv.FormatInt(int64(idx-1), 10)
+
 	_, err := p.pool.Exec(ctx, q, args...)
 	return err
 }

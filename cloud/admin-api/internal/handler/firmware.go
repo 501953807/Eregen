@@ -23,7 +23,7 @@ func NewFirmwareHandler(s store.Store) *FirmwareHandler {
 func (h *FirmwareHandler) List(c *gin.Context) {
 	versions, err := h.store.ListFirmwareVersions(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": versions})
@@ -51,7 +51,7 @@ func (h *FirmwareHandler) Create(c *gin.Context) {
 		MinAppVersion: body.MinAppVersion, ForceUpdate: body.ForceUpdate,
 	}
 	if err := h.store.CreateFirmwareVersion(c.Request.Context(), v); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"code": "OK", "message": "firmware version created"})
@@ -61,7 +61,7 @@ func (h *FirmwareHandler) Create(c *gin.Context) {
 func (h *FirmwareHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 	if err := h.store.DeleteFirmwareVersion(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "firmware version deleted"})
@@ -78,7 +78,7 @@ func (h *FirmwareHandler) PushOTA(c *gin.Context) {
 		return
 	}
 	if err := h.store.PushOTAJob(c.Request.Context(), body.FirmwareID, body.DeviceIDs); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "OTA push scheduled"})

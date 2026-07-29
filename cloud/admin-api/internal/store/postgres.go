@@ -169,15 +169,15 @@ func (s *PostgresStore) SetUserRole(ctx context.Context, userID, role string) er
 	return err
 }
 
-// UpdateDeviceConfig updates device settings JSONB column.
+// UpdateDeviceConfig updates device settings JSONB column safely using JSON marshaling.
 func (s *PostgresStore) UpdateDeviceConfig(ctx context.Context, deviceID string, config map[string]interface{}) error {
-	settings := `{}`
-	for k, v := range config {
-		if v != nil {
-			settings += fmt.Sprintf(`"%s":%v,`, k, v)
-		}
+	// SAFETY: Use json.Marshal to properly encode the configuration as JSON,
+	// preventing SQL injection that could occur with manual string concatenation.
+	data, err := json.Marshal(config)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
 	}
-	_, err := s.db.ExecContext(ctx, `UPDATE devices SET settings = settings || $1::jsonb WHERE device_id = $2`, settings, deviceID)
+	_, err = s.db.ExecContext(ctx, `UPDATE devices SET settings = settings || $1::jsonb WHERE device_id = $2`, data, deviceID)
 	return err
 }
 

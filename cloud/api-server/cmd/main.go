@@ -104,8 +104,23 @@ func main() {
 	sms := service.NewSMSProvider(cfg.SMSAccessKey, cfg.SMSAccessSecret, cfg.SMSSignName, cfg.SMPTemplateID, log)
 	push := service.NewPushProvider(cfg.FCMKeyPath, cfg.FCMProjectID, log)
 
-	authMW := middleware.NewJWTAuth(cfg.JWTSecret, time.Duration(cfg.TokenExpiry)*time.Second,
-		time.Duration(cfg.RefreshExpiry)*time.Second, log, pg)
+	// CSRF configuration - for browser-based auth protection
+	csrfSecret := os.Getenv("CSRF_SECRET")
+	if csrfSecret == "" {
+		csrfSecret = "csrf-secret-change-in-production" // Must be changed in production!
+	}
+	csrfTTL := 24 * time.Hour
+
+	authMW := middleware.NewJWTAuth(
+		cfg.JWTSecret,
+		time.Duration(cfg.TokenExpiry)*time.Second,
+		time.Duration(cfg.RefreshExpiry)*time.Second,
+		log,
+		pg,
+		rdb,  // Use the *redis.Client directly, not the wrapped store.Redis
+		csrfSecret,
+		csrfTTL,
+	)
 
 	deviceAuth := middleware.NewDeviceAuth(pg, log, cfg.DeviceSecret)
 

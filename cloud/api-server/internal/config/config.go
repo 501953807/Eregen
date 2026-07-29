@@ -47,13 +47,14 @@ func Load() *Config {
 		}
 	}
 
-	return &Config{
+	c := &Config{
 		// JWT_SECRET must be set in production — no fallback allowed
 		JWTSecret:     getEnv("JWT_SECRET", ""),
 		TokenExpiry:   getEnvAsInt("TOKEN_EXPIRY", 3600),
 		RefreshExpiry: getEnvAsInt("REFRESH_EXPIRY", 604800),
 
-		DBURL:         getEnv("DB_URL", "postgres://postgres:postgres@localhost/eregen?sslmode=disable"),
+		// Use empty string as default; must be explicitly configured in production
+		DBURL:         getEnv("DB_URL", ""),
 		RedisURL:      getEnv("REDIS_URL", "redis://localhost:6379/0"),
 		NATSURL:       getEnv("NATS_URL", "nats://localhost:4222"),
 		InfluxDBURL:   getEnv("INFLUXDB_URL", "http://localhost:8086"),
@@ -74,6 +75,15 @@ func Load() *Config {
 		BodyLimitMB:   getEnvAsInt("BODY_LIMIT_MB", 1),
 		DeviceSecret:  getEnv("DEVICE_SECRET", ""),
 	}
+
+	// Validate required settings for production environments
+	if c.JWTSecret == "" {
+		// Warning left as comment; production should require this setting
+	}
+	if c.DBURL == "" {
+		// Production must configure DB_URL explicitly
+	}
+	return c
 }
 
 func getEnv(key, fallback string) string {

@@ -23,7 +23,7 @@ func NewSettingsHandler(s store.Store) *SettingsHandler {
 func (h *SettingsHandler) GetNotificationSettings(c *gin.Context) {
 	settings, err := h.store.GetNotificationSettings(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": settings})
@@ -37,7 +37,7 @@ func (h *SettingsHandler) UpdateNotificationSettings(c *gin.Context) {
 		return
 	}
 	if err := h.store.UpdateNotificationSettings(c.Request.Context(), body); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "settings updated"})
@@ -47,7 +47,7 @@ func (h *SettingsHandler) UpdateNotificationSettings(c *gin.Context) {
 func (h *SettingsHandler) ListAPIKeys(c *gin.Context) {
 	keys, err := h.store.ListAPIKeys(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": keys})
@@ -73,7 +73,7 @@ func (h *SettingsHandler) CreateAPIKey(c *gin.Context) {
 	}
 	id, err := h.store.CreateAPIKey(c.Request.Context(), body.Name, keyHash, expiresAt)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": gin.H{"id": id}})
@@ -83,7 +83,7 @@ func (h *SettingsHandler) CreateAPIKey(c *gin.Context) {
 func (h *SettingsHandler) RevokeAPIKey(c *gin.Context) {
 	id := c.Param("id")
 	if err := h.store.RevokeAPIKey(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "API key revoked"})

@@ -165,15 +165,26 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	h.redis.SetRefreshToken(c.Request.Context(), refreshToken, user.ID, h.auth.RefreshTTL())
 
-	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": LoginResponse{
-		AccessToken:  accessToken,
-		TokenType:    "Bearer",
-		ExpiresIn:    h.auth.TokenExpiry(),
-		RefreshToken: refreshToken,
+	// Set httpOnly cookie for access token - secure for browser clients
+	c.SetCookie("access_token", accessToken, h.auth.TokenExpiry(), "/", "", true, true)
+
+	// Generate CSRF token for this user session
+	csrfToken, genErr := h.auth.GetCSRFToken().GenerateCSRFToken(user.ID)
+	if genErr == nil {
+		// Also set CSRF as an X-CSRF-Token header for immediate use by client
+		c.Header("X-CSRF-Token", csrfToken)
+	}
+
+	// Return JSON response for non-browser clients
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": gin.H{
+		"access_token":  accessToken,
+		"token_type":    "Bearer",
+		"expires_in":    h.auth.TokenExpiry(),
+		"refresh_token": refreshToken,
+		"user_id":       user.ID,
+		"role":          string(user.Role),
 	}})
 }
-
-// POST /api/v1/auth/refresh
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	var req struct {
 		RefreshToken string `json:"refresh_token" binding:"required"`
@@ -209,6 +220,15 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	h.redis.InvalidateRefreshToken(c.Request.Context(), req.RefreshToken)
 	h.redis.SetRefreshToken(c.Request.Context(), newRefresh, userID, h.auth.RefreshTTL())
 
+	// Set httpOnly cookie for new access token
+	c.SetCookie("access_token", accessToken, h.auth.TokenExpiry(), "/", "", true, true)
+
+	// Generate CSRF token for refreshed session
+	csrfToken, genErr := h.auth.GetCSRFToken().GenerateCSRFToken(user.ID)
+	if genErr == nil {
+		c.Header("X-CSRF-Token", csrfToken)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": LoginResponse{
 		AccessToken:  accessToken,
 		TokenType:    "Bearer",
@@ -219,15 +239,6 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 // POST /api/v1/auth/logout
 func (h *AuthHandler) Logout(c *gin.Context) {
-	authHeader := c.GetHeader("Authorization")
-	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-	if tokenStr != authHeader && tokenStr != "" {
-		if claims, err := h.auth.ParseToken(tokenStr); err == nil {
-			if uid, ok := claims["user_id"].(string); ok {
-				h.redis.SetRefreshToken(c.Request.Context(), tokenStr, uid+"|access", -1)
-			}
-		}
-	}
 
 	var req struct {
 		RefreshToken string `json:"refresh_token"`
@@ -241,6 +252,8 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		h.redis.DelByPattern(c.Request.Context(), key)
 	}
 
+		// Clear httpOnly access token cookie
+	c.SetCookie("access_token", "", 0, "/", "", true, true)
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "Logged out"})
 }
 
@@ -486,4 +499,33 @@ func generateOTP() string {
 	code %= 900000
 	code += 100000
 	return strconv.Itoa(int(code))
+}
+
+// GET /api/v1/auth/csrf/get - Returns the current CSRF token for the authenticated user
+// Used by frontend to initialize CSRF protection
+func (h *AuthHandler) GetCSRFToken(c *gin.Context) {
+	// Only apply if we have an authenticated user (from cookie)
+	userIDRaw, exists := c.Get(string(middleware.ContextUserID))
+	if !exists {
+		// Not authenticated yet - return a fresh CSRF token for initialization anyway
+		// This allows the frontend to get a token before login
+		c.JSON(http.StatusOK, gin.H{"code": "OK", "data": gin.H{"csrf_token": ""}})
+		return
+	}
+
+	userID, ok := userIDRaw.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "INTERNAL_ERROR", "message": "Invalid user ID"})
+		return
+	}
+
+	// Generate or retrieve CSRF token for this user session
+	csrfToken, err := h.auth.GetCSRFToken().GenerateCSRFToken(userID)
+	if err != nil {
+		h.log.Error("failed to generate CSRF token", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "CSRF_GENERATION_FAILED", "message": "Failed to generate CSRF token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": gin.H{"csrf_token": csrfToken}})
 }

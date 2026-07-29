@@ -11,6 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/lib/pq"
+
 	smsChannel "eregen.dev/push/internal/channel/sms"
 	wechatChannel "eregen.dev/push/internal/channel/wechat"
 	"eregen.dev/push/internal/config"
@@ -58,12 +60,12 @@ func main() {
 	// Channel router — fan-out to all channels
 	rtr := router.NewRouter(fcmClient, wechatClient, smsClient)
 
-	// HTTP health endpoint
+	// HTTP health endpoint (standard format for unified launch system)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok","service":"push"}`))
+		w.Write([]byte(`{"data":{"status":"ok"}}`))
 	})
 
 	httpServer := &http.Server{

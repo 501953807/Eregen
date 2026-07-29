@@ -8,14 +8,15 @@ import (
 
 	"eregen.dev/api-server/internal/model"
 	"eregen.dev/api-server/internal/store"
-
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
 func newTestJWTAuth() *JWTAuth {
 	log, _ := zap.NewDevelopment()
-	return NewJWTAuth("test-secret-key-min-32-bytes-long", 15*time.Minute, 7*24*time.Hour, log, &store.Postgres{})
+	rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
+	return NewJWTAuth("test-secret-key-min-32-bytes-long", 15*time.Minute, 7*24*time.Hour, log, &store.Postgres{}, rdb, "test-csrf-secret", 24*time.Hour)
 }
 
 func TestGenerateAccessToken(t *testing.T) {
@@ -119,8 +120,9 @@ func TestAuthMiddleware_InvalidFormat(t *testing.T) {
 }
 
 func TestAuthMiddleware_ExpiredToken(t *testing.T) {
+	rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
 	gin.SetMode(gin.TestMode)
-	auth := NewJWTAuth("test-secret-key-min-32-bytes-long", -1*time.Hour, 7*24*time.Hour, zap.NewNop(), &store.Postgres{})
+	auth := NewJWTAuth("test-secret-key-min-32-bytes-long", -1*time.Hour, 7*24*time.Hour, zap.NewNop(), &store.Postgres{}, rdb, "test-csrf-secret", 24*time.Hour)
 	tokenStr, _ := auth.GenerateAccessToken("user-expired", model.RoleFamily)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/test", nil)

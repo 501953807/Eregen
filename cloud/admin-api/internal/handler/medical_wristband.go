@@ -31,14 +31,14 @@ func (h *MedicalWristbandHandler) ListPatients(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.Query("page_size"))
 	page, pageSize, err := validation.ValidatePagination(page, pageSize, 100)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
 		return
 	}
 
 	status := c.Query("status")
 	patients, err := h.store.ListPatients(c.Request.Context(), page, pageSize, status)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -70,7 +70,7 @@ func (h *MedicalWristbandHandler) CreatePatient(c *gin.Context) {
 		p.Status = "admitted"
 	}
 	if err := h.store.CreatePatient(c.Request.Context(), &p); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": p})
@@ -86,7 +86,7 @@ func (h *MedicalWristbandHandler) UpdatePatient(c *gin.Context) {
 	}
 	p.ID = id
 	if err := h.store.UpdatePatient(c.Request.Context(), &p); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": p})
@@ -96,7 +96,7 @@ func (h *MedicalWristbandHandler) UpdatePatient(c *gin.Context) {
 func (h *MedicalWristbandHandler) DeletePatient(c *gin.Context) {
 	id := c.Param("id")
 	if err := h.store.DeletePatient(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "discharged"})
@@ -129,7 +129,7 @@ func (h *MedicalWristbandHandler) BatchImport(c *gin.Context) {
 		return
 	}
 	if err := h.store.BatchImportPatients(c.Request.Context(), patients); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"message": "imported", "count": len(patients)})
@@ -140,7 +140,7 @@ func (h *MedicalWristbandHandler) GetPatientHistory(c *gin.Context) {
 	id := c.Param("id")
 	history, err := h.store.GetPatientHistory(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": history})
@@ -154,14 +154,14 @@ func (h *MedicalWristbandHandler) ListWristbands(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.Query("page_size"))
 	page, pageSize, err := validation.ValidatePagination(page, pageSize, 100)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
 		return
 	}
 
 	status := c.Query("status")
 	devices, err := h.store.ListWristbands(c.Request.Context(), page, pageSize, status)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -182,7 +182,7 @@ func (h *MedicalWristbandHandler) BindWristband(c *gin.Context) {
 		return
 	}
 	if err := h.store.BindWristband(c.Request.Context(), body.PatientID, body.DeviceID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "bound"})
@@ -192,7 +192,7 @@ func (h *MedicalWristbandHandler) BindWristband(c *gin.Context) {
 func (h *MedicalWristbandHandler) UnbindWristband(c *gin.Context) {
 	bindingID := c.Param("id")
 	if err := h.store.UnbindWristband(c.Request.Context(), bindingID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "unbound"})
@@ -202,7 +202,7 @@ func (h *MedicalWristbandHandler) UnbindWristband(c *gin.Context) {
 func (h *MedicalWristbandHandler) ClearWristband(c *gin.Context) {
 	deviceID := c.Param("id")
 	if err := h.store.ClearWristband(c.Request.Context(), deviceID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "cleared"})
@@ -219,7 +219,7 @@ func (h *MedicalWristbandHandler) WriteToWristband(c *gin.Context) {
 		return
 	}
 	if err := h.store.WriteToWristband(c.Request.Context(), deviceID, body.Data); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "written"})
@@ -245,13 +245,13 @@ func (h *MedicalWristbandHandler) ListExpenses(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.Query("page_size"))
 	page, pageSize, err := validation.ValidatePagination(page, pageSize, 100)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
 		return
 	}
 
 	expenses, err := h.store.ListExpenses(c.Request.Context(), patientID, page, pageSize)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -269,7 +269,7 @@ func (h *MedicalWristbandHandler) CreateExpense(c *gin.Context) {
 		return
 	}
 	if err := h.store.CreateExpense(c.Request.Context(), &e); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": e})
@@ -282,7 +282,7 @@ func (h *MedicalWristbandHandler) ListMedications(c *gin.Context) {
 	patientID := c.Param("id")
 	items, err := h.store.ListMedications(c.Request.Context(), patientID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": items})
@@ -296,7 +296,7 @@ func (h *MedicalWristbandHandler) CreateMedication(c *gin.Context) {
 		return
 	}
 	if err := h.store.CreateMedication(c.Request.Context(), &m); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": m})
@@ -309,7 +309,7 @@ func (h *MedicalWristbandHandler) ListTestResults(c *gin.Context) {
 	patientID := c.Param("id")
 	items, err := h.store.ListTestResults(c.Request.Context(), patientID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": items})
@@ -323,7 +323,7 @@ func (h *MedicalWristbandHandler) CreateTestResult(c *gin.Context) {
 		return
 	}
 	if err := h.store.CreateTestResult(c.Request.Context(), &r); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": r})
@@ -337,7 +337,7 @@ func (h *MedicalWristbandHandler) ListDailyEntries(c *gin.Context) {
 	date := c.Query("date")
 	items, err := h.store.ListDailyEntries(c.Request.Context(), patientID, date)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": items})
@@ -351,7 +351,7 @@ func (h *MedicalWristbandHandler) CreateDailyEntry(c *gin.Context) {
 		return
 	}
 	if err := h.store.CreateDailyEntry(c.Request.Context(), &e); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": e})
@@ -365,13 +365,13 @@ func (h *MedicalWristbandHandler) ListVerifications(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.Query("page_size"))
 	page, pageSize, err := validation.ValidatePagination(page, pageSize, 100)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
 		return
 	}
 
 	items, err := h.store.ListVerifications(c.Request.Context(), page, pageSize)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -389,7 +389,7 @@ func (h *MedicalWristbandHandler) CreateVerification(c *gin.Context) {
 		return
 	}
 	if err := h.store.CreateVerification(c.Request.Context(), &v); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": v})
@@ -406,7 +406,7 @@ func (h *MedicalWristbandHandler) UpdateVerificationStatus(c *gin.Context) {
 		return
 	}
 	if err := h.store.UpdateVerificationStatus(c.Request.Context(), id, body.Status); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "updated"})
@@ -416,7 +416,7 @@ func (h *MedicalWristbandHandler) UpdateVerificationStatus(c *gin.Context) {
 func (h *MedicalWristbandHandler) GetTodayVerificationStats(c *gin.Context) {
 	stats, err := h.store.GetTodayVerificationStats(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": stats})
@@ -428,7 +428,7 @@ func (h *MedicalWristbandHandler) GetTodayVerificationStats(c *gin.Context) {
 func (h *MedicalWristbandHandler) GetStatsOverview(c *gin.Context) {
 	stats, err := h.store.GetMedicalStatsOverview(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": stats})
@@ -440,7 +440,7 @@ func (h *MedicalWristbandHandler) GetStatsOverview(c *gin.Context) {
 func (h *MedicalWristbandHandler) ListAlertTagConfigs(c *gin.Context) {
 	items, err := h.store.ListAlertTagConfigs(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": items})
@@ -454,7 +454,7 @@ func (h *MedicalWristbandHandler) CreateAlertTagConfig(c *gin.Context) {
 		return
 	}
 	if err := h.store.CreateAlertTagConfig(c.Request.Context(), &cfg); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": cfg})
@@ -468,7 +468,7 @@ func (h *MedicalWristbandHandler) ListAdmissions(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.Query("page_size"))
 	page, pageSize, err := validation.ValidatePagination(page, pageSize, 100)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
 		return
 	}
 
@@ -476,7 +476,7 @@ func (h *MedicalWristbandHandler) ListAdmissions(c *gin.Context) {
 	status := c.Query("status")
 	admissions, err := h.store.ListAdmissions(c.Request.Context(), page, pageSize, department, status)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -517,7 +517,7 @@ func (h *MedicalWristbandHandler) AdmitPatient(c *gin.Context) {
 	}
 
 	if err := h.store.CreateAdmission(c.Request.Context(), admission); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 
@@ -543,7 +543,7 @@ func (h *MedicalWristbandHandler) DischargePatient(c *gin.Context) {
 	}
 
 	if err := h.store.CompleteAdmission(c.Request.Context(), admissionID, body.DischargeType, body.Notes, body.TransferredTo); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "discharged"})
@@ -554,7 +554,7 @@ func (h *MedicalWristbandHandler) GetWardRound(c *gin.Context) {
 	patientID := c.Param("id")
 	rounds, err := h.store.ListWardRounds(c.Request.Context(), patientID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": rounds})
@@ -571,7 +571,7 @@ func (h *MedicalWristbandHandler) CompleteWardRound(c *gin.Context) {
 	}
 	entry.ID = uuid.New().String()
 	if err := h.store.CreateWardRound(c.Request.Context(), &entry); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": entry})

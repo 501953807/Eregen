@@ -1,4 +1,7 @@
-// Package protocol defines the BLE GATT protocol for medical wristband communication.
+// Package protocol defines the communication protocol for medical wristband.
+// The wristband uses NFC for near-field nurse verification as primary method,
+// with Cat1/MQTT for background clinical status reporting in ward workflows.
+// BLE 5.0 is retained for backward compatibility and firmware updates.
 package protocol
 
 import "time"

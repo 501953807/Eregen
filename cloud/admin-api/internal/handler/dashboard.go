@@ -23,7 +23,7 @@ func NewDashboardHandler(s store.Store) *DashboardHandler {
 func (h *DashboardHandler) GetOverview(c *gin.Context) {
 	stats, err := h.store.GetDashboardStats(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": stats})
@@ -33,7 +33,7 @@ func (h *DashboardHandler) GetOverview(c *gin.Context) {
 func (h *DashboardHandler) GetSubscriptionStats(c *gin.Context) {
 	stats, err := h.store.GetSubscriptionStats(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": stats})
@@ -47,7 +47,7 @@ func (h *DashboardHandler) GetAlertTrend(c *gin.Context) {
 	}
 	points, err := h.store.GetAlertTrend(c.Request.Context(), days)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": points})
@@ -57,7 +57,7 @@ func (h *DashboardHandler) GetAlertTrend(c *gin.Context) {
 func (h *DashboardHandler) GetAlertDistribution(c *gin.Context) {
 	items, err := h.store.GetAlertDistribution(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": items})
@@ -71,7 +71,7 @@ func (h *DashboardHandler) GetUserGrowth(c *gin.Context) {
 	}
 	points, err := h.store.GetUserGrowth(c.Request.Context(), months)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": points})

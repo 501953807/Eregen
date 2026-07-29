@@ -28,12 +28,12 @@ func (h *CommunityWBHandler) ListElders(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.Query("page_size"))
 	page, pageSize, err := validation.ValidatePagination(page, pageSize, 100)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
 		return
 	}
 	elders, err := h.store.ListCommunityElders(c.Request.Context(), page, pageSize, c.Query("status"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": elders, "page": page, "page_size": pageSize})
@@ -51,11 +51,11 @@ func (h *CommunityWBHandler) GetElder(c *gin.Context) {
 func (h *CommunityWBHandler) CreateElder(c *gin.Context) {
 	var elder model.CommunityElder
 	if err := c.ShouldBindJSON(&elder); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
 		return
 	}
 	if err := h.store.CreateCommunityElder(c.Request.Context(), &elder); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": elder})
@@ -64,12 +64,12 @@ func (h *CommunityWBHandler) CreateElder(c *gin.Context) {
 func (h *CommunityWBHandler) UpdateElder(c *gin.Context) {
 	var elder model.CommunityElder
 	if err := c.ShouldBindJSON(&elder); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
 		return
 	}
 	elder.ID = c.Param("id")
 	if err := h.store.UpdateCommunityElder(c.Request.Context(), &elder); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "updated"})
@@ -77,7 +77,7 @@ func (h *CommunityWBHandler) UpdateElder(c *gin.Context) {
 
 func (h *CommunityWBHandler) DeleteElder(c *gin.Context) {
 	if err := h.store.DeleteCommunityElder(c.Request.Context(), c.Param("id")); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
@@ -86,7 +86,7 @@ func (h *CommunityWBHandler) DeleteElder(c *gin.Context) {
 func (h *CommunityWBHandler) GetElderStats(c *gin.Context) {
 	stats, err := h.store.GetCommunityElderStats(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": stats})
@@ -98,12 +98,12 @@ func (h *CommunityWBHandler) ListDevices(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.Query("page_size"))
 	page, pageSize, err := validation.ValidatePagination(page, pageSize, 100)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
 		return
 	}
 	devices, err := h.store.ListCommunityDevices(c.Request.Context(), page, pageSize, c.Query("status"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": devices, "page": page, "page_size": pageSize})
@@ -115,11 +115,11 @@ func (h *CommunityWBHandler) BindElderDevice(c *gin.Context) {
 		DeviceID string `json:"device_id" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
 		return
 	}
 	if err := h.store.BindCommunityElderDevice(c.Request.Context(), body.ElderID, body.DeviceID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "bound"})
@@ -129,7 +129,7 @@ func (h *CommunityWBHandler) BindElderDevice(c *gin.Context) {
 func (h *CommunityWBHandler) ListWelfareTags(c *gin.Context) {
 	configs, err := h.store.ListWelfareTagConfigs(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": configs})
@@ -138,7 +138,7 @@ func (h *CommunityWBHandler) ListWelfareTags(c *gin.Context) {
 func (h *CommunityWBHandler) GetElderWelfareTags(c *gin.Context) {
 	tags, err := h.store.ListElderWelfareTags(c.Request.Context(), c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": tags})
@@ -147,12 +147,12 @@ func (h *CommunityWBHandler) GetElderWelfareTags(c *gin.Context) {
 func (h *CommunityWBHandler) AssignWelfareTag(c *gin.Context) {
 	var welfare model.CommunityElderWelfare
 	if err := c.ShouldBindJSON(&welfare); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
 		return
 	}
 	welfare.ElderID = c.Param("id")
 	if err := h.store.AssignWelfareTag(c.Request.Context(), &welfare); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"status": "assigned"})
@@ -161,7 +161,7 @@ func (h *CommunityWBHandler) AssignWelfareTag(c *gin.Context) {
 func (h *CommunityWBHandler) RevokeWelfareTag(c *gin.Context) {
 	tagCode := c.Param("tag_code")
 	if err := h.store.RevokeWelfareTag(c.Request.Context(), c.Param("id"), tagCode); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "revoked"})
@@ -179,7 +179,7 @@ func (h *CommunityWBHandler) TriggerSignin(c *gin.Context) {
 		IsWelfare     bool     `json:"is_welfare_signin"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
 		return
 	}
 
@@ -230,7 +230,7 @@ func (h *CommunityWBHandler) TriggerSignin(c *gin.Context) {
 		rec.ActivatedTags = string(tagsJSON)
 	}
 	if err := h.store.CreateSigninRecord(c.Request.Context(), &rec); err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		c.JSON(http.StatusConflict, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "signed_in", "record_id": rec.ID})
@@ -240,7 +240,7 @@ func (h *CommunityWBHandler) ListSigninRecords(c *gin.Context) {
 	records, err := h.store.ListSigninRecords(c.Request.Context(),
 		c.Query("elder_id"), c.Query("period"), c.Query("hospital_id"), 1, 50)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": records})
@@ -260,7 +260,7 @@ func (h *CommunityWBHandler) DispenseMedicine(c *gin.Context) {
 		Notes          string   `json:"notes"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
 		return
 	}
 	log := model.CommunityPharmacyLog{
@@ -275,7 +275,7 @@ func (h *CommunityWBHandler) DispenseMedicine(c *gin.Context) {
 	}
 	log.Items = "[]" // TODO: marshal items to JSON
 	if err := h.store.CreatePharmacyLog(c.Request.Context(), &log); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"status": "dispensed", "log_id": log.ID})
@@ -288,7 +288,7 @@ func (h *CommunityWBHandler) ImportMinzhengData(c *gin.Context) {
 		Filename string `json:"filename"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
 		return
 	}
 	sync := model.CommunityMinzhengSync{
@@ -299,7 +299,7 @@ func (h *CommunityWBHandler) ImportMinzhengData(c *gin.Context) {
 		MatchedCount:  0,
 	}
 	if err := h.store.CreateMinzhengSync(c.Request.Context(), &sync); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": sync})
@@ -308,7 +308,7 @@ func (h *CommunityWBHandler) ImportMinzhengData(c *gin.Context) {
 func (h *CommunityWBHandler) ListMinzhengSync(c *gin.Context) {
 	syncs, err := h.store.ListMinzhengSync(c.Request.Context(), 1, 20)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": syncs})
@@ -323,7 +323,7 @@ func (h *CommunityWBHandler) ExecuteBatchPayment(c *gin.Context) {
 		ElderIDs []string `json:"elder_ids"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
 		return
 	}
 
@@ -348,7 +348,7 @@ func (h *CommunityWBHandler) ExecuteBatchPayment(c *gin.Context) {
 func (h *CommunityWBHandler) ListBatchPayments(c *gin.Context) {
 	payments, err := h.store.ListBatchPayments(c.Request.Context(), c.Query("batch_id"), 1, 50)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": payments})

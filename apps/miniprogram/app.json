@@ -48,5 +48,11 @@
       }
     ]
   },
-  "sitemapLocation": "sitemap.json"
+  "sitemapLocation": "sitemap.json",
+  "plugins": {
+    "tencent-map": {
+      "version": "1.0.0",
+      "requestScope": "userLocation"
+    }
+  }
 }

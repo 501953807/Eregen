@@ -13,6 +13,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"golang.org/x/crypto/pbkdf2"
 )
 
 var (
@@ -57,17 +59,51 @@ func ValidatePairingCode(code string) bool {
 	return true
 }
 
+// SessionKeyResult contains the derived AES key and the salt used for derivation.
+// The salt must be persisted with the device binding for future key reconstruction.
+type SessionKeyResult struct {
+	Key   []byte // AES-128 key (16 bytes)
+	Salt  []byte // Random salt (16 bytes)
+}
+
 // DeriveSessionKey derives an AES-128 key from a pairing code and device ID
-func DeriveSessionKey(pairingCode, deviceID string) ([]byte, error) {
+// using PBKDF2 with SHA-256, salted per-device for forward security.
+// Returns both the key and the salt — the salt MUST be persisted alongside
+// the device binding in the database for later key reconstruction.
+func DeriveSessionKey(pairingCode, deviceID string) (*SessionKeyResult, error) {
 	if !ValidatePairingCode(pairingCode) {
 		return nil, ErrInvalidPairingCode
 	}
 
-	// Combine pairing code and device ID to create a deterministic key
+	// Generate a 16-byte random salt for this pairing session
+	salt := make([]byte, 16)
+	if _, err := io.ReadFull(rand.Reader, salt); err != nil {
+		return nil, err
+	}
+
+	// Use PBKDF2 with 100,000 iterations for resistance against brute-force
+	// on weak 4-digit pairing codes (only 10,000 combinations total)
 	keyMaterial := []byte(pairingCode + ":" + deviceID)
-	h := sha256.New()
-	h.Write(keyMaterial)
-	key := h.Sum(nil)[:AESKeySize]
+	key := pbkdf2.Key(keyMaterial, salt, 100000, sha256.New(), AESKeySize)
+
+	return &SessionKeyResult{
+		Key:  key,
+		Salt: salt,
+	}, nil
+}
+
+// DeriveSessionKeyWithSalt reconstructs the session key using a previously-
+// stored salt. Used when retrieving a persisted BLE session for authentication.
+func DeriveSessionKeyWithSalt(pairingCode, deviceID string, salt []byte) ([]byte, error) {
+	if !ValidatePairingCode(pairingCode) {
+		return nil, ErrInvalidPairingCode
+	}
+	if len(salt) != 16 {
+		return nil, errors.New("crypto: invalid salt length")
+	}
+
+	keyMaterial := []byte(pairingCode + ":" + deviceID)
+	key := pbkdf2.Key(keyMaterial, salt, 100000, sha256.New(), AESKeySize)
 	return key, nil
 }
 

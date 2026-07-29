@@ -95,18 +95,18 @@ func (h *UserHandler) CreateElderly(c *gin.Context) {
 
 	// Input validation
 	if err := validation.ElderlyName(req.Name); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_NAME", "message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_NAME", "message": "Invalid name format"})
 		return
 	}
 	for _, tier := range req.HealthTiers {
 		if err := validation.HealthTier(tier); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_TIER", "message": "health_tier: " + err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_TIER", "message": "health_tier: invalid parameter"})
 			return
 		}
 	}
 	if req.BirthDate != nil {
 		if err := validation.DateString(*req.BirthDate); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_BIRTHDATE", "message": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_BIRTHDATE", "message": "Invalid birthdate format"})
 			return
 		}
 	}
@@ -193,7 +193,7 @@ func (h *UserHandler) LinkDeviceToElderly(c *gin.Context) {
 
 	// Input validation: device ID format
 	if err := validation.DeviceID(req.DeviceID); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_DEVICE_ID", "message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_DEVICE_ID", "message": "Invalid device ID format"})
 		return
 	}
 

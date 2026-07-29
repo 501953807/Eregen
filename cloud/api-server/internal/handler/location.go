@@ -75,7 +75,7 @@ func (h *LocationHandler) SetGeofence(c *gin.Context) {
 	}
 
 	if err := validation.Geofence(req.Name, req.Lat, req.Lon, req.RadiusMeters); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_GEOFENCE", "message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_GEOFENCE", "message": "Invalid geofence data"})
 		return
 	}
 

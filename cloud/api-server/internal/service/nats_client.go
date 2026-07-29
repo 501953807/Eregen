@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -142,6 +143,40 @@ func (n *NatsClient) PublishCommand(ctx context.Context, deviceID string, cmd an
 	if err != nil {
 		return fmt.Errorf("publish command to %s: %w", topic, err)
 	}
+	return nil
+}
+
+// Ping tests the NATS connection by sending a lightweight request.
+// Returns nil if the connection is responsive, otherwise returns an error.
+// This method is used for health checks and production readiness probes.
+func (n *NatsClient) Ping(ctx context.Context) error {
+	if n.nc == nil {
+		return errors.New("nats client: not connected")
+	}
+
+	// Quick check: is the client in a connected state?
+	if !n.nc.IsConnected() {
+		return errors.New("nats client: not connected (state)")
+	}
+
+	// Perform a lightweight actual connectivity test using RequestWithContext
+	// Use a quick timeout to avoid blocking health check indefinitely
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	// Send a very small message to the NATS built-in subject that should respond immediately
+	msg, err := n.nc.RequestWithContext(ctx, "NATS.Echo", []byte{0})
+	if err != nil {
+		return fmt.Errorf("nats request failed: %w", err)
+	}
+
+	if msg == nil {
+		return errors.New("nats: empty response")
+	}
+
+	// Ack the message to clean up
+	msg.Ack()
+
 	return nil
 }
 

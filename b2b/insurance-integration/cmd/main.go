@@ -18,7 +18,7 @@ func main() {
 
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		dsn = "postgres://postgres:password@localhost:5432/eregen_b2b?sslmode=disable"
+		log.Fatal("DATABASE_URL environment variable is required", zap.String("default_fallback_used", "NOT ALLOWED"))
 	}
 
 	pool, err := pgxpool.New(context.Background(), dsn)
