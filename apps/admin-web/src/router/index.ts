@@ -1,4 +1,5 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, NavigationGuard } from 'vue-router'
+// Removed top-level import of useAuthStore to avoid circular dependency during module initialization
 
 const router = createRouter({
   history: createWebHistory(),
@@ -20,7 +21,30 @@ const router = createRouter({
     { path: '/regulatory', component: () => import('@/views/RegulatoryDashboard.vue') },
     { path: '/audit/:patientId', name: 'AuditDetail', component: () => import('@/views/AuditDetail.vue') },
     { path: '/community-wb', component: () => import('@/views/CommunityWristband.vue') },
+    // Login route (add this)
+    { path: '/login', component: () => import('@/views/Login.vue') },
   ],
 })
+
+// Add navigation guard to protect routes - use lazy store access
+const canAccessProtectedRoute: NavigationGuard = async (to, from, next) => {
+  // All routes except /login require authentication - lazily load store
+  const { useAuthStore } = await import('@/stores/auth')
+  const authStore = useAuthStore()
+
+  if (to.path !== '/login' && !authStore.isLoggedIn()) {
+    const redirectPath = from.path === '/' ? to.path : from.path
+    return next({ path: '/login', query: { redirect: redirectPath } })
+  }
+
+  if (to.path === '/login' && authStore.isLoggedIn()) {
+    // Already logged in, redirect to dashboard
+    return next('/dashboard')
+  }
+
+  next()
+}
+
+router.beforeEach(canAccessProtectedRoute)
 
 export default router

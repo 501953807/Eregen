@@ -1,87 +1,76 @@
-import axios from 'axios';
-import qs from 'qs'; // For proper form encoding
+import axios, { type AxiosRequestConfig, type AxiosError } from 'axios'
+import { ElMessage } from 'element-plus'
+import router from '@/router'
+// Removed top-level import of useAuthStore to avoid circular dependency during module initialization
 
-// Create API client with secure defaults
+// Determine base URL: in dev, use explicit backend URL; in prod, use relative API path
+let baseURL: string
+if (import.meta.env.DEV) {
+  // In development, connect directly to admin-api server
+  baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8089'
+} else {
+  // In production, use relative path served by same origin
+  baseURL = '/api/v1'
+}
+
+// API client instance
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://localhost:8080/api/v1', // Default to HTTPS
-  timeout: 10000,
-  withCredentials: true, // Crucial: sends cookies including httpOnly tokens
-  headers: {
-    'Content-Type': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest', // Helps detect AJAX requests
-  },
-});
+  baseURL,
+  timeout: 60000,
+})
 
-// CSRF token handling - get from x-csrf-token header or cookie
-function getCSRFToken() {
-  // Check for X-CSRF-Token in headers set by server
-  const meta = document.querySelector('meta[name="csrf-token"]');
-  return meta ? meta.content : null;
-}
-
-// Request interceptor – attach CSRF token and ensure HTTPS
-apiClient.interceptors.request.use((config) => {
-  // Ensure we're using HTTPS in production
-  if (import.meta.env.PRODUCTION && !config.baseURL?.startsWith('https://')) {
-    console.warn('API URL should use HTTPS in production');
+// Request interceptor - add Authorization header (lazy access to authStore via function)
+apiClient.interceptors.request.use(async (config) => {
+  // Lazily load the authStore when needed to avoid circular dependencies
+  const { useAuthStore } = await import('@/stores/auth')
+  const authStore = useAuthStore()
+  const token = authStore.token
+  if (token && config.headers) {
+    config.headers['Authorization'] = `Bearer ${token}`
   }
+  return config
+}, (error: AxiosError) => Promise.reject(error))
 
-  // Attach httpOnly session cookie via withCredentials (automatically sent)
-  config.withCredentials = true;
-
-  // Add CSRF token if available
-  const csrfToken = getCSRFToken();
-  if (csrfToken) {
-    config.headers['X-CSRF-Token'] = csrfToken;
-    // Also send as custom header for non-simple methods
-    config.headers['X-CSRF-Token'] = csrfToken;
-  }
-
-  return config;
-});
-
-// Response interceptor – handle 401/403 errors
+// Response interceptor - handle errors
 apiClient.interceptors.response.use(
-  (res) => res,
-  (err) => {
-    const status = err.response?.status;
+  (response) => response,
+  async (error: AxiosError) => {
+    const statusCode = error.response?.status
 
-    if (status === 401 || status === 403) {
-      // Clear any cached CSRF token (may be stale)
-      const meta = document.querySelector('meta[name="csrf-token"]');
-      if (meta) meta.remove();
+    // Handle 401 Unauthorized
+    if (statusCode === 401) {
+      // Lazily load authStore for logout
+      const { useAuthStore } = await import('@/stores/auth')
+      const authStore = useAuthStore()
+      authStore.logout()
 
-      // Redirect to login page
-      window.location.href = '/login';
-      return Promise.reject(err);
+      // Don't show message if user is already on login page trying to refresh
+      if (window.location.pathname !== '/login') {
+        ElMessage.warning('会话已过期，请重新登录')
+      }
+
+      const redirectPath = error.config?.params?.redirect || '/'
+      return router.push({ path: '/login', query: { redirect: redirectPath } })
     }
 
-    if (status === 403 && err.response?.headers['x-csrf-token']) {
-      // Stale CSRF token, refresh it
-      const newCsrf = err.response.headers['x-csrf-token'];
-      const meta = document.createElement('meta');
-      meta.name = 'csrf-token';
-      meta.content = newCsrf;
-      document.head.appendChild(meta);
+    // Handle 403 Forbidden
+    if (statusCode === 403) {
+      ElMessage.error('无访问权限')
+      return router.push('/login')
     }
 
-    return Promise.reject(err);
+    // Handle 500 Server Error
+    if (statusCode >= 500) {
+      ElMessage.error('服务器内部错误，请稍后重试')
+    }
+
+    // Return the error response data message if available
+    if (error.response?.data?.error) {
+      ElMessage.error(error.response.data.error)
+    }
+
+    return Promise.reject(error)
   }
-);
+)
 
-// Export utility for fetching fresh CSRF token on login
-export function setupCSRFTokenFromResponse(response) {
-  if (response.headers['x-csrf-token']) {
-    const meta = document.querySelector('meta[name="csrf-token"]');
-    if (meta) {
-      meta.content = response.headers['x-csrf-token'];
-    } else {
-      const meta = document.createElement('meta');
-      meta.name = 'csrf-token';
-      meta.content = response.headers['x-csrf-token'];
-      document.head.appendChild(meta);
-    }
-  }
-}
-
-export default apiClient;
+export default apiClient

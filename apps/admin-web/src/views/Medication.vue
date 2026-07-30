@@ -14,7 +14,7 @@
         <el-card shadow="hover" class="kpi-card kpi-green">
           <div class="kpi-content">
             <div class="kpi-icon" style="background: linear-gradient(135deg, #16A34A, #22C55E);">
-              <el-icon :size="28"><Medicine /></el-icon>
+              <el-icon :size="28"><PieChart /></el-icon>
             </div>
             <div class="kpi-info">
               <div class="kpi-value">{{ stats.activeRules }}</div>
@@ -40,7 +40,7 @@
         <el-card shadow="hover" class="kpi-card kpi-blue">
           <div class="kpi-content">
             <div class="kpi-icon" style="background: linear-gradient(135deg, #3B82F6, #60A5FA);">
-              <el-icon :size="28"><Clock /></el-icon>
+              <el-icon :size="28"><Watch /></el-icon>
             </div>
             <div class="kpi-info">
               <div class="kpi-value">{{ stats.adherenceRate }}%</div>
@@ -53,7 +53,7 @@
         <el-card shadow="hover" class="kpi-card kpi-danger">
           <div class="kpi-content">
             <div class="kpi-icon" style="background: linear-gradient(135deg, #EF4444, #F87171);">
-              <el-icon :size="28"><AlarmClock /></el-icon>
+              <el-icon :size="28"><Bell /></el-icon>
             </div>
             <div class="kpi-info">
               <div class="kpi-value">{{ stats.pendingActions }}</div>
@@ -155,7 +155,7 @@
 <script setup lang='ts'>
 import { ref, computed, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
-import { Medicine, Clock, Bell as AlarmBell, AlarmClock } from '@element-plus/icons-vue'
+import { Watch, Bell, PieChart } from '@element-plus/icons-vue'
 import { ElMessage, ElNotification, ElLoading } from 'element-plus'
 import type { MedicationRule } from '@/types'
 import { medicationApi } from '@/api/medication'

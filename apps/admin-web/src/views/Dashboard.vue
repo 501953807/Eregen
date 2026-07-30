@@ -9,7 +9,7 @@
               <el-icon :size="28"><Monitor /></el-icon>
             </div>
             <div class="kpi-info">
-              <div class="kpi-value">{{ stats.online_devices.toLocaleString() }}</div>
+              <div class="kpi-value">{{ store.stats.online_devices.toLocaleString() }}</div>
               <div class="kpi-label">在线设备</div>
               <div class="kpi-trend up">较昨日 +2.3%</div>
               <svg class="sparkline" viewBox="0 0 120 30">
@@ -27,7 +27,7 @@
               <el-icon :size="28"><UserFilled /></el-icon>
             </div>
             <div class="kpi-info">
-              <div class="kpi-value">{{ stats.total_users.toLocaleString() }}</div>
+              <div class="kpi-value">{{ store.stats.total_users.toLocaleString() }}</div>
               <div class="kpi-label">活跃家属</div>
               <div class="kpi-trend up">较昨日 +5.1%</div>
               <svg class="sparkline" viewBox="0 0 120 30">
@@ -45,7 +45,7 @@
               <el-icon :size="28"><Bell /></el-icon>
             </div>
             <div class="kpi-info">
-              <div class="kpi-value">{{ stats.active_alerts }}</div>
+              <div class="kpi-value">{{ store.stats.active_alerts }}</div>
               <div class="kpi-label">待处理告警</div>
               <div class="kpi-trend down">较昨日 -12.5%</div>
               <svg class="sparkline" viewBox="0 0 120 30">
@@ -63,7 +63,7 @@
               <el-icon :size="28"><TrendCharts /></el-icon>
             </div>
             <div class="kpi-info">
-              <div class="kpi-value">{{ stats.total_devices ? Math.round((stats.online_devices / stats.total_devices) * 100) + '%' : '—' }}</div>
+              <div class="kpi-value">{{ store.stats.total_devices ? Math.round((store.stats.online_devices / store.stats.total_devices) * 100) + '%' : '—' }}</div>
               <div class="kpi-label">设备在线率</div>
               <div class="kpi-trend up">较上周 +1.2%</div>
               <svg class="sparkline" viewBox="0 0 120 30">

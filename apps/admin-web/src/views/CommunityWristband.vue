@@ -4,19 +4,19 @@
     <el-row :gutter="12" style="margin-bottom: 16px;">
       <el-col :span="4">
         <el-card shadow="hover" class="kpi-card kpi-blue">
-          <div class="kpi-value">{{ stats.total_elders }}</div>
+          <div class="kpi-value">{{ store.stats.total_elders }}</div>
           <div class="kpi-label">登记老人</div>
         </el-card>
       </el-col>
       <el-col :span="4">
         <el-card shadow="hover" class="kpi-card kpi-green">
-          <div class="kpi-value">{{ stats.active_devices }}</div>
+          <div class="kpi-value">{{ store.stats.active_devices }}</div>
           <div class="kpi-label">在线腕带</div>
         </el-card>
       </el-col>
       <el-col :span="4">
         <el-card shadow="hover" class="kpi-card kpi-purple">
-          <div class="kpi-value">{{ stats.welfare_tags_count }}</div>
+          <div class="kpi-value">{{ store.stats.welfare_tags_count }}</div>
           <div class="kpi-label">福利标签</div>
         </el-card>
       </el-col>

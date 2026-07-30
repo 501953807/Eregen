@@ -9,4 +9,16 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
+  server: {
+    port: 3000,
+    proxy: {
+      // Proxy API requests to admin-api
+      '/api': {
+        target: 'http://localhost:8089',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        ws: true,
+      },
+    },
+  },
 })

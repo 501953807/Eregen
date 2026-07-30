@@ -30,15 +30,23 @@ func Setup(db *sql.DB, logger *zap.Logger, dbType string) *gin.Engine {
 		}
 		origin := c.Request.Header.Get("Origin")
 		allowed := false
-		for _, o := range origins {
-			if o == origin || origin == "" { // empty origin is acceptable (same-origin or direct calls)
-				allowed = true
-				break
+
+		// Check if origin is in allowed list
+		if origin != "" {
+			for _, o := range origins {
+				if o == origin {
+					allowed = true
+					break
+				}
 			}
+		} else {
+			// Empty origin (same-origin or browser-initiated without Origin header) is always allowed
+			allowed = true
 		}
+
 		if allowed {
 			if origin == "" {
-				origin = origins[0] // default
+				origin = origins[0] // default for same-origin requests
 			}
 			c.Header("Access-Control-Allow-Origin", origin)
 			c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
@@ -61,10 +69,19 @@ func Setup(db *sql.DB, logger *zap.Logger, dbType string) *gin.Engine {
 	}
 	adminJWT := middleware.NewAdminJWT(jwtSecret, 24*time.Hour, logger)
 
+	// Auth handler (used for login endpoint which doesn't require auth)
+	authHandler := handler.NewAuthHandler(jwtSecret, logger)
+
 	// Unprotected health check endpoint — always available, no auth required
 	r.GET("/api/v1/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"data": gin.H{"status": "ok"}})
 	})
+
+	// Auth endpoints — no authentication required for login
+	auth := r.Group("/api/v1/auth")
+	{
+		auth.POST("/login", authHandler.Login)
+	}
 
 	dashboard := handler.NewDashboardHandler(s)
 	device := handler.NewDeviceHandler(s)

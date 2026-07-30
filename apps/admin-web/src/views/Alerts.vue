@@ -5,7 +5,7 @@
       <el-col :span="8">
         <el-card shadow="hover" class="stat-card kpi-danger">
           <div class="stat-content">
-            <div class="stat-value">{{ stats.p0 }}</div>
+            <div class="stat-value">{{ store.stats.p0 }}</div>
             <div class="stat-label">P0 紧急</div>
           </div>
         </el-card>
@@ -13,7 +13,7 @@
       <el-col :span="8">
         <el-card shadow="hover" class="stat-card kpi-warning">
           <div class="stat-content">
-            <div class="stat-value">{{ stats.p1 }}</div>
+            <div class="stat-value">{{ store.stats.p1 }}</div>
             <div class="stat-label">P1 重要</div>
           </div>
         </el-card>
@@ -21,7 +21,7 @@
       <el-col :span="8">
         <el-card shadow="hover" class="stat-card kpi-blue">
           <div class="stat-content">
-            <div class="stat-value">{{ stats.p2 }}</div>
+            <div class="stat-value">{{ store.stats.p2 }}</div>
             <div class="stat-label">P2 通知</div>
           </div>
         </el-card>
