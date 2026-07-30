@@ -38,7 +38,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	// Generate JWT token
-	token, err := auth.GenerateToken(auth.DefaultAdminUser.Username, auth.DefaultAdminUser.Role, h.jwtSecret, h.logger)
+	token, err := auth.GenerateToken(auth.DefaultAdminUser.Username, auth.DefaultAdminUser.Role, h.jwtSecret)
 	if err != nil {
 		h.logger.Error("failed to generate token", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create authentication token"})

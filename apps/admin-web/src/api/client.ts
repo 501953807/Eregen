@@ -1,76 +1,96 @@
-import axios, { type AxiosRequestConfig, type AxiosError } from 'axios'
-import { ElMessage } from 'element-plus'
-import router from '@/router'
-// Removed top-level import of useAuthStore to avoid circular dependency during module initialization
+import axios, { type AxiosInstance, AxiosResponse, AxiosError } from 'axios';
+import { useAuthStore } from '@/stores/auth';
+import { ElMessage } from 'element-plus';
+import router from '@/router';
 
-// Determine base URL: in dev, use explicit backend URL; in prod, use relative API path
-let baseURL: string
-if (import.meta.env.DEV) {
-  // In development, connect directly to admin-api server
-  baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8089'
-} else {
-  // In production, use relative path served by same origin
-  baseURL = '/api/v1'
-}
+const baseURL = import.meta.env.VITE_API_BASE_URL
+  ? import.meta.env.VITE_API_BASE_URL
+  : (import.meta.env.DEV ? 'http://localhost:8089' : '/api/v1');
 
-// API client instance
-const apiClient = axios.create({
+const apiClient: AxiosInstance = axios.create({
   baseURL,
-  timeout: 60000,
-})
+  timeout: 30000,
+});
 
-// Request interceptor - add Authorization header (lazy access to authStore via function)
-apiClient.interceptors.request.use(async (config) => {
-  // Lazily load the authStore when needed to avoid circular dependencies
-  const { useAuthStore } = await import('@/stores/auth')
-  const authStore = useAuthStore()
-  const token = authStore.token
-  if (token && config.headers) {
-    config.headers['Authorization'] = `Bearer ${token}`
+const parseJwt = (token: string): Record<string, any> | null => {
+  try {
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return null;
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
   }
-  return config
-}, (error: AxiosError) => Promise.reject(error))
+};
 
-// Response interceptor - handle errors
+apiClient.interceptors.request.use(
+  async (config) => {
+    const authStore = useAuthStore();
+    const token = authStore.getToken();
+
+    if (token && config.headers) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    if (config.method === 'post' || config.method === 'put') {
+      config.headers['Content-Type'] = 'application/json';
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 apiClient.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError) => {
-    const statusCode = error.response?.status
+  (response: AxiosResponse<any>) => {
+    const { code, msg, data } = response.data || {};
+    if ((response.status >= 200 && response.status < 300) && (!code || (code >= 200 && code < 300))) {
+      return { code, msg: msg || '成功', data };
+    }
+    ElMessage.error(msg || '业务请求失败，请重试');
+    return Promise.reject({ code, msg: msg || '业务失败', data });
+  },
+  (error: AxiosError) => {
+    const authStore = useAuthStore();
 
-    // Handle 401 Unauthorized
-    if (statusCode === 401) {
-      // Lazily load authStore for logout
-      const { useAuthStore } = await import('@/stores/auth')
-      const authStore = useAuthStore()
-      authStore.logout()
-
-      // Don't show message if user is already on login page trying to refresh
-      if (window.location.pathname !== '/login') {
-        ElMessage.warning('会话已过期，请重新登录')
-      }
-
-      const redirectPath = error.config?.params?.redirect || '/'
-      return router.push({ path: '/login', query: { redirect: redirectPath } })
+    if (!error.response) {
+      ElMessage.error('网络错误，请检查网络连接');
+      return Promise.reject({ code: 0, msg: '网络错误', data: null });
     }
 
-    // Handle 403 Forbidden
-    if (statusCode === 403) {
-      ElMessage.error('无访问权限')
-      return router.push('/login')
+    const status = error.response.status;
+    const resp = error.response.data as { code?: number; msg?: string; data?: any };
+
+    if (status === 401 || resp.code === 401) {
+      authStore.logout();
+      ElMessage.warning('会话已过期，请重新登录');
+      const redirectPath = error.config?.params?.redirect || window.location.pathname;
+      return router.push({ path: '/login', query: { redirect: redirectPath } });
     }
 
-    // Handle 500 Server Error
-    if (statusCode >= 500) {
-      ElMessage.error('服务器内部错误，请稍后重试')
+    if (status === 403 || resp.code === 403) {
+      ElMessage.error('无权访问此资源');
+      return Promise.reject({ code: 403, msg: '权限不足', data: null });
     }
 
-    // Return the error response data message if available
-    if (error.response?.data?.error) {
-      ElMessage.error(error.response.data.error)
-    }
-
-    return Promise.reject(error)
+    const errorMsg = resp?.msg || error.response?.statusText || '请求失败';
+    ElMessage.error(errorMsg);
+    return Promise.reject({ code: status || (resp.code || 0), msg: errorMsg, data: resp?.data });
   }
-)
+);
 
-export default apiClient
+export default apiClient;
+
+export async function apiCall<T>(func: () => Promise<ApiResponse<T>>): Promise<T> {
+  try {
+    const res = await func();
+    if ((res.code && (res.code < 200 || res.code >= 300)) && (!res.code || res.code < 200)) {
+      throw new Error(res.msg || 'API call failed');
+    }
+    return res.data;
+  } catch (err) {
+    console.error('API call error:', err);
+    throw err;
+  }
+}
