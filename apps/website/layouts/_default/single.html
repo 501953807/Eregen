@@ -1,0 +1,13 @@
+{{ define "main" }}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <h1>{{ .Title }}</h1>
+    {{ if .Params.description }}<p class="page-hero-desc">{{ .Params.description }}</p>{{ end }}
+  </div>
+</div>
+<div class="page-content">
+  <div class="page-content-inner">
+    {{ .Content }}
+  </div>
+</div>
+{{ end }}

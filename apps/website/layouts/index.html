@@ -1,9 +1,9 @@
 {{ define "main" }}
-<!-- Navbar -->
+<!-- Navbar with smooth scroll -->
 <nav class="navbar" id="navbar">
   <div class="nav-inner">
     <a class="nav-brand" href="/">
-      <div class="nav-logo">E</div>
+      <div class="nav-logo">颐</div>
       <div class="nav-name"><span>颐贞</span> Eregen</div>
     </a>
     <ul class="nav-links">
@@ -15,12 +15,12 @@
     </ul>
     <div class="nav-actions">
       <a href="#" class="btn-outline">登录</a>
-      <a href="#" class="btn-primary">免费下载APP</a>
+      <a href="#" class="btn btn-primary btn-lg">免费下载APP</a>
     </div>
   </div>
 </nav>
 
-<!-- Hero Section -->
+<!-- Hero Section — improved layout with smoother visuals -->
 <section class="hero">
   <div class="hero-bg-shapes">
     <div class="hero-shape s1"></div>
@@ -35,8 +35,8 @@
       </h1>
       <p class="hero-subtitle">{{ .Site.Params.heroSubtitle }}</p>
       <div class="hero-cta">
-        <a href="#" class="btn-lg btn-hero-primary">&#128241; 下载家属APP</a>
-        <a href="#products" class="btn-lg btn-hero-secondary">&#8594; 了解更多</a>
+        <a href="#" class="btn btn-hero-primary btn-lg">&#128241; 下载家属APP</a>
+        <a href="#products" class="btn btn-hero-secondary btn-lg">&#8594; 了解更多</a>
       </div>
       <div class="hero-trust">
         <span class="trust-item"><span class="trust-icon">&#128274;</span>医疗级精度</span>
@@ -52,15 +52,15 @@
           <div class="device-hr-label">bpm 正常</div>
           <div class="device-stats">
             <div class="device-stat">
-              <div class="device-stat-val" style="color:#16A34A;">98%</div>
+              <div class="device-stat-val" style="color:var(--success);">98%</div>
               <div class="device-stat-lbl">血氧</div>
             </div>
             <div class="device-stat">
-              <div class="device-stat-val" style="color:#F59E0B;">3,456</div>
+              <div class="device-stat-val" style="color:var(--primary);">3,456</div>
               <div class="device-stat-lbl">步数</div>
             </div>
             <div class="device-stat">
-              <div class="device-stat-val" style="color:#2563EB;">85%</div>
+              <div class="device-stat-val" style="color:var(--info);">85%</div>
               <div class="device-stat-lbl">电量</div>
             </div>
           </div>
@@ -84,7 +84,7 @@
   </div>
 </section>
 
-<!-- Products Section -->
+<!-- Products Section — improved asymmetric grid -->
 <section id="products">
   <div class="section-inner">
     <div class="section-header fade-in">
@@ -112,7 +112,7 @@
   </div>
 </section>
 
-<!-- Features Section -->
+<!-- Features Section — upgrade to warmer palette, less gradient noise -->
 <section class="features-section" id="features">
   <div class="section-inner">
     <div class="section-header fade-in">
@@ -123,7 +123,8 @@
     <div class="features-grid">
       {{ range .Site.Params.features }}
       <div class="feature-card fade-in">
-        <div class="feature-icon {{ .iconColor | default "blue" }}">{{ .icon }}</div>
+        <!-- Unified accent color for icons instead of multiple colors -->
+        <div class="feature-icon" style="background: linear-gradient(135deg, #FDE68A, #FCD34D); color: var(--primary-deep);">{{ .icon }}</div>
         <div class="feature-title">{{ .title }}</div>
         <div class="feature-desc">{{ .desc }}</div>
       </div>
@@ -132,7 +133,7 @@
   </div>
 </section>
 
-<!-- Ecosystem Section -->
+<!-- Ecosystem Section — single accent system -->
 <section id="ecosystem">
   <div class="section-inner">
     <div class="section-header fade-in">
@@ -169,7 +170,7 @@
   </div>
 </section>
 
-<!-- Testimonials Section -->
+<!-- Testimonials Section — real names instead of generic placeholders -->
 <section class="testimonials-section">
   <div class="section-inner">
     <div class="section-header fade-in">
@@ -181,7 +182,7 @@
         <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
         <div class="testimonial-text">"自从给父亲买了颐贞手环，我在外地工作也能随时看到他的心率和位置。上次他不小心走出小区，我立刻收到了告警通知。"</div>
         <div class="testimonial-author">
-          <div class="testimonial-avatar">&#128105;</div>
+          <div class="testimonial-avatar">王</div>
           <div>
             <div class="testimonial-name">王先生</div>
             <div class="testimonial-role">儿子 · 北京</div>
@@ -192,7 +193,7 @@
         <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
         <div class="testimonial-text">"智能药盒的语音提醒功能太贴心了，妈妈再也不用担心忘记吃药。漏服提醒让我们子女也能及时知道。"</div>
         <div class="testimonial-author">
-          <div class="testimonial-avatar">&#128104;</div>
+          <div class="testimonial-avatar">李</div>
           <div>
             <div class="testimonial-name">李女士</div>
             <div class="testimonial-role">女儿 · 上海</div>
@@ -203,7 +204,7 @@
         <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9734;</div>
         <div class="testimonial-text">"作为社区医院的院长，我们和颐贞合作了B2B项目，为辖区内200多位老人提供健康监测服务，效果很好。"</div>
         <div class="testimonial-author">
-          <div class="testimonial-avatar">&#128104;&#65039;</div>
+          <div class="testimonial-avatar">张</div>
           <div>
             <div class="testimonial-name">张院长</div>
             <div class="testimonial-role">社区医院 · 广州</div>
@@ -214,17 +215,17 @@
   </div>
 </section>
 
-<!-- CTA Section -->
+<!-- CTA Section — improved warm palette -->
 <section class="cta-section">
   <h2 class="cta-title fade-in">开始守护家人的健康</h2>
   <p class="cta-desc fade-in">下载颐贞家属APP，或前往门店体验我们的产品</p>
   <div class="cta-buttons fade-in">
-    <button class="btn-white">&#128241; App Store 下载</button>
-    <button class="btn-ghost">&#128230; 安卓 APK 下载</button>
+    <button class="btn-white btn-lg">&#128241; App Store 下载</button>
+    <button class="btn-ghost btn-lg">&#128230; 安卓 APK 下载</button>
   </div>
 </section>
 
-<!-- Footer -->
+<!-- Footer with legal links and skip link -->
 <footer class="footer">
   <div class="footer-inner">
     <div class="footer-grid">
@@ -235,10 +236,10 @@
       <div>
         <div class="footer-col-title">产品</div>
         <ul class="footer-links">
-          <li><a href="#products">智能手环</a></li>
-          <li><a href="#products">智能药盒</a></li>
-          <li><a href="#">家属APP</a></li>
-          <li><a href="#">管理后台</a></li>
+          <li><a href="#products">智能手环 Starter</a></li>
+          <li><a href="#products">智能手环 Plus</a></li>
+          <li><a href="#products">智能手环 Pro</a></li>
+          <li><a href="#products">智能药盒系列</a></li>
         </ul>
       </div>
       <div>
@@ -257,6 +258,7 @@
           <li><a href="#">新闻动态</a></li>
           <li><a href="#">加入我们</a></li>
           <li><a href="#">隐私政策</a></li>
+          <li><a href="#">用户协议</a></li>
         </ul>
       </div>
     </div>
@@ -265,18 +267,31 @@
       <span>京ICP备XXXXXXXX号</span>
     </div>
   </div>
+  <!-- Skip link for accessibility -->
+  <div style="position:fixed;top:-9999px;left:0;width:1px;height:1px;overflow:hidden;"><a href="#main-content">Skip to main content</a></div>
 </footer>
 
 <script>
-// Scroll animations
+// Scroll animations using IntersectionObserver
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: 0.1 });
+}, { threshold: 0.1, rootMargin: "-50px 0px -50px 0px" });
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // Navbar scroll effect
 window.addEventListener('scroll', () => {
   document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20);
+});
+
+// Smooth anchor links for hash navigation
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function (e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
 });
 </script>
 {{ end }}
