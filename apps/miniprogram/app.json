@@ -19,7 +19,7 @@
   },
   "tabBar": {
     "color": "#999999",
-    "selectedColor": "#07C160",
+    "selectedColor": "#F59E0B", /* Unified brand amber instead of green */
     "backgroundColor": "#ffffff",
     "list": [
       {

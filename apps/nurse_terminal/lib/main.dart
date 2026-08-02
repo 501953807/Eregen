@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'src/screens/login_screen.dart';
 import 'src/screens/home_screen.dart';
 import 'src/services/medical_wristband_ble_service.dart';
+import 'common/theme.dart'; // Import unified theme
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,14 +16,25 @@ class NurseTerminalApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '颐贞 护士终端',
-      theme: ThemeData(
-        colorSchemeSeed: Colors.blue,
-        useMaterial3: true,
+      theme: ThemeData.useMaterial3.copyWith(
+        colorSchemeSeed: NurseTerminalTheme.primary, // Use amber instead of blue
         brightness: Brightness.light,
+        fontFamily: 'PingFang SC', // Match web font stack
+        elevationScale: 1.5,
+        primaryColor: NurseTerminalTheme.primary,
+        scaffoldBackground: NurseTerminalTheme.bgScaffold,
+        cardTheme: CardTheme(
+          margin: EdgeInsets.zero,
+          padding: EdgeInsets.all(NurseTerminalTheme.spacingM),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NurseTerminalTheme.radiusLarge)),
+          elevation: 2,
+        ),
+        elevatedButtonTheme: NurseTerminalTheme.elevatedButtonTheme,
+        textButtonTheme: NurseTerminalTheme.textButtonTheme,
+        iconButtonTheme: NurseTerminalTheme.iconButtonTheme,
       ),
-      darkTheme: ThemeData(
-        colorSchemeSeed: Colors.blue,
-        useMaterial3: true,
+      darkTheme: ThemeData.brightness.copyWith(
+        colorSchemeSeed: NurseTerminalTheme.primary,
         brightness: Brightness.dark,
       ),
       home: const LoginScreen(),
@@ -69,37 +81,45 @@ class _BleScanPageState extends State<BleScanPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('颐贞 护士终端')),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                ElevatedButton.icon(
-                  onPressed: _startScan,
-                  icon: const Icon(Icons.bluetooth_searching),
-                  label: const Text('开始扫描'),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: _stopScan,
-                  icon: const Icon(Icons.bluetooth_disabled),
-                  label: const Text('停止扫描'),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _log.length,
-              itemBuilder: (context, i) => ListTile(
-                dense: true,
-                title: Text(_log[i], style: const TextStyle(fontSize: 12)),
+      appBar: AppBar(
+        title: const Text('颐贞 护士终端'),
+        elevation: 2,
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(NurseTerminalTheme.spacingM),
+        child: Column(
+          children: [
+            Container(
+              decoration: NurseTerminalTheme.cardDecoration,
+              padding: EdgeInsets.all(NurseTerminalTheme.spacingM),
+              child: Column(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _startScan,
+                    icon: const Icon(Icons.bluetooth_searching),
+                    label: const Text('开始扫描'),
+                  ),
+                  const SizedBox(height: NurseTerminalTheme.spacingS),
+                  ElevatedButton.icon(
+                    onPressed: _stopScan,
+                    icon: const Icon(Icons.bluetooth_disabled),
+                    label: const Text('停止扫描'),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: NurseTerminalTheme.spacingL),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _log.length,
+                itemBuilder: (context, i) => ListTile(
+                  dense: true,
+                  title: Text(_log[i], style: NurseTerminalTheme.smallLabelStyle),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

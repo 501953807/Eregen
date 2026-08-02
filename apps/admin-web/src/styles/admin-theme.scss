@@ -1,0 +1,183 @@
+/* Eregen Admin Web Theme — Unified Brand Palette */
+/* Based on element-plus/theme-chalk default variables with brand color adjustments */
+
+:root {
+  /* Primary brand color — unified warm amber (single accent) */
+  --el-bg-color: #FAFAFA;
+  --el-bg-color-light: #F5F5F5;
+  --el-input-bg-color: #ffffff;
+  --el-text-color-primary: #111827;
+  --el-text-color-regular: #374151;
+  --el-text-color-secondary: #6B7280;
+  --el-text-color-placeholder: #9CA3AF;
+  --el-text-color-disabled: #D1D5DB;
+
+  /* Brand colors — single amber-based system */
+  --el-color-primary: #F59E0B;       /* Warm amber as the sole primary/accent */
+  --el-color-primary-light: #FEF3C7; /* Light amber background variant */
+  --el-color-primary-dark: #D97706;  /* Darker amber for hover/deeper state */
+
+  /* Status colors (desaturated, harmonious) */
+  --el-color-success: #10B981;       /* Emerald green, desaturated */
+  --el-color-success-light: #ECFDF5;
+  --el-color-warning: #F59E0B;       /* Same as primary (amber warning is natural) */
+  --el-color-warning-light: #FEF3C7;
+  --el-color-danger: #EF4444;        /* Red, desaturated */
+  --el-color-danger-light: #FEF2F2;
+  --el-color-info: #3B82F6;          /* Blue for info only when needed */
+  --el-color-info-light: #EFF6FF;
+
+  /* Border and divider colors */
+  --el-border-color: #E5E5EB;
+  --el-border-color-light: #F3F4F6;
+  --el-border-color-darker: #D1D5DB;
+
+  /* Component radii */
+  --el-border-radius-small: 8px;
+  --el-border-radius-medium: 12px;
+  --el-border-radius-large: 16px;
+  --el-border-radius-extra-large: 20px;
+
+  /* Shadows */
+  --el-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --el-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
+  --el-shadow-lg: 0 10px 20px rgba(245, 158, 11, 0.1);
+  --el-shadow-xl: 0 20px 40px rgba(245, 158, 11, 0.15);
+
+  /* Transitions */
+  --el-transition-duration: 0.3s;
+  --el-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-index hierarchy */
+  --el-index-normal: 1;
+  --el-index-popup: 10;
+  --el-index-modal: 20;
+  --el-index-notice: 30;
+}
+
+/* Override sidebar style with warmer accent instead of blue */
+.el-menu-item, .el-menu-group .el-menu-item,
+.el-menu-popover .el-menu-item {
+  --el-menu-item-hover-bg-color: rgba(245, 158, 11, 0.08);
+  --el-menu-item-active-color: var(--el-color-primary);
+  --el-menu-active-border-width: 3px;
+}
+
+/* Card styles — upgraded elevation */
+.el-card {
+  --el-card-padding: 20px;
+  --el-card-background: var(--el-bg-color-light);
+  --el-card-border-radius: var(--el-border-radius-lg);
+}
+
+/* Button — enhanced hover/active states */
+.el-button {
+  --el-button-default-color: var(--el-text-color-primary);
+  --el-button-primary-color: var(--el-color-primary);
+  --el-button-primary-hover-color: var(--el-color-primary-dark);
+  --el-button-primary-active-color: #B45309;
+  --el-button-bg-primary: var(--el-color-primary);
+  --el-button-bg-primary-hover: var(--el-color-primary-dark);
+  --el-button-bg-primary-active: var(--el-color-primary-dark);
+}
+
+/* Table row hover effect — subtle amber tint */
+.el-table__row:hover {
+  background-color: rgba(245, 158, 11, 0.05);
+}
+
+/* Form element focus state — visible ring */
+.el-input__wrapper:focus-within,
+.el-select__wrapper:focus-within {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--el-color-primary-light);
+}
+
+/* Link style with hover underline effect */
+.el-link {
+  --el-link-text-color: var(--el-color-primary);
+  --link-hover-text-color: var(--el-color-primary-dark);
+}
+
+/* Loading indicator — animated spinner with brand color */
+.el-loading-spinner {
+  --el-loading-color: var(--el-color-primary);
+  --el-loading-spinner-size: 40px;
+}
+
+/* Dialog/Modal backdrop and styling */
+.el-dialog__wrapper {
+  --el-dialog-border-radius: var(--el-border-radius-xl);
+}
+
+/* Message notification toast */
+.el-message {
+  --el-message-background: var(--el-bg-color);
+  --el-message-border-radius: var(--el-border-radius-md);
+  --el-message-padding: 16px;
+  --el-message-close-color: var(--el-color-primary);
+}
+
+/* Tag style upgrade — soft rounded */
+.el-tag {
+  --el-tag-bg-color: var(--el-color-primary-light);
+  --el-tag-text-color: var(--el-color-primary);
+  --el-tag-border-radius: var(--el-border-radius-small);
+}
+
+/* Breadcrumb separator styled nicely */
+.el-breadcrumb__separator {
+  color: var(--el-text-color-secondary);
+  margin: 0 8px;
+}
+
+/* Pagination refined style */
+.el-pagination {
+  --el-pagination-bg-color: var(--el-bg-color);
+  --el-pagination-text-color: var(--el-text-color-primary);
+  --el-pagination-hover-color: var(--el-color-primary);
+}
+
+/* Dropdown menu shadow enhancement */
+.el-dropdown-menu {
+  box-shadow: var(--el-shadow-lg);
+}
+
+/* Upgraded scrollbar for webkit */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--el-bg-color);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--el-border-color);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--el-border-color-darker);
+}
+
+/* Global utility classes for empty states */
+.empty-state {
+  text-align: center; padding: 60px 20px; color: var(--el-text-color-secondary); }
+.empty-state-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.6; }
+.empty-state-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--el-text-color-primary); }
+.empty-state-desc { font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+
+/* Loading skeleton placeholder */
+.skeleton { background: linear-gradient(90deg, #f5f5f5 25%, #e0e0e0 50%, #f5f5f5 75%); background-size: 200% 100%; animation: loading-skeleton 1.5s infinite; border-radius: 4px; }
+@keyframes loading-skeleton { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Error banner */
+.error-banner { background: #FEF2F2; border: 1px solid #FEE2E2; color: #DC2626; padding: 12px 16px; border-radius: var(--el-border-radius-sm); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.error-icon { font-size: 18px; }
+
+/* Success banner */
+.success-banner { background: #F0FDF4; border: 1px solid #DCFCE7; color: #16A34A; padding: 12px 16px; border-radius: var(--el-border-radius-sm); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.success-icon { font-size: 18px; }
+
+/* Page container with proper spacing */
+.page-container { background: var(--el-bg-color); min-height: calc(100vh - 64px); padding: 24px; }

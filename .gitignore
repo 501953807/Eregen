@@ -113,6 +113,7 @@ README.md
 !docs/development-guide.md
 !docs/known-issues.md
 !docs/commit-message-guide.md
+apps/website/content/**/*.md
 
 # CI/CD workflows — internal tooling info
 .github/workflows/

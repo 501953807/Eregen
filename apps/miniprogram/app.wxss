@@ -1,14 +1,150 @@
-/* 品牌色 */
---primary: #4A90D9;
---primary-dark: #357ABD;
---success: #4CAF50;
---warning: #FFA726;
---danger: #FF6B6B;
---info: #42A5F5;
+/* Eregen Unified Brand Theme — WeChat Miniprogram */
+/* Warm amber primary color system, desaturated status colors consistent with web/app */
+
+:root {
+  /* Single accent color — warm amber (#F59E0B) as the unified brand primary */
+  --primary: #F59E0B;       /* Amber-500 */
+  --primary-dark: #D97706;  /* Amber-600 - hover/deeper state */
+  --primary-light: #FEF3C7; /* Amber-100 - light background */
+
+  /* Neutral gray scale (warm-toned, matching web) */
+  --gray-50: #FAFAFA;
+  --gray-100: #F5F5F5;
+  --gray-200: #E5E5EB;
+  --gray-300: #D1D5DB;
+  --gray-400: #9CA3AF;
+  --gray-500: #6B7280;
+  --gray-600: #4B5563;
+  --gray-700: #374151;
+  --gray-800: #1F2937;
+  --gray-900: #111827;
+
+  /* Status colors (desaturated) */
+  --success: #10B981;     /* Emerald-500 */
+  --danger: #EF4444;      /* Red-500 */
+  --warning: #F59E0B;     /* Same as primary - natural amber warning */
+  --info: #3B82F6;        /* Blue-500 for informational only */
+
+  /* Component design tokens */
+  --radius-sm: 6rpx;
+  --radius-md: 12rpx;
+  --radius-lg: 16rpx;
+  --shadow-sm: 0 2px 8rpx rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12rpx rgba(245, 158, 11, 0.12); /* tinted shadow with brand hue */
+  --spacing-xs: 8rpx;
+  --spacing-s: 16rpx;
+  --spacing-m: 24rpx;
+  --spacing-l: 32rpx;
+  --spacing-xl: 48rpx;
+}
 
 page {
-  background-color: #F5F6FA;
-  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+  background-color: var(--gray-50);
+  font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 28rpx;
-  color: #333;
+  color: var(--gray-800);
+}
+
+/* Unified button style */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-md); font-weight: 600; cursor: pointer; text-align: center;
+  padding: var(--spacing-s) var(--spacing-l); transition: all 0.2s ease;
+  text-decoration: none; font-size: 28rpx;
+}
+
+.btn-primary {
+  background-color: var(--primary); color: white; box-shadow: var(--shadow-sm);
+}
+.btn-primary:hover { background-color: var(--primary-dark); transform: translateY(-2rpx); box-shadow: var(--shadow-md); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-outline {
+  border: 2rpx solid var(--gray-300); background: white; color: var(--gray-700);
+}
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+.btn-lg { padding: var(--spacing-m) var(--spacing-l); font-size: 32rpx; }
+
+/* Card style */
+.card {
+  background: white; border-radius: var(--radius-lg); padding: var(--spacing-l);
+  box-shadow: var(--shadow-sm); margin-bottom: var(--spacing-m);
+}
+
+/* Status badges */
+.status-badge {
+  display: inline-block; padding: 4rpx 12rpx; border-radius: var(--radius-sm); font-size: 24rpx; font-weight: 600;
+}
+.status-success { background-color: #ECFDF5; color: var(--success); }
+.status-danger { background-color: #FEF2F2; color: var(--danger); }
+.status-warning { background-color: #FEF3C7; color: var(--warning); }
+
+/* Navigation bar customization */
+.navbar {
+  height: 102rpx;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--spacing-l); background: white; box-shadow: var(--shadow-sm); position: sticky; top: 0; z-index: 100;
+}
+.nav-title { font-size: 32rpx; font-weight: 700; color: var(--gray-800); }
+.nav-icon { font-size: 36rpx; color: var(--gray-600); padding: 10rpx; }
+
+/* Tab bar override — use warm amber for active state instead of default green */
+/* Note: WeChat tab bar color is limited but we can adjust via app.json colors */
+
+/* List item style */
+.list-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--spacing-m) var(--spacing-l); border-bottom: 1rpx solid var(--gray-200);
+}
+.list-item:last-child { border-bottom: none; }
+.list-left { flex: 1; }
+.list-title { font-size: 28rpx; font-weight: 600; color: var(--gray-800); margin-bottom: 4rpx; }
+.list-desc { font-size: 24rpx; color: var(--gray-500); }
+
+/* Form elements */
+.input-field, .select-field {
+  width: 100%; padding: var(--spacing-s) var(--spacing-l); border: 1rpx solid var(--gray-300);
+  border-radius: var(--radius-md); font-size: 28rpx; background: white; box-sizing: border-box;
+}
+.input-field:focus, .select-field:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2rpx rgba(245, 158, 11, 0.1); }
+
+/* Empty state placeholder */
+.empty-state {
+  text-align: center; padding: var(--spacing-xl); color: var(--gray-500); font-size: 24rpx;
+}
+.empty-icon { font-size: 80rpx; margin-bottom: var(--spacing-s); opacity: 0.5; }
+
+/* Loading indicator */
+.loading { display: flex; justify-content: center; align-items: center; padding: var(--spacing-xl); }
+.loading-spinner {
+  width: 50rpx; height: 50rpx; border: 4rpx solid var(--gray-200); border-top-color: var(--primary); border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Error banner */
+.error-banner {
+  background-color: #FEF2F2; border: 1rpx solid #FEE2E2; color: var(--danger); padding: var(--spacing-s) var(--spacing-l);
+  border-radius: var(--radius-md); margin-bottom: var(--spacing-m); font-size: 26rpx;
+}
+
+/* Success banner */
+.success-banner {
+  background-color: #ECFDF5; border: 1rpx solid #DCFCE7; color: var(--success); padding: var(--spacing-s) var(--spacing-l);
+  border-radius: var(--radius-md); margin-bottom: var(--spacing-m); font-size: 26rpx;
+}
+
+/* KPI card style */
+.kpi-card {
+  background: linear-gradient(135deg, var(--primary-light), white); border-radius: var(--radius-lg); padding: var(--spacing-l);
+  text-align: center; box-shadow: var(--shadow-sm);
+}
+.kpi-value { font-size: 48rpx; font-weight: 700; color: var(--primary); margin-bottom: 8rpx; }
+.kpi-label { font-size: 24rpx; color: var(--gray-600); }
+
+/* Responsive adjustments */
+@media (max-width: 750rpx) {
+  body { font-size: 26rpx; }
+  .card { padding: var(--spacing-m); }
 }
