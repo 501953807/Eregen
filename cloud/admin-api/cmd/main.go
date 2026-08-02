@@ -94,7 +94,7 @@ func seedDatabase(db *sql.DB) error {
 	_, err = db.ExecContext(context.Background(),
 		`INSERT INTO users (id, name, email, role, password_hash, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
-		adminID, "系统管理员", "admin@eregen.com", "admin", "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgbflz5YxVbM1VdR46oHXzXPlI3G",
+		adminID, "系统管理员", "admin@eregen.com", "admin", "$2a$10$sYd8gEoGUA0O9fBB/jlfEeQv9CuyHoKgaH.qDWgOfBpSoT1Kh8Yba",
 	)
 	if err != nil && !isUniqueConstraintError(err) {
 		return fmt.Errorf("insert admin user: %w", err)
@@ -106,7 +106,7 @@ func seedDatabase(db *sql.DB) error {
 	_, err = db.ExecContext(context.Background(),
 		`INSERT INTO users (id, name, email, role, password_hash, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
-		user1ID, "张大爷", "zhang@example.com", "user", "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgbflz5YxVbM1VdR46oHXzXPlI3G",
+		user1ID, "张大爷", "zhang@example.com", "user", "$2a$10$JVMdHOp3Ect5e6WY7m3wpeJMDIM/iUjXvt7OAYYM9U6dJe0qvFkHe",
 	)
 	if err != nil && !isUniqueConstraintError(err) {
 		return fmt.Errorf("insert user 1: %w", err)
