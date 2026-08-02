@@ -65,7 +65,7 @@ __pycache__/
 .venv/
 venv/
 
-# Data (InfluxDB data, etc.)
+# Data
 data/
 
 # Logs
@@ -108,7 +108,7 @@ docs/specs/
 docs/superpowers/
 docs/logo/
 README.md
-# Allow project documentation
+*.md
 !ARCHITECTURE.md
 !docs/development-guide.md
 !docs/known-issues.md
@@ -123,14 +123,11 @@ shared/assets/README.md
 cloud/data-pipeline/README.md
 cloud/push-service/README.md
 
-# OS
-.DS_Store
-Thumbs.db
-
 # Duplicate development copies
 SP1-auth/
 
-# Runtime logs
-*.log
 # User home directories accidentally in project
 Users/
+
+# Test results
+test-results/
