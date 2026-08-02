@@ -109,7 +109,7 @@ docs/superpowers/
 docs/logo/
 README.md
 *.md
-!ARCHITECTURE.md
+!docs/ARCHITECTURE.md
 !docs/development-guide.md
 !docs/known-issues.md
 !docs/commit-message-guide.md
