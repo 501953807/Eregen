@@ -131,3 +131,12 @@ Users/
 
 # Test results
 test-results/
+
+# Hugo build artifacts
+apps/website/public/
+apps/website/.hugo.pid
+apps/website/.hugo_build.lock
+apps/website/*.log
+apps/website/hugo-build.log
+apps/website/website-static.log
+apps/website/website.log
