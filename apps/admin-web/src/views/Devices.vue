@@ -103,12 +103,12 @@
         @row-click="handleRowClick"
         highlight-current-row
       >
-        <el-table-column type="selection" width="40" :selectable="row => row.device_type !== 'pillbox_basic'" />
+        <el-table-column type="selection" width="40" :selectable="row => row.type !== 'pillbox_basic'" />
         <el-table-column label="设备信息" min-width="160">
           <template #default="{ row }">
             <div class="device-cell">
-              <div class="device-thumb" :class="row.device_type === 'bracelet' ? 'thumb-bracelet' : 'thumb-pillbox'">
-                {{ row.device_type === 'bracelet' ? '📱' : '💊' }}
+              <div class="device-thumb" :class="row.type === 'bracelet' ? 'thumb-bracelet' : 'thumb-pillbox'">
+                {{ row.type === 'bracelet' ? '📱' : '💊' }}
               </div>
               <div>
                 <div class="device-name">{{ deviceLabel(row) }}</div>
@@ -182,8 +182,8 @@
       <div class="panel-body" v-if="panelDevice">
         <!-- Device Header -->
         <div class="panel-device-header">
-          <div class="panel-device-icon" :class="panelDevice.device_type === 'bracelet' ? 'icon-bracelet' : 'icon-pillbox'">
-            {{ panelDevice.device_type === 'bracelet' ? '📱' : '💊' }}
+          <div class="panel-device-icon" :class="panelDevice.type === 'bracelet' ? 'icon-bracelet' : 'icon-pillbox'">
+            {{ panelDevice.type === 'bracelet' ? '📱' : '💊' }}
           </div>
           <div>
             <div class="panel-device-name">{{ deviceLabel(panelDevice) }}</div>
@@ -245,11 +245,36 @@
         </div>
       </div>
     </div>
+
+    <!-- Config Dialog -->
+    <el-dialog v-model="showConfigDialog" :title="`远程配置 — ${configDevice?.device_id || ''}`" width="480px" destroy-on-close>
+      <el-form :model="configForm" label-width="130px">
+        <el-form-item label="心跳间隔（秒）">
+          <el-input-number v-model="configForm.interval" :min="5" :max="300" style="width:100%;" />
+        </el-form-item>
+        <el-form-item label="音量（%）">
+          <el-slider v-model="configForm.volume" :min="0" :max="100" show-input style="width:100%;" />
+        </el-form-item>
+        <el-form-item label="GPS 定位">
+          <el-switch v-model="configForm.gps_enabled" />
+        </el-form-item>
+        <el-form-item label="SOS 按钮">
+          <el-switch v-model="configForm.sos_enabled" />
+        </el-form-item>
+        <el-form-item label="跌倒检测">
+          <el-switch v-model="configForm.fall_detect" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showConfigDialog = false">取消</el-button>
+        <el-button type="primary" @click="confirmConfig" :loading="false">确认下发</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, Upload } from '@element-plus/icons-vue'
 import { useDeviceStore } from '@/stores/device'
@@ -271,7 +296,7 @@ const filters = ref({
 const filteredDevices = computed(() => {
   let list = deviceStore.devices
   if (filters.value.status) list = list.filter(d => d.status === filters.value.status)
-  if (filters.value.type) list = list.filter(d => `${d.device_type}-${d.tier}` === filters.value.type)
+  if (filters.value.type) list = list.filter(d => `${d.type}-${d.tier}` === filters.value.type)
   if (filters.value.mode) list = list.filter(d => d.mode === filters.value.mode)
   if (filters.value.search) {
     const q = filters.value.search.toLowerCase()
@@ -295,7 +320,7 @@ const stats = computed(() => ({
 // Selection
 const selectedIds = ref<string[]>([])
 const allSelected = computed(() => {
-  const selectable = filteredDevices.value.filter(d => d.device_type !== 'pillbox_basic')
+  const selectable = filteredDevices.value.filter(d => d.type !== 'pillbox_basic')
   return selectable.length > 0 && selectable.every(d => selectedIds.value.includes(d.id))
 })
 
@@ -304,10 +329,10 @@ function handleSelectionChange(rows: Device[]) {
 }
 function toggleSelectAll(val: boolean) {
   if (val) {
-    const ids = filteredDevices.value.filter(d => d.device_type !== 'pillbox_basic').map(d => d.id)
+    const ids = filteredDevices.value.filter(d => d.type !== 'pillbox_basic').map(d => d.id)
     selectedIds.value = [...new Set([...selectedIds.value, ...ids])]
   } else {
-    const removable = new Set(filteredDevices.value.filter(d => d.device_type !== 'pillbox_basic').map(d => d.id))
+    const removable = new Set(filteredDevices.value.filter(d => d.type !== 'pillbox_basic').map(d => d.id))
     selectedIds.value = selectedIds.value.filter(id => !removable.has(id))
   }
 }
@@ -321,11 +346,11 @@ function deviceLabel(d: Device): string {
     bracelet: { starter: '手环 Starter', plus: '手环 Plus', pro: '手环 Pro' },
     pillbox: { basic: '药盒 Basic', smart: '药盒 Smart', auto: '药盒 Auto' },
   }
-  return labels[d.device_type]?.[d.tier] || `${d.device_type}-${d.tier}`
+  return labels[d.type]?.[d.tier] || `${d.type}-${d.tier}`
 }
 
 function chipLabel(d: Device): string {
-  if (d.device_type === 'bracelet') return 'GD32E230C8T3'
+  if (d.type === 'bracelet') return 'GD32E230C8T3'
   if (d.tier === 'auto') return 'ESP32-C3 + 电机驱动'
   if (d.tier === 'smart') return 'ESP32-C3 + TTS'
   return '无MCU (纯机械)'
@@ -434,10 +459,46 @@ function handleBatchOta() {
   ElMessage.info(`准备对 ${selectedIds.value.length} 台设备进行批量OTA`)
 }
 
-// Config
+// Config dialog
+const showConfigDialog = ref(false)
+const configDevice = ref<Device | null>(null)
+const configForm = ref({ interval: 30, volume: 80, gps_enabled: true, sos_enabled: true, fall_detect: true })
+
 function handleConfig(row: Device) {
   closePanel()
-  ElMessage.info(`准备配置 ${row.device_id}`)
+  configDevice.value = row
+  configForm.value = {
+    interval: row.settings?.interval ?? 30,
+    volume: row.settings?.volume ?? 80,
+    gps_enabled: row.settings?.gps_enabled ?? true,
+    sos_enabled: row.settings?.sos_enabled ?? true,
+    fall_detect: row.settings?.fall_detect ?? true,
+  }
+  showConfigDialog.value = true
+}
+
+async function confirmConfig() {
+  if (!configDevice.value) return
+  try {
+    await devicesApi.adminUpdateConfig(configDevice.value.device_id, {
+      interval: configForm.value.interval,
+      volume: configForm.value.volume,
+      gps_enabled: configForm.value.gps_enabled,
+      sos_enabled: configForm.value.sos_enabled,
+      fall_detect: configForm.value.fall_detect,
+    })
+    ElMessage.success('配置已下发')
+    showConfigDialog.value = false
+    await deviceStore.fetchList({
+      page: filters.value.page,
+      page_size: filters.value.pageSize,
+      status: filters.value.status,
+      type: filters.value.type,
+      tier: filters.value.tier,
+    })
+  } catch {
+    ElMessage.error('配置下发失败')
+  }
 }
 
 function handleBatchConfig() {

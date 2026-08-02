@@ -110,11 +110,15 @@
         <el-table-column label="操作" fixed="right" min-width="160">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="handleView(row)">查看</el-button>
+            <el-button link type="warning" size="small" @click="handleAcknowledge(row)" :disabled="row.status !== 'pending'">标记已读</el-button>
             <el-button link type="success" size="small" @click="handleResolve(row)" :disabled="row.status === 'resolved'">标记已处理</el-button>
           </template>
         </el-table-column>
       </el-table>
-      <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
+        <el-tag :type="sseConnected ? 'success' : 'danger'" size="small">
+          {{ sseConnected ? '● 实时推送已连接' : '○ 推送未连接' }}
+        </el-tag>
         <el-pagination background layout="prev, pager, next" :total="allAlerts.length" :page-size="20" />
       </div>
     </el-card>
@@ -178,7 +182,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { alertsApi } from '@/api/alerts'
 import type { Alert } from '@/types'
@@ -186,6 +190,8 @@ import type { Alert } from '@/types'
 const allAlerts = ref<Alert[]>([])
 const loading = ref(false)
 const selectedRows = ref<Alert[]>([])
+const sseConnected = ref(false)
+let eventSource: EventSource | null = null
 
 const filters = ref({
   severity: '',
@@ -208,9 +214,9 @@ const filteredAlerts = computed(() => {
 })
 
 const stats = computed(() => ({
-  p0: allAlerts.value.filter(a => a.severity === 'P0' && a.status === 'pending').length,
-  p1: allAlerts.value.filter(a => a.severity === 'P1' && a.status === 'pending').length,
-  p2: allAlerts.value.filter(a => a.severity === 'P2' && a.status === 'pending').length,
+  p0: allAlerts.value.filter(a => (a.severity === 'P0' || a.severity === 'high') && a.status === 'pending').length,
+  p1: allAlerts.value.filter(a => (a.severity === 'P1' || a.severity === 'medium') && a.status === 'pending').length,
+  p2: allAlerts.value.filter(a => (a.severity === 'P2' || a.severity === 'low') && a.status === 'pending').length,
 }))
 
 function alertBadgeClass(type: string): string {
@@ -225,11 +231,11 @@ function alertDotClass(type: string): string {
 }
 
 function severityBadgeClass(sev: string): string {
-  const map: Record<string, string> = { P0: 'badge-danger', P1: 'badge-warning', P2: 'badge-info' }
+  const map: Record<string, string> = { P0: 'badge-danger', P1: 'badge-warning', P2: 'badge-info', high: 'badge-danger', medium: 'badge-warning', low: 'badge-info' }
   return map[sev] || 'badge-info'
 }
 function severityDotClass(sev: string): string {
-  const map: Record<string, string> = { P0: 'dot-danger', P1: 'dot-warning', P2: 'dot-info' }
+  const map: Record<string, string> = { P0: 'dot-danger', P1: 'dot-warning', P2: 'dot-info', high: 'dot-danger', medium: 'dot-warning', low: 'dot-info' }
   return map[sev] || 'dot-info'
 }
 
@@ -241,7 +247,12 @@ function alertTypeLabel(type: string): string {
 }
 
 function statusLabel(status: string): string {
-  return status === 'pending' ? '未处理' : '已处理'
+  return status === 'pending' ? '未处理' : status === 'acknowledged' ? '已确认' : '已处理'
+}
+
+function severityLabel(sev: string): string {
+  const map: Record<string, string> = { P0: 'P0 紧急', P1: 'P1 重要', P2: 'P2 通知', high: '高', medium: '中', low: '低' }
+  return map[sev] || sev
 }
 
 async function handleSearch() {
@@ -268,6 +279,52 @@ async function fetchAlerts() {
   }
 }
 
+// SSE real-time push
+function connectSSE() {
+  const token = localStorage.getItem('admin_token')
+  const url = `/api/v1/admin/stream/alerts${token ? `?token=${encodeURIComponent(token)}` : ''}`
+  eventSource = new EventSource(url)
+
+  eventSource.addEventListener('alert', (e: Event) => {
+    const evt = e as MessageEvent
+    let data: any
+    try { data = JSON.parse(evt.data) } catch { return }
+    if (data.type === 'init' && data.alerts) {
+      // Merge catch-up alerts, avoid duplicates
+      const existingIds = new Set(allAlerts.value.map(a => a.id))
+      const newAlerts = data.alerts.filter((a: Alert) => !existingIds.has(a.id))
+      if (newAlerts.length) {
+        allAlerts.value = [...newAlerts, ...allAlerts.value]
+        newAlerts.forEach(a => {
+          ElMessage.warning({ message: `🔔 新告警: ${alertTypeLabel(a.alert_type)} (${a.severity})`, duration: 5000 })
+        })
+      }
+    } else if (data.type === 'new' && data.alert) {
+      const a = data.alert as Alert
+      if (!allAlerts.value.find(x => x.id === a.id)) {
+        allAlerts.value.unshift(a)
+        ElMessage.warning({ message: `🔔 新告警: ${alertTypeLabel(a.alert_type)} (${a.severity})`, duration: 5000 })
+      }
+    }
+  })
+
+  eventSource.onerror = () => {
+    sseConnected.value = false
+    eventSource?.close()
+    eventSource = null
+    // Retry after 10s
+    setTimeout(connectSSE, 10000)
+  }
+}
+
+function disconnectSSE() {
+  if (eventSource) {
+    eventSource.close()
+    eventSource = null
+  }
+  sseConnected.value = false
+}
+
 function handleSelectionChange(rows: Alert[]) {
   selectedRows.value = rows
 }
@@ -281,6 +338,17 @@ async function handleResolve(row: Alert) {
   } catch {
     ElMessage.warning('操作失败（模拟）')
     row.status = 'resolved'
+  }
+}
+
+async function handleAcknowledge(row: Alert) {
+  try {
+    await alertsApi.acknowledge(row.id)
+    row.status = 'acknowledged'
+    ElMessage.success('已标记为已读')
+  } catch {
+    ElMessage.warning('操作失败（模拟）')
+    row.status = 'acknowledged'
   }
 }
 
@@ -312,7 +380,14 @@ function handleView(row: Alert) {
   showDetailDialog.value = true
 }
 
-onMounted(fetchAlerts)
+onMounted(() => {
+  fetchAlerts()
+  connectSSE()
+})
+
+onUnmounted(() => {
+  disconnectSSE()
+})
 </script>
 
 <style scoped>

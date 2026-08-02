@@ -18,6 +18,9 @@ type DashboardStats struct {
 	OnlineDevices       int          `json:"online_devices"`
 	TotalDevices        int          `json:"total_devices"`
 	ActiveAlerts        int          `json:"active_alerts"`
+	P0Alerts            int          `json:"p0"`
+	P1Alerts            int          `json:"p1"`
+	P2Alerts            int          `json:"p2"`
 	TotalUsers          int          `json:"total_users"`
 	ActiveSubscriptions int          `json:"active_subscriptions"`
 	AlertTrend          []TrendPoint `json:"alert_trend,omitempty"`
@@ -48,6 +51,13 @@ type UserSummary struct {
 	Role      string    `json:"role"`
 	CreatedAt time.Time `json:"created_at"`
 	Devices   int       `json:"devices"`
+}
+
+// UserLogin is returned by GetUserByCredential.
+type UserLogin struct {
+	ID   string
+	Name string
+	Role string
 }
 
 // AlertSummary is a lightweight row returned by the alert list endpoint.

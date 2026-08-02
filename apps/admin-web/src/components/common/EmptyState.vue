@@ -36,7 +36,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'click', e: MouseEvent): void
-}>())
+}>()
 
 const onAction = (e: MouseEvent) => {
   emit('click', e)

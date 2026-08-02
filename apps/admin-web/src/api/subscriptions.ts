@@ -1,10 +1,13 @@
 import apiClient from './client'
 
+export interface SubscriptionItem {
+  tier: string
+  count: number
+  pct: number
+}
+
 export const subscriptionsApi = {
-  list(params?: Record<string, any>) {
-    return apiClient.get('/subscriptions', { params })
-  },
   stats() {
-    return apiClient.get('/subscriptions/stats')
+    return apiClient.get<{ data: SubscriptionItem[] }>('/admin/stats/subscriptions')
   },
 }

@@ -7,6 +7,7 @@ import type { AlertTrendPoint, AlertDistributionItem, UserGrowthPoint } from '@/
 export const useDashboardStore = defineStore('dashboard', () => {
   const stats = ref<DashboardStats>({
     online_devices: 0, total_devices: 0, active_alerts: 0,
+    p0: 0, p1: 0, p2: 0,
     total_users: 0, active_subscriptions: 0, alert_trend: [],
   })
   const chartData = ref<{

@@ -53,6 +53,27 @@ func (a *StoreAdapter) SetUserRole(ctx context.Context, userID, role string) err
 	return (&SqliteStore{db: a.db}).SetUserRole(ctx, userID, role)
 }
 
+func (a *StoreAdapter) CreateUser(ctx context.Context, name, email, phone, role, passwordHash string) (string, error) {
+	if a.dbType == "postgres" {
+		return (&PostgresStore{db: a.db}).CreateUser(ctx, name, email, phone, role, passwordHash)
+	}
+	return (&SqliteStore{db: a.db}).CreateUser(ctx, name, email, phone, role, passwordHash)
+}
+
+func (a *StoreAdapter) UpdateUser(ctx context.Context, id, name, email, phone, role string) error {
+	if a.dbType == "postgres" {
+		return (&PostgresStore{db: a.db}).UpdateUser(ctx, id, name, email, phone, role)
+	}
+	return (&SqliteStore{db: a.db}).UpdateUser(ctx, id, name, email, phone, role)
+}
+
+func (a *StoreAdapter) DeleteUser(ctx context.Context, id string) error {
+	if a.dbType == "postgres" {
+		return (&PostgresStore{db: a.db}).DeleteUser(ctx, id)
+	}
+	return (&SqliteStore{db: a.db}).DeleteUser(ctx, id)
+}
+
 func (a *StoreAdapter) UpdateDeviceConfig(ctx context.Context, deviceID string, config map[string]interface{}) error {
 	if a.dbType == "postgres" {
 		return (&PostgresStore{db: a.db}).UpdateDeviceConfig(ctx, deviceID, config)
@@ -72,6 +93,13 @@ func (a *StoreAdapter) ResolveAlert(ctx context.Context, alertID string) error {
 		return (&PostgresStore{db: a.db}).ResolveAlert(ctx, alertID)
 	}
 	return (&SqliteStore{db: a.db}).ResolveAlert(ctx, alertID)
+}
+
+func (a *StoreAdapter) UpdateAlertStatus(ctx context.Context, alertID, status string) error {
+	if a.dbType == "postgres" {
+		return (&PostgresStore{db: a.db}).UpdateAlertStatus(ctx, alertID, status)
+	}
+	return (&SqliteStore{db: a.db}).UpdateAlertStatus(ctx, alertID, status)
 }
 
 func (a *StoreAdapter) GetSubscriptionStats(ctx context.Context) ([]model.SubscriptionStat, error) {
@@ -249,6 +277,27 @@ func (a *StoreAdapter) GetElderlyMedicationRules(ctx context.Context, elderlyID 
 		return (&PostgresStore{db: a.db}).GetElderlyMedicationRules(ctx, elderlyID)
 	}
 	return (&SqliteStore{db: a.db}).GetElderlyMedicationRules(ctx, elderlyID)
+}
+
+func (a *StoreAdapter) CreateMedicationRule(ctx context.Context, elderlyID string, rule *model.MedicationRuleRow) error {
+	if a.dbType == "postgres" {
+		return (&PostgresStore{db: a.db}).CreateMedicationRule(ctx, elderlyID, rule)
+	}
+	return (&SqliteStore{db: a.db}).CreateMedicationRule(ctx, elderlyID, rule)
+}
+
+func (a *StoreAdapter) UpdateMedicationRule(ctx context.Context, elderlyID, ruleID string, updates map[string]interface{}) error {
+	if a.dbType == "postgres" {
+		return (&PostgresStore{db: a.db}).UpdateMedicationRule(ctx, elderlyID, ruleID, updates)
+	}
+	return (&SqliteStore{db: a.db}).UpdateMedicationRule(ctx, elderlyID, ruleID, updates)
+}
+
+func (a *StoreAdapter) DeleteMedicationRule(ctx context.Context, elderlyID, ruleID string) error {
+	if a.dbType == "postgres" {
+		return (&PostgresStore{db: a.db}).DeleteMedicationRule(ctx, elderlyID, ruleID)
+	}
+	return (&SqliteStore{db: a.db}).DeleteMedicationRule(ctx, elderlyID, ruleID)
 }
 
 func (a *StoreAdapter) GetElderlyDevices(ctx context.Context, elderlyID string) ([]model.DeviceSummaryRow, error) {
@@ -750,6 +799,13 @@ func (a *StoreAdapter) EvaluateRegulatoryRules(ctx context.Context, event string
 		return (&PostgresStore{db: a.db}).EvaluateRegulatoryRules(ctx, event, data)
 	}
 	return (&SqliteStore{db: a.db}).EvaluateRegulatoryRules(ctx, event, data)
+}
+
+func (a *StoreAdapter) GetUserByCredential(ctx context.Context, method, credential, secret string) (*model.UserLogin, error) {
+	if a.dbType == "postgres" {
+		return (&PostgresStore{db: a.db}).GetUserByCredential(ctx, method, credential, secret)
+	}
+	return (&SqliteStore{db: a.db}).GetUserByCredential(ctx, method, credential, secret)
 }
 
 var _ Store = (*StoreAdapter)(nil)

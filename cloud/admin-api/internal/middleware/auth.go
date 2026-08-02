@@ -13,6 +13,7 @@ import (
 type ContextKey string
 
 const (
+	ContextUserID   ContextKey = "user_id"
 	ContextAdminRole ContextKey = "admin_role"
 )
 
@@ -55,6 +56,9 @@ func (j *AdminJWT) AuthMiddleware() gin.HandlerFunc {
 
 		if role, ok := claims["role"].(string); ok {
 			c.Set(string(ContextAdminRole), role)
+		}
+		if uid, ok := claims["user_id"].(string); ok {
+			c.Set(string(ContextUserID), uid)
 		}
 		c.Next()
 	}

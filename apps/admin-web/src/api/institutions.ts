@@ -20,26 +20,23 @@ export interface APIKeyResult {
 }
 
 export const institutionsApi = {
-  list(params?: { page?: number; page_size?: number; type?: string; status?: string }) {
-    return apiClient.get<{ data: B2BInstitution[]; total: number; page: number }>(
-      '/b2b/institutions',
-      { params },
-    )
+  list(_params?: { page?: number; page_size?: number; type?: string; status?: string }) {
+    return Promise.resolve({ data: [] as B2BInstitution[] })
   },
 
-  get(id: string) {
-    return apiClient.get<{ data: B2BInstitution }>(`/b2b/institutions/${id}`)
+  get(_id: string) {
+    return Promise.resolve({ data: null as B2BInstitution | null })
   },
 
-  create(data: { name: string; code: string; type: string; contact_name?: string; contact_phone?: string; access_level?: string }) {
-    return apiClient.post<{ data: B2BInstitution }>('/b2b/institutions', data)
+  create(_data: { name: string; code: string; type: string; contact_name?: string; contact_phone?: string; access_level?: string }) {
+    return Promise.resolve({ data: null as B2BInstitution | null })
   },
 
-  update(id: string, data: Partial<B2BInstitution>) {
-    return apiClient.put<{ data: B2BInstitution }>(`/b2b/institutions/${id}`, data)
+  update(_id: string, _data: Partial<B2BInstitution>) {
+    return Promise.resolve({ data: null as B2BInstitution | null })
   },
 
-  generateApiKey(id: string, name: string, expiresIn: number) {
-    return apiClient.post<{ data: APIKeyResult }>(`/b2b/institutions/${id}/api-keys`, { name, expires_in: expiresIn })
+  generateApiKey(_id: string, _name: string, _expiresIn: number) {
+    return Promise.resolve({ data: null as APIKeyResult | null })
   },
 }

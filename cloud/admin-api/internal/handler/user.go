@@ -60,3 +60,54 @@ func (h *UserHandler) List(c *gin.Context) {
 		"page_size": pageSize,
 	})
 }
+
+// Create adds a new user.
+func (h *UserHandler) Create(c *gin.Context) {
+	var body struct {
+		Name     string `json:"name" binding:"required"`
+		Email    string `json:"email"`
+		Phone    string `json:"phone"`
+		Role     string `json:"role" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	id, err := h.store.CreateUser(c.Request.Context(), body.Name, body.Email, body.Phone, body.Role, body.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"data": gin.H{"id": id, "name": body.Name, "role": body.Role}})
+}
+
+// Update modifies an existing user.
+func (h *UserHandler) Update(c *gin.Context) {
+	userID := c.Param("id")
+	var body struct {
+		Name  string `json:"name"`
+		Email string `json:"email"`
+		Phone string `json:"phone"`
+		Role  string `json:"role"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	if err := h.store.UpdateUser(c.Request.Context(), userID, body.Name, body.Email, body.Phone, body.Role); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "user updated"})
+}
+
+// Delete removes a user.
+func (h *UserHandler) Delete(c *gin.Context) {
+	userID := c.Param("id")
+	if err := h.store.DeleteUser(c.Request.Context(), userID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "user deleted"})
+}

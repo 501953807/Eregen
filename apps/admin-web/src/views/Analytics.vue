@@ -114,25 +114,27 @@ import {
   Monitor, UserFilled, TrendCharts, BellFilled,
   Connection, VideoCamera, DataLine, Calendar
 } from '@element-plus/icons-vue'
+import { dashboardApi } from '@/api/dashboard'
+import type { AlertDistributionItem, UserGrowthPoint } from '@/api/dashboard'
 
 // Key metrics
 const keyMetrics = ref([
-  { label: '在线设备总数', value: '12,847', trend: '12.5%', trendUp: true, icon: Connection, colorClass: 'blue', iconColor: '#2563EB' },
-  { label: '活跃用户数', value: '8,234', trend: '8.3%', trendUp: true, icon: UserFilled, colorClass: 'green', iconColor: '#16A34A' },
-  { label: '今日告警数', value: '342', trend: '5.1%', trendUp: false, icon: BellFilled, colorClass: 'warning', iconColor: '#F59E0B' },
-  { label: '机构接入数', value: '128', trend: '22.0%', trendUp: true, icon: Monitor, colorClass: 'purple', iconColor: '#7C3AED' },
+  { label: '在线设备总数', value: '—', trend: '—', trendUp: true, icon: Connection, colorClass: 'blue', iconColor: '#2563EB' },
+  { label: '活跃用户数', value: '—', trend: '—', trendUp: true, icon: UserFilled, colorClass: 'green', iconColor: '#16A34A' },
+  { label: '今日告警数', value: '—', trend: '—', trendUp: false, icon: BellFilled, colorClass: 'warning', iconColor: '#F59E0B' },
+  { label: '机构接入数', value: '—', trend: '—', trendUp: true, icon: Monitor, colorClass: 'purple', iconColor: '#7C3AED' },
 ])
 
 // Institution data
 const institutionPeriod = ref('7')
 const institutionList = ref([
-  { name: '上海市第一中心医院', type: 'hospital', typeLabel: '三甲医院', elderlyCount: 1250, dataIngested: 45200, lastActive: '2分钟前', activityScore: 95, activityColor: '#16A34A' },
-  { name: '浦东新区社区服务中心', type: 'community', typeLabel: '社区', elderlyCount: 890, dataIngested: 28300, lastActive: '15分钟前', activityScore: 82, activityColor: '#2563EB' },
-  { name: '北京协和医院', type: 'hospital', typeLabel: '三甲医院', elderlyCount: 780, dataIngested: 24100, lastActive: '1小时前', activityScore: 76, activityColor: '#2563EB' },
-  { name: '朝阳区养老服务站', type: 'station', typeLabel: '服务站', elderlyCount: 420, dataIngested: 12600, lastActive: '3小时前', activityScore: 65, activityColor: '#F59E0B' },
-  { name: '广州医科大学附属第一医院', type: 'hospital', typeLabel: '三甲医院', elderlyCount: 360, dataIngested: 10800, lastActive: '5小时前', activityScore: 58, activityColor: '#F59E0B' },
-  { name: '深圳市南山区养老院', type: 'nursing', typeLabel: '养老院', elderlyCount: 280, dataIngested: 8400, lastActive: '1天前', activityScore: 45, activityColor: '#EF4444' },
+  { name: '上海市第一中心医院', type: 'hospital', typeLabel: '三甲医院', elderlyCount: 0, dataIngested: 0, lastActive: '—', activityScore: 0, activityColor: '#16A34A' },
+  { name: '浦东新区社区服务中心', type: 'community', typeLabel: '社区', elderlyCount: 0, dataIngested: 0, lastActive: '—', activityScore: 0, activityColor: '#2563EB' },
 ])
+
+// Chart data
+const alertDistribution = ref<AlertDistributionItem[]>([])
+const userGrowth = ref<UserGrowthPoint[]>([])
 
 function formatNumber(n: number): string {
   return n >= 10000 ? `${(n / 10000).toFixed(1)}万` : n.toLocaleString()
@@ -151,7 +153,29 @@ function institutionTypeDot(type: string): string {
   return 'dot-gray'
 }
 
+async function loadDashboard() {
+  try {
+    const [trendRes, distRes, growthRes, overviewRes] = await Promise.all([
+      dashboardApi.alertTrend({ days: 7 }),
+      dashboardApi.alertDistribution(),
+      dashboardApi.userGrowth({ months: 6 }),
+      dashboardApi.overview(),
+    ])
+    const dist = distRes.data.data || []
+    const growth = growthRes.data.data || []
+    const overview = overviewRes.data.data || {}
+    alertDistribution.value = dist
+    userGrowth.value = growth
+    keyMetrics.value[0].value = (overview.total_devices || 0).toLocaleString()
+    keyMetrics.value[1].value = (overview.total_users || 0).toLocaleString()
+    keyMetrics.value[2].value = (overview.active_alerts || 0).toLocaleString()
+  } catch {
+    // Keep defaults
+  }
+}
+
 onMounted(async () => {
+  await loadDashboard()
   await nextTick()
   renderDeviceChart()
   renderAlertChart()
@@ -185,15 +209,18 @@ function renderDeviceChart() {
 function renderAlertChart() {
   const el = document.querySelector('#alert-chart-area')
   if (!el) return
-  const types = [
-    { name: 'SOS紧急呼叫', count: 45, color: '#EF4444' },
-    { name: '跌倒检测', count: 32, color: '#F59E0B' },
-    { name: '心率异常', count: 78, color: '#6B7280' },
-    { name: '电子围栏', count: 28, color: '#2563EB' },
-    { name: '漏服药物', count: 156, color: '#16A34A' },
-    { name: '设备离线', count: 3, color: '#F59E0B' },
-  ]
-  const max = Math.max(...types.map(t => t.count))
+  const types = alertDistribution.value.length > 0
+    ? alertDistribution.value.map(d => ({ name: d.name, count: d.value, color: d.color }))
+    : [
+        { name: 'SOS紧急呼叫', count: 45, color: '#EF4444' },
+        { name: '跌倒检测', count: 32, color: '#F59E0B' },
+        { name: '心率异常', count: 78, color: '#6B7280' },
+        { name: '电子围栏', count: 28, color: '#2563EB' },
+        { name: '漏服药物', count: 156, color: '#16A34A' },
+        { name: '设备离线', count: 3, color: '#F59E0B' },
+      ]
+  const max = Math.max(...types.map(t => t.count), 1)
+  const total = types.reduce((s, t) => s + t.count, 0) || 442
 
   let html = '<div style="padding:10px 0;">'
   types.forEach(t => {
@@ -205,11 +232,11 @@ function renderAlertChart() {
           <span style="font-size:12px;color:#fff;font-weight:600;">${t.count}</span>
         </div>
       </div>
-      <span style="width:40px;font-size:12px;color:var(--el-text-color-secondary);">${(t.count / 442 * 100).toFixed(0)}%</span>
+      <span style="width:40px;font-size:12px;color:var(--el-text-color-secondary);">${total > 0 ? (t.count / total * 100).toFixed(0) : 0}%</span>
     </div>`
   })
   html += '</div>'
-  html += `<div style="text-align:center;font-size:12px;color:var(--el-text-color-secondary);">本周告警总计 <strong style="color:var(--el-text-color-primary);">442</strong> 起</div>`
+  html += `<div style="text-align:center;font-size:12px;color:var(--el-text-color-secondary);">本周告警总计 <strong style="color:var(--el-text-color-primary);">${total}</strong> 起</div>`
   el.innerHTML = html
 }
 
@@ -239,12 +266,15 @@ function renderMedicationChart() {
 function renderUserGrowthChart() {
   const el = document.querySelector('#user-growth-chart-area')
   if (!el) return
-  const months = ['2月', '3月', '4月', '5月', '6月', '7月']
-  const familyUsers = [1200, 2100, 3400, 4800, 6200, 8234]
-  const elderlyProfiles = [800, 1500, 2400, 3500, 4800, 6500]
+  const months = userGrowth.value.length > 0
+    ? userGrowth.value.map(p => p.month)
+    : ['2月', '3月', '4月', '5月', '6月', '7月']
+  const familyUsers = userGrowth.value.length > 0
+    ? userGrowth.value.map(p => p.new_users)
+    : [1200, 2100, 3400, 4800, 6200, 8234]
 
   let html = '<div style="display:flex;justify-content:space-between;align-items:flex-end;height:200px;padding:10px 0;">'
-  const max = Math.max(...familyUsers)
+  const max = Math.max(...familyUsers, 1)
   months.forEach((month, i) => {
     const barH = (familyUsers[i] / max * 160).toFixed(0)
     html += `<div style="flex:1;text-align:center;">
@@ -254,7 +284,8 @@ function renderUserGrowthChart() {
     </div>`
   })
   html += '</div>'
-  html += `<div style="text-align:center;margin-top:12px;font-size:12px;color:var(--el-text-color-secondary);">家属用户累计 <strong style="color:#2563EB;">8,234</strong> ｜ 老人档案 <strong style="color:#16A34A;">6,500</strong></div>`
+  const totalGrowth = familyUsers.reduce((s, v) => s + v, 0)
+  html += `<div style="text-align:center;margin-top:12px;font-size:12px;color:var(--el-text-color-secondary);">用户累计 <strong style="color:#2563EB;">${totalGrowth.toLocaleString()}</strong></div>`
   el.innerHTML = html
 }
 </script>

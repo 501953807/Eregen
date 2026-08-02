@@ -148,7 +148,48 @@ func (h *ElderlyHandler) MedicationRules(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": rules})
 }
 
-// DeviceList returns devices linked to an elderly person.
+// CreateMedicationRule adds a new medication rule for an elderly person.
+func (h *ElderlyHandler) CreateMedicationRule(c *gin.Context) {
+	elderlyID := c.Param("id")
+	var body model.MedicationRuleRow
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	body.ElderlyID = elderlyID
+	if err := h.store.CreateMedicationRule(c.Request.Context(), elderlyID, &body); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"data": body})
+}
+
+// UpdateMedicationRule updates an existing medication rule.
+func (h *ElderlyHandler) UpdateMedicationRule(c *gin.Context) {
+	elderlyID := c.Param("id")
+	ruleID := c.Param("rule_id")
+	var body map[string]interface{}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	if err := h.store.UpdateMedicationRule(c.Request.Context(), elderlyID, ruleID, body); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "rule updated"})
+}
+
+// DeleteMedicationRule removes a medication rule.
+func (h *ElderlyHandler) DeleteMedicationRule(c *gin.Context) {
+	elderlyID := c.Param("id")
+	ruleID := c.Param("rule_id")
+	if err := h.store.DeleteMedicationRule(c.Request.Context(), elderlyID, ruleID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "rule deleted"})
+}
 func (h *ElderlyHandler) DeviceList(c *gin.Context) {
 	elderlyID := c.Param("id")
 	devices, err := h.store.GetElderlyDevices(c.Request.Context(), elderlyID)

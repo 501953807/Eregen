@@ -45,9 +45,9 @@
       >
         <el-table-column label="设备类型" width="100">
           <template #default="{ row }">
-            <span class="device-type-badge" :class="row.device_type === 'bracelet' ? 'badge-bracelet' : 'badge-pillbox'">
-              {{ row.device_type === 'bracelet' ? '📱' : '💊' }}
-              <span>{{ deviceTypeLabel(row.device_type) }}</span>
+            <span class="device-type-badge" :class="row.type === 'bracelet' ? 'badge-bracelet' : 'badge-pillbox'">
+              {{ row.type === 'bracelet' ? '📱' : '💊' }}
+              <span>{{ deviceTypeLabel(row.type) }}</span>
             </span>
           </template>
         </el-table-column>
@@ -84,7 +84,7 @@
     <el-dialog v-model="showCreateDialog" title="创建固件版本" width="550px" destroy-on-close>
       <el-form :model="createForm" label-width="120px">
         <el-form-item label="设备类型" required>
-          <el-select v-model="createForm.device_type" style="width: 100%;">
+          <el-select v-model="createForm.type" style="width: 100%;">
             <el-option label="手环" value="bracelet" />
             <el-option label="药盒" value="pillbox" />
           </el-select>
@@ -123,7 +123,7 @@
 
     <!-- Push OTA Dialog -->
     <el-dialog v-model="showPushDialog" title="推送OTA升级" width="550px" destroy-on-close>
-      <p style="margin-bottom: 12px;">目标固件: <strong>{{ selectedFirmware?.version }}</strong> ({{ deviceTypeLabel(selectedFirmware?.device_type ?? '') }}/{{ tierLabel(selectedFirmware?.tier ?? '') }})</p>
+      <p style="margin-bottom: 12px;">目标固件: <strong>{{ selectedFirmware?.version }}</strong> ({{ deviceTypeLabel(selectedFirmware?.type ?? '') }}/{{ tierLabel(selectedFirmware?.tier ?? '') }})</p>
       <el-form :model="pushForm" label-width="100px">
         <el-form-item label="目标设备">
           <el-radio-group v-model="pushForm.mode">
@@ -229,8 +229,8 @@ const pushForm = ref({ mode: 'all', deviceIdsStr: '' })
 
 /* ---------- Computed ---------- */
 
-const bracelets = computed(() => firmwares.value.filter(f => f.device_type === 'bracelet').length)
-const pillboxes = computed(() => firmwares.value.filter(f => f.device_type === 'pillbox').length)
+const bracelets = computed(() => firmwares.value.filter(f => f.type === 'bracelet').length)
+const pillboxes = computed(() => firmwares.value.filter(f => f.type === 'pillbox').length)
 const activeJobs = computed(() => Object.values(jobMap.value).flat().filter(j => {
   const p = j.progress
   return p.pending > 0 || p.downloading > 0

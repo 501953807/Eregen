@@ -125,7 +125,7 @@
           <template #header>
             <div class="card-header-with-action">
               <span style="font-weight: 600;">最新告警</span>
-              <el-link type="primary" :underline="false">查看全部 →</el-link>
+              <el-link type="primary" :underline="'never'">查看全部 →</el-link>
             </div>
           </template>
           <el-table :data="alertTableData" stripe style="width: 100%">
@@ -163,7 +163,7 @@
           <template #header>
             <div class="card-header-with-action">
               <span style="font-weight: 600;">用户增长</span>
-              <el-link type="primary" :underline="false">详情 →</el-link>
+              <el-link type="primary" :underline="'never'">详情 →</el-link>
             </div>
           </template>
           <div ref="barChartRef" style="height: 300px;"></div>

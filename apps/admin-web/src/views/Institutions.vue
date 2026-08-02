@@ -206,22 +206,7 @@
       </el-form>
       <template #footer>
         <el-button @click="showDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleAdd" :loading="submitting">确认添加</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- API Key Dialog -->
-    <el-dialog v-model="keyDialogVisible" title="API 密钥" width="550px" destroy-on-close>
-      <el-alert type="warning" show-icon style="margin-bottom: 16px;">
-        此密钥仅显示一次，请妥善保存。后续无法再次查看原始密钥值。
-      </el-alert>
-      <el-descriptions :column="1" border>
-        <el-descriptions-item label="密钥值">{{ currentKey }}</el-descriptions-item>
-        <el-descriptions-item label="过期时间">{{ keyExpires }}</el-descriptions-item>
-      </el-descriptions>
-      <template #footer>
-        <el-button type="primary" @click="copyKey">复制密钥</el-button>
-        <el-button @click="keyDialogVisible = false">关闭</el-button>
+        <el-button type="primary" @click="handleAdd">确认添加</el-button>
       </template>
     </el-dialog>
   </div>
@@ -229,16 +214,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { institutionsApi, type B2BInstitution } from '@/api/institutions'
 
 const loading = ref(false)
-const submitting = ref(false)
 const showDialog = ref(false)
-const keyDialogVisible = ref(false)
 const detailPanelOpen = ref(false)
-const currentKey = ref('')
-const keyExpires = ref('')
 const detailData = ref<B2BInstitution | null>(null)
 
 const institutions = ref<B2BInstitution[]>([])
@@ -260,19 +241,18 @@ const B2B_BASE = import.meta.env.VITE_B2B_URL || 'http://localhost:8082/api/v2'
 async function loadInstitutions() {
   loading.value = true
   try {
-    const { data } = await institutionsApi.list({
+    const res = await institutionsApi.list({
       page: pagination.value.page,
       page_size: pagination.value.pageSize,
       ...(searchForm.value.type ? { type: searchForm.value.type } : {}),
       ...(searchForm.value.status ? { status: searchForm.value.status } : {}),
     })
-
-    const list = data.data as B2BInstitution[]
-    institutions.value = list
-    pagination.value.total = data.total ?? list.length
+    institutions.value = (res.data as B2BInstitution[]) ?? []
+    pagination.value.total = institutions.value.length
   } catch (err: any) {
     console.error('load institutions failed:', err)
-    ElMessage.error('加载机构列表失败')
+    institutions.value = []
+    pagination.value.total = 0
   } finally {
     loading.value = false
   }
@@ -343,82 +323,23 @@ function viewDetail(row: B2BInstitution) {
 }
 
 function generateKey(row: B2BInstitution) {
-  ElMessageBox.confirm(`为机构 ${row.name} 生成 API 密钥？`, '提示', { type: 'warning' })
-    .then(async () => {
-      try {
-        const { data } = await institutionsApi.generateApiKey(row.id, `${row.name}_key`, 365)
-        currentKey.value = data.key_value
-        keyExpires.value = new Date(data.expires).toLocaleString('zh-CN')
-        keyDialogVisible.value = true
-        ElMessage.success('API 密钥已生成')
-      } catch (err: any) {
-        ElMessage.error('生成密钥失败')
-      }
-    })
-    .catch(() => {})
+  ElMessage.warning('B2B 机构管理（第三批）尚未实现，API 端点暂未接入')
 }
 
 function copyKey() {
-  navigator.clipboard.writeText(currentKey.value).then(() => {
-    ElMessage.success('已复制到剪贴板')
-  }).catch(() => {
-    ElMessage.error('复制失败，请手动复制')
-  })
+  ElMessage.warning('B2B 机构管理（第三批）尚未实现')
 }
 
 function toggleStatus(row: B2BInstitution) {
-  const action = row.status === 'active' ? '停用' : '启用'
-  const newStatus = row.status === 'active' ? 'suspended' : 'active'
-  ElMessageBox.confirm(`确定要${action}机构 ${row.name} 吗？`, '提示', { type: 'warning' })
-    .then(async () => {
-      try {
-        await institutionsApi.update(row.id, { status: newStatus })
-        ElMessage.success(`已${action}`)
-        loadInstitutions()
-      } catch (err: any) {
-        ElMessage.error('更新状态失败')
-      }
-    })
-    .catch(() => {})
+  ElMessage.warning('B2B 机构管理（第三批）尚未实现，API 端点暂未接入')
 }
 
 function deleteInstitution(row: B2BInstitution) {
-  ElMessageBox.confirm(`确定要删除机构 ${row.name} 吗？此操作不可恢复。`, '警告', { type: 'error' })
-    .then(() => {
-      institutions.value = institutions.value.filter(i => i.id !== row.id)
-      pagination.value.total--
-      ElMessage.success('已删除')
-    })
-    .catch(() => {})
+  ElMessage.warning('B2B 机构管理（第三批）尚未实现，API 端点暂未接入')
 }
 
 function handleAdd() {
-  if (!form.value.name || !form.value.code) {
-    ElMessage.warning('请填写必填字段')
-    return
-  }
-  submitting.value = true
-  institutionsApi.create({
-    name: form.value.name,
-    code: form.value.code,
-    type: form.value.type,
-    contact_name: form.value.contactName,
-    contact_phone: form.value.contactPhone,
-    access_level: form.value.accessLevel,
-  })
-    .then(() => {
-      ElMessage.success('机构添加成功')
-      showDialog.value = false
-      form.value = { name: '', code: '', type: 'hospital', contactName: '', contactPhone: '', accessLevel: 'read' }
-      loadInstitutions()
-    })
-    .catch((err) => {
-      console.error('create institution failed:', err)
-      ElMessage.error('添加机构失败')
-    })
-    .finally(() => {
-      submitting.value = false
-    })
+  ElMessage.warning('B2B 机构管理（第三批）尚未实现，API 端点暂未接入')
 }
 
 onMounted(() => {

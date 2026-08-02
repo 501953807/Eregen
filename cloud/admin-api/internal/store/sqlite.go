@@ -6,11 +6,37 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"eregen.dev/admin-api/internal/auth"
 	"eregen.dev/admin-api/internal/model"
+	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	_ "modernc.org/sqlite"
 )
+
+// parseTimeOrDefault parses a time string in various formats, returning a default value on error.
+func parseTimeOrDefault(s string, defaultVal time.Time) time.Time {
+	if s == "" {
+		return defaultVal
+	}
+	// Try RFC3339 first
+	if t, err := time.Parse(time.RFC3339, s); err == nil {
+		return t
+	}
+	// Try common datetime formats
+	for _, layout := range []string{
+		"2006-01-02 15:04:05",
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05Z",
+		"2006-01-02T15:04:05Z07:00",
+	} {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t
+		}
+	}
+	return defaultVal
+}
 
 // SqliteStore wraps database access for admin operations using SQLite.
 type SqliteStore struct {
@@ -476,6 +502,15 @@ func (s *SqliteStore) GetDashboardStats(ctx context.Context) (*model.DashboardSt
 	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM alerts WHERE status='pending'`).Scan(&stats.ActiveAlerts); err != nil {
 		return nil, fmt.Errorf("active alerts: %w", err)
 	}
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM alerts WHERE severity='P0' AND status='pending'`).Scan(&stats.P0Alerts); err != nil {
+		return nil, fmt.Errorf("p0 alerts: %w", err)
+	}
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM alerts WHERE severity='P1' AND status='pending'`).Scan(&stats.P1Alerts); err != nil {
+		return nil, fmt.Errorf("p1 alerts: %w", err)
+	}
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM alerts WHERE severity='P2' AND status='pending'`).Scan(&stats.P2Alerts); err != nil {
+		return nil, fmt.Errorf("p2 alerts: %w", err)
+	}
 	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users`).Scan(&stats.TotalUsers); err != nil {
 		return nil, fmt.Errorf("total users: %w", err)
 	}
@@ -488,7 +523,7 @@ func (s *SqliteStore) GetDashboardStats(ctx context.Context) (*model.DashboardSt
 // ListDevices returns a paginated list of devices with optional filters.
 func (s *SqliteStore) ListDevices(ctx context.Context, page, pageSize int, status, devType, tier string) ([]model.DeviceSummary, error) {
 	query := `SELECT id, device_id, device_type, tier, status, COALESCE(last_seen, '0001-01-01'),
-		(SELECT u.name FROM users u JOIN devices d ON d.owner_user_id = u.id WHERE d.id = devices.id LIMIT 1),
+		COALESCE((SELECT u.name FROM users u JOIN devices d ON d.owner_user_id = u.id WHERE d.id = devices.id LIMIT 1), ''),
 		COALESCE(json_extract(settings, '$.fw_version'),'v0.1')
 		FROM devices WHERE 1=1`
 	args := []interface{}{}
@@ -520,14 +555,15 @@ func (s *SqliteStore) ListDevices(ctx context.Context, page, pageSize int, statu
 	var devices []model.DeviceSummary
 	for rows.Next() {
 		var d model.DeviceSummary
-		if err := rows.Scan(&d.ID, &d.DeviceID, &d.Type, &d.Tier, &d.Status, &d.LastSeen, &d.OwnerName, &d.FirmwareVer); err != nil {
+		var lastSeenStr string
+		if err := rows.Scan(&d.ID, &d.DeviceID, &d.Type, &d.Tier, &d.Status, &lastSeenStr, &d.OwnerName, &d.FirmwareVer); err != nil {
 			return nil, fmt.Errorf("scan device: %w", err)
 		}
+		d.LastSeen = parseTimeOrDefault(lastSeenStr, time.Time{})
 		devices = append(devices, d)
 	}
 	return devices, rows.Err()
 }
-
 // ListUsers returns a paginated list of users with optional role filter.
 func (s *SqliteStore) ListUsers(ctx context.Context, page, pageSize int, role string) ([]model.UserSummary, error) {
 	query := `SELECT u.id, u.name, u.role, u.created_at,
@@ -603,6 +639,33 @@ func (s *SqliteStore) SetUserRole(ctx context.Context, userID, role string) erro
 	return err
 }
 
+// CreateUser inserts a new user and returns the generated ID.
+func (s *SqliteStore) CreateUser(ctx context.Context, name, email, phone, role, password string) (string, error) {
+	hash, err := auth.HashPassword(password)
+	if err != nil {
+		return "", fmt.Errorf("hash password: %w", err)
+	}
+	id := uuid.New().String()
+	_, err = s.db.ExecContext(ctx,
+		`INSERT INTO users (id, name, email, phone, role, password_hash) VALUES (?, ?, ?, ?, ?, ?)`,
+		id, name, email, phone, role, hash)
+	return id, err
+}
+
+// UpdateUser modifies an existing user's basic fields.
+func (s *SqliteStore) UpdateUser(ctx context.Context, id, name, email, phone, role string) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE users SET name=?, email=?, phone=?, role=? WHERE id=?`,
+		name, email, phone, role, id)
+	return err
+}
+
+// DeleteUser removes a user by ID.
+func (s *SqliteStore) DeleteUser(ctx context.Context, id string) error {
+	_, err := s.db.ExecContext(ctx, `DELETE FROM users WHERE id = ?`, id)
+	return err
+}
+
 // UpdateDeviceConfig updates device settings JSON column.
 func (s *SqliteStore) UpdateDeviceConfig(ctx context.Context, deviceID string, config map[string]interface{}) error {
 	settingsJSON, err := json.Marshal(config)
@@ -625,6 +688,18 @@ func (s *SqliteStore) TriggerOTA(ctx context.Context, deviceID, firmwareURL, sha
 func (s *SqliteStore) ResolveAlert(ctx context.Context, alertID string) error {
 	_, err := s.db.ExecContext(ctx,
 		`UPDATE alerts SET status = 'resolved', resolved_at = datetime('now') WHERE id = ?`, alertID)
+	return err
+}
+
+// UpdateAlertStatus updates an alert's status and resolved_at timestamp.
+func (s *SqliteStore) UpdateAlertStatus(ctx context.Context, alertID, status string) error {
+	if status == "resolved" {
+		_, err := s.db.ExecContext(ctx,
+			`UPDATE alerts SET status = 'resolved', resolved_at = datetime('now') WHERE id = ?`, alertID)
+		return err
+	}
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE alerts SET status = ? WHERE id = ?`, status, alertID)
 	return err
 }
 
@@ -732,23 +807,29 @@ func (s *SqliteStore) GetUserGrowth(ctx context.Context, months int) ([]model.Us
 // GetDeviceByID returns a single device by its database ID.
 func (s *SqliteStore) GetDeviceByID(ctx context.Context, id string) (*model.DeviceDetail, error) {
 	var d model.DeviceDetail
+	var lastSeenStr, settingsStr, elderlyName string
 	err := s.db.QueryRowContext(ctx, `
 		SELECT d.id, d.device_id, d.device_type, d.tier, d.status, COALESCE(d.last_seen, '0001-01-01'),
 		       u.name, COALESCE(json_extract(d.settings, '$.fw_version'),'v0.1'),
 		       d.settings,
-		       e.name AS elderly_name
+		       COALESCE(e.name, '')
 			FROM devices d LEFT JOIN users u ON d.owner_user_id = u.id
 			LEFT JOIN elderly_devices ed ON d.id = ed.device_id
 			LEFT JOIN elderly_profiles e ON ed.elderly_id = e.id
 			WHERE d.id = ?`, id).Scan(
-		&d.ID, &d.DeviceID, &d.Type, &d.Tier, &d.Status, &d.LastSeen,
-		&d.OwnerName, &d.FirmwareVer, &d.SettingsJSON, &d.ElderlyName,
+		&d.ID, &d.DeviceID, &d.Type, &d.Tier, &d.Status, &lastSeenStr,
+		&d.OwnerName, &d.FirmwareVer, &settingsStr, &elderlyName,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("device not found")
 		}
 		return nil, fmt.Errorf("get device: %w", err)
+	}
+	d.LastSeen = parseTimeOrDefault(lastSeenStr, time.Time{})
+	d.ElderlyName = elderlyName
+	if settingsStr != "" {
+		json.Unmarshal([]byte(settingsStr), &d.SettingsJSON)
 	}
 	return &d, nil
 }
@@ -894,6 +975,37 @@ func (s *SqliteStore) ChangeAdminPassword(ctx context.Context, userID, hash stri
 	return err
 }
 
+// GetUserByCredential returns a user by email (method="email") or phone+OTP (method="phone").
+func (s *SqliteStore) GetUserByCredential(ctx context.Context, method, credential, secret string) (*model.UserLogin, error) {
+	var u model.UserLogin
+	var hash string
+	switch method {
+	case "email":
+		err := s.db.QueryRowContext(ctx,
+			`SELECT id, name, role, password_hash FROM users WHERE email = ?`, credential).Scan(
+			&u.ID, &u.Name, &u.Role, &hash)
+		if err != nil {
+			return nil, err
+		}
+		if !auth.ComparePassword(secret, hash) {
+			return nil, fmt.Errorf("invalid credentials")
+		}
+	case "phone":
+		err := s.db.QueryRowContext(ctx,
+			`SELECT id, name, role, password_hash FROM users WHERE phone = ?`, credential).Scan(
+			&u.ID, &u.Name, &u.Role, &hash)
+		if err != nil {
+			return nil, err
+		}
+		if !auth.ComparePassword(secret, hash) {
+			return nil, fmt.Errorf("invalid credentials")
+		}
+	default:
+		return nil, fmt.Errorf("invalid method")
+	}
+	return &u, nil
+}
+
 // ========== Elderly Profile Management ==========
 
 // ListElderly returns a paginated list of elderly profiles.
@@ -910,17 +1022,19 @@ func (s *SqliteStore) ListElderly(ctx context.Context, page, pageSize int) ([]mo
 	var profiles []model.ElderlyProfile
 	for rows.Next() {
 		var p model.ElderlyProfile
-		var birthRaw, avatarRaw, tiersRaw string
-		if err := rows.Scan(&p.ID, &p.Name, &p.UserID, &birthRaw, &avatarRaw, &tiersRaw, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		var birthRaw, tiersRaw, createdAtStr, updatedAtStr string
+		var avatarNull sql.NullString
+		if err := rows.Scan(&p.ID, &p.Name, &p.UserID, &birthRaw, &avatarNull, &tiersRaw, &createdAtStr, &updatedAtStr); err != nil {
 			return nil, fmt.Errorf("scan elderly: %w", err)
 		}
+		p.CreatedAt = parseTimeOrDefault(createdAtStr, time.Time{})
+		p.UpdatedAt = parseTimeOrDefault(updatedAtStr, time.Time{})
 		if birthRaw != "" {
-			if t, err := time.Parse(time.RFC3339, birthRaw); err == nil {
-				p.BirthDate = &t
-			}
+			t := parseTimeOrDefault(birthRaw, time.Time{})
+			p.BirthDate = &t
 		}
-		if avatarRaw != "" {
-			p.AvatarURL = &avatarRaw
+		if avatarNull.Valid {
+			p.AvatarURL = &avatarNull.String
 		}
 		if tiersRaw != "" {
 			json.Unmarshal([]byte(tiersRaw), &p.HealthTiers)
@@ -1048,6 +1162,39 @@ func (s *SqliteStore) GetElderlyMedicationRules(ctx context.Context, elderlyID s
 	return items, rows.Err()
 }
 
+// CreateMedicationRule inserts a new medication rule.
+func (s *SqliteStore) CreateMedicationRule(ctx context.Context, elderlyID string, rule *model.MedicationRuleRow) error {
+	rule.ID = uuid.New().String()
+	daysJSON, _ := json.Marshal(rule.DaysOfWeek)
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO medication_rules (id, elderly_id, schedule_time, pill_type, dose_count, days_of_week, active)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		rule.ID, elderlyID, rule.ScheduleTime, rule.PillType, rule.DoseCount, daysJSON, rule.Active)
+	return err
+}
+
+// UpdateMedicationRule updates fields of an existing medication rule.
+func (s *SqliteStore) UpdateMedicationRule(ctx context.Context, elderlyID, ruleID string, updates map[string]interface{}) error {
+	parts := []string{}
+	args := []interface{}{}
+	for k, v := range updates {
+		parts = append(parts, fmt.Sprintf("%s=?", k))
+		args = append(args, v)
+	}
+	args = append(args, elderlyID, ruleID)
+	query := fmt.Sprintf("UPDATE medication_rules SET %s WHERE elderly_id=? AND id=?",
+		strings.Join(parts, ", "))
+	_, err := s.db.ExecContext(ctx, query, args...)
+	return err
+}
+
+// DeleteMedicationRule removes a medication rule.
+func (s *SqliteStore) DeleteMedicationRule(ctx context.Context, elderlyID, ruleID string) error {
+	_, err := s.db.ExecContext(ctx,
+		`DELETE FROM medication_rules WHERE elderly_id=? AND id=?`, elderlyID, ruleID)
+	return err
+}
+
 // GetElderlyDevices returns devices linked to an elderly person.
 func (s *SqliteStore) GetElderlyDevices(ctx context.Context, elderlyID string) ([]model.DeviceSummaryRow, error) {
 	rows, err := s.db.QueryContext(ctx, `
@@ -1064,9 +1211,11 @@ func (s *SqliteStore) GetElderlyDevices(ctx context.Context, elderlyID string) (
 	var items []model.DeviceSummaryRow
 	for rows.Next() {
 		var d model.DeviceSummaryRow
-		if err := rows.Scan(&d.ID, &d.DeviceID, &d.Type, &d.Tier, &d.Status, &d.FirmwareVer, &d.LastSeen); err != nil {
+		var lastSeenStr string
+		if err := rows.Scan(&d.ID, &d.DeviceID, &d.Type, &d.Tier, &d.Status, &d.FirmwareVer, &lastSeenStr); err != nil {
 			return nil, fmt.Errorf("scan elderly device: %w", err)
 		}
+		d.LastSeen = parseTimeOrDefault(lastSeenStr, time.Time{})
 		items = append(items, d)
 	}
 	return items, rows.Err()

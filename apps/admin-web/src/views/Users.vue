@@ -250,6 +250,7 @@
         <el-form-item label="姓名"><el-input v-model="addForm.name" placeholder="请输入姓名" /></el-form-item>
         <el-form-item label="手机号"><el-input v-model="addForm.phone" placeholder="请输入手机号" /></el-form-item>
         <el-form-item label="邮箱"><el-input v-model="addForm.email" placeholder="请输入邮箱（可选）" /></el-form-item>
+        <el-form-item label="密码"><el-input v-model="addForm.password" type="password" placeholder="请输入密码" /></el-form-item>
         <el-form-item label="角色">
           <el-select v-model="addForm.role" style="width: 100%;">
             <el-option label="家属" value="family" />
@@ -261,6 +262,27 @@
       <template #footer>
         <el-button @click="showAddDialog = false">取消</el-button>
         <el-button type="primary" @click="confirmAddUser">创建</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Edit User Dialog -->
+    <el-dialog v-model="showEditDialog" title="编辑用户" width="480px">
+      <el-form :model="editForm" label-width="100px">
+        <el-form-item label="姓名"><el-input v-model="editForm.name" placeholder="请输入姓名" /></el-form-item>
+        <el-form-item label="手机号"><el-input v-model="editForm.phone" placeholder="请输入手机号" /></el-form-item>
+        <el-form-item label="邮箱"><el-input v-model="editForm.email" placeholder="请输入邮箱（可选）" /></el-form-item>
+        <el-form-item label="角色">
+          <el-select v-model="editForm.role" style="width: 100%;">
+            <el-option label="家属" value="family" />
+            <el-option label="老人" value="elderly" />
+            <el-option label="机构管理员" value="institution" />
+            <el-option label="管理员" value="admin" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showEditDialog = false">取消</el-button>
+        <el-button type="primary" @click="confirmEditUser">保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -423,29 +445,68 @@ const activityTimeline = [
 
 // Add User Dialog
 const showAddDialog = ref(false)
-const addForm = ref({ name: '', phone: '', email: '', role: 'family' })
+const addForm = ref({ name: '', phone: '', email: '', role: 'family', password: '' })
+const showEditDialog = ref(false)
+const editForm = ref({ id: '', name: '', phone: '', email: '', role: 'family' })
 
 function handleAddUser() {
-  addForm.value = { name: '', phone: '', email: '', role: 'family' }
+  addForm.value = { name: '', phone: '', email: '', role: 'family', password: '' }
   showAddDialog.value = true
 }
 
 async function confirmAddUser() {
-  if (!addForm.value.name || !addForm.value.phone) {
-    ElMessage.warning('请填写姓名和手机号')
+  if (!addForm.value.name || !addForm.value.phone || !addForm.value.password) {
+    ElMessage.warning('请填写姓名、手机号和密码')
     return
   }
   try {
-    await usersApi.list({ page_size: 1 })
-    ElMessage.success('用户创建成功（模拟）')
+    await usersApi.create({
+      name: addForm.value.name,
+      phone: addForm.value.phone,
+      email: addForm.value.email || undefined,
+      role: addForm.value.role,
+      password: addForm.value.password,
+    })
+    ElMessage.success('用户创建成功')
+    addForm.value = { name: '', phone: '', email: '', role: 'family' }
+    showAddDialog.value = false
+    await usersStore.fetchFamily({ page_size: 50 })
+    await usersStore.fetchElderly({ page_size: 50 })
   } catch {
-    ElMessage.success('用户创建成功（模拟）')
+    ElMessage.error('创建用户失败，请重试')
   }
-  showAddDialog.value = false
 }
 
 function handleEditUser(user: any) {
-  ElMessage.info(`编辑用户: ${user.name}`)
+  editForm.value = {
+    id: user.id,
+    name: user.name,
+    phone: user.phone || '',
+    email: user.email || '',
+    role: user.role || 'family',
+  }
+  showEditDialog.value = true
+}
+
+async function confirmEditUser() {
+  if (!editForm.value.name) {
+    ElMessage.warning('请填写姓名')
+    return
+  }
+  try {
+    await usersApi.update(editForm.value.id, {
+      name: editForm.value.name,
+      phone: editForm.value.phone || undefined,
+      email: editForm.value.email || undefined,
+      role: editForm.value.role,
+    })
+    ElMessage.success('用户信息已更新')
+    showEditDialog.value = false
+    await usersStore.fetchFamily({ page_size: 50 })
+    await usersStore.fetchElderly({ page_size: 50 })
+  } catch {
+    ElMessage.error('更新失败，请重试')
+  }
 }
 
 function handleSendMessage(user: any) {
@@ -455,7 +516,10 @@ function handleSendMessage(user: any) {
 async function handleDisableUser(user: any) {
   try {
     await ElMessageBox.confirm(`确定要禁用用户 "${user.name}" 吗？`, '确认', { type: 'warning' })
-    ElMessage.success('用户已禁用（模拟）')
+    await usersApi.delete(user.id)
+    ElMessage.success('用户已禁用')
+    await usersStore.fetchFamily({ page_size: 50 })
+    await usersStore.fetchElderly({ page_size: 50 })
   } catch { /* cancelled */ }
 }
 

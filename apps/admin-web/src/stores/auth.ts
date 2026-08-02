@@ -20,22 +20,27 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('admin_user', JSON.stringify(u))
   }
 
-  function login(username: string, password: string) {
+  function login(payload: { method: 'email' | 'phone'; credential: string; secret: string }) {
     return new Promise<void>((resolve, reject) => {
       loading.value = true
       error.value = null
 
-      // Call the API endpoint using configured apiClient (has baseURL)
-      apiClient.post('/api/v1/auth/login', { username, password })
+      apiClient.post('/auth/login', payload)
         .then(response => {
-          const { token: jwtToken, user: userInfo } = response.data.data
-          setToken(jwtToken)
-          setUser(userInfo)
+          const body = response.data as any
+          const loginData = body?.data
+          if (!loginData) {
+            throw new Error(body?.msg || '登录失败')
+          }
+          const { token, user } = loginData
+          if (!token) throw new Error('未获取到 token')
+          setToken(token)
+          setUser(user)
           resolve()
         })
         .catch(err => {
           loading.value = false
-          const errorMsg = err.response?.data?.error || (err.message || 'Login failed. Please check username and password.')
+          const errorMsg = err?.response?.data?.msg || err?.response?.data?.error || (err?.message || '登录失败，请重试')
           error.value = errorMsg
           reject(err)
         })

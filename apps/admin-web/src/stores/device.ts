@@ -26,8 +26,8 @@ export const useDeviceStore = defineStore('device', () => {
     try {
       const res = await devicesApi.list({ page_size: 1 })
       const list = res.data.data || []
-      const bracelets = list.filter((d: Device) => d.device_type === 'bracelet')
-      const pillboxes = list.filter((d: Device) => d.device_type === 'pillbox')
+      const bracelets = list.filter((d: Device) => d.type === 'bracelet')
+      const pillboxes = list.filter((d: Device) => d.type === 'pillbox')
       const onlineCount = list.filter((d: Device) => d.status === 'online').length
       stats.value = {
         bracelet_count: bracelets.length,

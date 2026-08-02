@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"eregen.dev/admin-api/internal/auth"
 	"eregen.dev/admin-api/internal/model"
 	"time"
 
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -41,6 +43,15 @@ func (s *PostgresStore) GetDashboardStats(ctx context.Context) (*model.Dashboard
 	}
 	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM alerts WHERE status='pending'`).Scan(&stats.ActiveAlerts); err != nil {
 		return nil, fmt.Errorf("active alerts: %w", err)
+	}
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM alerts WHERE severity='P0' AND status='pending'`).Scan(&stats.P0Alerts); err != nil {
+		return nil, fmt.Errorf("p0 alerts: %w", err)
+	}
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM alerts WHERE severity='P1' AND status='pending'`).Scan(&stats.P1Alerts); err != nil {
+		return nil, fmt.Errorf("p1 alerts: %w", err)
+	}
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM alerts WHERE severity='P2' AND status='pending'`).Scan(&stats.P2Alerts); err != nil {
+		return nil, fmt.Errorf("p2 alerts: %w", err)
 	}
 	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users`).Scan(&stats.TotalUsers); err != nil {
 		return nil, fmt.Errorf("total users: %w", err)
@@ -169,6 +180,33 @@ func (s *PostgresStore) SetUserRole(ctx context.Context, userID, role string) er
 	return err
 }
 
+// CreateUser inserts a new user and returns the generated ID.
+func (s *PostgresStore) CreateUser(ctx context.Context, name, email, phone, role, password string) (string, error) {
+	hash, err := auth.HashPassword(password)
+	if err != nil {
+		return "", fmt.Errorf("hash password: %w", err)
+	}
+	id := uuid.New().String()
+	_, err = s.db.ExecContext(ctx,
+		`INSERT INTO users (id, name, email, phone, role, password_hash) VALUES ($1, $2, $3, $4, $5, $6)`,
+		id, name, email, phone, role, hash)
+	return id, err
+}
+
+// UpdateUser modifies an existing user's basic fields.
+func (s *PostgresStore) UpdateUser(ctx context.Context, id, name, email, phone, role string) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE users SET name=$1, email=$2, phone=$3, role=$4 WHERE id=$5`,
+		name, email, phone, role, id)
+	return err
+}
+
+// DeleteUser removes a user by ID.
+func (s *PostgresStore) DeleteUser(ctx context.Context, id string) error {
+	_, err := s.db.ExecContext(ctx, `DELETE FROM users WHERE id = $1`, id)
+	return err
+}
+
 // UpdateDeviceConfig updates device settings JSONB column safely using JSON marshaling.
 func (s *PostgresStore) UpdateDeviceConfig(ctx context.Context, deviceID string, config map[string]interface{}) error {
 	// SAFETY: Use json.Marshal to properly encode the configuration as JSON,
@@ -193,6 +231,17 @@ func (s *PostgresStore) TriggerOTA(ctx context.Context, deviceID, firmwareURL, s
 func (s *PostgresStore) ResolveAlert(ctx context.Context, alertID string) error {
 	_, err := s.db.ExecContext(ctx,
 		`UPDATE alerts SET status = 'resolved', resolved_at = NOW() WHERE id = $1`, alertID)
+	return err
+}
+
+func (s *PostgresStore) UpdateAlertStatus(ctx context.Context, alertID, status string) error {
+	if status == "resolved" {
+		_, err := s.db.ExecContext(ctx,
+			`UPDATE alerts SET status = 'resolved', resolved_at = NOW() WHERE id = $1`, alertID)
+		return err
+	}
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE alerts SET status = $2 WHERE id = $1`, alertID, status)
 	return err
 }
 
@@ -451,6 +500,37 @@ func (s *PostgresStore) RevokeAPIKey(ctx context.Context, id string) error {
 func (s *PostgresStore) ChangeAdminPassword(ctx context.Context, userID, hash string) error {
 	_, err := s.db.ExecContext(ctx, `UPDATE users SET password_hash = $1 WHERE id = $2 AND role = 'admin'`, hash, userID)
 	return err
+}
+
+// GetUserByCredential returns a user by email (method="email") or phone+OTP (method="phone").
+func (s *PostgresStore) GetUserByCredential(ctx context.Context, method, credential, secret string) (*model.UserLogin, error) {
+	var u model.UserLogin
+	var hash string
+	switch method {
+	case "email":
+		err := s.db.QueryRowContext(ctx,
+			`SELECT id, name, role, password_hash FROM users WHERE email = $1`, credential).Scan(
+			&u.ID, &u.Name, &u.Role, &hash)
+		if err != nil {
+			return nil, err
+		}
+		if !auth.ComparePassword(secret, hash) {
+			return nil, fmt.Errorf("invalid credentials")
+		}
+	case "phone":
+		err := s.db.QueryRowContext(ctx,
+			`SELECT id, name, role, password_hash FROM users WHERE phone = $1`, credential).Scan(
+			&u.ID, &u.Name, &u.Role, &hash)
+		if err != nil {
+			return nil, err
+		}
+		if !auth.ComparePassword(secret, hash) {
+			return nil, fmt.Errorf("invalid credentials")
+		}
+	default:
+		return nil, fmt.Errorf("invalid method")
+	}
+	return &u, nil
 }
 
 // ========== Medical Wristband Methods ==========

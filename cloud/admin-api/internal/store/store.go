@@ -15,9 +15,13 @@ type Store interface {
 	ListUsers(ctx context.Context, page, pageSize int, role string) ([]model.UserSummary, error)
 	ListAlerts(ctx context.Context, severity, status string, limit int) ([]model.AlertSummary, error)
 	SetUserRole(ctx context.Context, userID, role string) error
+	CreateUser(ctx context.Context, name, email, phone, role, passwordHash string) (string, error)
+	UpdateUser(ctx context.Context, id, name, email, phone, role string) error
+	DeleteUser(ctx context.Context, id string) error
 	UpdateDeviceConfig(ctx context.Context, deviceID string, config map[string]interface{}) error
 	TriggerOTA(ctx context.Context, deviceID, firmwareURL, sha256Hash string) error
 	ResolveAlert(ctx context.Context, alertID string) error
+	UpdateAlertStatus(ctx context.Context, alertID, status string) error
 	GetSubscriptionStats(ctx context.Context) ([]model.SubscriptionStat, error)
 	GetAlertTrend(ctx context.Context, days int) ([]model.AlertTrendPoint, error)
 	GetAlertDistribution(ctx context.Context) ([]model.AlertDistributionItem, error)
@@ -35,6 +39,7 @@ type Store interface {
 	CreateAPIKey(ctx context.Context, name, keyHash string, expiresAt *time.Time) (string, error)
 	RevokeAPIKey(ctx context.Context, id string) error
 	ChangeAdminPassword(ctx context.Context, userID, hash string) error
+	GetUserByCredential(ctx context.Context, method, credential, secret string) (*model.UserLogin, error)
 
 	// Elderly profile management
 	ListElderly(ctx context.Context, page, pageSize int) ([]model.ElderlyProfile, error)
@@ -45,6 +50,9 @@ type Store interface {
 	GetElderlyHealthStats(ctx context.Context, elderlyID string) (*model.HealthStats, error)
 	GetElderlyHealthRecords(ctx context.Context, elderlyID string, limit int) ([]model.HealthRecordRow, error)
 	GetElderlyMedicationRules(ctx context.Context, elderlyID string) ([]model.MedicationRuleRow, error)
+	CreateMedicationRule(ctx context.Context, elderlyID string, rule *model.MedicationRuleRow) error
+	UpdateMedicationRule(ctx context.Context, elderlyID, ruleID string, updates map[string]interface{}) error
+	DeleteMedicationRule(ctx context.Context, elderlyID, ruleID string) error
 	GetElderlyDevices(ctx context.Context, elderlyID string) ([]model.DeviceSummaryRow, error)
 	GetElderlyLocationHistory(ctx context.Context, elderlyID string, limit int) ([]model.LocationPoint, error)
 	GetElderlyAlertHistory(ctx context.Context, elderlyID string, limit int) ([]model.AlertSummaryRow, error)

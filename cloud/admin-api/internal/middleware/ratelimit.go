@@ -41,7 +41,7 @@ func (l *AdminRateLimiter) Middleware() gin.HandlerFunc {
 		}
 		key += c.GetString("user_id")
 
-		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 		defer cancel()
 
 		now := time.Now().Unix()
@@ -56,7 +56,7 @@ func (l *AdminRateLimiter) Middleware() gin.HandlerFunc {
 		count := pipe.ZCard(ctx, windowKey)
 		_, err := pipe.Exec(ctx)
 		if err != nil {
-			log.Printf("admin rate limiter error: %v", err)
+			log.Printf("admin rate limiter error: %v (fail open)", err)
 			c.Next()
 			return
 		}

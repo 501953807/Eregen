@@ -265,8 +265,8 @@
           </el-table-column>
           <el-table-column label="严重程度" width="100">
             <template #default="{ row }">
-              <span class="status-badge" :class="row.severity === 'P0' ? 'badge-danger' : row.severity === 'P1' ? 'badge-warning' : 'badge-primary'">
-                <span class="status-dot" :class="row.severity === 'P0' ? 'dot-danger' : row.severity === 'P1' ? 'dot-warning' : 'dot-primary'"></span>
+              <span class="status-badge" :class="row.severity === 'high' || row.severity === 'P0' ? 'badge-danger' : row.severity === 'medium' || row.severity === 'P1' ? 'badge-warning' : 'badge-primary'">
+                <span class="status-dot" :class="row.severity === 'high' || row.severity === 'P0' ? 'dot-danger' : row.severity === 'medium' || row.severity === 'P1' ? 'dot-warning' : 'dot-primary'"></span>
                 {{ row.severity }}
               </span>
             </template>

@@ -84,118 +84,118 @@ export interface WardRoundEntry {
 export const medicalApi = {
   // Patients
   listPatients(params: { page?: number; page_size?: number; status?: string }) {
-    return apiClient.get('/medical/patients', { params })
+    return apiClient.get('/admin/medical/patients', { params })
   },
 
   getPatient(id: string) {
-    return apiClient.get(`/medical/patients/${id}`)
+    return apiClient.get(`/admin/medical/patients/${id}`)
   },
 
   createPatient(data: Partial<Patient>) {
-    return apiClient.post('/medical/patients', data)
+    return apiClient.post('/admin/medical/patients', data)
   },
 
   updatePatient(id: string, data: Partial<Patient>) {
-    return apiClient.put(`/medical/patients/${id}`, data)
+    return apiClient.put(`/admin/medical/patients/${id}`, data)
   },
 
   deletePatient(id: string) {
-    return apiClient.delete(`/medical/patients/${id}`)
+    return apiClient.delete(`/admin/medical/patients/${id}`)
   },
 
   getByAdmissionNo(admissionNo: string) {
-    return apiClient.get('/medical/patients/by-admission', { params: { admission_no: admissionNo } })
+    return apiClient.get('/admin/medical/patients/by-admission', { params: { admission_no: admissionNo } })
   },
 
   batchImport(patients: Partial<Patient>[]) {
-    return apiClient.post('/medical/patients/batch-import', patients)
+    return apiClient.post('/admin/medical/patients/batch-import', patients)
   },
 
   getPatientHistory(patientId: string) {
-    return apiClient.get(`/medical/patients/${patientId}/history`)
+    return apiClient.get(`/admin/medical/patients/${patientId}/history`)
   },
 
   // Wristband devices
   listWristbands(params: { page?: number; page_size?: number; status?: string }) {
-    return apiClient.get('/medical/wristbands', { params })
+    return apiClient.get('/admin/medical/wristbands', { params })
   },
 
   bindWristband(patientId: string, deviceId: string) {
-    return apiClient.post('/medical/wristbands/bind', { patient_id: patientId, device_id: deviceId })
+    return apiClient.post('/admin/medical/wristbands/bind', { patient_id: patientId, device_id: deviceId })
   },
 
   unbindWristband(bindingId: string) {
-    return apiClient.post(`/medical/wristbands/${bindingId}/unbind`)
+    return apiClient.post(`/admin/medical/wristbands/${bindingId}/unbind`)
   },
 
   clearWristband(deviceId: string) {
-    return apiClient.post(`/medical/wristbands/${deviceId}/clear`)
+    return apiClient.post(`/admin/medical/wristbands/${deviceId}/clear`)
   },
 
   writeToFirmware(deviceId: string, data: string) {
-    return apiClient.post(`/medical/wristbands/${deviceId}/write`, { data })
+    return apiClient.post(`/admin/medical/wristbands/${deviceId}/write`, { data })
   },
 
   getFirmware(deviceId: string) {
-    return apiClient.get(`/medical/wristbands/${deviceId}/firmware`)
+    return apiClient.get(`/admin/medical/wristbands/${deviceId}/firmware`)
   },
 
   // Verifications
   listVerifications(params: { page?: number; page_size?: number }) {
-    return apiClient.get('/medical/verifications', { params })
+    return apiClient.get('/admin/medical/verifications', { params })
   },
 
   createVerification(data: Partial<VerificationRecord>) {
-    return apiClient.post('/medical/verifications', data)
+    return apiClient.post('/admin/medical/verifications', data)
   },
 
   updateVerificationStatus(id: string, status: string) {
-    return apiClient.put(`/medical/verifications/${id}/status`, { status })
+    return apiClient.put(`/admin/medical/verifications/${id}/status`, { status })
   },
 
   getTodayStats() {
-    return apiClient.get('/medical/verifications/stats/today')
+    return apiClient.get('/admin/medical/verifications/stats/today')
   },
 
   // Stats
   getOverview() {
-    return apiClient.get('/medical/stats/overview')
+    return apiClient.get('/admin/medical/stats/overview')
   },
 
   // Clinical workflow
   admitPatient(data: { patient_id: string; bed_no: string; department: string; diagnosis?: string; emergency_contact?: string; allergies?: string; expected_stay_days?: number }) {
-    return apiClient.post('/medical/admissions', data)
+    return apiClient.post('/admin/medical/admissions', data)
   },
 
   listAdmissions(params?: { page?: number; page_size?: number; department?: string; status?: string }) {
-    return apiClient.get('/medical/admissions', { params })
+    return apiClient.get('/admin/medical/admissions', { params })
   },
 
   dischargePatient(id: string, data: { discharge_type: string; notes?: string; transferred_to?: string }) {
-    return apiClient.post(`/medical/admissions/${id}/discharge`, data)
+    return apiClient.post(`/admin/medical/admissions/${id}/discharge`, data)
   },
 
   getWardRounds(patientId: string) {
-    return apiClient.get(`/medical/patients/${patientId}/ward-round`)
+    return apiClient.get(`/admin/medical/patients/${patientId}/ward-round`)
   },
 
   completeWardRound(patientId: string, data: { nurse_id: string; blood_pressure?: string; heart_rate?: number; spo2?: number; temperature?: number; weight?: number; notes?: string; observations?: string }) {
-    return apiClient.post(`/medical/patients/${patientId}/ward-round`, data)
+    return apiClient.post(`/admin/medical/patients/${patientId}/ward-round`, data)
   },
 
   getRegulatoryAlerts(params?: { rule_code?: string; severity?: string; status?: string; department?: string; page?: number; page_size?: number }) {
-    return apiClient.get('/regulatory/alerts', { params })
+    return apiClient.get('/admin/regulatory/alerts', { params })
   },
 
   resolveRegulatoryAlert(alertId: string, data: { user_id: string; notes?: string }) {
-    return apiClient.put(`/regulatory/alerts/${alertId}/resolve`, data)
+    return apiClient.put(`/admin/regulatory/alerts/${alertId}/resolve`, data)
   },
 
   getAuditTrail(patientId: string) {
-    return apiClient.get(`/regulatory/audit/patient/${patientId}`)
+    return apiClient.get(`/admin/regulatory/audit/patient/${patientId}`)
   },
 
   exportReport(patientId: string) {
-    return apiClient.get(`/regulatory/compliance/report`, { params: { patient_id: patientId } })
+    return apiClient.get(`/admin/regulatory/compliance/report`, { params: { patient_id: patientId } })
   },
 }

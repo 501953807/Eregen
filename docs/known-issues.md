@@ -63,3 +63,11 @@
 - **现象**: SP1-auth/ (重复副本), Users/ (系统目录), admin-api.log (日志) 污染根目录
 - **解决**: 已删除 SP1-auth/, Users/, admin-api.log
 - **状态**: ✅ 已解决
+
+### [2026-08-02] Hugo 构建模板错误
+- **现象**: products 配置为 map 但模板按 slice 迭代，缺少 list.html/single.html 模板
+- **根因**: hugo.toml 使用 `[[params.products.bracelet]]` 等 map 键而非 `[[params.products]]` slice
+- **解决**: 已修正配置为 slice 格式，新增 list.html 和 single.html 模板
+- **状态**: ✅ 已解决
+
+---

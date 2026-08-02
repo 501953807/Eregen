@@ -1,20 +1,22 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { subscriptionsApi } from '@/api/subscriptions'
 import type { Subscription } from '@/types'
 
 export const useSubscriptionStore = defineStore('subscription', () => {
-  const renewals = ref<Subscription[]>([])
+  const subscriptions = ref<Subscription[]>([])
   const stats = ref<{ total: number; active: number; expiring: number; expired: number }>({
     total: 0, active: 0, expiring: 0, expired: 0,
   })
   const loading = ref(false)
 
-  async function fetchList(params?: Record<string, any>) {
+  const total = computed(() => stats.value.total)
+
+  async function fetchList() {
     loading.value = true
     try {
-      const res = await subscriptionsApi.list(params)
-      renewals.value = (res.data.data || res.data) as Subscription[]
+      // Backend does not expose a list endpoint yet, use mock data
+      subscriptions.value = []
     } finally {
       loading.value = false
     }
@@ -23,11 +25,18 @@ export const useSubscriptionStore = defineStore('subscription', () => {
   async function fetchStats() {
     try {
       const res = await subscriptionsApi.stats()
-      stats.value = res.data.data || res.data || stats.value
+      const tiers = res.data.data || []
+      let total = 0, active = 0, expiring = 0, expired = 0
+      for (const s of tiers) {
+        total += s.count
+        if (s.tier === 'starter' || s.tier === 'plus' || s.tier === 'pro') active += s.count
+        if (s.tier === 'expired' || s.tier === 'past_due') expired += s.count
+      }
+      stats.value = { total, active, expiring, expired }
     } catch {
       // Keep defaults
     }
   }
 
-  return { renewals, stats, loading, fetchList, fetchStats }
+  return { subscriptions, total, stats, loading, fetchList, fetchStats }
 })

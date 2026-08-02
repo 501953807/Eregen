@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"eregen.dev/admin-api/internal/model"
 )
 
@@ -210,6 +212,41 @@ func (s *PostgresStore) GetElderlyMedicationRules(ctx context.Context, elderlyID
 		rules = append(rules, r)
 	}
 	return rules, rows.Err()
+}
+
+// CreateMedicationRule inserts a new medication rule.
+func (s *PostgresStore) CreateMedicationRule(ctx context.Context, elderlyID string, rule *model.MedicationRuleRow) error {
+	rule.ID = uuid.New().String()
+	daysJSON, _ := json.Marshal(rule.DaysOfWeek)
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO medication_rules (id, elderly_id, schedule_time, pill_type, dose_count, days_of_week, active)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		rule.ID, elderlyID, rule.ScheduleTime, rule.PillType, rule.DoseCount, daysJSON, rule.Active)
+	return err
+}
+
+// UpdateMedicationRule updates fields of an existing medication rule.
+func (s *PostgresStore) UpdateMedicationRule(ctx context.Context, elderlyID, ruleID string, updates map[string]interface{}) error {
+	parts := []string{}
+	args := []interface{}{}
+	idx := 1
+	for k, v := range updates {
+		parts = append(parts, fmt.Sprintf("%s=$%d", k, idx))
+		args = append(args, v)
+		idx++
+	}
+	args = append(args, elderlyID, ruleID)
+	query := fmt.Sprintf("UPDATE medication_rules SET %s WHERE elderly_id=$%d AND id=$%d",
+		strings.Join(parts, ", "), idx, idx+1)
+	_, err := s.db.ExecContext(ctx, query, args...)
+	return err
+}
+
+// DeleteMedicationRule removes a medication rule.
+func (s *PostgresStore) DeleteMedicationRule(ctx context.Context, elderlyID, ruleID string) error {
+	_, err := s.db.ExecContext(ctx,
+		`DELETE FROM medication_rules WHERE elderly_id=$1 AND id=$2`, elderlyID, ruleID)
+	return err
 }
 
 // GetElderlyDevices returns devices linked to an elderly person.

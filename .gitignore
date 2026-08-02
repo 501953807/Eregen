@@ -67,6 +67,17 @@ venv/
 
 # Data
 data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Binaries
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+*_fixed
 
 # Logs
 logs/

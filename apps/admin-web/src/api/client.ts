@@ -7,7 +7,7 @@ import router from '@/router'
 let baseURL: string
 if (import.meta.env.DEV) {
   // In development, connect directly to admin-api server
-  baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8089'
+  baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8085/api/v1'
 } else {
   // In production, use relative path served by same origin
   baseURL = '/api/v1'
@@ -35,7 +35,7 @@ apiClient.interceptors.request.use(async (config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const statusCode = error.response?.status
+    const statusCode = error.response?.status ?? 0
 
     // Handle 401 Unauthorized
     if (statusCode === 401) {
@@ -65,8 +65,9 @@ apiClient.interceptors.response.use(
     }
 
     // Return the error response data message if available
-    if (error.response?.data?.error) {
-      ElMessage.error(error.response.data.error)
+    const errData = error.response?.data as { error?: string } | null | undefined
+    if (errData?.error) {
+      ElMessage.error(errData.error)
     }
 
     return Promise.reject(error)

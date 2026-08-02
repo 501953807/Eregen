@@ -22,13 +22,13 @@ export interface ElderlyProfile {
 export interface Device {
   id: string
   device_id: string
-  device_type: 'bracelet' | 'pillbox'
+  type: 'bracelet' | 'pillbox'
   tier: 'starter' | 'plus' | 'pro' | 'basic' | 'smart' | 'auto'
   status: 'online' | 'offline'
   last_seen?: string
-  owner_user_id: string
+  owner_name?: string
+  firmware_version?: string
   settings?: Record<string, any>
-  created_at: string
 }
 
 export interface HealthRecord {
@@ -67,8 +67,9 @@ export interface Alert {
   id: string
   elderly_id: string
   alert_type: string
-  severity: 'P0' | 'P1' | 'P2'
-  status: 'pending' | 'resolved'
+  severity: 'low' | 'medium' | 'high' | 'P0' | 'P1' | 'P2'
+  status: 'pending' | 'resolved' | 'acknowledged' | 'false_positive'
+  message?: string
   metadata?: Record<string, any>
   created_at: string
   resolved_at?: string
@@ -87,6 +88,9 @@ export interface DashboardStats {
   online_devices: number
   total_devices: number
   active_alerts: number
+  p0: number
+  p1: number
+  p2: number
   total_users: number
   active_subscriptions: number
   alert_trend: TrendPoint[]

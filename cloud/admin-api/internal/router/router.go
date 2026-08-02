@@ -70,7 +70,7 @@ func Setup(db *sql.DB, logger *zap.Logger, dbType string) *gin.Engine {
 	adminJWT := middleware.NewAdminJWT(jwtSecret, 24*time.Hour, logger)
 
 	// Auth handler (used for login endpoint which doesn't require auth)
-	authHandler := handler.NewAuthHandler(jwtSecret, logger)
+	authHandler := handler.NewAuthHandler(jwtSecret, logger, s)
 
 	// Unprotected health check endpoint — always available, no auth required
 	r.GET("/api/v1/health", func(c *gin.Context) {
@@ -100,6 +100,11 @@ func Setup(db *sql.DB, logger *zap.Logger, dbType string) *gin.Engine {
 		log.Printf("admin rate limiter init failed: %v (will fail open)", rlErr)
 	}
 
+	// SSE stream — auth via query param token (EventSource cannot send custom headers)
+	r.GET("/api/v1/admin/stream/alerts", func(c *gin.Context) {
+		handler.StreamHandler().ServeHTTP(c.Writer, c.Request)
+	})
+
 	api := r.Group("/api/v1/admin")
 	if rlErr == nil {
 		api.Use(rateLimiter.Middleware())
@@ -113,14 +118,18 @@ func Setup(db *sql.DB, logger *zap.Logger, dbType string) *gin.Engine {
 		api.GET("/stats/subscriptions", dashboard.GetSubscriptionStats)
 		api.GET("/devices", device.List)
 		api.GET("/users", user.List)
-		api.GET("/alerts", alert.List)
+		api.POST("/users", user.Create)
+		api.PUT("/users/:id", user.Update)
+		api.DELETE("/users/:id", user.Delete)
 		// User role management
 		api.POST("/users/:id/role", user.SetRole)
+		api.GET("/alerts", alert.List)
 		// Device config and OTA
 		api.POST("/devices/:id/config", device.UpdateConfig)
 		api.POST("/devices/:id/ota", device.TriggerOTA)
 		// Alert resolution
 		api.POST("/alerts/:id/resolve", alert.Resolve)
+		api.POST("/alerts/:id/acknowledge", alert.Acknowledge)
 		// Elderly person management
 		api.GET("/elderly", elderly.List)
 		api.GET("/elderly/:id", elderly.Detail)
@@ -131,6 +140,9 @@ func Setup(db *sql.DB, logger *zap.Logger, dbType string) *gin.Engine {
 		api.GET("/elderly/:id/health-stats", elderly.HealthStats)
 		api.GET("/elderly/:id/health-records", elderly.HealthRecords)
 		api.GET("/elderly/:id/medication-rules", elderly.MedicationRules)
+		api.POST("/elderly/:id/medication-rules", elderly.CreateMedicationRule)
+		api.PUT("/elderly/:id/medication-rules/:rule_id", elderly.UpdateMedicationRule)
+		api.DELETE("/elderly/:id/medication-rules/:rule_id", elderly.DeleteMedicationRule)
 		api.GET("/elderly/:id/devices", elderly.DeviceList)
 		api.GET("/elderly/:id/location-history", elderly.LocationHistory)
 		api.GET("/elderly/:id/alert-history", elderly.AlertHistory)
@@ -162,6 +174,7 @@ func Setup(db *sql.DB, logger *zap.Logger, dbType string) *gin.Engine {
 			setting.GET("/api-keys", settings.ListAPIKeys)
 			setting.POST("/api-keys", settings.CreateAPIKey)
 			setting.DELETE("/api-keys/:id", settings.RevokeAPIKey)
+			setting.POST("/password", settings.ChangePassword)
 		}
 
 		// Medical wristband management
