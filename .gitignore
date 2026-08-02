@@ -11,6 +11,7 @@
 *.dylib
 *.ilk
 *.pdb
+*_fixed
 
 # IDE files
 .project
@@ -121,3 +122,6 @@ cloud/push-service/README.md
 # OS
 .DS_Store
 Thumbs.db
+
+# Duplicate development copies
+SP1-auth/
