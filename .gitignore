@@ -108,7 +108,11 @@ docs/specs/
 docs/superpowers/
 docs/logo/
 README.md
-*.md
+# Allow project documentation
+!ARCHITECTURE.md
+!docs/development-guide.md
+!docs/known-issues.md
+!docs/commit-message-guide.md
 
 # CI/CD workflows — internal tooling info
 .github/workflows/
@@ -125,3 +129,8 @@ Thumbs.db
 
 # Duplicate development copies
 SP1-auth/
+
+# Runtime logs
+*.log
+# User home directories accidentally in project
+Users/
