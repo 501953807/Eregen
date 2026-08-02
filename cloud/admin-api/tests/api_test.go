@@ -3,6 +3,7 @@
 package tests
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"log"
@@ -10,66 +11,85 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
+	"eregen.dev/admin-api/internal/auth"
 	"eregen.dev/admin-api/internal/router"
 	"eregen.dev/admin-api/internal/store"
 
+	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
 )
 
+// generateTestToken creates a valid JWT for the test environment.
+func generateTestToken(t *testing.T) string {
+	t.Helper()
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		secret = "test-secret-key-for-testing"
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": "usr-admin",
+		"role":    "admin",
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+	})
+	tok, err := token.SignedString([]byte(secret))
+	if err != nil {
+		t.Fatalf("failed to sign test token: %v", err)
+	}
+	return tok
+}
+
 func TestAPIV1Endpoints(t *testing.T) {
-	// Set JWT_SECRET for router setup
 	os.Setenv("JWT_SECRET", "test-secret-key-for-testing")
 
-	// Create in-memory SQLite DB
-	db, err := store.NewSqlite("/tmp/regen-test.db")
+	db, err := store.NewSqlite(":memory:")
 	if err != nil {
 		t.Fatalf("failed to init test db: %v", err)
 	}
 	defer db.Close()
 
-	// Seed test data
 	seedTestData(db)
 
-	// Setup router with test db
 	logger, _ := zap.NewProduction()
-	r := router.Setup(db, logger, "sqlite")
+	r := router.Setup(store.NewSqliteStore(db), logger)
+	token := generateTestToken(t)
 
-	// Create test request recorder
-	testCases := []struct {
-		name     string
-		method   string
-		path     string
+	type testCase struct {
+		name       string
+		method     string
+		path       string
 		wantStatus int
-	}{
+	}
+	testCases := []testCase{
 		{
-			name:     "GET /api/v1/health",
-			method:   http.MethodGet,
-			path:     "/api/v1/health",
+			name:       "GET /api/v1/health",
+			method:     http.MethodGet,
+			path:       "/api/v1/health",
 			wantStatus: http.StatusOK,
 		},
 		{
-			name:     "GET /api/v1/elderly",
-			method:   http.MethodGet,
-			path:     "/api/v1/admin/elderly",
+			name:       "GET /api/v1/admin/elderly",
+			method:     http.MethodGet,
+			path:       "/api/v1/admin/elderly",
 			wantStatus: http.StatusOK,
 		},
 		{
-			name:     "GET /api/v1/users?role=family",
-			method:   http.MethodGet,
-			path:     "/api/v1/admin/users?role=family",
+			name:       "GET /api/v1/admin/users?role=family",
+			method:     http.MethodGet,
+			path:       "/api/v1/admin/users?role=family",
 			wantStatus: http.StatusOK,
 		},
 		{
-			name:     "GET /api/v1/devices",
-			method:   http.MethodGet,
-			path:     "/api/v1/admin/devices",
+			name:       "GET /api/v1/admin/devices",
+			method:     http.MethodGet,
+			path:       "/api/v1/admin/devices",
 			wantStatus: http.StatusOK,
 		},
 		{
-			name:     "GET /api/v1/alerts",
-			method:   http.MethodGet,
-			path:     "/api/v1/admin/alerts",
+			name:       "GET /api/v1/admin/alerts",
+			method:     http.MethodGet,
+			path:       "/api/v1/admin/alerts",
 			wantStatus: http.StatusOK,
 		},
 	}
@@ -77,12 +97,10 @@ func TestAPIV1Endpoints(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest(tc.method, tc.path, nil)
-			// Add Authorization header for protected endpoints (except health)
 			if tc.path != "/api/v1/health" {
-				req.Header.Set("Authorization", "Bearer test-jwt-token-for-testing")
+				req.Header.Set("Authorization", "Bearer "+token)
 			}
 			rec := httptest.NewRecorder()
-
 			r.ServeHTTP(rec, req)
 
 			if rec.Code != tc.wantStatus {
@@ -90,30 +108,20 @@ func TestAPIV1Endpoints(t *testing.T) {
 				t.Log(rec.Body.String())
 			}
 
-			// Additional validation for specific endpoints
+			var resp map[string]interface{}
+			json.Unmarshal(rec.Body.Bytes(), &resp)
+
 			switch tc.path {
 			case "/api/v1/health":
-				var resp map[string]interface{}
-				if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
-					t.Fatal("failed to parse health response")
-				}
 				data, ok := resp["data"].(map[string]interface{})
 				if !ok || data["status"] != "ok" {
 					t.Fatalf("health response missing {data: {status: 'ok'}}, got=%v", resp)
 				}
-			case "/api/v1/elderly":
-				var resp map[string]interface{}
-				if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
-					t.Fatal("failed to parse elderly response")
-				}
+			case "/api/v1/admin/elderly":
 				if data, ok := resp["data"].([]interface{}); !ok || len(data) == 0 {
 					t.Fatal("elderly endpoint should return array of profiles")
 				}
-			case "/api/v1/users":
-				var resp map[string]interface{}
-				if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
-					t.Fatal("failed to parse users response")
-				}
+			case "/api/v1/admin/users":
 				if _, ok := resp["data"]; !ok || resp["meta"] == nil {
 					t.Fatal("users response missing data or meta")
 				}
@@ -122,11 +130,141 @@ func TestAPIV1Endpoints(t *testing.T) {
 	}
 }
 
+func TestAPIV1Endpoints_Unauthorized(t *testing.T) {
+	os.Setenv("JWT_SECRET", "test-secret-key-for-testing")
+
+	db, err := store.NewSqlite(":memory:")
+	if err != nil {
+		t.Fatalf("failed to init test db: %v", err)
+	}
+	defer db.Close()
+
+	seedTestData(db)
+
+	logger, _ := zap.NewProduction()
+	r := router.Setup(store.NewSqliteStore(db), logger)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/elderly", nil)
+	req.Header.Set("Authorization", "Bearer invalid-token")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("expected status 401, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestLoginEndpoint(t *testing.T) {
+	os.Setenv("JWT_SECRET", "test-secret-key-for-testing")
+
+	db, err := store.NewSqlite(":memory:")
+	if err != nil {
+		t.Fatalf("failed to init test db: %v", err)
+	}
+	defer db.Close()
+
+	seedTestData(db)
+
+	logger, _ := zap.NewProduction()
+	r := router.Setup(store.NewSqliteStore(db), logger)
+
+	loginBody := map[string]string{"method": "email", "credential": "admin@eregen.com", "secret": "Admin@123"}
+	bodyBytes, _ := json.Marshal(loginBody)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var resp map[string]interface{}
+	json.Unmarshal(rec.Body.Bytes(), &resp)
+	if resp["data"] == nil {
+		t.Fatal("login response missing data")
+	}
+	data, ok := resp["data"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("data is not an object, got %T", resp["data"])
+	}
+	if _, hasToken := data["token"]; !hasToken {
+		t.Fatal("login response missing token")
+	}
+}
+
+func TestCreateUser(t *testing.T) {
+	os.Setenv("JWT_SECRET", "test-secret-key-for-testing")
+
+	db, err := store.NewSqlite(":memory:")
+	if err != nil {
+		t.Fatalf("failed to init test db: %v", err)
+	}
+	defer db.Close()
+
+	seedTestData(db)
+
+	logger, _ := zap.NewProduction()
+	r := router.Setup(store.NewSqliteStore(db), logger)
+	token := generateTestToken(t)
+
+	createBody := map[string]string{
+		"name":     "测试用户",
+		"phone":    "13900000001",
+		"role":     "family",
+		"password": "Test@12345",
+	}
+	bodyBytes, _ := json.Marshal(createBody)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Errorf("expected status 201, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestLoginInvalidCredentials(t *testing.T) {
+	os.Setenv("JWT_SECRET", "test-secret-key-for-testing")
+
+	db, err := store.NewSqlite(":memory:")
+	if err != nil {
+		t.Fatalf("failed to init test db: %v", err)
+	}
+	defer db.Close()
+
+	seedTestData(db)
+
+	logger, _ := zap.NewProduction()
+	r := router.Setup(store.NewSqliteStore(db), logger)
+
+	loginBody := map[string]string{"method": "email", "credential": "admin@eregen.com", "secret": "wrong-password"}
+	bodyBytes, _ := json.Marshal(loginBody)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("expected status 401, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
 func seedTestData(db *sql.DB) {
-	// Insert test users
+	adminHash, err := auth.HashPassword("Admin@123")
+	if err != nil {
+		log.Fatalf("failed to hash admin password: %v", err)
+	}
+
 	users := []struct {
 		id, name, email, role, phone, password_hash string
 	}{
+		{"usr-admin", "系统管理员", "admin@eregen.com", "admin", "", adminHash},
 		{"usr-family-1", "张伟", "zhangwei@example.com", "family", "12345678900", "$2a$10$92Ub3fyY.sN1LZ2s8QyLmOZ4j3Kp5q7r8t9u0i1o2p3s4t5u6v7w8x9y0z1"},
 		{"usr-family-2", "李娜", "lina@example.com", "family", "13800138000", "$2a$10$92Ub3fyY.sN1LZ2s8QyLmOZ4j3Kp5q7r8t9u0i1o2p3s4t5u6v7w8x9y0z1"},
 	}
@@ -138,10 +276,9 @@ func seedTestData(db *sql.DB) {
 		}
 	}
 
-	// Insert test elderly profiles
 	elders := []struct {
 		id, userID, name, birthDate string
-		healthTiers string // JSON array
+		healthTiers string
 	}{
 		{"eld-1", "usr-family-1", "张建国", "1950-01-01", `["基础版"]`},
 		{"eld-2", "usr-family-2", "李秀英", "1948-05-05", `["防跌倒"]`},
@@ -154,7 +291,6 @@ func seedTestData(db *sql.DB) {
 		}
 	}
 
-	// Insert test devices WITH id column
 	dbExec := func(query string, args ...interface{}) error {
 		_, err := db.Exec(query, args...)
 		return err
@@ -167,8 +303,6 @@ func seedTestData(db *sql.DB) {
 		"dev-px-001", "dev-px-001", "pillbox", "standard", "online", "usr-family-2", "2026-07-27T09:30:00Z", `{"fw_version": "1.5.2"}`); err != nil {
 		log.Printf("failed to insert device dev-px-001: %v", err)
 	}
-
-	// Insert test alert
 	if err := dbExec(`INSERT OR REPLACE INTO alerts (id, elderly_id, alert_type, severity, status, message, device_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		"alert-001", "eld-1", "sos", "high", "pending", "老人按下SOS按钮", "dev-br-001"); err != nil {
 		log.Printf("failed to insert alert alert-001: %v", err)

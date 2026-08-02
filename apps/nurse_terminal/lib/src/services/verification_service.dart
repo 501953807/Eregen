@@ -1,6 +1,6 @@
 import '../services/api_client.dart';
 
-/// Service for creating and listing verification records from BLE wristband scans.
+/// Service for creating and listing verification records from NFC wristband scans.
 class VerificationService {
   final ApiClient api;
   VerificationService(this.api);

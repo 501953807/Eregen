@@ -1,4 +1,4 @@
-/// Medical wristband patient information from BLE scan
+/// Medical wristband patient information from NFC scan
 class PatientInfo {
   final String patientId;
   final String admissionNo;

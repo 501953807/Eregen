@@ -23,11 +23,22 @@ type:
   test:     测试相关
   chore:    构建/工具相关
 
+Scope 范围:
+  admin-api, api-server, gateway, push-service, data-pipeline,
+  admin-web, family-app, miniprogram, nurse-terminal, website,
+  hospital-api, community, insurance, shared, firmware, docs, infra
+
 示例:
   feat(admin-web): add user management page
   fix(api-server): resolve device connection timeout
   docs: update ARCHITECTURE.md
 ```
+
+详细示例见 [commit-message-guide.md](commit-message-guide.md)（已合并至此文件）。
+
+## 项目完成度
+
+详见 [完成度核对矩阵.md](完成度核对矩阵.md)
 
 ## 代码规范
 

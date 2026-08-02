@@ -1,7 +1,6 @@
 package router
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -16,8 +15,7 @@ import (
 )
 
 // Setup wires up the Gin engine with all admin routes.
-func Setup(db *sql.DB, logger *zap.Logger, dbType string) *gin.Engine {
-	s := store.NewStore(db, dbType)
+func Setup(s store.Store, logger *zap.Logger) *gin.Engine {
 	r := gin.Default()
 
 	// CORS middleware - allow admin-web and other trusted origins

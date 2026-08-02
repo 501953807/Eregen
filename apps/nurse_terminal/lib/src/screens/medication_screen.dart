@@ -3,7 +3,7 @@ import '../services/api_client.dart';
 import 'verification_screen.dart';
 
 /// Medication screen: shows today's medication schedule and allows
-/// verification of each dose via BLE wristband scan.
+/// verification of each dose via NFC wristband scan.
 class MedicationScreen extends StatefulWidget {
   final String patientId;
 

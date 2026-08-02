@@ -244,7 +244,7 @@ type MedicalDailyEntry struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 }
 
-// MedicalVerification represents a nurse BLE verification record.
+// MedicalVerification represents a nurse NFC verification record.
 type MedicalVerification struct {
 	ID               string    `json:"id"`
 	DeviceID         string    `json:"device_id"`

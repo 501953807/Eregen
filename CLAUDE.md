@@ -116,21 +116,21 @@
 | ⑧-2 | Community Platform (B2B) | 社区老人档案管理、福利标签分配、批量支付结算、民政同步 | Same APIKeyAuth pattern, b2b_institutions table seeded via migration | `migrations/001_init_institutions.sql` |
 | ⑧-3 | Insurance Integration (B2B) | 保险provider注册，费用结算对账，医保覆盖额度管理 | Same auth pattern, encrypted policy keys storage | `migrations/001_init_institutions.sql` |
 
-### 第二批 → 待启动（依据专项计划执行）
+### 第二批 → 已完成
 
-| # | 子系统 | 建设内容 | 实施策略 | 专项计划文档 |
-|---|--------|---------|----------|-------------|
-| ④ | 家属 App Flutter | 实时定位地图+SOS按钮+用药提醒+健康趋势图+告警中心 | Flutter模块化架构，Provider/Riverpod状态管理，dio API层 | `docs/superpowers/plans/2026-07-28-family-app-complete.md` (Tasks F1-F10) |
-| ⑤ | 管理后台 Vue 3 | 仪表盘总览+设备列表+老人档案+用药管理+告警中心+系统设置 | Vue3 Composition API + Pinia + Element Plus + Axios interceptor | `docs/superpowers/plans/2026-07-28-admin-web-complete.md` (Tasks A1-A10) |
+| # | 子系统 | 建设内容 | 实施策略 | 参考文档 |
+|---|--------|---------|----------|---------|
+| ④ | 家属 App Flutter | 实时定位地图+SOS按钮+用药提醒+健康趋势图+告警中心 | Flutter模块化架构，Provider/Riverpod状态管理，dio API层 | `docs/specs/04-family-app.md` |
+| ⑤ | 管理后台 Vue 3 | 仪表盘总览+设备列表+老人档案+用药管理+告警中心+系统设置 | Vue3 Composition API + Pinia + Element Plus + Axios interceptor | `docs/specs/05-admin-web.md` |
 
-### 第三批 → 待启动
+### 第三批 → 已完成
 
-| # | 子系统 | 建设内容 | 实施策略 | 专项计划文档 |
-|---|--------|---------|----------|-------------|
-| ⑦ | 微信小程序 | 轻量版家属端(地图定位+用药提醒+紧急呼叫) | 原生 WXML/WXSS, Tencent Map插件, 微信订阅消息 | `docs/superpowers/plans/2026-07-28-miniprogram-complete.md` (Tasks M1-M7) |
-| ⑥ | 品牌官网 Hugo | 产品介绍三档对比页+购买引导+联系表单+关于页面 | Hugo静态生成, Tailwind CSS响应式布局 | `docs/superpowers/plans/2026-07-28-website-complete.md` (Tasks W1-W10) |
+| # | 子系统 | 建设内容 | 实施策略 | 参考文档 |
+|---|--------|---------|----------|---------|
+| ⑦ | 微信小程序 | 轻量版家属端(地图定位+用药提醒+紧急呼叫) | 原生 WXML/WXSS, Tencent Map插件, 微信订阅消息 | `docs/specs/07-miniprogram.md` |
+| ⑥ | 品牌官网 Hugo | 产品介绍三档对比页+购买引导+联系表单+关于页面 | Hugo静态生成, Tailwind CSS响应式布局 | `docs/specs/06-website.md` |
 | ⑨ | 医用电子腕带 | NFC身份核验 + Cat1上报双模式，医疗护士终端交互协议 | ESP32-S3 + BLE/NFC双芯片设计，wb_ble.go 协议文档已更新 | — (protocol doc updated) |
-| ⑩ | 护士核验终端 Flutter | PDA手持设备的NFC扫描验证 + 医嘱执行记录 | Flutter移动App，nfc_plus插件，完成wb_ble.go的VerificationReport映射 | `docs/superpowers/plans/2026-07-28-family-app-complete.md` Task F11 (扩展) |
+| ⑩ | 护士核验终端 Flutter | PDA手持设备的NFC扫描验证 + 医嘱执行记录 | Flutter移动App，nfc_plus插件，完成wb_ble.go的VerificationReport映射 | `docs/specs/11-nurse-terminal.md` |
 
 ### 第四批 → 硬件采购后启动
 
@@ -139,7 +139,7 @@
 | ① | 手环固件 (Entry/Plus/Pro) | GD32E230 FreeRTOS C工程，传感器驱动(GPS/PPG/IMU)/BLE低功耗通信 | 需采购GD32E230开发板+GPS模组+PPG传感器 | See firmware/bracelet/目录框架 |
 | ② | 药盒固件 (Basic/Smart/Auto) | ESP32-C3 ESP-IDF C工程，电机控制/语音TTS/WiFi连接 | 需采购ESP32-C3开发板+步进电机+语音模块 | See firmware/pillbox/目录框架 |
 
-> **重要说明**：以上任务顺序严格按 CLAUDE.md 原始实施批次安排。每个专项计划文件均包含原子级可执行步骤（单步≤5分钟），适合子agent并行执行。所有前端专项计划在 `docs/superpowers/plans/` 目录下。
+> **重要说明**：以上任务顺序严格按 CLAUDE.md 原始实施批次安排。各子系统规格详见 `docs/specs/` 目录。已实施的专项计划文件已归档。
 
 ---
 
@@ -365,7 +365,7 @@ cp scripts/default-ports.env .env
 - **项目描述文件**：`README.md`、`slogan.md`、`product-overview.md` 等全盘文字描述项目的文件
 - **工具配置文件**：`.claude/`、`.serena/`、`.codegraph/`、`.playwright-mcp/` 等 AI 工具和本地配置
 - **CI/CD 工作流**：`.github/workflows/`（避免暴露内部工具链信息）
-- **超能力相关**：`docs/superpowers/` 目录下的 brainstorming 结果、实施计划等
+- **超能力相关**：`docs/superpowers/specs/` 目录下的设计决策（已实施部分）
 
 **允许提交的：**
 - 源代码文件（`.go`, `.dart`, `.ts`, `.vue`, `.js`, `.wxml`, `.wxss`, `.c`, `.h` 等）

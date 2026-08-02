@@ -381,7 +381,7 @@ func (h *MedicalWristbandHandler) ListVerifications(c *gin.Context) {
 	})
 }
 
-// CreateVerification records a nurse BLE verification scan.
+// CreateVerification records a nurse NFC verification scan.
 func (h *MedicalWristbandHandler) CreateVerification(c *gin.Context) {
 	var v model.MedicalVerification
 	if err := c.ShouldBindJSON(&v); err != nil {

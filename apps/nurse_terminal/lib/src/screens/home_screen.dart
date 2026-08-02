@@ -144,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ]),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // TODO: Open BLE scan to read medical wristband
+          // TODO: Open NFC scan to read medical wristband
         },
         icon: const Icon(Icons.qr_code_scanner),
         label: const Text('扫描腕带'),

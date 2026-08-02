@@ -32,6 +32,11 @@ func NewPostgres(dsn string) *sql.DB {
 	return db
 }
 
+// NewPostgresStore creates a PostgresStore from an existing *sql.DB.
+func NewPostgresStore(db *sql.DB) *PostgresStore {
+	return &PostgresStore{db: db}
+}
+
 // GetDashboardStats returns the top-level metrics for the admin dashboard.
 func (s *PostgresStore) GetDashboardStats(ctx context.Context) (*model.DashboardStats, error) {
 	var stats model.DashboardStats

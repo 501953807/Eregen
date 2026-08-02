@@ -22,16 +22,19 @@ import (
 func main() {
 	cfg := config.Load()
 
+	var s store.Store
 	var db *sql.DB
 	var err error
 	switch cfg.DatabaseType {
 	case "postgres":
 		db = store.NewPostgres(cfg.DatabaseURL)
+		s = store.NewPostgresStore(db)
 	default: // sqlite (default)
 		db, err = store.NewSqlite(cfg.SQLitePath)
 		if err != nil {
 			log.Fatalf("sqlite init failed: %v", err)
 		}
+		s = store.NewSqliteStore(db)
 	}
 	defer db.Close()
 
@@ -43,7 +46,7 @@ func main() {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 
-	r := router.Setup(db, logger, cfg.DatabaseType)
+	r := router.Setup(s, logger)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

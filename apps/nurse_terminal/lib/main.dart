@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'src/screens/login_screen.dart';
 import 'src/screens/home_screen.dart';
+import 'src/screens/verification_screen.dart';
 import 'src/services/medical_wristband_ble_service.dart';
-import 'common/theme.dart'; // Import unified theme
+import 'common/theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,51 +17,49 @@ class NurseTerminalApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '颐贞 护士终端',
-      theme: ThemeData.useMaterial3.copyWith(
-        colorSchemeSeed: NurseTerminalTheme.primary, // Use amber instead of blue
+      theme: ThemeData(
+        colorSchemeSeed: NurseTerminalTheme.primary,
         brightness: Brightness.light,
-        fontFamily: 'PingFang SC', // Match web font stack
-        elevationScale: 1.5,
+        fontFamily: 'PingFang SC',
         primaryColor: NurseTerminalTheme.primary,
-        scaffoldBackground: NurseTerminalTheme.bgScaffold,
-        cardTheme: CardTheme(
+        scaffoldBackgroundColor: NurseTerminalTheme.bgScaffold,
+        cardTheme: CardThemeData(
           margin: EdgeInsets.zero,
-          padding: EdgeInsets.all(NurseTerminalTheme.spacingM),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NurseTerminalTheme.radiusLarge)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(NurseTerminalTheme.radiusLarge),
+          ),
           elevation: 2,
         ),
         elevatedButtonTheme: NurseTerminalTheme.elevatedButtonTheme,
         textButtonTheme: NurseTerminalTheme.textButtonTheme,
         iconButtonTheme: NurseTerminalTheme.iconButtonTheme,
       ),
-      darkTheme: ThemeData.brightness.copyWith(
-        colorSchemeSeed: NurseTerminalTheme.primary,
-        brightness: Brightness.dark,
-      ),
+      darkTheme: ThemeData.dark(),
+      themeMode: ThemeMode.light,
       home: const LoginScreen(),
       routes: {
         '/': (_) => const LoginScreen(),
         '/home': (_) => const HomeScreen(),
-        '/ble-scan': (_) => BleScanPage(),
+        '/nfc-scan': (_) => const NfcScanPage(),
       },
     );
   }
 }
 
-class BleScanPage extends StatefulWidget {
-  const BleScanPage({super.key});
+class NfcScanPage extends StatefulWidget {
+  const NfcScanPage({super.key});
 
   @override
-  State<BleScanPage> createState() => _BleScanPageState();
+  State<NfcScanPage> createState() => _NfcScanPageState();
 }
 
-class _BleScanPageState extends State<BleScanPage> {
-  final MedicalWristbandService _bleService = MedicalWristbandService();
+class _NfcScanPageState extends State<NfcScanPage> {
+  final MedicalWristbandService _nfcService = MedicalWristbandService();
   final List<String> _log = [];
 
   @override
   void dispose() {
-    _bleService.dispose();
+    _nfcService.dispose();
     super.dispose();
   }
 
@@ -69,13 +68,36 @@ class _BleScanPageState extends State<BleScanPage> {
   }
 
   Future<void> _startScan() async {
-    _addLog('Starting BLE scan...');
-    await _bleService.startScan();
-  }
-
-  Future<void> _stopScan() async {
-    _addLog('Stopping BLE scan...');
-    await _bleService.stopScan();
+    if (!mounted) return;
+    _addLog('Starting NFC scan...');
+    try {
+      final message = await _nfcService.scanWristband();
+      if (message != null) {
+        _addLog('NFC tag read successfully');
+        final patient = _nfcService.parsePatientInfo(message);
+        if (patient != null) {
+          _addLog('Patient: ${patient.patientId}');
+          if (mounted) {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => VerificationScreen(
+                  patientId: patient.patientId,
+                  patientName: patient.name,
+                ),
+              ),
+            );
+            if (result == true) {
+              _addLog('Verification saved');
+            }
+          }
+        }
+      } else {
+        _addLog('No wristband detected');
+      }
+    } catch (e) {
+      _addLog('NFC error: $e');
+    }
   }
 
   @override
@@ -86,35 +108,33 @@ class _BleScanPageState extends State<BleScanPage> {
         elevation: 2,
       ),
       body: Padding(
-        padding: EdgeInsets.all(NurseTerminalTheme.spacingM),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Container(
-              decoration: NurseTerminalTheme.cardDecoration,
-              padding: EdgeInsets.all(NurseTerminalTheme.spacingM),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+              ),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
                   ElevatedButton.icon(
                     onPressed: _startScan,
-                    icon: const Icon(Icons.bluetooth_searching),
-                    label: const Text('开始扫描'),
-                  ),
-                  const SizedBox(height: NurseTerminalTheme.spacingS),
-                  ElevatedButton.icon(
-                    onPressed: _stopScan,
-                    icon: const Icon(Icons.bluetooth_disabled),
-                    label: const Text('停止扫描'),
+                    icon: const Icon(Icons.nfc),
+                    label: const Text('NFC 读取腕带'),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: NurseTerminalTheme.spacingL),
+            const SizedBox(height: 24),
             Expanded(
               child: ListView.builder(
                 itemCount: _log.length,
                 itemBuilder: (context, i) => ListTile(
                   dense: true,
-                  title: Text(_log[i], style: NurseTerminalTheme.smallLabelStyle),
+                  title: Text(_log[i], style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 ),
               ),
             ),

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:uuid/uuid.dart';
 import '../services/api_client.dart';
 import '../services/verification_service.dart';
 import '../services/medical_wristband_ble_service.dart';
 import '../models/medical_models.dart';
 
-/// Verification screen: scans medical wristband via BLE, displays result,
+/// Verification screen: scans medical wristband via NFC, displays result,
 /// and allows the nurse to confirm and save the verification record.
 class VerificationScreen extends StatefulWidget {
   final String patientId;
@@ -25,7 +24,7 @@ class VerificationScreen extends StatefulWidget {
 class _VerificationScreenState extends State<VerificationScreen> {
   final ApiClient _api = ApiClient();
   late final VerificationService _verificationService;
-  final MedicalWristbandService _bleService = MedicalWristbandService();
+  final MedicalWristbandService _nfcService = MedicalWristbandService();
 
   VerificationResult? _result;
   bool _scanning = false;
@@ -39,7 +38,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   @override
   void dispose() {
-    _bleService.dispose();
+    _nfcService.dispose();
     super.dispose();
   }
 
@@ -51,85 +50,51 @@ class _VerificationScreenState extends State<VerificationScreen> {
     });
 
     try {
-      // Start BLE scan for wristband devices
-      await FlutterBluePlus.startScan(
-        timeout: const Duration(seconds: 15),
-        androidUsesFineLocation: true,
-      );
-
-      // Wait for a device to be discovered
-      BluetoothDevice? targetDevice;
-      final subscription = FlutterBluePlus.scanResults.listen((results) {
-        for (final r in results) {
-          final name = r.device.platformName;
-          if (name.contains('Eregen') || name.contains('WB-')) {
-            targetDevice = r.device;
-          }
+      final message = await _nfcService.scanWristband();
+      if (message == null) {
+        if (mounted) {
+          setState(() {
+            _scanning = false;
+            _error = '未检测到腕带，请将腕带靠近设备背面';
+          });
         }
+        return;
+      }
+
+      // Parse patient info from NDEF payload
+      final patientInfo = _nfcService.parsePatientInfo(message);
+      if (patientInfo == null) {
+        if (mounted) {
+          setState(() {
+            _scanning = false;
+            _error = '腕带数据格式异常，请重试';
+          });
+        }
+        return;
+      }
+
+      final tagPatientId = patientInfo.patientId;
+      setState(() {
+        _scanning = false;
       });
 
-      // Wait up to 20 seconds for a device
-      await Future.delayed(const Duration(seconds: 20));
-      await subscription.cancel();
-      await FlutterBluePlus.stopScan();
+      // Check if tag patient matches the selected patient
+      final isMatch = tagPatientId == widget.patientId;
 
-      if (targetDevice == null) {
-        if (mounted) {
-          setState(() {
-            _scanning = false;
-            _error = '未找到腕带设备，请确保腕带已开机并在附近';
-          });
-        }
-        return;
-      }
-
-      // Connect to the discovered device
-      setState(() => _error = '正在连接腕带...');
-      final connected = await _bleService.connect(targetDevice!);
-      if (!connected) {
-        if (mounted) {
-          setState(() {
-            _scanning = false;
-            _error = '腕带连接失败，请重试';
-          });
-        }
-        return;
-      }
-
-      // Read patient info from wristband
-      setState(() => _error = '正在读取腕带信息...');
-      final info = await _bleService.readPatientInfo();
-      if (info == null) {
-        if (mounted) {
-          setState(() {
-            _scanning = false;
-            _error = '读取腕带信息失败，请重试';
-          });
-        }
-        return;
-      }
-
-      // Send verification request through BLE
-      setState(() => _error = '正在核验...');
       final requestId = const Uuid().v4();
-      final verificationResult = await _bleService.sendVerificationRequest(
+      _result = VerificationResult(
         requestId: requestId,
+        patientId: tagPatientId,
+        deviceDeviceId: patientInfo.admissionNo,
         scanType: 'nurse_scan',
-        patientId: info.patientId,
+        result: isMatch ? 'matched' : 'unmatched',
+        verifiedBy: 'current-user',
+        lat: 0.0,
+        lon: 0.0,
+        notes: isMatch ? '' : '腕带与患者不匹配',
+        timestamp: DateTime.now(),
       );
 
-      await _bleService.disconnect();
-
-      if (mounted) {
-        setState(() {
-          _scanning = false;
-          if (verificationResult != null) {
-            _result = verificationResult;
-          } else {
-            _error = '核验请求超时或腕带返回为空';
-          }
-        });
-      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -159,20 +124,17 @@ class _VerificationScreenState extends State<VerificationScreen> {
     }
   }
 
-  // ── Build ───────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('腕带扫描核验'),
+        title: const Text('腕带 NFC 核验'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Current patient banner
             Card(
               color: Colors.blue.shade50,
               child: Padding(
@@ -187,10 +149,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         children: [
                           const Text(
                             '当前患者',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                           Text(
                             '${widget.patientName} (ID: ${widget.patientId})',
@@ -208,14 +167,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Scan button or result
             if (_scanning)
               Center(
                 child: Column(
                   children: [
                     const CircularProgressIndicator(),
                     const SizedBox(height: 12),
-                    Text(_error ?? '正在扫描腕带...'),
+                    Text(_error ?? '正在 NFC 读取腕带...'),
                   ],
                 ),
               )
@@ -255,20 +213,28 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 child: Column(
                   children: [
                     const Icon(
-                      Icons.qr_code_scanner,
+                      Icons.nfc,
                       size: 80,
                       color: Colors.blue,
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      '点击下方按钮开始扫描医疗腕带',
+                      '将医用腕带靠近设备背面进行 NFC 读取',
                       style: TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '保持 4cm 以内距离，等待 2 秒',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 13,
+                      ),
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
                       onPressed: _startScan,
-                      icon: const Icon(Icons.bluetooth_searching),
-                      label: const Text('开始扫描'),
+                      icon: const Icon(Icons.nfc),
+                      label: const Text('开始 NFC 读取'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 32,
@@ -366,10 +332,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
             width: 80,
             child: Text(
               label,
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 13,
-              ),
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
             ),
           ),
           Expanded(
