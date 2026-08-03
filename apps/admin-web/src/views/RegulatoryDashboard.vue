@@ -287,7 +287,7 @@ onMounted(async () => {
 .filter-card :deep(.el-card__body) { padding: 16px; }
 .content-panel { margin-bottom: 0; }
 .panel-header { display: flex; justify-content: space-between; align-items: center; }
-.panel-title { font-size: 15px; font-weight: 700; color: var(--el-text-color-primary); border-left: 3px solid #2563EB; padding-left: 8px; }
+.panel-title { font-size: 15px; font-weight: 700; color: var(--el-text-color-primary); border-left: 3px solid #165DFF; padding-left: 8px; }
 :deep(.el-tabs--border-card) { border: none; }
 :deep(.el-tabs--border-card > .el-tabs__header) { border-bottom: 1px solid var(--el-border-color-light); margin: 0; }
 </style>

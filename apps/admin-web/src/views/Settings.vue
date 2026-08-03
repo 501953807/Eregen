@@ -238,7 +238,7 @@ onMounted(loadNotificationSettings)
 .badge-success { background: #F0FDF4; color: #16A34A; }
 .badge-danger { background: #FEF2F2; color: #DC2626; }
 .badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #EFF6FF; color: #2563EB; }
+.badge-primary { background: #EFF6FF; color: #165DFF; }
 .badge-gray { background: #F3F4F6; color: #6B7280; }
 .status-dot {
   width: 6px;
@@ -249,6 +249,6 @@ onMounted(loadNotificationSettings)
 .dot-success { background: #16A34A; }
 .dot-danger { background: #DC2626; }
 .dot-warning { background: #D97706; }
-.dot-primary { background: #2563EB; }
+.dot-primary { background: #165DFF; }
 .dot-gray { background: #6B7280; }
 </style>

@@ -194,7 +194,7 @@
             <div class="panel-section-title">订阅信息</div>
             <div class="panel-row">
               <span class="panel-row-label">套餐</span>
-              <span class="panel-row-value" :style="{ color: selectedUser?.tier === 'pro' ? '#7C3AED' : '#2563EB' }">
+              <span class="panel-row-value" :style="{ color: selectedUser?.tier === 'pro' ? '#9B8ED8' : '#165DFF' }">
                 {{ tierLabel(selectedUser?.tier || '') }} {{ (selectedUser as any).sub_type || '' }}
               </span>
             </div>
@@ -210,7 +210,7 @@
               v-for="(profile, i) in (selectedUser as any).elderly_profiles"
               :key="i"
               class="panel-row"
-              style="cursor:pointer;color:#2563EB;"
+              style="cursor:pointer;color:#165DFF;"
               @click="viewElderlyProfile(profile)"
             >
               {{ profile.name }}（{{ profile.relation }}）· {{ profile.devices || '无设备' }}
@@ -573,7 +573,7 @@ onMounted(async () => {
 }
 
 .user-tabs .el-button.active {
-  background: linear-gradient(135deg, #2563EB, #7C3AED);
+  background: linear-gradient(135deg, #165DFF, #9B8ED8);
   color: white;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
@@ -608,9 +608,9 @@ onMounted(async () => {
   font-weight: 600;
 }
 
-.kpi-blue .kpi-value { color: #2563EB; }
+.kpi-blue .kpi-value { color: #165DFF; }
 .kpi-green .kpi-value { color: #16A34A; }
-.kpi-purple .kpi-value { color: #7C3AED; }
+.kpi-purple .kpi-value { color: #9B8ED8; }
 .kpi-red .kpi-value { color: #EF4444; }
 
 /* Filter Card */
@@ -635,7 +635,7 @@ onMounted(async () => {
 }
 
 .user-card:hover {
-  border-color: #2563EB;
+  border-color: #165DFF;
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.1);
   transform: translateY(-2px);
 }
@@ -665,8 +665,8 @@ onMounted(async () => {
   color: var(--el-text-color-placeholder);
 }
 
-.user-avatar.male { background: #DBEAFE; color: #2563EB; }
-.user-avatar.female { background: #FCE7F3; color: #EC4899; }
+.user-avatar.male { background: #DBEAFE; color: #165DFF; }
+.user-avatar.female { background: #FCE7F3; color: #D48EC0; }
 
 .user-name-info {
   flex: 1;
@@ -685,8 +685,8 @@ onMounted(async () => {
   font-family: monospace;
 }
 
-.tier-pro { background: #EDE9FE; color: #7C3AED; }
-.tier-plus { background: #DBEAFE; color: #2563EB; }
+.tier-pro { background: #EDE9FE; color: #9B8ED8; }
+.tier-plus { background: #DBEAFE; color: #165DFF; }
 .tier-starter { background: #F3F4F6; color: #6B7280; }
 
 .user-stats {
@@ -890,7 +890,7 @@ onMounted(async () => {
 
 .activity-dot.login { background: #16A34A; }
 .activity-dot.alert { background: #EF4444; }
-.activity-dot.config { background: #2563EB; }
+.activity-dot.config { background: #165DFF; }
 
 .activity-text {
   flex: 1;

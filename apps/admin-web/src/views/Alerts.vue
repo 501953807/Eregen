@@ -412,7 +412,7 @@ onUnmounted(() => {
 }
 .kpi-danger .stat-value { color: #EF4444; }
 .kpi-warning .stat-value { color: #F59E0B; }
-.kpi-blue .stat-value { color: #2563EB; }
+.kpi-blue .stat-value { color: #165DFF; }
 .stat-label {
   font-size: 13px;
   color: var(--el-text-color-secondary);
@@ -438,7 +438,7 @@ onUnmounted(() => {
 .badge-success { background: #F0FDF4; color: #16A34A; }
 .badge-danger { background: #FEF2F2; color: #DC2626; }
 .badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #EFF6FF; color: #2563EB; }
+.badge-primary { background: #EFF6FF; color: #165DFF; }
 .badge-gray { background: #F3F4F6; color: #6B7280; }
 .badge-info { background: #F8FAFC; color: #94A3B8; }
 .status-dot {
@@ -450,7 +450,7 @@ onUnmounted(() => {
 .dot-success { background: #16A34A; }
 .dot-danger { background: #DC2626; }
 .dot-warning { background: #D97706; }
-.dot-primary { background: #2563EB; }
+.dot-primary { background: #165DFF; }
 .dot-gray { background: #6B7280; }
 .dot-info { background: #94A3B8; }
 

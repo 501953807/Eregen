@@ -458,9 +458,9 @@ function formatDate(ts: string): string {
   margin-top: 6px;
   font-weight: 600;
 }
-.kpi-blue .kpi-value { color: #2563EB; }
+.kpi-blue .kpi-value { color: #165DFF; }
 .kpi-green .kpi-value { color: #16A34A; }
-.kpi-purple .kpi-value { color: #7C3AED; }
+.kpi-purple .kpi-value { color: #9B8ED8; }
 .kpi-warning .kpi-value { color: #F59E0B; }
 
 /* Section title */
@@ -487,8 +487,8 @@ function formatDate(ts: string): string {
   font-size: 12px;
   font-weight: 600;
 }
-.badge-bracelet { background: #DBEAFE; color: #2563EB; }
-.badge-pillbox { background: #FCE7F3; color: #EC4899; }
+.badge-bracelet { background: #DBEAFE; color: #165DFF; }
+.badge-pillbox { background: #FCE7F3; color: #D48EC0; }
 
 /* Tier tag */
 .tier-tag {
@@ -497,8 +497,8 @@ function formatDate(ts: string): string {
   padding: 2px 8px;
   border-radius: 6px;
 }
-.tier-pro { background: #EDE9FE; color: #7C3AED; }
-.tier-plus { background: #DBEAFE; color: #2563EB; }
+.tier-pro { background: #EDE9FE; color: #9B8ED8; }
+.tier-plus { background: #DBEAFE; color: #165DFF; }
 .tier-basic { background: #F3F4F6; color: #6B7280; }
 
 /* Version tag */

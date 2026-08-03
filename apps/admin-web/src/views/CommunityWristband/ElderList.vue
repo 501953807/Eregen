@@ -83,14 +83,14 @@ function welfareTagClass(code: string): string {
 <style scoped>
 .patient-cell { display: flex; align-items: center; gap: 8px; }
 .patient-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
-.avatar-blue { background: #DBEAFE; color: #2563EB; }
-.avatar-pink { background: #FCE7F3; color: #EC4899; }
+.avatar-blue { background: #DBEAFE; color: #165DFF; }
+.avatar-pink { background: #FCE7F3; color: #D48EC0; }
 .welfare-tag-orphan { background: #FEF2F2; color: #DC2626; }
 .welfare-tag-poverty { background: #FFFBEB; color: #D97706; }
-.welfare-tag-disability { background: #EFF6FF; color: #2563EB; }
+.welfare-tag-disability { background: #EFF6FF; color: #165DFF; }
 .welfare-tag-special { background: #FEF2F2; color: #DC2626; }
 .welfare-tag-bus { background: #F0FDF4; color: #16A34A; }
-.welfare-tag-medical { background: #EDE9FE; color: #7C3AED; }
+.welfare-tag-medical { background: #EDE9FE; color: #9B8ED8; }
 .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; }
 .badge-success { background: #F0FDF4; color: #16A34A; }
 .badge-gray { background: #F3F4F6; color: #6B7280; }

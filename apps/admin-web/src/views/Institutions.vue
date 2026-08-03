@@ -386,10 +386,10 @@ onMounted(() => {
   margin-top: 6px;
   font-weight: 600;
 }
-.kpi-blue .kpi-value { color: #2563EB; }
+.kpi-blue .kpi-value { color: #165DFF; }
 .kpi-green .kpi-value { color: #16A34A; }
 .kpi-warning .kpi-value { color: #F59E0B; }
-.kpi-purple .kpi-value { color: #7C3AED; }
+.kpi-purple .kpi-value { color: #9B8ED8; }
 
 /* Filter card */
 .filter-card :deep(.el-card__body) {

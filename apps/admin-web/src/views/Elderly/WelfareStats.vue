@@ -219,7 +219,7 @@
           <el-card shadow="hover" class="stat-box">
             <template #header><span class="panel-title">签到活跃度</span></template>
             <div class="activity-stats">
-              <div class="act-row"><span>本月签到率</span><el-progress :percentage="87" :color="'#2563EB'" :stroke-width="8" /><strong>87%</strong></div>
+              <div class="act-row"><span>本月签到率</span><el-progress :percentage="87" :color="'#165DFF'" :stroke-width="8" /><strong>87%</strong></div>
               <div class="act-row"><span>连续签到≥3月</span><el-progress :percentage="68" :color="'#16A34A'" :stroke-width="8" /><strong>68%</strong></div>
               <div class="act-row"><span>本月首次签到</span><span style="font-weight:600;color:#F59E0B;">234 人</span></div>
               <div class="act-row"><span>跨院重复</span><span style="font-weight:600;color:#EF4444;">3 人次</span></div>
@@ -352,9 +352,9 @@ const welfareDist = [
   { code: 'medical_assist', label: '医疗', count: 67, pct: 67, color: '#00897b' },
 ]
 const hospitalDist = [
-  { name: '社区医院A', count: 234, pct: 100, color: '#2563EB' },
-  { name: '社区医院B', count: 156, pct: 67, color: '#7C3AED' },
-  { name: '社区医院C', count: 92, pct: 39, color: '#EC4899' },
+  { name: '社区医院A', count: 234, pct: 100, color: '#165DFF' },
+  { name: '社区医院B', count: 156, pct: 67, color: '#9B8ED8' },
+  { name: '社区医院C', count: 92, pct: 39, color: '#D48EC0' },
 ]
 const ruleAlerts = [
   { code: 'R_C01', desc: '重复领取', count: 3, tagType: 'danger' },
@@ -370,13 +370,13 @@ const ruleAlerts = [
 .filter-bar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
 .table-card { margin-bottom: 20px; }
 .pagination-wrapper { display: flex; justify-content: flex-end; margin-top: 16px; }
-.panel-title { font-size: 15px; font-weight: 700; color: var(--el-text-color-primary); border-left: 3px solid #2563EB; padding-left: 8px; }
+.panel-title { font-size: 15px; font-weight: 700; color: var(--el-text-color-primary); border-left: 3px solid #165DFF; padding-left: 8px; }
 .upload-zone { border: 2px dashed var(--el-border-color); border-radius: 12px; padding: 32px; text-align: center; cursor: pointer; }
 .upload-inner p { font-size: 13px; color: var(--el-text-color-secondary); }
 .upload-icon { font-size: 36px; margin-bottom: 8px; }
 .bar-chart { display: flex; align-items: flex-end; gap: 16px; padding: 16px 0; height: 130px; }
 .bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
-.bar { width: 32px; background: linear-gradient(180deg, #2563EB, #7C3AED); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.3s; }
+.bar { width: 32px; background: linear-gradient(180deg, #165DFF, #9B8ED8); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.3s; }
 .bar-label { font-size: 11px; color: var(--el-text-color-placeholder); margin-top: 6px; }
 .bar-value { font-size: 12px; font-weight: 600; color: var(--el-text-color-primary); margin-bottom: 4px; }
 .h-bars { display: flex; flex-direction: column; gap: 6px; }
@@ -387,12 +387,12 @@ const ruleAlerts = [
 .h-bar-val { width: 40px; color: var(--el-text-color-placeholder); font-size: 12px; flex-shrink: 0; text-align: right; }
 .stat-box :deep(.el-card__body) { padding: 16px; }
 .stat-center { text-align: center; padding: 12px 0; }
-.stat-big-num { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #2563EB, #7C3AED); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.stat-big-num { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #165DFF, #9B8ED8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 .activity-stats { display: flex; flex-direction: column; gap: 12px; }
 .act-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; gap: 8px; }
 .act-row span:first-child { color: var(--el-text-color-secondary); white-space: nowrap; }
 .payment-stats { text-align: center; padding: 8px 0; }
-.pay-total { font-size: 24px; font-weight: 800; color: #2563EB; }
+.pay-total { font-size: 24px; font-weight: 800; color: #165DFF; }
 .pay-metrics { display: flex; justify-content: space-around; }
 .pay-metric { text-align: center; }
 .alert-list { display: flex; flex-direction: column; gap: 8px; }
@@ -402,18 +402,18 @@ const ruleAlerts = [
 .badge-success { background: #F0FDF4; color: #16A34A; }
 .badge-danger { background: #FEF2F2; color: #DC2626; }
 .badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #EFF6FF; color: #2563EB; }
+.badge-primary { background: #EFF6FF; color: #165DFF; }
 .badge-gray { background: #F3F4F6; color: #6B7280; }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
 .dot-success { background: #16A34A; }
 .dot-danger { background: #DC2626; }
 .dot-warning { background: #D97706; }
-.dot-primary { background: #2563EB; }
+.dot-primary { background: #165DFF; }
 .dot-gray { background: #6B7280; }
 .kpi-card :deep(.el-card__body) { padding: 18px; display: flex; flex-direction: column; align-items: center; text-align: center; border-radius: 14px; }
 .kpi-value { font-size: 28px; font-weight: 800; line-height: 1.2; }
 .kpi-label { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 6px; font-weight: 600; }
-.kpi-blue .kpi-value { color: #2563EB; }
+.kpi-blue .kpi-value { color: #165DFF; }
 .kpi-green .kpi-value { color: #16A34A; }
 .kpi-warning .kpi-value { color: #F59E0B; }
 .kpi-danger .kpi-value { color: #EF4444; }

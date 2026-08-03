@@ -1,51 +1,52 @@
-/* Eregen Admin Web Theme — Unified Brand Palette */
-/* Based on element-plus/theme-chalk default variables with brand color adjustments */
+/* Eregen Admin Web Theme — V1 Deep Blue Palette */
+/* Medical admin system: clean, professional, modern minimalist */
 
 :root {
-  /* Primary brand color — unified warm amber (single accent) */
-  --el-bg-color: #FAFAFA;
-  --el-bg-color-light: #F5F5F5;
+  /* Background — pure white */
+  --el-bg-color: #FFFFFF;
+  --el-bg-color-light: #F8FAFC;
   --el-input-bg-color: #ffffff;
-  --el-text-color-primary: #111827;
-  --el-text-color-regular: #374151;
-  --el-text-color-secondary: #6B7280;
-  --el-text-color-placeholder: #9CA3AF;
-  --el-text-color-disabled: #D1D5DB;
+  --el-text-color-primary: #0F172A;
+  --el-text-color-regular: #334155;
+  --el-text-color-secondary: #64748B;
+  --el-text-color-placeholder: #94A3B8;
+  --el-text-color-disabled: #CBD5E1;
 
-  /* Brand colors — single amber-based system */
-  --el-color-primary: #F59E0B;       /* Warm amber as the sole primary/accent */
-  --el-color-primary-light: #FEF3C7; /* Light amber background variant */
-  --el-color-primary-dark: #D97706;  /* Darker amber for hover/deeper state */
+  /* Brand colors — deep matte blue */
+  --el-color-primary: #165DFF;
+  --el-color-primary-light: #EFF6FF;
+  --el-color-primary-dark: #0E4FD4;
+  --el-color-primary-lighter: #DBEAFE;
 
-  /* Status colors (desaturated, harmonious) */
-  --el-color-success: #10B981;       /* Emerald green, desaturated */
-  --el-color-success-light: #ECFDF5;
-  --el-color-warning: #F59E0B;       /* Same as primary (amber warning is natural) */
-  --el-color-warning-light: #FEF3C7;
-  --el-color-danger: #EF4444;        /* Red, desaturated */
+  /* Status colors — desaturated, professional */
+  --el-color-success: #36D399;
+  --el-color-success-light: #F0FDF4;
+  --el-color-warning: #F59E0B;
+  --el-color-warning-light: #FFFBEB;
+  --el-color-danger: #F87272;
   --el-color-danger-light: #FEF2F2;
-  --el-color-info: #3B82F6;          /* Blue for info only when needed */
-  --el-color-info-light: #EFF6FF;
+  --el-color-info: #64748B;
+  --el-color-info-light: #F1F5F9;
 
-  /* Border and divider colors */
-  --el-border-color: #E5E5EB;
-  --el-border-color-light: #F3F4F6;
-  --el-border-color-darker: #D1D5DB;
+  /* Border and divider */
+  --el-border-color: #E2E8F0;
+  --el-border-color-light: #F1F5F9;
+  --el-border-color-darker: #CBD5E1;
 
-  /* Component radii */
+  /* Component radii — unified 8px / 12px */
   --el-border-radius-small: 8px;
   --el-border-radius-medium: 12px;
   --el-border-radius-large: 16px;
   --el-border-radius-extra-large: 20px;
 
-  /* Shadows */
-  --el-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --el-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
-  --el-shadow-lg: 0 10px 20px rgba(245, 158, 11, 0.1);
-  --el-shadow-xl: 0 20px 40px rgba(245, 158, 11, 0.15);
+  /* Shadows — soft layered elevation */
+  --el-shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+  --el-shadow-md: 0 4px 6px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.03);
+  --el-shadow-lg: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);
+  --el-shadow-xl: 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08);
 
   /* Transitions */
-  --el-transition-duration: 0.3s;
+  --el-transition-duration: 0.25s;
   --el-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Z-index hierarchy */
@@ -55,129 +56,308 @@
   --el-index-notice: 30;
 }
 
-/* Override sidebar style with warmer accent instead of blue */
+/* ============================================
+   SIDEBAR MENU
+   ============================================ */
+.el-menu,
+.el-menu--horizontal,
+.el-menu--popup {
+  border: none !important;
+}
+
 .el-menu-item, .el-menu-group .el-menu-item,
 .el-menu-popover .el-menu-item {
-  --el-menu-item-hover-bg-color: rgba(245, 158, 11, 0.08);
-  --el-menu-item-active-color: var(--el-color-primary);
-  --el-menu-active-border-width: 3px;
+  --el-menu-item-hover-bg-color: rgba(22, 93, 255, 0.08) !important;
+  --el-menu-item-active-color: #FFFFFF !important;
+  transition: all 0.2s ease !important;
 }
 
-/* Card styles — upgraded elevation */
+/* Active menu item — blue left border indicator */
+.el-menu-item.is-active {
+  position: relative;
+  background: rgba(22, 93, 255, 0.15) !important;
+  border-radius: 0 8px 8px 0;
+}
+.el-menu-item.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 24px;
+  background: linear-gradient(180deg, #79A3FF, #165DFF);
+  border-radius: 0 3px 3px 0;
+}
+
+/* ============================================
+   CARDS — layered shadow + emboss
+   ============================================ */
 .el-card {
   --el-card-padding: 20px;
-  --el-card-background: var(--el-bg-color-light);
-  --el-card-border-radius: var(--el-border-radius-lg);
+  --el-card-background: #FFFFFF;
+  --el-card-border-radius: 10px;
+  border: 1px solid var(--el-border-color) !important;
+  box-shadow: var(--el-shadow-sm) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.el-card:hover {
+  box-shadow: var(--el-shadow-lg) !important;
+  transform: translateY(-2px);
 }
 
-/* Button — enhanced hover/active states */
+/* ============================================
+   BUTTONS — primary blue with depth
+   ============================================ */
 .el-button {
   --el-button-default-color: var(--el-text-color-primary);
-  --el-button-primary-color: var(--el-color-primary);
-  --el-button-primary-hover-color: var(--el-color-primary-dark);
-  --el-button-primary-active-color: #B45309;
-  --el-button-bg-primary: var(--el-color-primary);
-  --el-button-bg-primary-hover: var(--el-color-primary-dark);
-  --el-button-bg-primary-active: var(--el-color-primary-dark);
+  --el-button-primary-color: #FFFFFF;
+  --el-button-primary-hover-color: #FFFFFF;
+  --el-button-primary-active-color: #FFFFFF;
+  --el-button-primary-bg: #165DFF;
+  --el-button-primary-border: #165DFF;
+  --el-button-primary-hover-bg: #0E4FD4;
+  --el-button-primary-hover-border: #0E4FD4;
+  --el-button-primary-active-bg: #0B3DB0;
+  --el-button-primary-active-border: #0B3DB0;
+  border-radius: 8px !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(22, 93, 255, 0.15), 0 2px 8px rgba(22, 93, 255, 0.08);
+}
+.el-button--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(22, 93, 255, 0.25), 0 4px 12px rgba(22, 93, 255, 0.12);
+}
+.el-button--primary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(22, 93, 255, 0.15);
+}
+.el-button--default {
+  border-color: var(--el-border-color);
+  background: #FFFFFF;
+  color: var(--el-text-color-primary);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.el-button--default:hover {
+  border-color: var(--el-color-primary);
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light);
 }
 
-/* Table row hover effect — subtle amber tint */
-.el-table__row:hover {
-  background-color: rgba(245, 158, 11, 0.05);
+/* ============================================
+   INPUT FIELDS — focus glow
+   ============================================ */
+.el-input__wrapper,
+.el-input__inner,
+.el-textarea__inner {
+  border-radius: 8px !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(255,255,255,0.9) !important;
+  border: 1px solid var(--el-border-color) !important;
+  transition: all 0.25s ease !important;
 }
-
-/* Form element focus state — visible ring */
 .el-input__wrapper:focus-within,
-.el-select__wrapper:focus-within {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--el-color-primary-light);
+.el-select__wrapper:focus-within,
+.el-textarea__inner:focus {
+  border-color: #165DFF !important;
+  box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.1), inset 0 1px 2px rgba(0,0,0,0.04) !important;
 }
 
-/* Link style with hover underline effect */
+/* ============================================
+   TABLE
+   ============================================ */
+.el-table {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color) !important;
+}
+.el-table th.el-table__cell {
+  background: var(--el-bg-color-light) !important;
+  color: var(--el-text-color-secondary);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--el-border-color) !important;
+}
+.el-table td.el-table__cell {
+  border-bottom: 1px solid var(--el-border-color-light) !important;
+}
+.el-table__row:hover > td.el-table__cell {
+  background-color: rgba(22, 93, 255, 0.03) !important;
+}
+.el-table--striped .el-table__row--striped td.el-table__cell {
+  background: var(--el-bg-color-light) !important;
+}
+
+/* ============================================
+   TAGS / BADGES
+   ============================================ */
+.el-tag {
+  --el-tag-bg-color: var(--el-color-primary-light);
+  --el-tag-text-color: var(--el-color-primary);
+  --el-tag-border-radius: 6px;
+  --el-tag-padding: 4px 10px;
+  --el-tag-font-size: 12px;
+  font-weight: 500;
+}
+.el-tag--success {
+  --el-tag-bg-color: var(--el-color-success-light);
+  --el-tag-text-color: #059669;
+}
+.el-tag--danger {
+  --el-tag-bg-color: var(--el-color-danger-light);
+  --el-tag-text-color: #DC2626;
+}
+.el-tag--warning {
+  --el-tag-bg-color: var(--el-color-warning-light);
+  --el-tag-text-color: #D97706;
+}
+
+/* ============================================
+   LINKS
+   ============================================ */
 .el-link {
   --el-link-text-color: var(--el-color-primary);
   --link-hover-text-color: var(--el-color-primary-dark);
 }
+.el-link:hover {
+  color: var(--el-color-primary-dark);
+}
 
-/* Loading indicator — animated spinner with brand color */
+/* ============================================
+   LOADING
+   ============================================ */
 .el-loading-spinner {
   --el-loading-color: var(--el-color-primary);
   --el-loading-spinner-size: 40px;
 }
 
-/* Dialog/Modal backdrop and styling */
-.el-dialog__wrapper {
-  --el-dialog-border-radius: var(--el-border-radius-xl);
+/* ============================================
+   DIALOGS
+   ============================================ */
+.el-dialog {
+  --el-dialog-border-radius: 12px;
+  border: 1px solid var(--el-border-color) !important;
+  box-shadow: var(--el-shadow-xl) !important;
+}
+.el-dialog__header {
+  border-bottom: 1px solid var(--el-border-color-light);
+  padding-bottom: 16px;
+  margin-right: 0;
+}
+.el-dialog__body {
+  padding: 24px;
 }
 
-/* Message notification toast */
+/* ============================================
+   TOAST / MESSAGE
+   ============================================ */
 .el-message {
-  --el-message-background: var(--el-bg-color);
-  --el-message-border-radius: var(--el-border-radius-md);
-  --el-message-padding: 16px;
-  --el-message-close-color: var(--el-color-primary);
+  --el-message-background: #FFFFFF;
+  --el-message-border-radius: 10px;
+  --el-message-padding: 14px 16px;
+  --el-message-close-color: var(--el-text-color-secondary);
+  box-shadow: var(--el-shadow-lg) !important;
+  border: 1px solid var(--el-border-color);
 }
+.el-message--success { border-left: 3px solid var(--el-color-success); }
+.el-message--warning { border-left: 3px solid var(--el-color-warning); }
+.el-message--error { border-left: 3px solid var(--el-color-danger); }
+.el-message--info { border-left: 3px solid var(--el-color-primary); }
 
-/* Tag style upgrade — soft rounded */
-.el-tag {
-  --el-tag-bg-color: var(--el-color-primary-light);
-  --el-tag-text-color: var(--el-color-primary);
-  --el-tag-border-radius: var(--el-border-radius-small);
-}
-
-/* Breadcrumb separator styled nicely */
-.el-breadcrumb__separator {
-  color: var(--el-text-color-secondary);
-  margin: 0 8px;
-}
-
-/* Pagination refined style */
+/* ============================================
+   PAGINATION
+   ============================================ */
 .el-pagination {
   --el-pagination-bg-color: var(--el-bg-color);
   --el-pagination-text-color: var(--el-text-color-primary);
   --el-pagination-hover-color: var(--el-color-primary);
 }
+.el-pagination button.is-active {
+  background: var(--el-color-primary) !important;
+  border-color: var(--el-color-primary) !important;
+}
 
-/* Dropdown menu shadow enhancement */
+/* ============================================
+   DROPDOWN
+   ============================================ */
 .el-dropdown-menu {
-  box-shadow: var(--el-shadow-lg);
+  box-shadow: var(--el-shadow-lg) !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--el-border-color) !important;
 }
 
-/* Upgraded scrollbar for webkit */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: var(--el-bg-color);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--el-border-color);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--el-border-color-darker);
-}
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--el-border-color); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--el-border-color-darker); }
 
-/* Global utility classes for empty states */
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
 .empty-state {
-  text-align: center; padding: 60px 20px; color: var(--el-text-color-secondary); }
+  text-align: center; padding: 60px 20px; color: var(--el-text-color-secondary);
+}
 .empty-state-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.6; }
 .empty-state-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--el-text-color-primary); }
 .empty-state-desc { font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
 
-/* Loading skeleton placeholder */
-.skeleton { background: linear-gradient(90deg, #f5f5f5 25%, #e0e0e0 50%, #f5f5f5 75%); background-size: 200% 100%; animation: loading-skeleton 1.5s infinite; border-radius: 4px; }
-@keyframes loading-skeleton { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: loading-skeleton 1.5s infinite;
+  border-radius: 6px;
+}
+@keyframes loading-skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
 
-/* Error banner */
-.error-banner { background: #FEF2F2; border: 1px solid #FEE2E2; color: #DC2626; padding: 12px 16px; border-radius: var(--el-border-radius-sm); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-.error-icon { font-size: 18px; }
+.error-banner {
+  background: var(--el-color-danger-light);
+  border: 1px solid #FEE2E2;
+  color: #DC2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-/* Success banner */
-.success-banner { background: #F0FDF4; border: 1px solid #DCFCE7; color: #16A34A; padding: 12px 16px; border-radius: var(--el-border-radius-sm); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-.success-icon { font-size: 18px; }
+.success-banner {
+  background: var(--el-color-success-light);
+  border: 1px solid #DCFCE7;
+  color: #059669;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-/* Page container with proper spacing */
-.page-container { background: var(--el-bg-color); min-height: calc(100vh - 64px); padding: 24px; }
+.page-container {
+  background: var(--el-bg-color);
+  min-height: calc(100vh - 64px);
+  padding: 24px;
+}
+
+/* ============================================
+   PAGE TRANSITION
+   ============================================ */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+}
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(3px);
+}
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-3px);
+}

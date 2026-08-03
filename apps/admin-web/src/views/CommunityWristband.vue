@@ -208,9 +208,9 @@ function onFileUpload(file: File) { ElMessage.success(`文件 ${file.name} 已�
 .kpi-card :deep(.el-card__body) { padding: 18px; display: flex; flex-direction: column; align-items: center; text-align: center; border-radius: 14px; }
 .kpi-value { font-size: 28px; font-weight: 800; line-height: 1.2; }
 .kpi-label { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 6px; font-weight: 600; }
-.kpi-blue .kpi-value { color: #2563EB; }
+.kpi-blue .kpi-value { color: #165DFF; }
 .kpi-green .kpi-value { color: #16A34A; }
-.kpi-purple .kpi-value { color: #7C3AED; }
+.kpi-purple .kpi-value { color: #9B8ED8; }
 .kpi-warning .kpi-value { color: #F59E0B; }
 .kpi-danger .kpi-value { color: #EF4444; }
 .kpi-orange .kpi-value { color: #EA580C; }

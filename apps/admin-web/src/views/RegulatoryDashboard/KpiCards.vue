@@ -53,8 +53,8 @@ const props = defineProps<{
 .kpi-trend { font-size: 11px; margin-top: 4px; }
 .trend-up { color: #16A34A; }
 .trend-down { color: #EF4444; }
-.kpi-blue .kpi-value { color: #2563EB; }
+.kpi-blue .kpi-value { color: #165DFF; }
 .kpi-green .kpi-value { color: #16A34A; }
 .kpi-danger .kpi-value { color: #EF4444; }
-.kpi-purple .kpi-value { color: #7C3AED; }
+.kpi-purple .kpi-value { color: #9B8ED8; }
 </style>

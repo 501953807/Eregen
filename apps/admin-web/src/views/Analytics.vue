@@ -119,17 +119,17 @@ import type { AlertDistributionItem, UserGrowthPoint } from '@/api/dashboard'
 
 // Key metrics
 const keyMetrics = ref([
-  { label: '在线设备总数', value: '—', trend: '—', trendUp: true, icon: Connection, colorClass: 'blue', iconColor: '#2563EB' },
+  { label: '在线设备总数', value: '—', trend: '—', trendUp: true, icon: Connection, colorClass: 'blue', iconColor: '#165DFF' },
   { label: '活跃用户数', value: '—', trend: '—', trendUp: true, icon: UserFilled, colorClass: 'green', iconColor: '#16A34A' },
   { label: '今日告警数', value: '—', trend: '—', trendUp: false, icon: BellFilled, colorClass: 'warning', iconColor: '#F59E0B' },
-  { label: '机构接入数', value: '—', trend: '—', trendUp: true, icon: Monitor, colorClass: 'purple', iconColor: '#7C3AED' },
+  { label: '机构接入数', value: '—', trend: '—', trendUp: true, icon: Monitor, colorClass: 'purple', iconColor: '#9B8ED8' },
 ])
 
 // Institution data
 const institutionPeriod = ref('7')
 const institutionList = ref([
   { name: '上海市第一中心医院', type: 'hospital', typeLabel: '三甲医院', elderlyCount: 0, dataIngested: 0, lastActive: '—', activityScore: 0, activityColor: '#16A34A' },
-  { name: '浦东新区社区服务中心', type: 'community', typeLabel: '社区', elderlyCount: 0, dataIngested: 0, lastActive: '—', activityScore: 0, activityColor: '#2563EB' },
+  { name: '浦东新区社区服务中心', type: 'community', typeLabel: '社区', elderlyCount: 0, dataIngested: 0, lastActive: '—', activityScore: 0, activityColor: '#165DFF' },
 ])
 
 // Chart data
@@ -197,7 +197,7 @@ function renderDeviceChart() {
     const barHeight = ((online[i] - minOnline) / (maxOnline - minOnline)) * 200
     html += `<div style="flex:1;text-align:center;">
       <div style="margin-bottom:4px;font-size:12px;color:#16A34A;font-weight:600;">${online[i]}%</div>
-      <div style="background:linear-gradient(180deg,#2563EB,#7C3AED);border-radius:4px 4px 0 0;height:${barHeight}px;width:60%;margin:0 auto;min-height:20px;"></div>
+      <div style="background:linear-gradient(180deg,#165DFF,#9B8ED8);border-radius:4px 4px 0 0;height:${barHeight}px;width:60%;margin:0 auto;min-height:20px;"></div>
       <div style="margin-top:8px;font-size:11px;color:var(--el-text-color-secondary);">${day}</div>
     </div>`
   })
@@ -215,7 +215,7 @@ function renderAlertChart() {
         { name: 'SOS紧急呼叫', count: 45, color: '#EF4444' },
         { name: '跌倒检测', count: 32, color: '#F59E0B' },
         { name: '心率异常', count: 78, color: '#6B7280' },
-        { name: '电子围栏', count: 28, color: '#2563EB' },
+        { name: '电子围栏', count: 28, color: '#165DFF' },
         { name: '漏服药物', count: 156, color: '#16A34A' },
         { name: '设备离线', count: 3, color: '#F59E0B' },
       ]
@@ -278,14 +278,14 @@ function renderUserGrowthChart() {
   months.forEach((month, i) => {
     const barH = (familyUsers[i] / max * 160).toFixed(0)
     html += `<div style="flex:1;text-align:center;">
-      <div style="margin-bottom:4px;font-size:12px;font-weight:600;color:#2563EB;">${familyUsers[i].toLocaleString()}</div>
-      <div style="background:linear-gradient(180deg,#2563EB,#7C3AED);border-radius:4px 4px 0 0;height:${barH}px;width:50%;margin:0 auto;min-height:20px;"></div>
+      <div style="margin-bottom:4px;font-size:12px;font-weight:600;color:#165DFF;">${familyUsers[i].toLocaleString()}</div>
+      <div style="background:linear-gradient(180deg,#165DFF,#9B8ED8);border-radius:4px 4px 0 0;height:${barH}px;width:50%;margin:0 auto;min-height:20px;"></div>
       <div style="margin-top:8px;font-size:11px;color:var(--el-text-color-secondary);">${month}</div>
     </div>`
   })
   html += '</div>'
   const totalGrowth = familyUsers.reduce((s, v) => s + v, 0)
-  html += `<div style="text-align:center;margin-top:12px;font-size:12px;color:var(--el-text-color-secondary);">用户累计 <strong style="color:#2563EB;">${totalGrowth.toLocaleString()}</strong></div>`
+  html += `<div style="text-align:center;margin-top:12px;font-size:12px;color:var(--el-text-color-secondary);">用户累计 <strong style="color:#165DFF;">${totalGrowth.toLocaleString()}</strong></div>`
   el.innerHTML = html
 }
 </script>
@@ -313,10 +313,10 @@ function renderUserGrowthChart() {
   color: var(--el-text-color-primary);
   margin-bottom: 4px;
 }
-.kpi-blue .metric-value { color: #2563EB; }
+.kpi-blue .metric-value { color: #165DFF; }
 .kpi-green .metric-value { color: #16A34A; }
 .kpi-warning .metric-value { color: #F59E0B; }
-.kpi-purple .metric-value { color: #7C3AED; }
+.kpi-purple .metric-value { color: #9B8ED8; }
 .metric-trend {
   font-size: 12px;
 }
@@ -334,7 +334,7 @@ function renderUserGrowthChart() {
 .badge-success { background: #F0FDF4; color: #16A34A; }
 .badge-danger { background: #FEF2F2; color: #DC2626; }
 .badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #EFF6FF; color: #2563EB; }
+.badge-primary { background: #EFF6FF; color: #165DFF; }
 .badge-gray { background: #F3F4F6; color: #6B7280; }
 .status-dot {
   width: 6px;
@@ -345,6 +345,6 @@ function renderUserGrowthChart() {
 .dot-success { background: #16A34A; }
 .dot-danger { background: #DC2626; }
 .dot-warning { background: #D97706; }
-.dot-primary { background: #2563EB; }
+.dot-primary { background: #165DFF; }
 .dot-gray { background: #6B7280; }
 </style>

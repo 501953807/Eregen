@@ -274,7 +274,7 @@ const revenue = ref({
 
 // Funnel steps — v2 prototype enhancement
 const funnelSteps = ref([
-  { label: '注册账号', count: 5234, width: 100, percent: 100, gradient: 'linear-gradient(90deg, #2563EB, #7C3AED)' },
+  { label: '注册账号', count: 5234, width: 100, percent: 100, gradient: 'linear-gradient(90deg, #165DFF, #9B8ED8)' },
   { label: '绑定设备', count: 3558, width: 68, percent: 68.0, gradient: 'linear-gradient(90deg, #3B82F6, #6366F1)' },
   { label: '使用7天+', count: 1832, width: 35, percent: 35.0, gradient: 'linear-gradient(90deg, #6366F1, #8B5CF6)' },
   { label: '试用开始', count: 945, width: 18, percent: 18.1, gradient: 'linear-gradient(90deg, #8B5CF6, #A78BFA)' },
@@ -714,8 +714,8 @@ onMounted(async () => {
   padding: 2px 8px;
   border-radius: 6px;
 }
-.tier-pro { background: #EDE9FE; color: #7C3AED; }
-.tier-plus { background: #DBEAFE; color: #2563EB; }
+.tier-pro { background: #EDE9FE; color: #9B8ED8; }
+.tier-plus { background: #DBEAFE; color: #165DFF; }
 .tier-basic { background: var(--el-fill-color-light); color: var(--el-text-color-secondary); }
 
 .plan-tag {

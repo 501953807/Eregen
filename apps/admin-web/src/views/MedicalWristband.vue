@@ -671,9 +671,9 @@ async function handleResolveAlert(row: RegulatoryAlert) {
   margin-top: 6px;
   font-weight: 600;
 }
-.kpi-blue .kpi-value { color: #2563EB; }
+.kpi-blue .kpi-value { color: #165DFF; }
 .kpi-green .kpi-value { color: #16A34A; }
-.kpi-purple .kpi-value { color: #7C3AED; }
+.kpi-purple .kpi-value { color: #9B8ED8; }
 .kpi-warning .kpi-value { color: #F59E0B; }
 
 /* Patient cell */
@@ -693,8 +693,8 @@ async function handleResolveAlert(row: RegulatoryAlert) {
   font-weight: 600;
   flex-shrink: 0;
 }
-.avatar-blue { background: #DBEAFE; color: #2563EB; }
-.avatar-pink { background: #FCE7F3; color: #EC4899; }
+.avatar-blue { background: #DBEAFE; color: #165DFF; }
+.avatar-pink { background: #FCE7F3; color: #D48EC0; }
 
 /* Status badges with dots */
 .status-badge {
@@ -709,7 +709,7 @@ async function handleResolveAlert(row: RegulatoryAlert) {
 .badge-success { background: #F0FDF4; color: #16A34A; }
 .badge-danger { background: #FEF2F2; color: #DC2626; }
 .badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #EFF6FF; color: #2563EB; }
+.badge-primary { background: #EFF6FF; color: #165DFF; }
 .badge-gray { background: #F3F4F6; color: #6B7280; }
 .badge-info { background: #F8FAFC; color: #94A3B8; }
 .status-dot {
@@ -721,7 +721,7 @@ async function handleResolveAlert(row: RegulatoryAlert) {
 .dot-success { background: #16A34A; }
 .dot-danger { background: #DC2626; }
 .dot-warning { background: #D97706; }
-.dot-primary { background: #2563EB; }
+.dot-primary { background: #165DFF; }
 .dot-gray { background: #6B7280; }
 .dot-info { background: #94A3B8; }
 

@@ -342,8 +342,8 @@ onMounted(() => {
   font-weight: 700;
   flex-shrink: 0;
 }
-.avatar-blue { background: #DBEAFE; color: #2563EB; }
-.avatar-pink { background: #FCE7F3; color: #EC4899; }
+.avatar-blue { background: #DBEAFE; color: #165DFF; }
+.avatar-pink { background: #FCE7F3; color: #D48EC0; }
 
 .patient-details {
   flex-grow: 1;
@@ -368,7 +368,7 @@ onMounted(() => {
   padding: 2px 10px;
   border-radius: 8px;
   background: #EFF6FF;
-  color: #2563EB;
+  color: #165DFF;
 }
 
 .patient-meta-grid {
@@ -439,7 +439,7 @@ onMounted(() => {
   font-size: 15px;
   font-weight: 700;
   color: var(--el-text-color-primary);
-  border-left: 3px solid #2563EB;
+  border-left: 3px solid #165DFF;
   padding-left: 8px;
 }
 
@@ -484,7 +484,7 @@ onMounted(() => {
 }
 
 .timeline-dot.inbound { background: #16A34A; }
-.timeline-dot.verify { background: #2563EB; }
+.timeline-dot.verify { background: #165DFF; }
 .timeline-dot.medication { background: #F59E0B; }
 .timeline-dot.geofence { background: #EF4444; }
 .timeline-dot.discharge { background: #6B7280; }
@@ -502,7 +502,7 @@ onMounted(() => {
 }
 
 .timeline-content.inbound { border-left-color: #16A34A; }
-.timeline-content.verify { border-left-color: #2563EB; }
+.timeline-content.verify { border-left-color: #165DFF; }
 .timeline-content.medication { border-left-color: #F59E0B; }
 .timeline-content.geofence { border-left-color: #EF4444; }
 .timeline-content.discharge { border-left-color: #6B7280; }

@@ -74,12 +74,12 @@ function alertTypeClass(type?: string): string {
 <style scoped>
 .patient-cell { display: flex; align-items: center; gap: 8px; }
 .patient-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
-.avatar-blue { background: #DBEAFE; color: #2563EB; }
-.avatar-pink { background: #FCE7F3; color: #EC4899; }
+.avatar-blue { background: #DBEAFE; color: #165DFF; }
+.avatar-pink { background: #FCE7F3; color: #D48EC0; }
 .patient-name { font-weight: 600; font-size: 13px; }
 .patient-id { font-size: 11px; color: var(--el-text-color-secondary); }
 .alert-type-badge { font-size: 12px; padding: 2px 8px; border-radius: 4px; }
-.badge-primary { background: #EFF6FF; color: #2563EB; }
+.badge-primary { background: #EFF6FF; color: #165DFF; }
 .badge-warning { background: #FFFBEB; color: #D97706; }
 .badge-danger { background: #FEF2F2; color: #DC2626; }
 .badge-info { background: #F8FAFC; color: #94A3B8; }

@@ -5,7 +5,7 @@
       <el-col :span="6">
         <el-card shadow="hover" class="kpi-card kpi-blue">
           <div class="kpi-content">
-            <div class="kpi-icon" style="background: linear-gradient(135deg, #2563EB, #7C3AED);">
+            <div class="kpi-icon" style="background: linear-gradient(135deg, #165DFF, #9B8ED8);">
               <el-icon :size="28"><Monitor /></el-icon>
             </div>
             <div class="kpi-info">
@@ -13,8 +13,8 @@
               <div class="kpi-label">在线设备</div>
               <div class="kpi-trend up">较昨日 +2.3%</div>
               <svg class="sparkline" viewBox="0 0 120 30">
-                <polyline :points="sparkLinePoints(lineSparkData)" fill="none" stroke="#2563EB" stroke-width="1.5"/>
-                <circle v-for="(p, i) in lineSparkData" :key="i" :cx="sparkX(i, lineSparkData.length)" :cy="sparkY(p, lineSparkData)" r="2" fill="#2563EB" opacity="0.6"/>
+                <polyline :points="sparkLinePoints(lineSparkData)" fill="none" stroke="#165DFF" stroke-width="1.5"/>
+                <circle v-for="(p, i) in lineSparkData" :key="i" :cx="sparkX(i, lineSparkData.length)" :cy="sparkY(p, lineSparkData)" r="2" fill="#165DFF" opacity="0.6"/>
               </svg>
             </div>
           </div>
@@ -271,7 +271,7 @@ function renderLineChart() {
     series: [
       {
         name: '手环', type: 'line', smooth: true, data: bracelet.length ? bracelet : [0],
-        itemStyle: { color: '#2563EB' }, areaStyle: { opacity: 0.1 },
+        itemStyle: { color: '#165DFF' }, areaStyle: { opacity: 0.1 },
       },
       {
         name: '药盒', type: 'line', smooth: true, data: pillbox.length ? pillbox : [0],
@@ -296,7 +296,7 @@ function renderPieChart() {
         : [
             { value: 35, name: 'SOS', itemStyle: { color: '#EF4444' } },
             { value: 28, name: '跌倒检测', itemStyle: { color: '#F59E0B' } },
-            { value: 22, name: '心率异常', itemStyle: { color: '#2563EB' } },
+            { value: 22, name: '心率异常', itemStyle: { color: '#165DFF' } },
             { value: 15, name: '漏服药物', itemStyle: { color: '#16A34A' } },
           ],
       emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } },
@@ -322,8 +322,8 @@ function renderBarChart() {
       data: growth.length ? growth.map(g => g.new_users) : [120, 180, 250, 320, 410, 520],
       itemStyle: {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: '#2563EB' },
-          { offset: 1, color: '#7C3AED' },
+          { offset: 0, color: '#165DFF' },
+          { offset: 1, color: '#9B8ED8' },
         ]),
       },
     }],
@@ -355,9 +355,9 @@ function renderDonutChart() {
     series: [{
       name: '设备类型', type: 'pie', radius: ['40%', '70%'], center: ['50%', '55%'],
       data: [
-        { value: 480, name: '手环-入门版', itemStyle: { color: '#2563EB' } },
-        { value: 312, name: '手环-中端版', itemStyle: { color: '#7C3AED' } },
-        { value: 148, name: '手环-高端版', itemStyle: { color: '#EC4899' } },
+        { value: 480, name: '手环-入门版', itemStyle: { color: '#165DFF' } },
+        { value: 312, name: '手环-中端版', itemStyle: { color: '#9B8ED8' } },
+        { value: 148, name: '手环-高端版', itemStyle: { color: '#D48EC0' } },
         { value: 220, name: '药盒-智能版', itemStyle: { color: '#16A34A' } },
         { value: 85, name: '药盒-自动版', itemStyle: { color: '#F59E0B' } },
       ],
@@ -375,9 +375,9 @@ function renderPlanChart() {
     series: [{
       name: '套餐', type: 'pie', radius: ['40%', '70%'], center: ['50%', '55%'],
       data: [
-        { value: 189, name: 'Starter ¥29/月', itemStyle: { color: '#7C3AED' } },
-        { value: 312, name: 'Plus ¥59/月', itemStyle: { color: '#2563EB' } },
-        { value: 148, name: 'Pro ¥99/月', itemStyle: { color: '#EC4899' } },
+        { value: 189, name: 'Starter ¥29/月', itemStyle: { color: '#9B8ED8' } },
+        { value: 312, name: 'Plus ¥59/月', itemStyle: { color: '#165DFF' } },
+        { value: 148, name: 'Pro ¥99/月', itemStyle: { color: '#D48EC0' } },
       ],
       label: { fontSize: 11, formatter: '{b}\n{d}%' },
     }],
@@ -481,7 +481,7 @@ window.addEventListener('resize', handleResize)
 .badge-success { background: #F0FDF4; color: #16A34A; }
 .badge-danger { background: #FEF2F2; color: #DC2626; }
 .badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #EFF6FF; color: #2563EB; }
+.badge-primary { background: #EFF6FF; color: #165DFF; }
 .status-dot {
   width: 6px;
   height: 6px;
@@ -491,5 +491,5 @@ window.addEventListener('resize', handleResize)
 .dot-success { background: #16A34A; }
 .dot-danger { background: #DC2626; }
 .dot-warning { background: #D97706; }
-.dot-primary { background: #2563EB; }
+.dot-primary { background: #165DFF; }
 </style>
