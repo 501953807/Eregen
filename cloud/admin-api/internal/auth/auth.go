@@ -1,27 +1,30 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
 	"github.com/golang-jwt/jwt/v5"
-	"go.uber.org/zap"
 )
 
-// HashPassword generates a bcrypt hash from the given password.
+type Claims struct {
+	jwt.MapClaims
+	UserID string `json:"user_id"`
+	Role   string `json:"role"`
+}
+
 func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(bytes), err
 }
 
-// ComparePassword checks if the given password matches the stored hash.
 func ComparePassword(password, hash string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
 
-// DefaultUsers is the built-in default users for development (passwords are plaintext for this list; see seedDatabase for bcrypt hashes)
 var DefaultUsers = []struct {
 	Username string
 	Password string
@@ -36,13 +39,11 @@ var DefaultUsers = []struct {
 	{Username: "operator@eregen.com", Password: "Op@1234", Phone: "13900000003", OTP: "123456", Role: "operator", Name: "李护士", ID: "usr-op1"},
 }
 
-// LoginResult represents the result of a successful login
 type LoginResult struct {
 	Token string     `json:"token"`
 	User  *UserInfo  `json:"user"`
 }
 
-// UserInfo contains basic user info returned after login
 type UserInfo struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
@@ -50,26 +51,80 @@ type UserInfo struct {
 	Role  string `json:"role"`
 }
 
-// GenerateToken creates a JWT token for the given user
-func GenerateToken(userID, role, secret string, log *zap.Logger) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": userID,
-		"role":    role,
-		"exp":     time.Now().Add(2 * time.Hour).Unix(),
-	})
+func GenerateToken(userID, role, secret string) (string, error) {
+	if userID == "" || role == "" || secret == "" {
+		return "", errors.New("invalid parameters: user_id, role, and secret are required")
+	}
 
+	now := time.Now()
+	expiry := now.Add(2 * time.Hour)
+
+	claims := Claims{
+		MapClaims: jwt.MapClaims{
+			"exp":      expiry.Unix(),
+			"IssuedAt": now.Unix(),
+			"Issuer":   "eregen_admin_api",
+			"sub":      userID,
+		},
+		UserID: userID,
+		Role:   role,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(secret))
 }
 
-// VerifyLogin checks if the provided credentials match any default user.
-// method is "email" (uses Username) or "phone" (uses Phone/OTP).
-// Phone credentials are normalized by stripping +86/86 prefix.
+func ValidateToken(tokenString, secret string) (*Claims, error) {
+	if tokenString == "" || secret == "" {
+		return nil, errors.New("token and secret are required")
+	}
+
+	parts := strings.Split(tokenString, " ")
+	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+		return nil, errors.New("token must be in format 'Bearer <token>'")
+	}
+
+	tokenToValidate := parts[1]
+	token, err := jwt.ParseWithClaims(tokenToValidate, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(secret), nil
+	})
+
+	if err != nil || !token.Valid {
+		return nil, errors.New("invalid or expired token")
+	}
+
+	claims, ok := token.Claims.(*Claims)
+	if !ok {
+		return nil, errors.New("invalid claims type")
+	}
+
+	return claims, nil
+}
+
+func ExtractUserIDFromToken(tokenString, secret string) (string, error) {
+	claims, err := ValidateToken(tokenString, secret)
+	if err != nil {
+		return "", err
+	}
+	return claims.UserID, nil
+}
+
+func ExtractRoleFromToken(tokenString, secret string) (string, error) {
+	claims, err := ValidateToken(tokenString, secret)
+	if err != nil {
+		return "", err
+	}
+	return claims.Role, nil
+}
+
 func VerifyLogin(method, credential, secret string) (*struct {
 	ID   string
 	Name string
 	Role string
 }, error) {
-	// Normalize phone: strip +86 or 86 prefix for comparison
 	normalized := strings.TrimPrefix(credential, "+86")
 	normalized = strings.TrimPrefix(normalized, "86")
 	for _, u := range DefaultUsers {

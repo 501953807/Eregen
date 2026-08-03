@@ -1,87 +1,82 @@
-import { defineStore } from 'pinia'
-import { ref, onMounted } from 'vue'
-import router from '@/router'
-// Use the configured apiClient which has proper baseURL for dev/prod environments
-import apiClient from '@/api/client'
+import { defineStore } from 'pinia';
+import { ref, computed, watch } from 'vue';
+import router from '@/router';
+import type { User, LoginResponse, AuthState } from '@/types';
+
+const STORAGE_KEY = 'eregen_admin_auth_state';
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(localStorage.getItem('admin_token'))
-  const user = ref<{ name: string; role: string } | null>(localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user')!) : null)
-  const loading = ref(false)
-  const error = ref<string | null>(null)
+  const parseJwt = (token: string): Record<string, any> | null => {
+    try {
+      const base64Url = token.split('.')[1];
+      if (!base64Url) return null;
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+      return JSON.parse(jsonPayload);
+    } catch { return null; }
+  };
 
-  function setToken(t: string) {
-    token.value = t
-    localStorage.setItem('admin_token', t)
-  }
+  const stored = localStorage.getItem(STORAGE_KEY);
+  const initialState: AuthState = stored
+    ? { token: stored.split(',')[0], user: stored.split(',')[1] === 'null' ? null : JSON.parse(stored.split(',')[1]), expiresAt: stored.split(',')[2] ? Number(stored.split(',')[2]) : null }
+    : { token: null, user: null, expiresAt: null };
 
-  function setUser(u: any) {
-    user.value = u
-    localStorage.setItem('admin_user', JSON.stringify(u))
-  }
+  const state = ref<AuthState>(initialState);
 
-  function login(payload: { method: 'email' | 'phone'; credential: string; secret: string }) {
-    return new Promise<void>((resolve, reject) => {
-      loading.value = true
-      error.value = null
+  const isExpired = computed(() => state.value.expiresAt && Date.now() >= state.value.expiresAt * 1000);
+  const isLoggedIn = computed(() => !!state.value.token && !isExpired.value);
+  const getUser = computed(() => state.value.user || null);
+  const getToken = () => state.value.token;
 
-      apiClient.post('/auth/login', payload)
-        .then(response => {
-          const body = response.data as any
-          const loginData = body?.data
-          if (!loginData) {
-            throw new Error(body?.msg || '登录失败')
-          }
-          const { token, user } = loginData
-          if (!token) throw new Error('未获取到 token')
-          setToken(token)
-          setUser(user)
-          resolve()
-        })
-        .catch(err => {
-          loading.value = false
-          const errorMsg = err?.response?.data?.msg || err?.response?.data?.error || (err?.message || '登录失败，请重试')
-          error.value = errorMsg
-          reject(err)
-        })
-    })
-  }
+  const persist = () => {
+    const uStr = state.value.user ? JSON.stringify(state.value.user) : 'null';
+    const eStr = state.value.expiresAt ? state.value.expiresAt.toString() : '';
+    localStorage.setItem(STORAGE_KEY, `${state.value.token || ''},${uStr},${eStr}`);
+  };
 
-  function logout() {
-    token.value = null
-    user.value = null
-    localStorage.removeItem('admin_token')
-    localStorage.removeItem('admin_user')
-    router.push('/login')
-  }
+  watch(state.value, () => { persist(); }, { deep: true });
 
-  function hasPermission(resource: string): boolean {
-    if (!user.value) return false
-    return user.value.role === 'super_admin' || user.value.role === 'admin'
-  }
+  const login = async (resp: LoginResponse) => {
+    const jwt = parseJwt(resp.token);
+    const exp = jwt?.exp || Math.floor(Date.now() / 1000) + 7200;
+    state.value = { token: resp.token, user: resp.user, expiresAt: Number(exp) };
+    persist();
+    const rd = (router.currentRoute.value.query.redirect as string) || '/dashboard';
+    router.push({ path: rd });
+    return resp.user;
+  };
 
-  function isLoggedIn(): boolean {
-    return token.value !== null && token.value !== ''
-  }
+  const logout = () => {
+    state.value = { token: null, user: null, expiresAt: null };
+    localStorage.removeItem(STORAGE_KEY);
+    router.push({ path: '/login' });
+  };
 
-  // On store initialization, check if there's a saved token
-  onMounted(() => {
-    if (token.value && !user.value) {
-      // Try to refresh user info from stored data or just mark as logged in
-      // In a real app, you might call /api/v1/auth/me here
+  const hasPermission = (role: string): boolean => {
+    const u = getUser.value; if (!u) return false;
+    if (role === 'admin') return u.role === 'admin';
+    return true;
+  };
+
+  const refreshToken = async (): Promise<boolean> => {
+    if (!state.value.token) return false;
+    try {
+      const jp = parseJwt(state.value.token);
+      if (jp?.exp) { state.value.expiresAt = jp.exp + 7200; persist(); return true; }
+    } catch (e) { console.warn('Token refresh failed:', e); }
+    return false;
+  };
+
+  if (state.value.token) {
+    const jp = parseJwt(state.value.token);
+    if (jp?.exp && Date.now() >= jp.exp * 1000) {
+      state.value = { token: null, user: null, expiresAt: null };
+      localStorage.removeItem(STORAGE_KEY);
+    } else if (jp?.sub && !state.value.user) {
+      state.value.user = { id: jp.sub || '', name: jp.name || '用户', role: jp.role || 'family', phone: jp.phone || '', created_at: jp.iat ? new Date(jp.iat * 1000).toISOString() : '' };
+      persist();
     }
-  })
-
-  return {
-    token,
-    user,
-    loading,
-    error,
-    setToken,
-    setUser,
-    login,
-    logout,
-    hasPermission,
-    isLoggedIn,
   }
-})
+
+  return { state, isLoggedIn, getUser, getToken, isExpired, login, logout, hasPermission, refreshToken, parseJwt };
+});

@@ -9,20 +9,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AuthHandler serves authentication endpoints.
 type AuthHandler struct {
 	jwtSecret string
 	logger    *zap.Logger
 	store     store.Store
 }
 
-// NewAuthHandler creates a new AuthHandler.
 func NewAuthHandler(jwtSecret string, logger *zap.Logger, s store.Store) *AuthHandler {
 	return &AuthHandler{jwtSecret: jwtSecret, logger: logger, store: s}
 }
 
-// Login handles admin login - verifies credentials and returns JWT token.
-// Supports dual login: method=email with username+password, or method=phone with phone+OTP.
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req struct {
 		Method     string `json:"method" binding:"required,oneof=email phone"`
@@ -37,7 +33,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	var userInfo *struct{ ID, Name, Role string }
 
-	// Try DB first, fall back to built-in default users
 	if h.store != nil {
 		dbUser, err := h.store.GetUserByCredential(c.Request.Context(), req.Method, req.Credential, req.Secret)
 		if err == nil {
@@ -55,7 +50,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		}
 	}
 
-	token, err := auth.GenerateToken(userInfo.ID, userInfo.Role, h.jwtSecret, h.logger)
+	token, err := auth.GenerateToken(userInfo.ID, userInfo.Role, h.jwtSecret)
 	if err != nil {
 		h.logger.Error("failed to generate token", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": "failed to create authentication token"})
