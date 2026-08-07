@@ -46,3 +46,14 @@ type VoiceCallEvent struct {
 	Message   string    `json:"message"`
 	Timestamp time.Time `json:"timestamp"`
 }
+
+// PushLog represents a single push notification delivery attempt.
+type PushLog struct {
+	ID        string    `json:"id"`
+	AlertID   string    `json:"alert_id"`
+	ElderlyID string    `json:"elderly_id"`
+	Channel   string    `json:"channel"` // "fcm", "wechat", "sms"
+	Status    string    `json:"status"`  // "sent", "failed"
+	Detail    string    `json:"detail"`
+	CreatedAt time.Time `json:"created_at"`
+}

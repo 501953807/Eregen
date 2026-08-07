@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 )
 
 // Member represents a family account that receives push notifications.
@@ -65,4 +66,46 @@ func (p *Postgres) GetElderlyByDeviceID(ctx context.Context, deviceID string) (s
 		return "", fmt.Errorf("resolve elderly from device %s: %w", deviceID, err)
 	}
 	return elderlyID, nil
+}
+
+// CreatePushLog inserts a push notification log entry.
+func (p *Postgres) CreatePushLog(ctx context.Context, log *model.PushLog) error {
+	_, err := p.db.ExecContext(ctx, `
+		INSERT INTO push_logs (id, alert_id, elderly_id, channel, status, detail, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		log.ID, log.AlertID, log.ElderlyID, log.Channel, log.Status, log.Detail, log.CreatedAt)
+	return err
+}
+
+// ListPushLogs returns recent push logs with optional filters.
+func (p *Postgres) ListPushLogs(ctx context.Context, alertID, channel string, page, pageSize int) ([]model.PushLog, error) {
+	q := `SELECT id, alert_id, elderly_id, channel, status, detail, created_at FROM push_logs WHERE 1=1`
+	args := []interface{}{}
+	if alertID != "" {
+		q += " AND alert_id = $" + strconv.Itoa(len(args)+1)
+		args = append(args, alertID)
+	}
+	if channel != "" {
+		q += " AND channel = $" + strconv.Itoa(len(args)+1)
+		args = append(args, channel)
+	}
+	q += " ORDER BY created_at DESC"
+	if page > 0 && pageSize > 0 {
+		offset := (page - 1) * pageSize
+		q += fmt.Sprintf(" LIMIT %d OFFSET %d", pageSize, offset)
+	}
+	rows, err := p.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list push logs: %w", err)
+	}
+	defer rows.Close()
+	var logs []model.PushLog
+	for rows.Next() {
+		var l model.PushLog
+		if err := rows.Scan(&l.ID, &l.AlertID, &l.ElderlyID, &l.Channel, &l.Status, &l.Detail, &l.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan push log: %w", err)
+		}
+		logs = append(logs, l)
+	}
+	return logs, rows.Err()
 }
