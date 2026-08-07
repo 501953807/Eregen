@@ -15,7 +15,7 @@ import (
 
 func newTestDeviceHandler(t *testing.T) *DeviceHandler {
 	log := zap.NewNop()
-	return NewDeviceHandler(&store.Postgres{}, &store.Redis{}, nil, log)
+	return NewDeviceHandler(&store.Postgres{}, &store.Postgres{}, &store.Postgres{}, &store.Redis{}, nil, log)
 }
 
 // ---------- HandleTelemetry input validation ----------

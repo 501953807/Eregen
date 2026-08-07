@@ -116,7 +116,7 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 	})
 
 	// Device MQTT gateway endpoint (separate from user-facing API)
-	deviceH := handler.NewDeviceHandler(pg, redis, nats, log)
+	deviceH := handler.NewDeviceHandler(pg, pg, pg, redis, nats, log)
 	deviceMW := deviceAuth.DeviceAuthMiddleware()
 	devicesPub := r.Group("/api/v1/devices")
 	devicesPub.Use(deviceMW)
@@ -132,7 +132,7 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 	alertH := handler.NewAlertHandler(pg, alertSvc, log)
 	insightEngine := service.NewInsightEngine(pg, log)
 	insightsH := handler.NewInsightsHandler(insightEngine, log)
-	otaSvc := service.NewOTAService(pg, nats, log)
+	otaSvc := service.NewOTAService(pg, pg, nats, log)
 	otaH := handler.NewOTAHandler(otaSvc, log)
 
 	// Medication interaction checker

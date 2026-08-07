@@ -18,13 +18,13 @@ import (
 
 // UserHandler handles user profile endpoints.
 type UserHandler struct {
-	store store.ProfileStore
-	redis store.DeviceCacheStore
+	store store.UserDomain
+	redis store.SessionDomain
 	log   *zap.Logger
 }
 
 // NewUserHandler creates a new user handler.
-func NewUserHandler(s store.ProfileStore, redis store.DeviceCacheStore, log *zap.Logger) *UserHandler {
+func NewUserHandler(s store.UserDomain, redis store.SessionDomain, log *zap.Logger) *UserHandler {
 	return &UserHandler{store: s, redis: redis, log: log}
 }
 
@@ -225,12 +225,8 @@ func (h *UserHandler) LinkDeviceToElderly(c *gin.Context) {
 
 // checkElderlyAccess returns true if the user owns the elderly profile.
 func (h *UserHandler) checkElderlyAccess(ctx context.Context, elderlyID, userID string) bool {
-	var count int
-	err := h.store.Pool().QueryRow(ctx,
-		"SELECT COUNT(*) FROM elderly_profiles WHERE id = $1 AND user_id = $2",
-		elderlyID, userID,
-	).Scan(&count)
-	return err == nil && count > 0
+	ok, err := h.store.CheckElderlyAccess(ctx, elderlyID, userID)
+	return err == nil && ok
 }
 
 func sanitizeUser(u *model.User) map[string]any {

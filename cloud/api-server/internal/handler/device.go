@@ -18,15 +18,17 @@ import (
 
 // DeviceHandler handles device management endpoints.
 type DeviceHandler struct {
-	store store.DeviceStore
-	redis store.DeviceCacheStore
-	nats  *service.NatsClient
-	log   *zap.Logger
+	store  store.DeviceDomain
+	users  store.UserDomain
+	admin  store.AdminDomain
+	redis  store.SessionDomain
+	nats   *service.NatsClient
+	log    *zap.Logger
 }
 
 // NewDeviceHandler creates a new device handler.
-func NewDeviceHandler(s store.DeviceStore, redis store.DeviceCacheStore, nats *service.NatsClient, log *zap.Logger) *DeviceHandler {
-	return &DeviceHandler{store: s, redis: redis, nats: nats, log: log}
+func NewDeviceHandler(s store.DeviceDomain, u store.UserDomain, a store.AdminDomain, redis store.SessionDomain, nats *service.NatsClient, log *zap.Logger) *DeviceHandler {
+	return &DeviceHandler{store: s, users: u, admin: a, redis: redis, nats: nats, log: log}
 }
 
 // GET /api/v1/devices
@@ -210,10 +212,7 @@ func (h *DeviceHandler) HandleTelemetry(c *gin.Context) {
 	}
 
 	// Verify: this user owns the elderly profile
-	var ownsElderly bool
-	err = h.store.Pool().QueryRow(c.Request.Context(),
-		"SELECT EXISTS(SELECT 1 FROM elderly_profiles WHERE id = $1 AND user_id = $2)",
-		elderlyID, userID).Scan(&ownsElderly)
+	ownsElderly, err := h.users.CheckElderlyAccess(c.Request.Context(), elderlyID, userID.(string))
 	if err != nil || !ownsElderly {
 		c.JSON(http.StatusUnauthorized, gin.H{"code": "ACCESS_DENIED", "message": "User does not have access to this elderly profile"})
 		return
@@ -467,7 +466,7 @@ func (h *DeviceHandler) AdminOTAPush(c *gin.Context) {
 		return
 	}
 
-	otaSvc := service.NewOTAService(h.store, h.nats, h.log)
+	otaSvc := service.NewOTAService(h.admin, h.store, h.nats, h.log)
 
 	// Get firmware release
 	release, err := otaSvc.GetFirmwareRelease(c.Request.Context(), req.FirmwareID)
@@ -513,7 +512,7 @@ func (h *DeviceHandler) AdminBatchOTAPush(c *gin.Context) {
 		return
 	}
 
-	otaSvc := service.NewOTAService(h.store, h.nats, h.log)
+	otaSvc := service.NewOTAService(h.admin, h.store, h.nats, h.log)
 
 	release, err := otaSvc.GetFirmwareRelease(c.Request.Context(), req.FirmwareID)
 	if err != nil {
