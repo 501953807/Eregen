@@ -155,3 +155,5 @@ apps/website/*.log
 apps/website/hugo-build.log
 apps/website/website-static.log
 apps/website/website.log
+dump.rdb
+cloud/config/
