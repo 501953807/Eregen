@@ -29,32 +29,20 @@ func main() {
 
 	// PostgreSQL via pgxpool
 	var pg *store.Postgres
-	var dbPool store.DBPool
 	var pgPool *pgxpool.Pool
 	var err error
 
-	if cfg.StorageType == "sqlite" {
-		db, err := store.NewSqlite(cfg.SQLitePath)
-		if err != nil {
-			log.Fatalf("sqlite init failed: %v", err)
-		}
-		dbPool = store.NewSqlitePool(db)
-		// For SQLite, we need a Postgres-like wrapper; use a no-op pool that delegates
-		pgPool = nil // Will use sqlite path below
-	} else {
-		pgConfig, err := pgxpool.ParseConfig(cfg.DBURL)
-		if err != nil {
-			log.Fatal("invalid postgres URL", zap.Error(err))
-		}
-		pgConfig.MaxConns = 10
-		pgPool, err = pgxpool.NewWithConfig(context.Background(), pgConfig)
-		if err != nil {
-			log.Fatal("failed to connect to postgres", zap.Error(err))
-		}
-		pg = store.NewPostgres(pgPool, log)
-		dbPool = store.NewPostgresPool(pgPool)
-		defer pgPool.Close()
+	pgConfig, err := pgxpool.ParseConfig(cfg.DBURL)
+	if err != nil {
+		log.Fatal("invalid postgres URL", zap.Error(err))
 	}
+	pgConfig.MaxConns = 10
+	pgPool, err = pgxpool.NewWithConfig(context.Background(), pgConfig)
+	if err != nil {
+		log.Fatal("failed to connect to postgres", zap.Error(err))
+	}
+	pg = store.NewPostgres(pgPool, log)
+	defer pgPool.Close()
 
 	// Redis
 	rdbOpts, err := redis.ParseURL(cfg.RedisURL)
