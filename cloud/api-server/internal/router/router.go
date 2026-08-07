@@ -255,11 +255,31 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 		med := protected.Group("/medical")
 		{
 			med.GET("/patients/:patient_id/history", medicalH.GetPatientHistory)
-			med.GET("/patients/:patient_id/expenses", medicalH.QueryExpenses)
-			med.GET("/patients/:patient_id/medications", medicalH.QueryMedications)
-			med.GET("/patients/:patient_id/test-results", medicalH.QueryTestResults)
-			med.GET("/patients/:patient_id/daily-entries", medicalH.QueryDailyEntries)
-			med.GET("/verifications", medicalH.QueryVerifications)
+			med.GET("/patients/:patient_id/expenses", func(c *gin.Context) {
+				patientID := c.Param("patient_id")
+				data, _ := medicalH.QueryExpenses(c, patientID)
+				c.JSON(http.StatusOK, gin.H{"code": "OK", "data": data})
+			})
+			med.GET("/patients/:patient_id/medications", func(c *gin.Context) {
+				patientID := c.Param("patient_id")
+				data, _ := medicalH.QueryMedications(c, patientID)
+				c.JSON(http.StatusOK, gin.H{"code": "OK", "data": data})
+			})
+			med.GET("/patients/:patient_id/test-results", func(c *gin.Context) {
+				patientID := c.Param("patient_id")
+				data, _ := medicalH.QueryTestResults(c, patientID)
+				c.JSON(http.StatusOK, gin.H{"code": "OK", "data": data})
+			})
+			med.GET("/patients/:patient_id/daily-entries", func(c *gin.Context) {
+				patientID := c.Param("patient_id")
+				data, _ := medicalH.QueryDailyEntries(c, patientID, "")
+				c.JSON(http.StatusOK, gin.H{"code": "OK", "data": data})
+			})
+			med.GET("/verifications", func(c *gin.Context) {
+				patientID := c.Query("patient_id")
+				data, _ := medicalH.QueryVerifications(c, patientID)
+				c.JSON(http.StatusOK, gin.H{"code": "OK", "data": data})
+			})
 		}
 
 		protected.GET("/subscriptions", subH.List)

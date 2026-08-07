@@ -30,6 +30,11 @@
 #define DEVICE_ID_PREFIX          "BR-"
 #define DEVICE_ID_SERIAL_LEN      4U
 
+/* Tier detection — ensures this is compiled for Entry only */
+#ifndef DEVICE_TYPE_BRACELET_ENTRY
+#error "Entry firmware must be compiled with -DDEVICE_TYPE_BRACELET_ENTRY"
+#endif
+
 /* Prototype MQTT shared secret (Phase 1.2 — upgraded to TLS/cert pinning in Phase 2) */
 #define MQTT_SHARED_SECRET        "eregen_dev_prototype"
 
@@ -106,7 +111,10 @@ int main(void)
 
     log_info("Eregen Bracelet Firmware v1.0");
     log_info("Device ID: %s", s_device_id);
-    log_info("Target: GD32E230C8T3 (Cortex-M4)\n");
+    log_info("Target: GD32E230C8T3 (Cortex-M4)");
+#ifdef DEVICE_TYPE_BRACELET_ENTRY
+    log_info("Tier: ENTRY — basic features");
+#endif
 
     /* Verify CRC16 with known test vector */
     const uint8_t crc_test[] = "123456789";
@@ -164,6 +172,9 @@ int main(void)
 
     /* Start heartbeat publisher (after all tasks are created) */
     heartbeat_start();
+
+    /* Entry tier: basic health + GPS + SOS only */
+    log_info("Tier: ENTRY — GPS, PPG, IMU, SOS, Cat1");
 
     /* Start the scheduler */
     vTaskStartScheduler();

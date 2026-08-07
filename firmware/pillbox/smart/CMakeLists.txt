@@ -6,9 +6,11 @@ idf_component_register(
     SRCS "main.c" "voice_reminder.c" "reminder_scheduler.c"
          "app_link.c" "oled_status.c" "volume_control.c"
          "../../common/src/ota_handler.c"
+         "ota/ota_download.c" "ota/ota_verify.c" "ota/ota_update.c" "ota/boot_switch.c"
     INCLUDE_DIRS "."
                  "../common/include"
                  "../../common/include"
+                 "ota"
     REQUIRES
         esp_wifi
         esp_event

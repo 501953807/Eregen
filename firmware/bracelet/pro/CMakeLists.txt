@@ -81,6 +81,12 @@ set(PRO_SOURCES
     gps_gnss.c
     power_optimizer.c
 
+    # OTA firmware update
+    ota/ota_download.c
+    ota/ota_verify.c
+    ota/ota_update.c
+    ota/boot_switch.c
+
     # FreeRTOS task management
     free_rtos_tasks.c
 

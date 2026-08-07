@@ -237,6 +237,26 @@ func (h *Handler) handleAlertTag(ctx context.Context, msg *model.DeviceMessage) 
 	return h.nats.PublishMedical(ev)
 }
 
+func (h *Handler) handleMedicalWBStatus(ctx context.Context, msg *model.DeviceMessage) error {
+	var p model.MedicalWBStatusPayload
+	if err := json.Unmarshal(msg.Raw, &p); err != nil {
+		return err
+	}
+	log.Printf("MEDICAL: wb status from %s -> patient=%s bat=%d", msg.DeviceID, p.PatientID, p.Battery)
+	key := "medical:wb:" + msg.DeviceID
+	val := map[string]any{
+		"patient_id": p.PatientID,
+		"battery":    p.Battery,
+		"lat":        p.Lat,
+		"lon":        p.Lon,
+		"updated_at": time.Now().UTC().Format(time.RFC3339),
+	}
+	data, _ := json.Marshal(val)
+	h.redis.Set(ctx, key, data, 5*time.Minute)
+	ev := makeNATSEvent(msg, p)
+	return h.nats.PublishMedical(ev)
+}
+
 func (h *Handler) handleCommunitySignin(ctx context.Context, msg *model.DeviceMessage) error {
 	var p model.CommunitySigninPayload
 	if err := json.Unmarshal(msg.Raw, &p); err != nil {

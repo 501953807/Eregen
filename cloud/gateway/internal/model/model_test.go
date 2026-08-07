@@ -18,6 +18,7 @@ func TestUpstreamMessageTypeConstants(t *testing.T) {
 		{"verification_scan", TypeVerificationScan, "verification_scan"},
 		{"device_status", TypeDeviceStatus, "device_status"},
 		{"alert_tag", TypeAlertTag, "alert_tag"},
+		{"medical_wb_status", TypeMedicalWBStatus, "medical_wb_status"},
 		{"community_signin", TypeCommunitySignin, "community_signin"},
 		{"community_welfare_update", TypeCommunityWelfareUpdate, "community_welfare_update"},
 		{"community_dispense", TypeCommunityDispense, "community_dispense"},

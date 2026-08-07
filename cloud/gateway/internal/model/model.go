@@ -80,6 +80,7 @@ const (
 	TypeVerificationScan UpstreamMessageType = "verification_scan"
 	TypeDeviceStatus    UpstreamMessageType = "device_status"
 	TypeAlertTag        UpstreamMessageType = "alert_tag"
+	TypeMedicalWBStatus UpstreamMessageType = "medical_wb_status"
 )
 
 // PatientRegisterPayload carries patient registration data sent by the medical wristband BLE scan.
@@ -126,6 +127,15 @@ type AlertTagPayload struct {
 	Lat     float64 `json:"lat,omitempty"`
 	Lon     float64 `json:"lon,omitempty"`
 	Notes   string  `json:"notes,omitempty"`
+}
+
+// MedicalWBStatusPayload carries periodic status from medical wristband (heartbeat/position).
+type MedicalWBStatusPayload struct {
+	PatientID  string  `json:"patient_id"`
+	Battery    int     `json:"bat"`
+	Lat        float64 `json:"lat,omitempty"`
+	Lon        float64 `json:"lon,omitempty"`
+	Timestamp  int64   `json:"ts"`
 }
 
 // ========== Community Wristband Upstream Message Types ==========

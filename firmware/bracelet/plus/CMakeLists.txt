@@ -66,6 +66,10 @@ set(PLUS_SOURCES
     fall_detect.c
     battery_optimizer.c
     ble_pair.c
+    ota/ota_download.c
+    ota/ota_verify.c
+    ota/ota_update.c
+    ota/boot_switch.c
 )
 
 # Combine all sources
