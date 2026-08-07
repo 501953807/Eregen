@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
+import '../services/patient_service.dart';
+import '../services/medical_wristband_ble_service.dart';
 import 'patient_detail_screen.dart';
 
 /// Home screen showing the list of admitted patients.
-/// Supports search, refresh, and navigation to patient detail.
+/// Supports both admin-api JWT and hospital-api key authentication.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -12,23 +14,45 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final ApiClient api = ApiClient();
+  // Try admin-api first (JWT), fall back to hospital-api (API key)
+  final ApiClient _adminApi = ApiClient();
+  final HospitalApiClient _hospitalApi = HospitalApiClient();
+  late PatientService _patientService;
+
   List<dynamic> patients = [];
   bool loading = true;
+  bool _usingHospitalApi = false;
   final _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    loadPatients();
+    _initService();
+    _loadPatients();
   }
 
-  Future<void> loadPatients() async {
+  void _initService() async {
+    // Check which auth method is available
+    final hasAdminToken = await _adminApi.isLoggedIn;
+    final hasHospitalKey = await _hospitalApi.isLoggedIn;
+
+    setState(() {
+      _usingHospitalApi = !hasAdminToken && hasHospitalKey;
+      _patientService = _usingHospitalApi
+          ? PatientService(_hospitalApi)
+          : PatientService(_adminApi as dynamic); // Cast for compatibility
+    });
+  }
+
+  Future<void> _loadPatients() async {
     setState(() => loading = true);
     try {
-      final res = await api.get(
-        '/api/v1/admin/medical/patients?page=1&page_size=50&status=admitted',
-      );
+      late Map<String, dynamic> res;
+      if (_usingHospitalApi) {
+        res = await _hospitalApi.get('/api/v2/b2b/institutions/${_hospitalApi.institutionId}/nurses/patients');
+      } else {
+        res = await _adminApi.get('/api/v1/admin/medical/patients?page=1&page_size=50&status=admitted');
+      }
       final data = res['data'] as List<dynamic>? ?? [];
       setState(() => patients = data);
     } catch (e) {
@@ -58,6 +82,27 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  Future<void> _scanWristband() async {
+    final result = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _NfcScanScreen(),
+      ),
+    );
+    if (result != null && mounted) {
+      final patient = patients.firstWhere(
+        (p) => p['id'] == result || p['admission_no'] == result,
+        orElse: () => <String, dynamic>{'id': result, 'name': '未知患者'},
+      );
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PatientDetailScreen(patient: patient),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredPatients;
@@ -69,10 +114,10 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              final navigator = Navigator.of(context);
-              await api.logout();
+              await _adminApi.logout();
+              await _hospitalApi.logout();
               if (mounted) {
-                navigator.pushReplacementNamed('/');
+                Navigator.of(context).pushReplacementNamed('/');
               }
             },
           ),
@@ -95,12 +140,27 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 8),
             ElevatedButton.icon(
-              onPressed: loadPatients,
+              onPressed: _loadPatients,
               icon: const Icon(Icons.refresh),
               label: const Text('刷新'),
             ),
           ]),
         ),
+        if (_usingHospitalApi)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: Colors.blue.shade50,
+            child: Row(
+              children: [
+                const Icon(Icons.business, size: 16, color: Colors.blue),
+                const SizedBox(width: 8),
+                Text(
+                  '医院 API 模式 | 机构: ${_hospitalApi.institutionId}',
+                  style: const TextStyle(color: Colors.blue, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
         Expanded(
           child: loading
               ? const Center(child: CircularProgressIndicator())
@@ -143,11 +203,152 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ]),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: Open NFC scan to read medical wristband
-        },
-        icon: const Icon(Icons.qr_code_scanner),
+        onPressed: _scanWristband,
+        icon: const Icon(Icons.nfc),
         label: const Text('扫描腕带'),
+      ),
+    );
+  }
+}
+
+/// A simple screen that performs NFC scan and returns patient ID on success.
+class _NfcScanScreen extends StatefulWidget {
+  @override
+  State<_NfcScanScreen> createState() => _NfcScanScreenState();
+}
+
+class _NfcScanScreenState extends State<_NfcScanScreen> {
+  final MedicalWristbandService _nfcService = MedicalWristbandService();
+  bool _scanning = false;
+  String? _error;
+  String? _patientId;
+
+  @override
+  void dispose() {
+    _nfcService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startScan() async {
+    setState(() {
+      _scanning = true;
+      _error = null;
+      _patientId = null;
+    });
+    try {
+      final message = await _nfcService.scanWristband();
+      if (message == null) {
+        setState(() => _error = '未检测到腕带，请将腕带靠近设备背面');
+        return;
+      }
+      final patientInfo = _nfcService.parsePatientInfo(message);
+      if (patientInfo == null) {
+        setState(() => _error = '腕带数据格式异常，请重试');
+        return;
+      }
+      setState(() {
+        _scanning = false;
+        _patientId = patientInfo.patientId;
+      });
+      Navigator.pop(context, patientInfo.patientId);
+    } catch (e) {
+      setState(() {
+        _scanning = false;
+        _error = '扫描失败: $e';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('扫描医用腕带')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_patientId != null)
+              Card(
+                color: Colors.green.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.green),
+                      const SizedBox(width: 12),
+                      Text(
+                        '已识别腕带 ID: $_patientId',
+                        style: const TextStyle(color: Colors.green),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else if (_error != null)
+              Card(
+                color: Colors.red.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.error_outline, color: Colors.red),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _error!,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        onPressed: _startScan,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('重新扫描'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              Center(
+                child: Column(
+                  children: [
+                    const Icon(Icons.nfc, size: 80, color: Colors.blue),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '将医用腕带靠近设备背面进行 NFC 读取',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '保持 4cm 以内距离，等待 2 秒',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    ),
+                    const SizedBox(height: 24),
+                    if (_scanning)
+                      const CircularProgressIndicator()
+                    else
+                      ElevatedButton.icon(
+                        onPressed: _startScan,
+                        icon: const Icon(Icons.nfc),
+                        label: const Text('开始扫描'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 16,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

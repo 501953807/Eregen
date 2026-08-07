@@ -32,12 +32,12 @@ const canAccessProtectedRoute: NavigationGuard = async (to, from, next) => {
   const { useAuthStore } = await import('@/stores/auth')
   const authStore = useAuthStore()
 
-  if (to.path !== '/login' && !authStore.isLoggedIn()) {
+  if (to.path !== '/login' && !authStore.checkLoggedIn()) {
     const redirectPath = from.path === '/' ? to.path : from.path
     return next({ path: '/login', query: { redirect: redirectPath } })
   }
 
-  if (to.path === '/login' && authStore.isLoggedIn()) {
+  if (to.path === '/login' && authStore.checkLoggedIn()) {
     // Already logged in, redirect to dashboard
     return next('/dashboard')
   }

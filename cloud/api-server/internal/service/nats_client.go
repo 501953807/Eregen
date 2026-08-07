@@ -16,8 +16,10 @@ import (
 )
 
 const (
-	natsDeviceSubject = "eregen.event.>"
-	natsTopicFormat   = "eregen.command.%s"
+	natsDeviceSubject        = "eregen.event.>"
+	natsMedicalSubject       = "eregen.medical.wb.>"
+	natsCommunitySubject     = "eregen.community.wb.>"
+	natsTopicFormat          = "eregen.command.%s"
 )
 
 // NatsClient manages NATS JetStream connections for device event processing.
@@ -43,7 +45,7 @@ func NewNatsClient(url string, log *zap.Logger) (*NatsClient, error) {
 
 	_, err = js.AddStream(&nats.StreamConfig{
 		Name:     "DEVICE_EVENTS",
-		Subjects: []string{"eregen.event.>"},
+		Subjects: []string{"eregen.event.>", "eregen.medical.wb.>", "eregen.community.wb.>"},
 		Storage:  nats.FileStorage,
 	})
 	if err != nil && err != nats.ErrStreamNameAlreadyInUse {
@@ -105,8 +107,44 @@ func (n *NatsClient) SubscribeDeviceEvents(ctx context.Context, handler *EventHa
 		return fmt.Errorf("subscribe device events: %w", err)
 	}
 
+	// Subscribe to medical wristband events
+	medicalSub, err := n.js.Subscribe(natsMedicalSubject, func(msg *nats.Msg) {
+		var ev DeviceEvent
+		if jsonErr := json.Unmarshal(msg.Data, &ev); jsonErr == nil && ev.Type != "" {
+			n.routeMedicalEvent(ctx, &ev, handler)
+			msg.Ack()
+			return
+		}
+		n.log.Warn("unparseable medical event")
+		msg.Nak()
+	})
+	if err != nil {
+		return fmt.Errorf("subscribe medical events: %w", err)
+	}
+
+	// Subscribe to community wristband events
+	communitySub, err := n.js.Subscribe(natsCommunitySubject, func(msg *nats.Msg) {
+		var ev DeviceEvent
+		if jsonErr := json.Unmarshal(msg.Data, &ev); jsonErr == nil && ev.Type != "" {
+			n.routeCommunityEvent(ctx, &ev, handler)
+			msg.Ack()
+			return
+		}
+		n.log.Warn("unparseable community event")
+		msg.Nak()
+	})
+	if err != nil {
+		return fmt.Errorf("subscribe community events: %w", err)
+	}
+
 	<-ctx.Done()
 	sub.Unsubscribe()
+	if medicalSub != nil {
+		medicalSub.Unsubscribe()
+	}
+	if communitySub != nil {
+		communitySub.Unsubscribe()
+	}
 	return nil
 }
 
@@ -129,6 +167,36 @@ func (n *NatsClient) routeEvent(ctx context.Context, ev *DeviceEvent, handler *E
 		handler.handleOTAProgress(ctx, ev)
 	default:
 		n.log.Debug("unknown device event type", zap.String("type", ev.Type))
+	}
+}
+
+// routeMedicalEvent dispatches medical wristband events.
+func (n *NatsClient) routeMedicalEvent(ctx context.Context, ev *DeviceEvent, handler *EventHandler) {
+	switch ev.Type {
+	case "patient_register":
+		handler.handlePatientRegister(ctx, ev)
+	case "verification_scan":
+		handler.handleVerificationScan(ctx, ev)
+	case "device_status":
+		handler.handleDeviceStatus(ctx, ev)
+	case "alert_tag":
+		handler.handleAlertTag(ctx, ev)
+	default:
+		n.log.Debug("unknown medical event type", zap.String("type", ev.Type))
+	}
+}
+
+// routeCommunityEvent dispatches community wristband events.
+func (n *NatsClient) routeCommunityEvent(ctx context.Context, ev *DeviceEvent, handler *EventHandler) {
+	switch ev.Type {
+	case "community_signin":
+		handler.handleCommunitySignin(ctx, ev)
+	case "community_welfare_update":
+		handler.handleCommunityWelfareUpdate(ctx, ev)
+	case "community_dispense":
+		handler.handleCommunityDispense(ctx, ev)
+	default:
+		n.log.Debug("unknown community event type", zap.String("type", ev.Type))
 	}
 }
 
@@ -369,4 +437,67 @@ func getInt(p *int) int {
 		return 0
 	}
 	return *p
+}
+
+// handlePatientRegister processes patient registration events from medical wristbands.
+func (h *EventHandler) handlePatientRegister(ctx context.Context, ev *DeviceEvent) {
+	h.log.Info("patient register from medical wristband",
+		zap.String("device", ev.DevID),
+		zap.String("elderly", ev.ElderlyID),
+	)
+	// Patient registration is handled via admin-api REST API, not via NATS
+	// This event is logged for monitoring purposes
+}
+
+// handleVerificationScan processes NFC verification scan events.
+func (h *EventHandler) handleVerificationScan(ctx context.Context, ev *DeviceEvent) {
+	h.log.Info("verification scan from medical wristband",
+		zap.String("device", ev.DevID),
+		zap.String("elderly", ev.ElderlyID),
+	)
+	// Verification records are created via admin-api REST API
+	// This event is logged for monitoring purposes
+}
+
+// handleDeviceStatus processes medical wristband device status events.
+func (h *EventHandler) handleDeviceStatus(ctx context.Context, ev *DeviceEvent) {
+	h.log.Debug("medical device status update",
+		zap.String("device", ev.DevID),
+		zap.String("status", ev.Status),
+	)
+	// Device status is managed via admin-api REST API
+}
+
+// handleAlertTag processes alert tag events from medical wristbands.
+func (h *EventHandler) handleAlertTag(ctx context.Context, ev *DeviceEvent) {
+	h.log.Warn("medical alert tag triggered",
+		zap.String("device", ev.DevID),
+		zap.String("elderly", ev.ElderlyID),
+	)
+	// Alert tags are managed via admin-api REST API
+}
+
+// handleCommunitySignin processes community wristband check-in events.
+func (h *EventHandler) handleCommunitySignin(ctx context.Context, ev *DeviceEvent) {
+	h.log.Info("community signin event",
+		zap.String("device", ev.DevID),
+		zap.String("elderly", ev.ElderlyID),
+	)
+	// Community signin is managed via admin-api REST API
+}
+
+// handleCommunityWelfareUpdate processes welfare tag update events.
+func (h *EventHandler) handleCommunityWelfareUpdate(ctx context.Context, ev *DeviceEvent) {
+	h.log.Info("community welfare update",
+		zap.String("device", ev.DevID),
+		zap.String("elderly", ev.ElderlyID),
+	)
+}
+
+// handleCommunityDispense processes pharmacy dispensing events.
+func (h *EventHandler) handleCommunityDispense(ctx context.Context, ev *DeviceEvent) {
+	h.log.Info("community pharmacy dispensing",
+		zap.String("device", ev.DevID),
+		zap.String("elderly", ev.ElderlyID),
+	)
 }

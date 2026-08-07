@@ -105,9 +105,9 @@ defineExpose({ editRuleConfig })
 .dept-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .dept-name { width: 80px; flex-shrink: 0; }
 .dept-bar-wrap { flex: 1; height: 10px; background: var(--el-fill-color-lighter); border-radius: 3px; overflow: hidden; }
-.dept-bar { height: 100%; background: linear-gradient(90deg, #165DFF, #9B8ED8); border-radius: 3px; transition: width 0.3s; }
+.dept-bar { height: 100%; background: linear-gradient(90deg, #5C8D73, #7BAF8C); border-radius: 3px; transition: width 0.3s; }
 .dept-count { width: 60px; text-align: right; color: var(--el-text-color-secondary); font-size: 12px; }
 .mono { font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px; }
 .panel-header { display: flex; justify-content: space-between; align-items: center; }
-.panel-title { font-size: 15px; font-weight: 700; color: var(--el-text-color-primary); border-left: 3px solid #165DFF; padding-left: 8px; }
+.panel-title { font-size: 15px; font-weight: 700; color: var(--el-text-color-primary); border-left: 3px solid #5C8D73; padding-left: 8px; }
 </style>

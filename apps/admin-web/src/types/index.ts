@@ -3,7 +3,11 @@ export interface User {
   phone: string;
   email?: string;
   name: string;
-  role: 'elder' | 'family' | 'operator' | 'nurse' | 'admin';
+  role: 'elder' | 'family' | 'operator' | 'nurse' | 'admin' | 'super_admin' | 'elderly';
+  tier?: 'starter' | 'plus' | 'pro';
+  verified?: boolean;
+  paid?: boolean;
+  last_login?: string;
   created_at: string;
 }
 
@@ -11,8 +15,9 @@ export interface Device {
   id: string;
   device_id: string;
   device_type: 'bracelet' | 'pillbox' | 'medical_wristband';
+  type?: 'bracelet' | 'pillbox' | 'medical_wristband';
   tier: 'starter' | 'plus' | 'pro' | 'basic' | 'smart' | 'auto';
-  status: 'online' | 'offline' | 'pending_upgrade' | 'fault';
+  status: 'online' | 'offline' | 'pending_upgrade' | 'fault' | 'ota_updating';
   firmware_version: string;
   last_seen: string;
   elder_id?: string;
@@ -21,6 +26,12 @@ export interface Device {
   mode?: 'family' | 'admin' | 'community' | 'medical';
   battery_pct?: number;
   rssi?: number;
+  ota_progress?: number;
+  ota_status?: string;
+  ota_speed?: string;
+  ota_eta?: string;
+  created_at?: string;
+  settings?: Record<string, any>;
 }
 
 export interface Elderly {
@@ -32,7 +43,14 @@ export interface Elderly {
   conditions: string[];
   emergency_contacts: string[];
   avatar_url?: string;
+  tier?: string;
+  verified?: boolean;
+  paid?: boolean;
+  last_login?: string;
+  created_at?: string;
 }
+
+export type ElderlyProfile = Elderly;
 
 export interface HealthRecord {
   id: string;
@@ -56,25 +74,34 @@ export interface LocationRecord {
 }
 
 export interface MedicationRule {
-  id: string;
+  id?: string;
   elderly_id: string;
   schedule_time: string;
   dose_count: number;
   pill_type: string;
   days_of_week: number[];
   active: boolean;
-  created_at: string;
+  created_at?: string;
+  pillType?: string;
+  doseCount?: number;
+  scheduleTime?: string;
+  daysOfWeek?: number[];
 }
 
 export interface Subscription {
   id: string;
   user_id: string;
+  user_name?: string;
   plan: 'free' | 'pro' | 'enterprise';
-  status: 'active' | 'expired' | 'cancelled' | 'pending_renewal';
+  plan_tier?: 'starter' | 'plus' | 'pro';
+  status: 'active' | 'expired' | 'cancelled' | 'pending_renewal' | 'past_due';
+  billing_cycle?: 'monthly' | 'annual';
   start_date: string;
   end_date: string;
   downgrade_reason?: string;
   per_device?: boolean;
+  total_spent?: number;
+  devices?: string[];
 }
 
 export interface Alert {
@@ -82,11 +109,12 @@ export interface Alert {
   dev_id?: string;
   elderly_id?: string;
   alert_type: 'sos' | 'fall' | 'heart' | 'medication' | 'geofence' | 'battery';
-  severity: 'p0' | 'p1' | 'p2';
+  severity: 'p0' | 'p1' | 'p2' | 'high' | 'medium' | 'low';
   status: 'pending' | 'acknowledged' | 'resolved';
   location?: { lat: number; lon: number };
   created_at: string;
   updated_at?: string;
+  resolved_at?: string;
   metadata?: Record<string, any>;
 }
 
@@ -96,6 +124,9 @@ export interface DashboardStats {
   active_alerts: number;
   total_users: number;
   active_subscriptions: number;
+  p0: number;
+  p1: number;
+  p2: number;
   alert_trend: Array<{ date: string; bracelet_count: number; pillbox_count: number }>;
 }
 

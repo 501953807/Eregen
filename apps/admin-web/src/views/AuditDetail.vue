@@ -10,8 +10,8 @@
         <h2 class="page-title" style="margin-top: 8px;">穿透审计详情</h2>
       </div>
       <div class="header-actions">
-        <el-button @click="handleRefresh" :icon="Refresh">刷新状态</el-button>
-        <el-button type="primary" @click="exportReport" :icon="Download">导出审计报告</el-button>
+        <el-button @click="handleRefresh"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>刷新状态</el-button>
+        <el-button type="primary" @click="exportReport"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>导出审计报告</el-button>
       </div>
     </div>
 
@@ -103,7 +103,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Refresh, Download } from '@element-plus/icons-vue'
 import { regulatoryApi } from '@/api/regulatory'
 import type { AuditTrail } from '@/api/regulatory'
 
@@ -342,7 +341,7 @@ onMounted(() => {
   font-weight: 700;
   flex-shrink: 0;
 }
-.avatar-blue { background: #DBEAFE; color: #165DFF; }
+.avatar-blue { background: #DDEBE1; color: #47745C; }
 .avatar-pink { background: #FCE7F3; color: #D48EC0; }
 
 .patient-details {
@@ -483,11 +482,11 @@ onMounted(() => {
   border: 2px solid #fff;
 }
 
-.timeline-dot.inbound { background: #16A34A; }
-.timeline-dot.verify { background: #165DFF; }
-.timeline-dot.medication { background: #F59E0B; }
-.timeline-dot.geofence { background: #EF4444; }
-.timeline-dot.discharge { background: #6B7280; }
+.timeline-dot.inbound { background: #6FAF8F; }
+.timeline-dot.verify { background: #5C8D73; }
+.timeline-dot.medication { background: #D9A441; }
+.timeline-dot.geofence { background: #D77B72; }
+.timeline-dot.discharge { background: #8FA8A0; }
 
 .timeline-content {
   background: #fafafa;

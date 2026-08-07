@@ -3,6 +3,7 @@ import apiClient from './client'
 export interface FirmwareRelease {
   id: string
   device_type: 'bracelet' | 'pillbox'
+  type?: 'bracelet' | 'pillbox'
   tier: 'starter' | 'plus' | 'pro' | 'basic' | 'smart' | 'auto'
   version: string
   url: string
@@ -11,6 +12,7 @@ export interface FirmwareRelease {
   min_app_version?: string
   force_update: boolean
   active: boolean
+  is_latest?: boolean
   created_at: string
   updated_at: string
 }

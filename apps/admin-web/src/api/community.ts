@@ -60,6 +60,23 @@ export interface BatchPayment {
   created_at: string
 }
 
+export interface CommunityPharmacyLog {
+  id: string
+  elder_id: string
+  elder_name?: string
+  device_id?: string
+  hospital_id: string
+  pharmacist_id?: string
+  dispense_time: string
+  period: string
+  items: string[]
+  total_cost: number
+  insurance_covered?: number
+  self_pay?: number
+  notes?: string
+  created_at: string
+}
+
 export const communityApi = {
   // Elders
   listElders(params?: { status?: string; page?: number; page_size?: number }) {
@@ -107,6 +124,9 @@ export const communityApi = {
   // Pharmacy
   dispenseMedicine(data: { elder_id: string; hospital_id: string; period: string; items: string[]; total_cost?: number; insurance_covered?: number; self_pay?: number }) {
     return apiClient.post('/admin/community-wb/pharmacy/dispense', data)
+  },
+  listPharmacyLogs(params?: { elder_id?: string; period?: string }) {
+    return apiClient.get<{ data: CommunityPharmacyLog[]; page: number; page_size: number }>('/admin/community-wb/pharmacy/logs', { params })
   },
   // Minzheng
   importMinzhengData(data: { source: string; filename?: string }) {

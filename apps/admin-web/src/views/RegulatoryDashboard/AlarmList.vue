@@ -1,5 +1,5 @@
 <template>
-  <el-table :data="filteredAlerts" stripe class="alarm-table" v-loading="loading">
+  <el-table :data="computedAlerts" stripe class="alarm-table" v-loading="loading">
     <el-table-column prop="triggered_at" label="时间" width="140">
       <template #default="{ row }">{{ formatTime(row.triggered_at) }}</template>
     </el-table-column>
@@ -36,12 +36,30 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
 const props = defineProps<{
   alerts: any[]
   loading: boolean
   severity: string
   search: string
 }>()
+
+const computedAlerts = computed(() => {
+  let result = props.alerts
+  if (props.severity) {
+    result = result.filter((a: any) => a.severity === props.severity)
+  }
+  if (props.search) {
+    const q = props.search.toLowerCase()
+    result = result.filter((a: any) =>
+      (a.patient_name || '').toLowerCase().includes(q) ||
+      (a.alert_type || '').toLowerCase().includes(q) ||
+      (a.detail || '').toLowerCase().includes(q)
+    )
+  }
+  return result
+})
 
 function formatTime(ts?: string): string {
   if (!ts) return '—'
@@ -74,13 +92,13 @@ function alertTypeClass(type?: string): string {
 <style scoped>
 .patient-cell { display: flex; align-items: center; gap: 8px; }
 .patient-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
-.avatar-blue { background: #DBEAFE; color: #165DFF; }
+.avatar-blue { background: #DDEBE1; color: #47745C; }
 .avatar-pink { background: #FCE7F3; color: #D48EC0; }
 .patient-name { font-weight: 600; font-size: 13px; }
 .patient-id { font-size: 11px; color: var(--el-text-color-secondary); }
 .alert-type-badge { font-size: 12px; padding: 2px 8px; border-radius: 4px; }
-.badge-primary { background: #EFF6FF; color: #165DFF; }
-.badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-danger { background: #FEF2F2; color: #DC2626; }
-.badge-info { background: #F8FAFC; color: #94A3B8; }
+.badge-primary { background: #DDEBE1; color: #47745C; }
+.badge-warning { background: #FEF7E8; color: #B8860B; }
+.badge-danger { background: #FDF0EE; color: #B85C54; }
+.badge-info { background: #EEF4F8; color: #6E9FC4; }
 </style>

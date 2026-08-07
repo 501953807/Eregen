@@ -11,8 +11,9 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    strictPort: true,
+    host: '0.0.0.0',
     proxy: {
-      // Proxy API requests to admin-api
       '/api': {
         target: 'http://localhost:8089',
         changeOrigin: true,

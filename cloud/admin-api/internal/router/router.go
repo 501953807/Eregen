@@ -88,9 +88,14 @@ func Setup(s store.Store, logger *zap.Logger) *gin.Engine {
 	elderly := handler.NewElderlyHandler(s)
 	firmware := handler.NewFirmwareHandler(s)
 	settings := handler.NewSettingsHandler(s)
-	medical := handler.NewMedicalWristbandHandler(s)
+patient := handler.NewPatientHandler(s)
+	_wristband := handler.NewWristbandHandler(s)
+	clinical := handler.NewClinicalHandler(s)
+	admission := handler.NewAdmissionHandler(s)
 	regulatory := handler.NewRegulatoryHandler(s)
 	communityWB := handler.NewCommunityWBHandler(s)
+	subscription := handler.NewSubscriptionHandler(s)
+	institution := handler.NewInstitutionHandler(s)
 
 	// Rate limiter — fail open if Redis is unavailable
 	rateLimiter, rlErr := middleware.NewAdminRateLimiter()
@@ -114,6 +119,20 @@ func Setup(s store.Store, logger *zap.Logger) *gin.Engine {
 	{
 		api.GET("/stats/overview", dashboard.GetOverview)
 		api.GET("/stats/subscriptions", dashboard.GetSubscriptionStats)
+		// Subscription management
+		api.GET("/subscriptions", subscription.List)
+		api.GET("/subscriptions/:id", subscription.Get)
+		api.POST("/subscriptions", subscription.Create)
+		api.PUT("/subscriptions/:id", subscription.Update)
+		api.POST("/subscriptions/:id/renew", subscription.Renew)
+		// Institution management
+		api.GET("/institutions", institution.List)
+		api.GET("/institutions/:id", institution.Get)
+		api.POST("/institutions", institution.Create)
+		api.PUT("/institutions/:id", institution.Update)
+		api.DELETE("/institutions/:id", institution.Delete)
+		api.POST("/institutions/:id/api-keys", institution.CreateAPIKey)
+		api.DELETE("/institutions/:id/api-keys/:key_id", institution.RevokeAPIKey)
 		api.GET("/devices", device.List)
 		api.GET("/users", user.List)
 		api.POST("/users", user.Create)
@@ -122,6 +141,7 @@ func Setup(s store.Store, logger *zap.Logger) *gin.Engine {
 		// User role management
 		api.POST("/users/:id/role", user.SetRole)
 		api.GET("/alerts", alert.List)
+		api.POST("/alerts", alert.Create)
 		// Device config and OTA
 		api.POST("/devices/:id/config", device.UpdateConfig)
 		api.POST("/devices/:id/ota", device.TriggerOTA)
@@ -144,6 +164,8 @@ func Setup(s store.Store, logger *zap.Logger) *gin.Engine {
 		api.GET("/elderly/:id/devices", elderly.DeviceList)
 		api.GET("/elderly/:id/location-history", elderly.LocationHistory)
 		api.GET("/elderly/:id/alert-history", elderly.AlertHistory)
+		api.POST("/elderly/:id/health-records", elderly.CreateHealthRecord)
+		api.POST("/elderly/:id/locations", elderly.CreateLocation)
 
 		// Dashboard chart stats
 		api.GET("/stats/alert-trend", dashboard.GetAlertTrend)
@@ -179,56 +201,56 @@ func Setup(s store.Store, logger *zap.Logger) *gin.Engine {
 		med := api.Group("/medical")
 		{
 			// Patient endpoints
-			med.GET("/patients", medical.ListPatients)
-			med.GET("/patients/:id", medical.GetPatient)
-			med.POST("/patients", medical.CreatePatient)
-			med.PUT("/patients/:id", medical.UpdatePatient)
-			med.DELETE("/patients/:id", medical.DeletePatient)
-			med.GET("/patients/by-admission", medical.GetByAdmissionNo)
-			med.POST("/patients/batch-import", medical.BatchImport)
-			med.GET("/patients/:id/history", medical.GetPatientHistory)
+			med.GET("/patients", patient.ListPatients)
+			med.GET("/patients/:id", patient.GetPatient)
+			med.POST("/patients", patient.CreatePatient)
+			med.PUT("/patients/:id", patient.UpdatePatient)
+			med.DELETE("/patients/:id", patient.DeletePatient)
+			med.GET("/patients/by-admission", patient.GetByAdmissionNo)
+			med.POST("/patients/batch-import", patient.BatchImport)
+			med.GET("/patients/:id/history", patient.GetPatientHistory)
 
 			// Wristband device endpoints
-			med.GET("/wristbands", medical.ListWristbands)
-			med.POST("/wristbands/bind", medical.BindWristband)
-			med.POST("/wristbands/:id/unbind", medical.UnbindWristband)
-			med.POST("/wristbands/:id/clear", medical.ClearWristband)
-			med.POST("/wristbands/:id/write", medical.WriteToWristband)
-			med.GET("/wristbands/:id/firmware", medical.GetFirmware)
+			med.GET("/wristbands", _wristband.ListWristbands)
+			med.POST("/wristbands/bind", _wristband.BindWristband)
+			med.POST("/wristbands/:id/unbind", _wristband.UnbindWristband)
+			med.POST("/wristbands/:id/clear", _wristband.ClearWristband)
+			med.POST("/wristbands/:id/write", _wristband.WriteToWristband)
+			med.GET("/wristbands/:id/firmware", _wristband.GetFirmware)
 
 			// Expense endpoints
-			med.GET("/patients/:id/expenses", medical.ListExpenses)
-			med.POST("/expenses", medical.CreateExpense)
+			med.GET("/patients/:id/expenses", clinical.ListExpenses)
+			med.POST("/expenses", clinical.CreateExpense)
 
 			// Medication endpoints
-			med.GET("/patients/:id/medications", medical.ListMedications)
-			med.POST("/medications", medical.CreateMedication)
+			med.GET("/patients/:id/medications", clinical.ListMedications)
+			med.POST("/medications", clinical.CreateMedication)
 
 			// Test result endpoints
-			med.GET("/patients/:id/test-results", medical.ListTestResults)
-			med.POST("/test-results", medical.CreateTestResult)
+			med.GET("/patients/:id/test-results", clinical.ListTestResults)
+			med.POST("/test-results", clinical.CreateTestResult)
 
 			// Daily entry endpoints
-			med.GET("/patients/:id/daily-entries", medical.ListDailyEntries)
-			med.POST("/daily-entries", medical.CreateDailyEntry)
+			med.GET("/patients/:id/daily-entries", clinical.ListDailyEntries)
+			med.POST("/daily-entries", clinical.CreateDailyEntry)
 
 			// Verification endpoints
-			med.GET("/verifications", medical.ListVerifications)
-			med.POST("/verifications", medical.CreateVerification)
-			med.PUT("/verifications/:id/status", medical.UpdateVerificationStatus)
-			med.GET("/verifications/stats/today", medical.GetTodayVerificationStats)
+			med.GET("/verifications", clinical.ListVerifications)
+			med.POST("/verifications", clinical.CreateVerification)
+			med.PUT("/verifications/:id/status", clinical.UpdateVerificationStatus)
+			med.GET("/verifications/stats/today", clinical.GetTodayVerificationStats)
 
 			// Stats and alert tags
-			med.GET("/stats/overview", medical.GetStatsOverview)
-			med.GET("/alert-tags", medical.ListAlertTagConfigs)
-			med.POST("/alert-tags", medical.CreateAlertTagConfig)
+			med.GET("/stats/overview", clinical.GetStatsOverview)
+			med.GET("/alert-tags", clinical.ListAlertTagConfigs)
+			med.POST("/alert-tags", clinical.CreateAlertTagConfig)
 
 			// Clinical workflow endpoints
-			med.POST("/admissions", medical.AdmitPatient)
-			med.GET("/admissions", medical.ListAdmissions)
-			med.POST("/admissions/:id/discharge", medical.DischargePatient)
-			med.GET("/patients/:id/ward-round", medical.GetWardRound)
-			med.POST("/patients/:id/ward-round", medical.CompleteWardRound)
+			med.POST("/admissions", admission.AdmitPatient)
+			med.GET("/admissions", admission.ListAdmissions)
+			med.POST("/admissions/:id/discharge", admission.DischargePatient)
+			med.GET("/patients/:id/ward-round", admission.GetWardRound)
+			med.POST("/patients/:id/ward-round", admission.CompleteWardRound)
 		}
 
 		// Regulatory closure
@@ -272,6 +294,7 @@ func Setup(s store.Store, logger *zap.Logger) *gin.Engine {
 			cwb.GET("/signin/records", communityWB.ListSigninRecords)
 			// Pharmacy
 			cwb.POST("/pharmacy/dispense", communityWB.DispenseMedicine)
+			cwb.GET("/pharmacy/logs", communityWB.ListPharmacyLogs)
 			// Minzheng
 			cwb.POST("/minzheng/import", communityWB.ImportMinzhengData)
 			cwb.GET("/minzheng/sync", communityWB.ListMinzhengSync)

@@ -120,7 +120,7 @@
         </el-table-column>
         <el-table-column label="套餐" width="90">
           <template #default="{ row }">
-            <span class="tier-tag" :class="tierClass(row.plan_tier)">{{ tierLabel(row.plan_tier) }}</span>
+            <span class="tier-tag" :class="tierClass(row.plan_tier || '')">{{ tierLabel(row.plan_tier || '') }}</span>
           </template>
         </el-table-column>
         <el-table-column label="计费周期" width="80">
@@ -145,7 +145,7 @@
         </el-table-column>
         <el-table-column label="月费" width="80">
           <template #default="{ row }">
-            ¥{{ planPrice(row.plan_tier) }}/月
+            ¥{{ planPrice(row.plan_tier || '') }}/月
           </template>
         </el-table-column>
         <el-table-column label="取消原因" min-width="100">
@@ -188,7 +188,7 @@
           <div class="panel-user-avatar">{{ userEmoji(panelSub.user_name) }}</div>
           <div>
             <div style="font-size:18px;font-weight:700;">{{ panelSub.user_name || '—' }}</div>
-            <div style="font-size:12px;color:var(--el-text-color-secondary);">{{ tierLabel(panelSub.plan_tier) }} 订阅</div>
+            <div style="font-size:12px;color:var(--el-text-color-secondary);">{{ tierLabel(panelSub.plan_tier || '') }} 订阅</div>
           </div>
         </div>
 
@@ -202,12 +202,12 @@
             </span>
           </span></div>
           <div class="panel-row"><span class="panel-row-label">套餐等级</span><span class="panel-row-value">
-            <span class="tier-tag" :class="tierClass(panelSub.plan_tier)">{{ tierLabel(panelSub.plan_tier) }}</span>
+            <span class="tier-tag" :class="tierClass(panelSub.plan_tier || '')">{{ tierLabel(panelSub.plan_tier || '') }}</span>
           </span></div>
           <div class="panel-row"><span class="panel-row-label">计费周期</span><span class="panel-row-value">{{ panelSub.billing_cycle === 'annual' ? '年度' : '月度' }}</span></div>
           <div class="panel-row"><span class="panel-row-label">开始时间</span><span class="panel-row-value">{{ formatDate(panelSub.start_date) }}</span></div>
           <div class="panel-row"><span class="panel-row-label">到期时间</span><span class="panel-row-value">{{ formatDate(panelSub.end_date) }}</span></div>
-          <div class="panel-row"><span class="panel-row-label">月均费用</span><span class="panel-row-value">¥{{ planPrice(panelSub.plan_tier) }}/月</span></div>
+          <div class="panel-row"><span class="panel-row-label">月均费用</span><span class="panel-row-value">¥{{ planPrice(panelSub.plan_tier || '') }}/月</span></div>
           <div class="panel-row"><span class="panel-row-label">累计消费</span><span class="panel-row-value">¥{{ panelSub.total_spent?.toLocaleString() || '—' }}</span></div>
           <div class="panel-row"><span class="panel-row-label">支付方式</span><span class="panel-row-value">微信支付</span></div>
         </div>
@@ -469,6 +469,24 @@ onMounted(async () => {
 .subscriptions-page {
   padding: 0;
 }
+.subscriptions-page :deep(.el-card) {
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
+  transition: all var(--duration-normal) var(--easing-out);
+}
+.subscriptions-page :deep(.el-card:hover) {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1px);
+}
+.subscriptions-page :deep(.el-card__header) {
+  background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  padding: 16px 20px;
+  border-radius: 12px 12px 0 0 !important;
+}
+.subscriptions-page :deep(.el-card__body) {
+  padding: 20px;
+}
 
 /* Page header */
 .page-header {
@@ -485,6 +503,22 @@ onMounted(async () => {
 }
 
 /* Revenue KPI cards */
+.rev-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.rev-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
+  pointer-events: none;
+}
+.rev-card:hover {
+  transform: translateY(-3px);
+}
 .rev-card :deep(.el-card__body) {
   padding: 16px;
   text-align: left;
@@ -495,9 +529,11 @@ onMounted(async () => {
   margin-bottom: 6px;
 }
 .rev-value {
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 800;
-  line-height: 1.2;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 4px;
 }
 .rev-change {
   font-size: 11px;
@@ -689,7 +725,7 @@ onMounted(async () => {
   font-weight: 600;
 }
 .status-active { background: #F0FDF4; color: var(--el-color-success); }
-.status-trial { background: #FFFBEB; color: #D97706; }
+.status-trial { background: #FEF7E8; color: #B8860B; }
 .status-expired { background: var(--el-fill-color-light); color: var(--el-text-color-secondary); }
 .status-cancelled { background: #FEF2F2; color: var(--el-color-danger); }
 .status-past-due { background: #FFF7ED; color: #C2410C; }
@@ -699,7 +735,7 @@ onMounted(async () => {
   border-radius: 50%;
 }
 .status-active .status-dot { background: var(--el-color-success); }
-.status-trial .status-dot { background: #D97706; }
+.status-trial .status-dot { background: #D9A441; }
 .status-expired .status-dot { background: var(--el-text-color-placeholder); }
 .status-cancelled .status-dot { background: var(--el-color-danger); }
 .status-past-due .status-dot { background: #C2410C; animation: pulse 1.5s infinite; }
@@ -714,8 +750,8 @@ onMounted(async () => {
   padding: 2px 8px;
   border-radius: 6px;
 }
-.tier-pro { background: #EDE9FE; color: #9B8ED8; }
-.tier-plus { background: #DBEAFE; color: #165DFF; }
+.tier-pro { background: #DDEBE1; color: #47745C; }
+.tier-plus { background: #E8F4EC; color: #4A8A6A; }
 .tier-basic { background: var(--el-fill-color-light); color: var(--el-text-color-secondary); }
 
 .plan-tag {

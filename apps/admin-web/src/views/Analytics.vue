@@ -6,7 +6,10 @@
         <el-card shadow="hover" class="metric-card" :class="'kpi-' + metric.colorClass">
           <div class="metric-header">
             <span class="metric-label">{{ metric.label }}</span>
-            <el-icon :size="24" :color="metric.iconColor"><component :is="metric.icon" /></el-icon>
+            <svg v-if="metric.icon === 'connection'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <svg v-else-if="metric.icon === 'user'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <svg v-else-if="metric.icon === 'bell'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+            <svg v-else-if="metric.icon === 'monitor'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           </div>
           <div class="metric-value">{{ metric.value }}</div>
           <div class="metric-trend" :style="{ color: metric.trendUp ? '#16A34A' : '#EF4444' }">
@@ -110,19 +113,15 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
-import {
-  Monitor, UserFilled, TrendCharts, BellFilled,
-  Connection, VideoCamera, DataLine, Calendar
-} from '@element-plus/icons-vue'
 import { dashboardApi } from '@/api/dashboard'
 import type { AlertDistributionItem, UserGrowthPoint } from '@/api/dashboard'
 
 // Key metrics
 const keyMetrics = ref([
-  { label: '在线设备总数', value: '—', trend: '—', trendUp: true, icon: Connection, colorClass: 'blue', iconColor: '#165DFF' },
-  { label: '活跃用户数', value: '—', trend: '—', trendUp: true, icon: UserFilled, colorClass: 'green', iconColor: '#16A34A' },
-  { label: '今日告警数', value: '—', trend: '—', trendUp: false, icon: BellFilled, colorClass: 'warning', iconColor: '#F59E0B' },
-  { label: '机构接入数', value: '—', trend: '—', trendUp: true, icon: Monitor, colorClass: 'purple', iconColor: '#9B8ED8' },
+  { label: '在线设备总数', value: '—', trend: '—', trendUp: true, icon: 'monitor', colorClass: 'blue', iconColor: '#165DFF' },
+  { label: '活跃用户数', value: '—', trend: '—', trendUp: true, icon: 'user', colorClass: 'green', iconColor: '#16A34A' },
+  { label: '今日告警数', value: '—', trend: '—', trendUp: false, icon: 'bell', colorClass: 'warning', iconColor: '#F59E0B' },
+  { label: '机构接入数', value: '—', trend: '—', trendUp: true, icon: 'connection', colorClass: 'purple', iconColor: '#9B8ED8' },
 ])
 
 // Institution data
@@ -196,13 +195,13 @@ function renderDeviceChart() {
   days.forEach((day, i) => {
     const barHeight = ((online[i] - minOnline) / (maxOnline - minOnline)) * 200
     html += `<div style="flex:1;text-align:center;">
-      <div style="margin-bottom:4px;font-size:12px;color:#16A34A;font-weight:600;">${online[i]}%</div>
-      <div style="background:linear-gradient(180deg,#165DFF,#9B8ED8);border-radius:4px 4px 0 0;height:${barHeight}px;width:60%;margin:0 auto;min-height:20px;"></div>
+      <div style="margin-bottom:4px;font-size:12px;color:#6FAF8F;font-weight:600;">${online[i]}%</div>
+      <div style="background:linear-gradient(180deg,#5C8D73,#7BAF8C);border-radius:4px 4px 0 0;height:${barHeight}px;width:60%;margin:0 auto;min-height:20px;"></div>
       <div style="margin-top:8px;font-size:11px;color:var(--el-text-color-secondary);">${day}</div>
     </div>`
   })
   html += '</div>'
-  html += `<div style="text-align:center;margin-top:12px;font-size:12px;color:var(--el-text-color-secondary);">日均在线率 <strong style="color:#16A34A;">95.9%</strong> ｜ 峰值 ${Math.max(...online)}% ｜ 最低 ${Math.min(...online)}%</div>`
+  html += `<div style="text-align:center;margin-top:12px;font-size:12px;color:var(--el-text-color-secondary);">日均在线率 <strong style="color:#6FAF8F;">95.9%</strong> ｜ 峰值 ${Math.max(...online)}% ｜ 最低 ${Math.min(...online)}%</div>`
   el.innerHTML = html
 }
 
@@ -215,7 +214,7 @@ function renderAlertChart() {
         { name: 'SOS紧急呼叫', count: 45, color: '#EF4444' },
         { name: '跌倒检测', count: 32, color: '#F59E0B' },
         { name: '心率异常', count: 78, color: '#6B7280' },
-        { name: '电子围栏', count: 28, color: '#165DFF' },
+        { name: '电子围栏', count: 28, color: '#5C8D73' },
         { name: '漏服药物', count: 156, color: '#16A34A' },
         { name: '设备离线', count: 3, color: '#F59E0B' },
       ]
@@ -251,7 +250,7 @@ function renderMedicationChart() {
   const min = 80
   days.forEach((day, i) => {
     const barHeight = ((adherence[i] - min) / (max - min)) * 160
-    const color = adherence[i] >= 90 ? '#16A34A' : (adherence[i] >= 85 ? '#F59E0B' : '#EF4444')
+    const color = adherence[i] >= 90 ? '#6FAF8F' : (adherence[i] >= 85 ? '#D9A441' : '#D77B72')
     html += `<div style="flex:1;text-align:center;">
       <div style="margin-bottom:4px;font-size:12px;font-weight:600;color:${color};">${adherence[i]}%</div>
       <div style="background:${color};border-radius:4px 4px 0 0;height:${barHeight}px;width:60%;margin:0 auto;min-height:20px;"></div>
@@ -278,14 +277,14 @@ function renderUserGrowthChart() {
   months.forEach((month, i) => {
     const barH = (familyUsers[i] / max * 160).toFixed(0)
     html += `<div style="flex:1;text-align:center;">
-      <div style="margin-bottom:4px;font-size:12px;font-weight:600;color:#165DFF;">${familyUsers[i].toLocaleString()}</div>
-      <div style="background:linear-gradient(180deg,#165DFF,#9B8ED8);border-radius:4px 4px 0 0;height:${barH}px;width:50%;margin:0 auto;min-height:20px;"></div>
+      <div style="margin-bottom:4px;font-size:12px;font-weight:600;color:#5C8D73;">${familyUsers[i].toLocaleString()}</div>
+      <div style="background:linear-gradient(180deg,#5C8D73,#7BAF8C);border-radius:4px 4px 0 0;height:${barH}px;width:50%;margin:0 auto;min-height:20px;"></div>
       <div style="margin-top:8px;font-size:11px;color:var(--el-text-color-secondary);">${month}</div>
     </div>`
   })
   html += '</div>'
   const totalGrowth = familyUsers.reduce((s, v) => s + v, 0)
-  html += `<div style="text-align:center;margin-top:12px;font-size:12px;color:var(--el-text-color-secondary);">用户累计 <strong style="color:#165DFF;">${totalGrowth.toLocaleString()}</strong></div>`
+  html += `<div style="text-align:center;margin-top:12px;font-size:12px;color:var(--el-text-color-secondary);">用户累计 <strong style="color:#5C8D73;">${totalGrowth.toLocaleString()}</strong></div>`
   el.innerHTML = html
 }
 </script>
@@ -296,6 +295,20 @@ function renderUserGrowthChart() {
 }
 .metric-card {
   margin-bottom: 0;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.metric-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
+  pointer-events: none;
+}
+.metric-card:hover {
+  transform: translateY(-3px);
 }
 .metric-header {
   display: flex;
@@ -308,15 +321,17 @@ function renderUserGrowthChart() {
   color: var(--el-text-color-secondary);
 }
 .metric-value {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
+  letter-spacing: -0.03em;
   color: var(--el-text-color-primary);
   margin-bottom: 4px;
+  line-height: 1;
 }
-.kpi-blue .metric-value { color: #165DFF; }
-.kpi-green .metric-value { color: #16A34A; }
-.kpi-warning .metric-value { color: #F59E0B; }
-.kpi-purple .metric-value { color: #9B8ED8; }
+.kpi-blue .metric-value { color: #5C8D73; }
+.kpi-green .metric-value { color: #6FAF8F; }
+.kpi-warning .metric-value { color: #D9A441; }
+.kpi-purple .metric-value { color: #7BAF8C; }
 .metric-trend {
   font-size: 12px;
 }
@@ -331,20 +346,20 @@ function renderUserGrowthChart() {
   font-size: 12px;
   font-weight: 600;
 }
-.badge-success { background: #F0FDF4; color: #16A34A; }
-.badge-danger { background: #FEF2F2; color: #DC2626; }
-.badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #EFF6FF; color: #165DFF; }
-.badge-gray { background: #F3F4F6; color: #6B7280; }
+.badge-success { background: #E8F4EC; color: #4A8A6A; }
+.badge-danger { background: #FDF0EE; color: #B85C54; }
+.badge-warning { background: #FEF7E8; color: #B8860B; }
+.badge-primary { background: #DDEBE1; color: #47745C; }
+.badge-gray { background: #F3F4F6; color: #8FA8A0; }
 .status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   display: inline-block;
 }
-.dot-success { background: #16A34A; }
-.dot-danger { background: #DC2626; }
-.dot-warning { background: #D97706; }
-.dot-primary { background: #165DFF; }
-.dot-gray { background: #6B7280; }
+.dot-success { background: #6FAF8F; }
+.dot-danger { background: #D77B72; }
+.dot-warning { background: #D9A441; }
+.dot-primary { background: #5C8D73; }
+.dot-gray { background: #8FA8A0; }
 </style>

@@ -95,12 +95,10 @@ type DeviceAuth struct {
 
 // NewDeviceAuth creates a device auth handler.
 func NewDeviceAuth(pg *store.Postgres, log *zap.Logger, deviceSecret string) *DeviceAuth {
-	key := []byte(deviceSecret)
-	if len(key) == 0 {
-		key = []byte("device-secret") // fallback only when not configured
-		log.Warn("using default device secret for authentication; this is insecure in production!")
+	if len(deviceSecret) == 0 {
+		log.Fatal("DEVICE_SECRET environment variable is required for device authentication")
 	}
-	return &DeviceAuth{store: pg, log: log, deviceKey: key}
+	return &DeviceAuth{store: pg, log: log, deviceKey: []byte(deviceSecret)}
 }
 
 // DeviceAuthMiddleware validates device tokens signed by the cloud server.

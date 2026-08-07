@@ -2,7 +2,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { handleApiError, handleApiSuccess } from '@/utils/error'
-import { Refresh, Download, Search } from '@element-plus/icons-vue'
 import { regulatoryApi, type RegulatoryAlert, type RuleConfig, type ComplianceReport } from '@/api/regulatory'
 import KpiCards from './RegulatoryDashboard/KpiCards.vue'
 import AlarmList from './RegulatoryDashboard/AlarmList.vue'
@@ -103,11 +102,11 @@ async function loadAlerts() {
     alerts.value = res.data?.data || []
   } catch {
     alerts.value = [
-      { id: '1', patient_name: '李秀英', patient_id: '8842', department: '心内科', alert_type: '电子围栏越界', severity: 'high', detail: '离开病区范围 50m', status: 'pending', triggered_at: new Date().toISOString() },
-      { id: '2', patient_name: '王建国', patient_id: '7731', department: '康复科', alert_type: '心率异常', severity: 'medium', detail: '持续心率 > 110bpm', status: 'pending', triggered_at: new Date(Date.now() - 300000).toISOString() },
-      { id: '3', patient_name: '赵淑华', patient_id: '9921', department: '老年病科', alert_type: '跌倒检测', severity: 'high', detail: 'IMU检测到剧烈震动', status: 'acknowledged', triggered_at: new Date(Date.now() - 900000).toISOString() },
-      { id: '4', patient_name: '陈志强', patient_id: '6654', department: '神经内科', alert_type: '用药提醒漏服', severity: 'low', detail: '早餐药未确认服用', status: 'pending', triggered_at: new Date(Date.now() - 1800000).toISOString() },
-      { id: '5', patient_name: '刘美兰', patient_id: '5523', department: '心内科', alert_type: '夜间离床超时', severity: 'medium', detail: '离床超过 15分钟', status: 'acknowledged', triggered_at: new Date(Date.now() - 3600000).toISOString() },
+      { id: '1', patient_name: '李秀英', patient_id: '8842', department: '心内科', alert_type: '电子围栏越界', severity: 'high', detail: '离开病区范围 50m', status: 'pending', triggered_at: new Date().toISOString(), rule_code: 'R02', hospital_id: 'h001' },
+      { id: '2', patient_name: '王建国', patient_id: '7731', department: '康复科', alert_type: '心率异常', severity: 'medium', detail: '持续心率 > 110bpm', status: 'pending', triggered_at: new Date(Date.now() - 300000).toISOString(), rule_code: 'R04', hospital_id: 'h002' },
+      { id: '3', patient_name: '赵淑华', patient_id: '9921', department: '老年病科', alert_type: '跌倒检测', severity: 'high', detail: 'IMU检测到剧烈震动', status: 'acknowledged', triggered_at: new Date(Date.now() - 900000).toISOString(), rule_code: 'R05', hospital_id: 'h003' },
+      { id: '4', patient_name: '陈志强', patient_id: '6654', department: '神经内科', alert_type: '用药提醒漏服', severity: 'low', detail: '早餐药未确认服用', status: 'pending', triggered_at: new Date(Date.now() - 1800000).toISOString(), rule_code: 'R06', hospital_id: 'h004' },
+      { id: '5', patient_name: '刘美兰', patient_id: '5523', department: '心内科', alert_type: '夜间离床超时', severity: 'medium', detail: '离床超过 15分钟', status: 'acknowledged', triggered_at: new Date(Date.now() - 3600000).toISOString(), rule_code: 'R08', hospital_id: 'h001' },
     ]
   }
 }
@@ -183,8 +182,8 @@ onMounted(async () => {
     <div class="page-header">
       <h2 class="page-title">监管总览看板</h2>
       <div class="header-actions">
-        <el-button @click="loadOverview" size="default"><el-icon><Refresh /></el-icon> 刷新</el-button>
-        <el-button type="primary" @click="exportReport" size="default"><el-icon><Download /></el-icon> 导出报表</el-button>
+        <el-button @click="loadOverview" size="default"><el-icon><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></el-icon> 刷新</el-button>
+        <el-button type="primary" @click="exportReport" size="default"><el-icon><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></el-icon> 导出报表</el-button>
       </div>
     </div>
 
@@ -214,7 +213,7 @@ onMounted(async () => {
           <el-input v-model="filters.search" placeholder="搜索患者姓名/ID..." clearable />
         </el-col>
         <el-col :span="3">
-          <el-button type="primary" @click="handleSearch" size="default"><el-icon><Search /></el-icon> 查询</el-button>
+          <el-button type="primary" @click="handleSearch" size="default"><el-icon><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></el-icon> 查询</el-button>
         </el-col>
         <el-col :span="3" style="text-align: right;"><el-button @click="handleResetFilters">重置</el-button></el-col>
       </el-row>
@@ -281,13 +280,22 @@ onMounted(async () => {
 
 <style scoped>
 .regulatory-page { padding: 0; }
+.regulatory-page :deep(.el-card:not(.filter-card):not(.content-panel)) {
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
+  transition: all var(--duration-normal) var(--easing-out);
+}
+.regulatory-page :deep(.el-card:hover) {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1px);
+}
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .page-title { font-size: 22px; font-weight: 800; color: var(--el-text-color-primary); margin: 0; }
 .header-actions { display: flex; gap: 12px; }
 .filter-card :deep(.el-card__body) { padding: 16px; }
 .content-panel { margin-bottom: 0; }
 .panel-header { display: flex; justify-content: space-between; align-items: center; }
-.panel-title { font-size: 15px; font-weight: 700; color: var(--el-text-color-primary); border-left: 3px solid #165DFF; padding-left: 8px; }
+.panel-title { font-size: 15px; font-weight: 700; color: var(--el-text-color-primary); border-left: 3px solid #5C8D73; padding-left: 8px; }
 :deep(.el-tabs--border-card) { border: none; }
 :deep(.el-tabs--border-card > .el-tabs__header) { border-bottom: 1px solid var(--el-border-color-light); margin: 0; }
 </style>

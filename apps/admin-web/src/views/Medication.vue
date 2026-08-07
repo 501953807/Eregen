@@ -13,8 +13,8 @@
       <el-col :span="6">
         <el-card shadow="hover" class="kpi-card kpi-green">
           <div class="kpi-content">
-            <div class="kpi-icon" style="background: linear-gradient(135deg, #16A34A, #22C55E);">
-              <el-icon :size="28"><PieChart /></el-icon>
+            <div class="kpi-icon-wrap green">
+              <el-icon :size="28"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 6V4M16 6V4M3 10h18"/><circle cx="8" cy="14" r="1.5"/><circle cx="16" cy="14" r="1.5"/></svg></el-icon>
             </div>
             <div class="kpi-info">
               <div class="kpi-value">{{ stats.activeRules }}</div>
@@ -26,8 +26,8 @@
       <el-col :span="6">
         <el-card shadow="hover" class="kpi-card kpi-warning">
           <div class="kpi-content">
-            <div class="kpi-icon" style="background: linear-gradient(135deg, #F59E0B, #FBBF24);">
-              <el-icon :size="28"><Bell /></el-icon>
+            <div class="kpi-icon-wrap orange">
+              <el-icon :size="28"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></el-icon>
             </div>
             <div class="kpi-info">
               <div class="kpi-value">{{ stats.missedCount }}</div>
@@ -39,8 +39,8 @@
       <el-col :span="6">
         <el-card shadow="hover" class="kpi-card kpi-blue">
           <div class="kpi-content">
-            <div class="kpi-icon" style="background: linear-gradient(135deg, #3B82F6, #60A5FA);">
-              <el-icon :size="28"><Watch /></el-icon>
+            <div class="kpi-icon-wrap blue">
+              <el-icon :size="28"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></el-icon>
             </div>
             <div class="kpi-info">
               <div class="kpi-value">{{ stats.adherenceRate }}%</div>
@@ -52,8 +52,8 @@
       <el-col :span="6">
         <el-card shadow="hover" class="kpi-card kpi-danger">
           <div class="kpi-content">
-            <div class="kpi-icon" style="background: linear-gradient(135deg, #EF4444, #F87171);">
-              <el-icon :size="28"><Bell /></el-icon>
+            <div class="kpi-icon-wrap red">
+              <el-icon :size="28"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 105 2H4a2 2 0 00-2 2v5a6 6 0 006 6 6 6 0 006-6V4a2 2 0 00-2-2h-1a.2.2 0 00.3.3"/><path d="M8 15v4M12 15v4M6 23h8"/></svg></el-icon>
             </div>
             <div class="kpi-info">
               <div class="kpi-value">{{ stats.pendingActions }}</div>
@@ -76,7 +76,7 @@
             style="width: 200px;"
             @input="handleSearch"
           >
-            <template #prefix><Search /></template>
+            <template #prefix><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></template>
           </el-input>
         </div>
       </template>
@@ -154,8 +154,6 @@
 
 <script setup lang='ts'>
 import { ref, computed, onMounted } from 'vue'
-import { Search } from '@element-plus/icons-vue'
-import { Watch, Bell, PieChart } from '@element-plus/icons-vue'
 import { ElMessage, ElNotification, ElLoading } from 'element-plus'
 import type { MedicationRule } from '@/types'
 import { medicationApi } from '@/api/medication'
@@ -234,10 +232,10 @@ onMounted(async () => {
 function openCreateDialog() {
   // Reset form
   form.value = {
-    pillType: '',
-    doseCount: 1,
-    scheduleTime: '',
-    daysOfWeek: [],
+    pill_type: '',
+    dose_count: 1,
+    schedule_time: '',
+    days_of_week: [],
     active: true
   }
   showDialog.value = true
@@ -246,10 +244,10 @@ function openCreateDialog() {
 // Handle edit
 function handleEdit(rule: MedicationRule) {
   form.value = {
-    pillType: rule.pillType,
-    doseCount: rule.doseCount,
-    scheduleTime: rule.scheduleTime,
-    daysOfWeek: rule.daysOfWeek || [],
+    pill_type: rule.pill_type,
+    dose_count: rule.dose_count,
+    schedule_time: rule.schedule_time,
+    days_of_week: rule.days_of_week || [],
     active: rule.active
   }
   showDialog.value = true
@@ -287,7 +285,7 @@ async function saveRule() {
   try {
     if (showDialog.value && form.value.id) {
       // Update mode
-      await medicationApi.updateRule(currentElder.value.id as string, form.value.value!, form.value)
+      await medicationApi.updateRule(currentElder.value.id as string, form.value.id!, form.value)
       ElMessage.success('更新成功')
     } else {
       // Create mode
@@ -339,35 +337,59 @@ function handleSearch() {
   color: var(--el-text-color-primary);
 }
 
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  transition: all var(--duration-normal) var(--easing);
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
+  pointer-events: none;
+}
+.kpi-card:hover {
+  transform: translateY(-3px);
+}
+
 .kpi-card :deep(.el-card__body) {
   padding: 16px 20px;
+  border: 1px solid var(--border-light);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), var(--shadow-card);
+  border-radius: var(--radius-lg);
 }
 
 .kpi-content {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
-.kpi-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
+.kpi-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
   flex-shrink: 0;
 }
-
-.kpi-info {
-  flex: 1;
-}
+.kpi-icon-wrap.blue { background: linear-gradient(135deg, #5C8D73, #7BAF8C); color: #fff; }
+.kpi-icon-wrap.green { background: linear-gradient(135deg, #6FAF8F, #8BC4A8); color: #fff; }
+.kpi-icon-wrap.orange { background: linear-gradient(135deg, #D9A441, #E8BC6A); color: #fff; }
+.kpi-icon-wrap.red { background: linear-gradient(135deg, #D77B72, #E09890); color: #fff; }
+.kpi-icon { display: none; }
+.kpi-info { flex: 1; }
 
 .kpi-value {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
   color: var(--el-text-color-primary);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 4px;
 }
 
 .kpi-label {

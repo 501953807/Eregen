@@ -3,25 +3,25 @@
     <!-- Stats Row -->
     <el-row :gutter="12" style="margin-bottom: 16px;">
       <el-col :span="8">
-        <el-card shadow="hover" class="stat-card kpi-danger">
+        <el-card shadow="never" class="stat-card kpi-danger">
           <div class="stat-content">
-            <div class="stat-value">{{ store.stats.p0 }}</div>
+            <div class="stat-value">{{ stats.p0 }}</div>
             <div class="stat-label">P0 紧急</div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="8">
-        <el-card shadow="hover" class="stat-card kpi-warning">
+        <el-card shadow="never" class="stat-card kpi-warning">
           <div class="stat-content">
-            <div class="stat-value">{{ store.stats.p1 }}</div>
+            <div class="stat-value">{{ stats.p1 }}</div>
             <div class="stat-label">P1 重要</div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="8">
-        <el-card shadow="hover" class="stat-card kpi-blue">
+        <el-card shadow="never" class="stat-card kpi-info">
           <div class="stat-content">
-            <div class="stat-value">{{ store.stats.p2 }}</div>
+            <div class="stat-value">{{ stats.p2 }}</div>
             <div class="stat-label">P2 通知</div>
           </div>
         </el-card>
@@ -29,10 +29,11 @@
     </el-row>
 
     <!-- Filters -->
-    <el-card shadow="hover" style="margin-bottom: 16px;">
-      <el-form :inline="true">
+    <div class="filter-bar">
+      <span class="filter-label">筛选：</span>
+      <el-form :inline="true" class="filter-form">
         <el-form-item label="严重程度">
-          <el-select v-model="filters.severity" placeholder="全部" clearable style="width: 140px;">
+          <el-select v-model="filters.severity" placeholder="全部" clearable style="width: 140px;" popper-class="wellness-popper">
             <el-option label="P0 紧急" value="P0" />
             <el-option label="P1 重要" value="P1" />
             <el-option label="P2 通知" value="P2" />
@@ -54,18 +55,20 @@
           </el-select>
         </el-form-item>
         <el-form-item>
+          <el-button @click="handleReset" class="btn-reset">重置</el-button>
           <el-button type="primary" @click="handleSearch">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
-    </el-card>
+    </div>
 
     <!-- Alert Table -->
-    <el-card shadow="hover">
+    <el-card shadow="never">
       <template #header>
         <div class="table-header">
-          <span style="font-weight: 600;">告警列表</span>
-          <el-button type="success" size="default" @click="handleBatchResolve">批量标记已处理</el-button>
+          <span style="font-weight: 600; color: #29404A;">告警列表</span>
+          <el-button type="primary" size="default" @click="handleBatchResolve" class="btn-primary-outline">
+            批量标记已处理
+          </el-button>
         </div>
       </template>
       <el-table v-loading="loading" :data="filteredAlerts" stripe style="width: 100%" @selection-change="handleSelectionChange">
@@ -110,14 +113,15 @@
         <el-table-column label="操作" fixed="right" min-width="160">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="handleView(row)">查看</el-button>
-            <el-button link type="warning" size="small" @click="handleAcknowledge(row)" :disabled="row.status !== 'pending'">标记已读</el-button>
-            <el-button link type="success" size="small" @click="handleResolve(row)" :disabled="row.status === 'resolved'">标记已处理</el-button>
+            <el-button link size="small" style="color:#D9A441;" @click="handleAcknowledge(row)" :disabled="row.status !== 'pending'">标记已读</el-button>
+            <el-button link size="small" style="color:#6FAF8F;" @click="handleResolve(row)" :disabled="row.status === 'resolved'">标记已处理</el-button>
           </template>
         </el-table-column>
       </el-table>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
-        <el-tag :type="sseConnected ? 'success' : 'danger'" size="small">
-          {{ sseConnected ? '● 实时推送已连接' : '○ 推送未连接' }}
+        <el-tag :type="sseConnected ? 'success' : 'danger'" size="small" effect="plain" style="border-radius:20px;">
+          <span :style="{ color: sseConnected ? '#6FAF8F' : '#D77B72', display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: sseConnected ? '#6FAF8F' : '#D77B72', marginRight: 6 }"></span>
+          {{ sseConnected ? '实时推送已连接' : '推送未连接' }}
         </el-tag>
         <el-pagination background layout="prev, pager, next" :total="allAlerts.length" :page-size="20" />
       </div>
@@ -250,11 +254,6 @@ function statusLabel(status: string): string {
   return status === 'pending' ? '未处理' : status === 'acknowledged' ? '已确认' : '已处理'
 }
 
-function severityLabel(sev: string): string {
-  const map: Record<string, string> = { P0: 'P0 紧急', P1: 'P1 重要', P2: 'P2 通知', high: '高', medium: '中', low: '低' }
-  return map[sev] || sev
-}
-
 async function handleSearch() {
   await fetchAlerts()
 }
@@ -279,7 +278,6 @@ async function fetchAlerts() {
   }
 }
 
-// SSE real-time push
 function connectSSE() {
   const token = localStorage.getItem('admin_token')
   const url = `/api/v1/admin/stream/alerts${token ? `?token=${encodeURIComponent(token)}` : ''}`
@@ -290,7 +288,6 @@ function connectSSE() {
     let data: any
     try { data = JSON.parse(evt.data) } catch { return }
     if (data.type === 'init' && data.alerts) {
-      // Merge catch-up alerts, avoid duplicates
       const existingIds = new Set(allAlerts.value.map(a => a.id))
       const newAlerts = data.alerts.filter((a: Alert) => !existingIds.has(a.id))
       if (newAlerts.length) {
@@ -312,7 +309,6 @@ function connectSSE() {
     sseConnected.value = false
     eventSource?.close()
     eventSource = null
-    // Retry after 10s
     setTimeout(connectSSE, 10000)
   }
 }
@@ -366,12 +362,9 @@ async function handleBatchResolve() {
     }
     ElMessage.success(`已批量处理 ${selectedRows.value.length} 条告警`)
     selectedRows.value = []
-  } catch {
-    // cancelled
-  }
+  } catch { /* cancelled */ }
 }
 
-// View detail
 const showDetailDialog = ref(false)
 const detailAlert = ref<Alert | null>(null)
 
@@ -396,6 +389,26 @@ onUnmounted(() => {
 }
 
 /* KPI stat cards */
+.stat-card {
+  border: 1px solid var(--border-light) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), var(--shadow-card) !important;
+  border-radius: var(--radius-lg) !important;
+  background: white !important;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
+  pointer-events: none;
+}
+.stat-card:hover {
+  transform: translateY(-3px);
+}
 .stat-card :deep(.el-card__body) {
   padding: 18px;
   display: flex;
@@ -403,67 +416,86 @@ onUnmounted(() => {
   justify-content: space-between;
   border-radius: 14px;
 }
-.stat-content {
-  flex: 1;
-}
+.stat-content { flex: 1; }
 .stat-value {
   font-size: 32px;
   font-weight: 800;
 }
-.kpi-danger .stat-value { color: #EF4444; }
-.kpi-warning .stat-value { color: #F59E0B; }
-.kpi-blue .stat-value { color: #165DFF; }
+.kpi-danger .stat-value { color: #D77B72; }
+.kpi-warning .stat-value { color: #D9A441; }
+.kpi-info .stat-value { color: #6E9FC4; }
 .stat-label {
   font-size: 13px;
-  color: var(--el-text-color-secondary);
+  color: #6B8980;
   margin-top: 4px;
   font-weight: 600;
 }
+
+.filter-form :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+.filter-form :deep(.el-select) {
+  width: 100%;
+}
+
+/* Table header */
 .table-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+.btn-reset {
+  border-radius: 12px !important;
+  border: 1px solid #D4DFD5 !important;
+  color: #4A6260 !important;
+  background: white !important;
+}
+.btn-primary-outline {
+  border-radius: 14px !important;
+  background: #FFFFFF !important;
+  border: 1.5px solid #5C8D73 !important;
+  color: #5C8D73 !important;
+  font-weight: 600;
+}
 
-/* Status badges with dots */
+/* Status badges */
 .status-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   padding: 3px 10px;
-  border-radius: 8px;
+  border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
 }
-.badge-success { background: #F0FDF4; color: #16A34A; }
-.badge-danger { background: #FEF2F2; color: #DC2626; }
-.badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #EFF6FF; color: #165DFF; }
-.badge-gray { background: #F3F4F6; color: #6B7280; }
-.badge-info { background: #F8FAFC; color: #94A3B8; }
+.badge-success { background: #E8F4EC; color: #4A8A6A; }
+.badge-danger { background: #FDF0EE; color: #B85C54; }
+.badge-warning { background: #FEF7E8; color: #B8860B; }
+.badge-primary { background: #DDEBE1; color: #47745C; }
+.badge-info { background: #EEF4F8; color: #4A7FA0; }
 .status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   display: inline-block;
 }
-.dot-success { background: #16A34A; }
-.dot-danger { background: #DC2626; }
-.dot-warning { background: #D97706; }
-.dot-primary { background: #165DFF; }
-.dot-gray { background: #6B7280; }
-.dot-info { background: #94A3B8; }
+.dot-success { background: #6FAF8F; }
+.dot-danger { background: #D77B72; }
+.dot-warning { background: #D9A441; }
+.dot-primary { background: #5C8D73; }
+.dot-info { background: #6E9FC4; }
 
 .mono {
   font-family: 'SF Mono', 'Consolas', monospace;
   font-size: 12px;
+  color: #6B8980;
 }
 
-/* ========== Detail Side Panel ========== */
+/* ========== Side Panel ========== */
 .side-panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(41,64,74,0.3);
   z-index: 200;
   display: none;
 }
@@ -480,14 +512,14 @@ onUnmounted(() => {
   z-index: 201;
   transition: right 0.3s ease;
   overflow-y: auto;
-  box-shadow: -10px 0 40px rgba(0,0,0,0.1);
+  box-shadow: -10px 0 40px rgba(60,90,70,0.12);
 }
 .side-panel.open {
   right: 0;
 }
 .panel-header {
   padding: 20px 24px;
-  border-bottom: 1px solid var(--el-border-color-light);
+  border-bottom: 1px solid #E5EDE6;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -499,22 +531,24 @@ onUnmounted(() => {
 .panel-title {
   font-size: 15px;
   font-weight: 700;
+  color: #29404A;
 }
 .panel-close {
   width: 32px;
   height: 32px;
   border-radius: 8px;
   border: none;
-  background: var(--el-fill-color-light);
+  background: #F3F5F1;
   cursor: pointer;
   font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.15s;
+  color: #6B8980;
 }
 .panel-close:hover {
-  background: var(--el-border-color-light);
+  background: #E5EDE6;
 }
 .panel-body {
   padding: 20px 24px;
@@ -524,14 +558,14 @@ onUnmounted(() => {
   margin-bottom: 20px;
 }
 .section-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--el-text-color-regular);
+  color: #6B8980;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 10px;
   padding-bottom: 6px;
-  border-bottom: 1px solid var(--el-border-color-light);
+  border-bottom: 1px solid #F3F5F1;
 }
 .panel-row {
   display: flex;
@@ -541,21 +575,21 @@ onUnmounted(() => {
 }
 .panel-label {
   font-size: 13px;
-  color: var(--el-text-color-secondary);
+  color: #6B8980;
   font-weight: 500;
 }
 .panel-value {
   font-size: 13px;
-  color: var(--el-text-color-primary);
+  color: #29404A;
   font-weight: 600;
 }
 .metadata-pre {
   margin: 0;
   font-size: 12px;
-  color: var(--el-text-color-regular);
-  background: #f5f7fa;
+  color: #4A6260;
+  background: #F8F6F1;
   padding: 12px;
-  border-radius: 6px;
+  border-radius: 10px;
   overflow-x: auto;
 }
 </style>

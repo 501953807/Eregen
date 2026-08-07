@@ -12,7 +12,9 @@ type Config struct {
 	TokenExpiry   int // seconds
 	RefreshExpiry int // seconds
 
-	DBURL         string
+	DBURL         string // PostgreSQL DSN (e.g. "postgres://user:pass@host:port/db")
+	StorageType   string // "postgres" or "sqlite" (default: "postgres")
+	SQLitePath    string // SQLite database file path
 	RedisURL      string
 	NATSURL       string
 	InfluxDBURL   string
@@ -54,7 +56,9 @@ func Load() *Config {
 		RefreshExpiry: getEnvAsInt("REFRESH_EXPIRY", 604800),
 
 		// Use empty string as default; must be explicitly configured in production
-		DBURL:         getEnv("DB_URL", ""),
+		DBURL:       getEnv("DB_URL", ""),
+		StorageType: getEnv("STORAGE_TYPE", "postgres"),
+		SQLitePath:  getEnv("SQLITE_PATH", "./data/api-server.sqlite"),
 		RedisURL:      getEnv("REDIS_URL", "redis://localhost:6379/0"),
 		NATSURL:       getEnv("NATS_URL", "nats://localhost:4222"),
 		InfluxDBURL:   getEnv("INFLUXDB_URL", "http://localhost:8086"),

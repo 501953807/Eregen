@@ -21,25 +21,25 @@
     <!-- KPI Row (4 columns) -->
     <el-row :gutter="12" style="margin-bottom: 16px;">
       <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-blue">
+        <el-card shadow="never" class="kpi-card kpi-primary">
           <div class="kpi-value">{{ stats.totalUsers }}</div>
           <div class="kpi-label">总用户数</div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-green">
+        <el-card shadow="never" class="kpi-card kpi-success">
           <div class="kpi-value">{{ stats.monthlyActive }}</div>
           <div class="kpi-label">月活跃</div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-purple">
+        <el-card shadow="never" class="kpi-card kpi-info">
           <div class="kpi-value">{{ stats.paidSubscriptions }}</div>
           <div class="kpi-label">付费订阅</div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-red">
+        <el-card shadow="never" class="kpi-card kpi-warning">
           <div class="kpi-value">{{ stats.todayNew }}</div>
           <div class="kpi-label">今日新增</div>
         </el-card>
@@ -91,7 +91,7 @@
     <div class="user-grid">
       <el-card
         v-for="user in paginatedUsers" :key="user.id"
-        shadow="hover" class="user-card"
+        shadow="never" class="user-card"
         @click="openSidePanel(user)"
       >
         <div class="user-card-header">
@@ -102,7 +102,7 @@
             <div class="user-name">{{ user.name }}</div>
             <div class="user-phone">{{ maskPhone(user.phone) }}</div>
           </div>
-          <el-tag v-if="user.tier" size="small" :class="'tier-' + user.tier" effect="light">
+          <el-tag v-if="user.tier" size="small" :class="'tier-' + user.tier" effect="plain">
             {{ tierLabel(user.tier) }}
           </el-tag>
         </div>
@@ -117,7 +117,7 @@
             <div class="user-stat-lbl">订阅剩余</div>
           </div>
           <div class="user-stat">
-            <div class="user-stat-val" :style="{ color: userStatColor(user.status) }">
+            <div class="user-stat-val" :style="{ color: userStatColor(user.statusText) }">
               {{ user.statusText }}
             </div>
             <div class="user-stat-lbl">状态</div>
@@ -157,7 +157,7 @@
     <div v-if="showSidePanel" class="side-panel-overlay" @click.self="showSidePanel = false">
       <div class="side-panel">
         <div class="panel-header">
-          <span style="font-size:15px;font-weight:700;">用户详情</span>
+          <span style="font-size:15px;font-weight:700;color:#29404A;">用户详情</span>
           <button class="panel-close" @click="showSidePanel = false">&#10005;</button>
         </div>
 
@@ -183,7 +183,7 @@
             <div class="panel-row"><span class="panel-row-label">最后登录</span><span class="panel-row-value">{{ selectedUser?.last_login || '—' }}</span></div>
             <div class="panel-row">
               <span class="panel-row-label">实名状态</span>
-              <span class="panel-row-value" :style="{ color: selectedUser?.verified ? '#16A34A' : '' }">
+              <span class="panel-row-value" :style="{ color: selectedUser?.verified ? '#4A8A6A' : '' }">
                 {{ selectedUser?.verified ? '✓ 已认证' : '未认证' }}
               </span>
             </div>
@@ -194,7 +194,7 @@
             <div class="panel-section-title">订阅信息</div>
             <div class="panel-row">
               <span class="panel-row-label">套餐</span>
-              <span class="panel-row-value" :style="{ color: selectedUser?.tier === 'pro' ? '#9B8ED8' : '#165DFF' }">
+              <span class="panel-row-value" :style="{ color: selectedUser?.tier === 'pro' ? '#5C8D73' : '#6E9FC4' }">
                 {{ tierLabel(selectedUser?.tier || '') }} {{ (selectedUser as any).sub_type || '' }}
               </span>
             </div>
@@ -210,12 +210,12 @@
               v-for="(profile, i) in (selectedUser as any).elderly_profiles"
               :key="i"
               class="panel-row"
-              style="cursor:pointer;color:#165DFF;"
+              style="cursor:pointer;color:#5C8D73;font-weight:500;"
               @click="viewElderlyProfile(profile)"
             >
               {{ profile.name }}（{{ profile.relation }}）· {{ profile.devices || '无设备' }}
             </div>
-            <div v-if="!selectedUser || !(selectedUser as any).elderly_profiles?.length" style="color:#909399;font-size:13px;padding:6px 0;">暂无关联老人</div>
+            <div v-if="!selectedUser || !(selectedUser as any).elderly_profiles?.length" style="color:#8FA8A0;font-size:13px;padding:6px 0;">暂无关联老人</div>
           </div>
 
           <!-- Recent Activity -->
@@ -237,7 +237,7 @@
               <el-button type="primary" size="small" style="flex:1;">发送通知</el-button>
               <el-button size="small" style="flex:1;">编辑信息</el-button>
               <el-button size="small" style="flex:1;">查看日志</el-button>
-              <el-button size="small" style="flex:1;color:#EF4444;border-color:#EF4444;">禁用账号</el-button>
+              <el-button size="small" style="flex:1;color:#D77B72;border-color:#D77B72;">禁用账号</el-button>
             </div>
           </div>
         </div>
@@ -347,7 +347,7 @@ const filteredUsers = computed<UserCard[]>(() => {
         phone: '',
         email: '',
         role: 'elderly',
-        created_at: e.created_at,
+        created_at: (e as any).created_at || '',
         gender: 'female',
         elderlyCount: 1,
         subscriptionDays: '—',
@@ -390,10 +390,10 @@ function roleLabel(role: string): string {
 }
 
 function userStatColor(status: string): string {
-  if (status === '活跃') return '#16A34A'
-  if (status === '正常') return '#16A34A'
-  if (status.includes('未活')) return '#F59E0B'
-  return '#909399'
+  if (status === '活跃') return '#4A8A6A'
+  if (status === '正常') return '#4A8A6A'
+  if (status.includes('未活')) return '#D9A441'
+  return '#8FA8A0'
 }
 
 function subAmount(tier?: string): string {
@@ -407,10 +407,10 @@ function formatDate(date?: string): string {
 }
 
 function getPanelAvatarBg(user?: User | null): string {
-  if (!user) return '#f3f4f6'
+  if (!user) return '#E8EEE9'
   if ((user as any).gender === 'male') return '#DBEAFE'
   if ((user as any).gender === 'female') return '#FCE7F3'
-  return '#F3E8FF'
+  return '#EDE9FE'
 }
 
 function handleSearch() {
@@ -468,7 +468,7 @@ async function confirmAddUser() {
       password: addForm.value.password,
     })
     ElMessage.success('用户创建成功')
-    addForm.value = { name: '', phone: '', email: '', role: 'family' }
+    addForm.value = { name: '', phone: '', email: '', role: 'family', password: '' }
     showAddDialog.value = false
     await usersStore.fetchFamily({ page_size: 50 })
     await usersStore.fetchElderly({ page_size: 50 })
@@ -543,9 +543,10 @@ onMounted(async () => {
 
 .page-title {
   font-size: 22px;
-  font-weight: 800;
-  color: var(--el-text-color-primary);
+  font-weight: 700;
+  color: #29404A;
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 /* User Type Tabs — pill style */
@@ -553,29 +554,29 @@ onMounted(async () => {
   display: flex;
   gap: 4px;
   margin-bottom: 16px;
-  background: white;
+  background: #FFFFFF;
   border-radius: 14px;
   padding: 4px;
-  border: 1px solid var(--el-border-color-light);
+  border: 1px solid #E5EDE6;
   width: fit-content;
-  box-shadow: var(--el-box-shadow-light);
+  box-shadow: 0 2px 8px rgba(60,90,70,0.04);
 }
 
 .user-tabs .el-button {
-  border-radius: 12px;
+  border-radius: 10px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   padding: 9px 22px;
   border: none;
   background: transparent;
-  color: var(--el-text-color-secondary);
+  color: #6B8980;
   transition: all 0.2s;
 }
 
 .user-tabs .el-button.active {
-  background: linear-gradient(135deg, #165DFF, #9B8ED8);
+  background: linear-gradient(135deg, #5C8D73, #7BAF8C);
   color: white;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 4px 12px rgba(92,141,115,0.25);
 }
 
 .tab-count {
@@ -585,33 +586,50 @@ onMounted(async () => {
   font-weight: 600;
 }
 
-/* KPI Cards — v2 blue/purple palette */
+/* KPI Cards */
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
+  pointer-events: none;
+}
+.kpi-card:hover {
+  transform: translateY(-3px);
+}
 .kpi-card :deep(.el-card__body) {
   padding: 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  border-radius: 14px;
 }
 
 .kpi-value {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
-  line-height: 1.2;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 4px;
 }
 
 .kpi-label {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  color: #6B8980;
   margin-top: 6px;
   font-weight: 600;
 }
 
-.kpi-blue .kpi-value { color: #165DFF; }
-.kpi-green .kpi-value { color: #16A34A; }
-.kpi-purple .kpi-value { color: #9B8ED8; }
-.kpi-red .kpi-value { color: #EF4444; }
+.kpi-primary .kpi-value { color: #5C8D73; }
+.kpi-success .kpi-value { color: #6FAF8F; }
+.kpi-info .kpi-value { color: #6E9FC4; }
+.kpi-warning .kpi-value { color: #D9A441; }
 
 /* Filter Card */
 .filter-card :deep(.el-card__body) {
@@ -629,14 +647,14 @@ onMounted(async () => {
 .user-card {
   cursor: pointer;
   transition: all 0.2s;
-  border-radius: 14px;
-  border: 1px solid var(--el-border-color-light);
+  border-radius: 16px !important;
+  border: 1px solid #E5EDE6 !important;
   background: white;
 }
 
 .user-card:hover {
-  border-color: #165DFF;
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.1);
+  border-color: #5C8D73;
+  box-shadow: 0 6px 20px rgba(92,141,115,0.12);
   transform: translateY(-2px);
 }
 
@@ -661,11 +679,11 @@ onMounted(async () => {
   font-size: 20px;
   font-weight: 700;
   flex-shrink: 0;
-  background: #F3F4F6;
-  color: var(--el-text-color-placeholder);
+  background: #E8EEE9;
+  color: #8FA8A0;
 }
 
-.user-avatar.male { background: #DBEAFE; color: #165DFF; }
+.user-avatar.male { background: #DBEAFE; color: #6E9FC4; }
 .user-avatar.female { background: #FCE7F3; color: #D48EC0; }
 
 .user-name-info {
@@ -676,17 +694,17 @@ onMounted(async () => {
 .user-name {
   font-size: 15px;
   font-weight: 700;
-  color: var(--el-text-color-primary);
+  color: #29404A;
 }
 
 .user-phone {
   font-size: 12px;
-  color: var(--el-text-color-placeholder);
+  color: #8FA8A0;
   font-family: monospace;
 }
 
-.tier-pro { background: #EDE9FE; color: #9B8ED8; }
-.tier-plus { background: #DBEAFE; color: #165DFF; }
+.tier-pro { background: #EDE9FE; color: #7C3AED; }
+.tier-plus { background: #DBEAFE; color: #6E9FC4; }
 .tier-starter { background: #F3F4F6; color: #6B7280; }
 
 .user-stats {
@@ -699,18 +717,19 @@ onMounted(async () => {
 .user-stat {
   text-align: center;
   padding: 8px;
-  background: #F9FAFB;
+  background: #F8F6F1;
   border-radius: 8px;
 }
 
 .user-stat-val {
   font-size: 16px;
   font-weight: 700;
+  color: #29404A;
 }
 
 .user-stat-lbl {
   font-size: 10px;
-  color: var(--el-text-color-placeholder);
+  color: #8FA8A0;
 }
 
 .user-tags {
@@ -724,7 +743,7 @@ onMounted(async () => {
   display: flex;
   gap: 6px;
   padding-top: 12px;
-  border-top: 1px solid #F3F4F6;
+  border-top: 1px solid #F3F5F1;
 }
 
 /* Pagination */
@@ -738,7 +757,7 @@ onMounted(async () => {
 .side-panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(41,64,74,0.3);
   z-index: 200;
   display: flex;
   justify-content: flex-end;
@@ -755,7 +774,7 @@ onMounted(async () => {
   max-width: 90vw;
   background: white;
   overflow-y: auto;
-  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.1);
+  box-shadow: -10px 0 40px rgba(60,90,70,0.12);
   display: flex;
   flex-direction: column;
   animation: slideIn 0.3s ease;
@@ -768,7 +787,7 @@ onMounted(async () => {
 
 .panel-header {
   padding: 20px 24px;
-  border-bottom: 1px solid var(--el-border-color-light);
+  border-bottom: 1px solid #E5EDE6;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -783,16 +802,17 @@ onMounted(async () => {
   height: 32px;
   border-radius: 8px;
   border: none;
-  background: var(--el-fill-color-light);
+  background: #F3F5F1;
   cursor: pointer;
   font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.15s;
+  color: #6B8980;
 }
 .panel-close:hover {
-  background: var(--el-border-color-light);
+  background: #E5EDE6;
 }
 
 .panel-body {
@@ -821,12 +841,12 @@ onMounted(async () => {
 .panel-name {
   font-size: 18px;
   font-weight: 700;
-  color: var(--el-text-color-primary);
+  color: #29404A;
 }
 
 .panel-role {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  color: #6B8980;
   margin-top: 2px;
 }
 
@@ -837,12 +857,12 @@ onMounted(async () => {
 .panel-section-title {
   font-size: 12px;
   font-weight: 700;
-  color: var(--el-text-color-secondary);
+  color: #6B8980;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 10px;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  border-bottom: 1px solid #F3F5F1;
 }
 
 .panel-row {
@@ -853,11 +873,12 @@ onMounted(async () => {
 }
 
 .panel-row-label {
-  color: var(--el-text-color-secondary);
+  color: #6B8980;
 }
 
 .panel-row-value {
   font-weight: 600;
+  color: #29404A;
 }
 
 /* Activity Timeline */
@@ -871,7 +892,7 @@ onMounted(async () => {
   display: flex;
   gap: 12px;
   padding: 10px 0;
-  border-bottom: 1px solid #F3F4F6;
+  border-bottom: 1px solid #F3F5F1;
   font-size: 12px;
   align-items: flex-start;
 }
@@ -888,19 +909,18 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
-.activity-dot.login { background: #16A34A; }
-.activity-dot.alert { background: #EF4444; }
-.activity-dot.config { background: #165DFF; }
+.activity-dot.login { background: #6FAF8F; }
+.activity-dot.alert { background: #D77B72; }
+.activity-dot.config { background: #6E9FC4; }
 
 .activity-text {
   flex: 1;
   font-weight: 600;
+  color: #29404A;
 }
 
 .activity-time {
-  color: var(--el-text-color-placeholder);
-  white-space: nowrap;
-  font-size: 11px;
+  color: #8FA8A0;
 }
 
 .panel-actions {

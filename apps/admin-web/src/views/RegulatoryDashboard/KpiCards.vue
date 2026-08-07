@@ -47,14 +47,17 @@ const props = defineProps<{
 
 <style scoped>
 .kpi-card :deep(.el-card__body) { padding: 18px; display: flex; flex-direction: column; align-items: center; text-align: center; border-radius: 14px; }
-.kpi-value { font-size: 28px; font-weight: 800; line-height: 1.2; }
+.kpi-card { position: relative; overflow: hidden; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+.kpi-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%); pointer-events: none; }
+.kpi-card:hover { transform: translateY(-3px); }
+.kpi-value { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 4px; }
 .kpi-label { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 6px; font-weight: 600; }
 .kpi-icon-wrap { font-size: 24px; margin-bottom: 4px; }
 .kpi-trend { font-size: 11px; margin-top: 4px; }
 .trend-up { color: #16A34A; }
 .trend-down { color: #EF4444; }
-.kpi-blue .kpi-value { color: #165DFF; }
-.kpi-green .kpi-value { color: #16A34A; }
-.kpi-danger .kpi-value { color: #EF4444; }
-.kpi-purple .kpi-value { color: #9B8ED8; }
+.kpi-blue .kpi-value { color: #5C8D73; }
+.kpi-green .kpi-value { color: #6FAF8F; }
+.kpi-danger .kpi-value { color: #D77B72; }
+.kpi-purple .kpi-value { color: #7BAF8C; }
 </style>

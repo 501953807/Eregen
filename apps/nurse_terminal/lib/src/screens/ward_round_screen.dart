@@ -3,6 +3,7 @@ import '../services/api_client.dart';
 import '../services/ward_round_service.dart';
 
 /// Ward round screen: collect vital signs and observations, then submit.
+/// Uses hospital-api for ward round data storage.
 class WardRoundScreen extends StatefulWidget {
   final String patientId;
 
@@ -13,7 +14,7 @@ class WardRoundScreen extends StatefulWidget {
 }
 
 class _WardRoundScreenState extends State<WardRoundScreen> {
-  final ApiClient _api = ApiClient();
+  final HospitalApiClient _hospitalApi = HospitalApiClient();
   late final WardRoundService _wardRoundService;
 
   // Vitals controllers
@@ -38,7 +39,7 @@ class _WardRoundScreenState extends State<WardRoundScreen> {
   @override
   void initState() {
     super.initState();
-    _wardRoundService = WardRoundService(_api);
+    _wardRoundService = WardRoundService(_hospitalApi);
   }
 
   @override
@@ -76,6 +77,12 @@ class _WardRoundScreenState extends State<WardRoundScreen> {
     });
 
     try {
+      final observations = <String, dynamic>[];
+      if (_falls) observations.add('falls_risk');
+      if (_confusion) observations.add('confusion');
+      if (_pain) observations.add('pain');
+      if (_poorAppetite) observations.add('poor_appetite');
+
       final entry = <String, dynamic>{
         'patient_id': widget.patientId,
         'recorded_at': DateTime.now().toIso8601String(),
@@ -84,12 +91,7 @@ class _WardRoundScreenState extends State<WardRoundScreen> {
         if (_spo2Controller.text.isNotEmpty) 'spo2': int.parse(_spo2Controller.text),
         if (_tempController.text.isNotEmpty) 'temperature': double.parse(_tempController.text),
         if (_weightController.text.isNotEmpty) 'weight_kg': double.parse(_weightController.text),
-        'observations': <String, dynamic>{
-          'falls_risk': _falls,
-          'confusion': _confusion,
-          'pain': _pain,
-          'poor_appetite': _poorAppetite,
-        },
+        'observations': observations,
         if (_notesController.text.isNotEmpty) 'notes': _notesController.text.trim(),
       };
 

@@ -12,7 +12,9 @@
 
     <div class="filter-bar">
       <el-button type="primary" @click="$emit('add')">＋ 新增老人</el-button>
-      <el-input v-model="searchQuery" placeholder="搜索姓名 / 身份证号 / 手机号" clearable style="width: 300px;" :prefix-icon="Search" @input="emitSearch" />
+      <el-input v-model="searchQuery" placeholder="搜索姓名 / 身份证号 / 手机号" clearable style="width: 300px;" @input="emitSearch">
+        <template #prefix><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></template>
+      </el-input>
     </div>
 
     <el-card shadow="never" class="table-card">
@@ -60,7 +62,6 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Search } from '@element-plus/icons-vue'
 
 interface WelfareTag { code: string; name: string; issuer?: string; start_date?: string; end_date?: string }
 interface ElderlyRow {

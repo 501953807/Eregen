@@ -13,13 +13,20 @@ import (
 
 // Config holds all gateway configuration.
 type Config struct {
-	LogLevel string        `yaml:"log_level"`
-	MQTT     MQTTConfig    `yaml:"mqtt"`
-	NATS     NATSConfig    `yaml:"nats"`
-	Postgres PostgresConfig `yaml:"postgres"`
-	Redis    RedisConfig   `yaml:"redis"`
-	InfluxDB InfluxDBConfig `yaml:"influxdb"`
-	Auth     AuthConfig    `yaml:"auth"`
+	LogLevel   string        `yaml:"log_level"`
+	MQTT       MQTTConfig    `yaml:"mqtt"`
+	NATS       NATSConfig    `yaml:"nats"`
+	Storage    StorageConfig `yaml:"storage"`
+	Redis      RedisConfig   `yaml:"redis"`
+	InfluxDB   InfluxDBConfig `yaml:"influxdb"`
+	Auth       AuthConfig    `yaml:"auth"`
+}
+
+// StorageConfig selects between postgres and sqlite backend.
+type StorageConfig struct {
+	Type   string `yaml:"type"`   // "postgres" or "sqlite"
+	DSN    string `yaml:"dsn"`
+	SQLite string `yaml:"sqlite"` // path to .sqlite file
 }
 
 // MQTTConfig holds EMQX connection settings.
@@ -87,7 +94,9 @@ func Load() Config {
 	// Override from environment variables (optional overrides)
 	overrideString(&cfg.MQTT.Broker, "GATEWAY_MQTT_BROKER")
 	overrideString(&cfg.NATS.URL, "GATEWAY_NATS_URL")
-	overrideString(&cfg.Postgres.DSN, "GATEWAY_POSTGRES_DSN")
+	overrideString(&cfg.Storage.Type, "GATEWAY_STORAGE_TYPE")
+	overrideString(&cfg.Storage.DSN, "GATEWAY_POSTGRES_DSN")
+	overrideString(&cfg.Storage.SQLite, "GATEWAY_SQLITE_PATH")
 	overrideString(&cfg.Redis.Address, "GATEWAY_REDIS_ADDRESS")
 	overrideString(&cfg.InfluxDB.URL, "GATEWAY_INFLUXDB_URL")
 
@@ -130,8 +139,10 @@ func defaultConfig() Config {
 			JetStreamDomain: "EREGEN",
 			StreamName:    "DEVICE_EVENTS",
 		},
-		Postgres: PostgresConfig{
-			DSN: "host=localhost port=5432 user=eregen password=eregen dbname=eregen sslmode=disable",
+		Storage: StorageConfig{
+			Type:   "postgres",
+			DSN:    "host=localhost port=5432 user=eregen password=eregen dbname=eregen sslmode=disable",
+			SQLite: "./data/gateway.sqlite",
 		},
 		Redis: RedisConfig{
 			Address: "localhost:6379",

@@ -1263,6 +1263,32 @@ func (s *SqliteStore) GetElderlyAlertHistory(ctx context.Context, elderlyID stri
 	return items, rows.Err()
 }
 
+// CreateHealthRecord inserts a new health record.
+func (s *SqliteStore) CreateHealthRecord(ctx context.Context, r *model.HealthRecordRow) error {
+	r.ID = uuid.New().String()
+	if r.Timestamp.IsZero() {
+		r.Timestamp = time.Now()
+	}
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO health_records (id, elderly_id, timestamp, hr, spo2, steps, sleep_hours)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		r.ID, r.ElderlyID, r.Timestamp, r.HR, r.SpO2, r.Steps, r.SleepHours)
+	return err
+}
+
+// CreateLocation inserts a new location record.
+func (s *SqliteStore) CreateLocation(ctx context.Context, loc *model.LocationPoint) error {
+	loc.ID = uuid.New().String()
+	if loc.Timestamp.IsZero() {
+		loc.Timestamp = time.Now()
+	}
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO location_history (id, elderly_id, lat, lon, accuracy, timestamp)
+		 VALUES (?, ?, ?, ?, ?, ?)`,
+		loc.ID, loc.ElderlyID, loc.Lat, loc.Lon, loc.Accuracy, loc.Timestamp)
+	return err
+}
+
 // ========== Medical Wristband Methods ==========
 
 // CreatePatient inserts a new patient record.
@@ -1873,6 +1899,19 @@ func (s *SqliteStore) EvaluateRegulatoryRules(ctx context.Context, event string,
 		}
 	}
 	return results, nil
+}
+
+// CreateAlert inserts a new alert record.
+func (s *SqliteStore) CreateAlert(ctx context.Context, a *model.AlertSummary) error {
+	a.ID = uuid.New().String()
+	if a.CreatedAt.IsZero() {
+		a.CreatedAt = time.Now()
+	}
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO alerts (id, elderly_id, alert_type, severity, status, message, device_id, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		a.ID, a.ElderlyID, a.AlertType, a.Severity, a.Status, "", a.DeviceID, a.CreatedAt)
+	return err
 }
 
 // CreateAlertTagConfig creates an alert tag configuration.

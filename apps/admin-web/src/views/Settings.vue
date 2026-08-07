@@ -219,6 +219,57 @@ onMounted(loadNotificationSettings)
 .settings-page {
   padding: 0;
 }
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.page-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--el-text-color-primary);
+  margin: 0;
+}
+.settings-page :deep(.el-card) {
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
+  transition: all var(--duration-normal) var(--easing-out);
+}
+.settings-page :deep(.el-card:hover) {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1px);
+}
+.settings-page :deep(.el-card__header) {
+  background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  padding: 16px 20px;
+  border-radius: 12px 12px 0 0 !important;
+}
+.settings-page :deep(.el-card__body) {
+  padding: 20px;
+}
+.settings-page :deep(.el-form-item__content) {
+  position: relative;
+}
+.settings-page :deep(.el-input__wrapper) {
+  border-radius: 8px !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(255,255,255,0.9) !important;
+  border: 1px solid var(--el-border-color) !important;
+  padding: 4px 12px !important;
+  background: white !important;
+}
+.settings-page :deep(.el-input__wrapper.is-focus) {
+  border-color: #5C8D73 !important;
+  box-shadow: 0 0 0 3px rgba(92,141,115,0.08), inset 0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(255,255,255,0.9) !important;
+}
+.settings-page :deep(.el-select__wrapper) {
+  border-radius: 8px !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(255,255,255,0.9) !important;
+  border: 1px solid var(--el-border-color) !important;
+  padding: 4px 12px !important;
+  background: white !important;
+}
 
 .mono {
   font-family: 'SF Mono', 'Consolas', monospace;
@@ -238,7 +289,7 @@ onMounted(loadNotificationSettings)
 .badge-success { background: #F0FDF4; color: #16A34A; }
 .badge-danger { background: #FEF2F2; color: #DC2626; }
 .badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #EFF6FF; color: #165DFF; }
+.badge-primary { background: #DDEBE1; color: #47745C; }
 .badge-gray { background: #F3F4F6; color: #6B7280; }
 .status-dot {
   width: 6px;
@@ -246,9 +297,9 @@ onMounted(loadNotificationSettings)
   border-radius: 50%;
   display: inline-block;
 }
-.dot-success { background: #16A34A; }
-.dot-danger { background: #DC2626; }
-.dot-warning { background: #D97706; }
-.dot-primary { background: #165DFF; }
-.dot-gray { background: #6B7280; }
+.dot-success { background: #6FAF8F; }
+.dot-danger { background: #D77B72; }
+.dot-warning { background: #D9A441; }
+.dot-primary { background: #5C8D73; }
+.dot-gray { background: #8FA8A0; }
 </style>

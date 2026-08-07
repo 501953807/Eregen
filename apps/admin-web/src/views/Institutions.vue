@@ -323,23 +323,75 @@ function viewDetail(row: B2BInstitution) {
 }
 
 function generateKey(row: B2BInstitution) {
-  ElMessage.warning('B2B 机构管理（第三批）尚未实现，API 端点暂未接入')
+  ElMessage.info('正在生成 API 密钥...')
+  institutionsApi.generateApiKey(row.id, row.name)
+    .then(res => {
+      ElMessageBox.alert(`密钥值（请妥善保存，仅显示一次）：<br><code style="font-family:monospace;">${res.data?.key_value || ''}</code>`, 'API 密钥', {
+        dangerouslyUseHTMLString: true,
+        confirmButtonText: '已复制',
+        type: 'success'
+      }).catch(() => {})
+    })
+    .catch(err => {
+      console.error('generate key failed:', err)
+      ElMessage.error('生成密钥失败')
+    })
 }
 
 function copyKey() {
-  ElMessage.warning('B2B 机构管理（第三批）尚未实现')
+  ElMessage.info('密钥已在生成弹窗中展示，请妥善保存')
 }
 
 function toggleStatus(row: B2BInstitution) {
-  ElMessage.warning('B2B 机构管理（第三批）尚未实现，API 端点暂未接入')
+  const newStatus = row.status === 'active' ? 'suspended' : 'active'
+  institutionsApi.update(row.id, { status: newStatus })
+    .then(() => {
+      ElMessage.success(newStatus === 'active' ? '已启用' : '已停用')
+      loadInstitutions()
+    })
+    .catch(err => {
+      console.error('toggle status failed:', err)
+      ElMessage.error('操作失败')
+    })
 }
 
-function deleteInstitution(row: B2BInstitution) {
-  ElMessage.warning('B2B 机构管理（第三批）尚未实现，API 端点暂未接入')
+async function deleteInstitution(row: B2BInstitution) {
+  try {
+    await ElMessageBox.confirm(`确定要删除机构「${row.name}」吗？此操作不可恢复。`, '警告', { type: 'warning' })
+    await institutionsApi.delete(row.id)
+    ElMessage.success('删除成功')
+    loadInstitutions()
+  } catch (err: any) {
+    if (err !== 'cancel') {
+      console.error('delete institution failed:', err)
+      ElMessage.error('删除失败')
+    }
+  }
 }
 
-function handleAdd() {
-  ElMessage.warning('B2B 机构管理（第三批）尚未实现，API 端点暂未接入')
+async function handleAdd() {
+  if (!form.value.name || !form.value.code) {
+    ElMessage.warning('请填写机构名称和编码')
+    return
+  }
+  try {
+    await institutionsApi.create({
+      name: form.value.name,
+      code: form.value.code,
+      type: form.value.type,
+      contact_name: form.value.contactName,
+      contact_phone: form.value.contactPhone,
+      access_level: form.value.accessLevel,
+      status: 'pending'
+    })
+    ElMessage.success('创建成功')
+    showDialog.value = false
+    form.value = { name: '', code: '', type: 'hospital', contactName: '', contactPhone: '', accessLevel: 'read' }
+    loadInstitutions()
+  } catch (err) {
+    console.error('create institution failed:', err)
+    ElMessage.error('创建失败')
+  }
 }
 
 onMounted(() => {
@@ -350,6 +402,24 @@ onMounted(() => {
 <style scoped>
 .institutions-page {
   padding: 0;
+}
+.institutions-page :deep(.el-card) {
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
+  transition: all var(--duration-normal) var(--easing-out);
+}
+.institutions-page :deep(.el-card:hover) {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1px);
+}
+.institutions-page :deep(.el-card__header) {
+  background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  padding: 16px 20px;
+  border-radius: 12px 12px 0 0 !important;
+}
+.institutions-page :deep(.el-card__body) {
+  padding: 20px;
 }
 
 /* Page header */
@@ -367,6 +437,22 @@ onMounted(() => {
 }
 
 /* KPI Cards */
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
+  pointer-events: none;
+}
+.kpi-card:hover {
+  transform: translateY(-3px);
+}
 .kpi-card :deep(.el-card__body) {
   padding: 18px;
   display: flex;
@@ -376,9 +462,11 @@ onMounted(() => {
   border-radius: 14px;
 }
 .kpi-value {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
-  line-height: 1.2;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 4px;
 }
 .kpi-label {
   font-size: 12px;
@@ -386,10 +474,10 @@ onMounted(() => {
   margin-top: 6px;
   font-weight: 600;
 }
-.kpi-blue .kpi-value { color: #165DFF; }
-.kpi-green .kpi-value { color: #16A34A; }
-.kpi-warning .kpi-value { color: #F59E0B; }
-.kpi-purple .kpi-value { color: #9B8ED8; }
+.kpi-blue .kpi-value { color: #5C8D73; }
+.kpi-green .kpi-value { color: #6FAF8F; }
+.kpi-warning .kpi-value { color: #D9A441; }
+.kpi-purple .kpi-value { color: #7BAF8C; }
 
 /* Filter card */
 .filter-card :deep(.el-card__body) {

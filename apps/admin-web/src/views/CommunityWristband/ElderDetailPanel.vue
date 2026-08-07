@@ -128,7 +128,7 @@ function parseTags(json: string | undefined): string[] {
 .panel-body { padding: 20px 24px; }
 .patient-detail-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--el-border-color-light); }
 .patient-avatar-large { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; }
-.avatar-blue { background: #DBEAFE; color: #165DFF; }
+.avatar-blue { background: #DDEBE1; color: #47745C; }
 .avatar-pink { background: #FCE7F3; color: #D48EC0; }
 .patient-detail-name { font-size: 17px; font-weight: 700; color: var(--el-text-color-primary); }
 .patient-detail-id { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 2px; }
@@ -150,7 +150,7 @@ function parseTags(json: string | undefined): string[] {
 .signin-tags { margin-top: 4px; }
 .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; }
 .badge-success { background: #F0FDF4; color: #16A34A; }
-.badge-primary { background: #EFF6FF; color: #165DFF; }
+.badge-primary { background: #DDEBE1; color: #47745C; }
 .badge-gray { background: #F3F4F6; color: #6B7280; }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
 .dot-success { background: #16A34A; }

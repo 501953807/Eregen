@@ -63,7 +63,7 @@ watch(visible, v => { if (!v) emit('update:modelValue', false) })
 .panel-close:hover { background: var(--el-border-color-light); }
 .panel-body { padding: 20px 24px; }
 .patient-detail-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--el-border-color-light); }
-.patient-avatar-large { width: 48px; height: 48px; border-radius: 50%; background: #DBEAFE; color: #165DFF; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; }
+.patient-avatar-large { width: 48px; height: 48px; border-radius: 50%; background: #DDEBE1; color: #47745C; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; }
 .patient-detail-name { font-size: 17px; font-weight: 700; color: var(--el-text-color-primary); }
 .patient-detail-id { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 2px; }
 .info-section { margin-bottom: 20px; }

@@ -155,6 +155,8 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 	dataExportH := handler.NewDataExportHandler(dataExportSvc, log)
 	statsH := handler.NewAdminStatsHandler(pg, log)
 
+	medicalH := handler.NewMedicalHandler(pg, log)
+
 	// Audit logger and handler
 	auditLogger := service.NewAuditLogger(10000, log)
 	auditH := handler.NewAuditHandler(auditLogger, log)
@@ -248,6 +250,17 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 		protected.GET("/health/latest", healthAgg.Latest)
 		protected.GET("/health/records", healthAgg.Records)
 		protected.GET("/health/risk-score", healthAgg.RiskScore)
+
+		// Medical wristband data for family app
+		med := protected.Group("/medical")
+		{
+			med.GET("/patients/:patient_id/history", medicalH.GetPatientHistory)
+			med.GET("/patients/:patient_id/expenses", medicalH.QueryExpenses)
+			med.GET("/patients/:patient_id/medications", medicalH.QueryMedications)
+			med.GET("/patients/:patient_id/test-results", medicalH.QueryTestResults)
+			med.GET("/patients/:patient_id/daily-entries", medicalH.QueryDailyEntries)
+			med.GET("/verifications", medicalH.QueryVerifications)
+		}
 
 		protected.GET("/subscriptions", subH.List)
 		protected.GET("/subscriptions/stats", subH.Stats)

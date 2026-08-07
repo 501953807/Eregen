@@ -49,7 +49,7 @@ set(APP_SOURCES
     sos_button.c
     free_rtos_tasks.c
     location/gps_manager.c
-    location/geofence.c
+    # geofence.c is only for Plus/Pro tiers
     ../common/crc16.c
     ../common/ring_buffer.c
     ../common/log.c

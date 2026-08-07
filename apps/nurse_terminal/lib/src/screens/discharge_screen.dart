@@ -4,6 +4,7 @@ import '../services/patient_service.dart';
 
 /// Discharge screen: select discharge type, add notes, optionally
 /// specify transfer destination, then call the discharge API.
+/// Supports both admin-api and hospital-api backends.
 class DischargeScreen extends StatefulWidget {
   final String admissionId;
 
@@ -14,14 +15,17 @@ class DischargeScreen extends StatefulWidget {
 }
 
 class _DischargeScreenState extends State<DischargeScreen> {
-  final ApiClient _api = ApiClient();
-  late final PatientService _patientService;
+  final ApiClient _adminApi = ApiClient();
+  final HospitalApiClient _hospitalApi = HospitalApiClient();
+  late PatientService _patientService;
 
   String _dischargeType = 'discharged';
   final _notesController = TextEditingController();
   final _transferredController = TextEditingController();
   bool _submitting = false;
   String? _error;
+
+  bool get _usingHospitalApi => _hospitalApi.institutionId != null;
 
   // Discharge type options: (value, label)
   static const _dischargeOptions = [
@@ -33,7 +37,7 @@ class _DischargeScreenState extends State<DischargeScreen> {
   @override
   void initState() {
     super.initState();
-    _patientService = PatientService(_api);
+    _patientService = PatientService(_hospitalApi);
   }
 
   @override
@@ -67,17 +71,28 @@ class _DischargeScreenState extends State<DischargeScreen> {
         body['transferred_to'] = _transferredController.text.trim();
       }
 
-      await _patientService.discharge(
-        widget.admissionId,
-        _dischargeType,
-        notes: _notesController.text.trim().isEmpty
-            ? null
-            : _notesController.text.trim(),
-        transferredTo:
-            _showTransferredTo && _transferredController.text.isNotEmpty
-                ? _transferredController.text.trim()
-                : null,
-      );
+      if (_usingHospitalApi) {
+        await _patientService.discharge(
+          widget.admissionId,
+          _dischargeType,
+          notes: _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
+          transferredTo:
+              _showTransferredTo && _transferredController.text.isNotEmpty
+                  ? _transferredController.text.trim()
+                  : null,
+        );
+      } else {
+        // Fall back to admin-api
+        final res = await _adminApi.post(
+          '/api/v1/admin/medical/patients/${widget.admissionId}/discharge',
+          body,
+        );
+        if (res['code'] != 'OK') {
+          throw Exception(res['error'] ?? 'Discharge failed');
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -5,38 +5,40 @@
       <h2 class="page-title">设备管理</h2>
       <div class="header-actions">
         <el-button type="primary" @click="handleRegister" size="default">+ 注册设备</el-button>
-        <el-button @click="handleRefresh">刷新</el-button>
+        <el-button @click="handleRefresh" class="btn-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>刷新
+        </el-button>
       </div>
     </div>
 
-    <!-- KPI Cards (5 columns) -->
+    <!-- KPI Cards -->
     <el-row :gutter="12" style="margin-bottom: 16px;">
       <el-col :span="5">
-        <el-card shadow="hover" class="kpi-card">
+        <el-card shadow="never" class="kpi-card kpi-total">
           <div class="kpi-num">{{ deviceStore.total }}</div>
           <div class="kpi-label">设备总数</div>
         </el-card>
       </el-col>
       <el-col :span="5">
-        <el-card shadow="hover" class="kpi-card kpi-online">
+        <el-card shadow="never" class="kpi-card kpi-online">
           <div class="kpi-num">{{ stats.online_devices }}</div>
           <div class="kpi-label">在线</div>
         </el-card>
       </el-col>
       <el-col :span="5">
-        <el-card shadow="hover" class="kpi-card kpi-offline">
+        <el-card shadow="never" class="kpi-card kpi-offline">
           <div class="kpi-num">{{ stats.offline_devices }}</div>
           <div class="kpi-label">离线</div>
         </el-card>
       </el-col>
       <el-col :span="5">
-        <el-card shadow="hover" class="kpi-card kpi-upgrade">
+        <el-card shadow="never" class="kpi-card kpi-upgrade">
           <div class="kpi-num">{{ stats.outdated_firmware }}</div>
           <div class="kpi-label">待升级</div>
         </el-card>
       </el-col>
       <el-col :span="4">
-        <el-card shadow="hover" class="kpi-card kpi-fault">
+        <el-card shadow="never" class="kpi-card kpi-fault">
           <div class="kpi-num">{{ stats.fault_count }}</div>
           <div class="kpi-label">故障</div>
         </el-card>
@@ -72,13 +74,13 @@
 
     <!-- Bulk Selection Banner -->
     <div class="bulk-banner" :class="{ show: selectedIds.length > 0 }">
-      <el-checkbox :model-value="allSelected" :model-enabled="allSelected" @change="toggleSelectAll" />
+      <el-checkbox :model-value="allSelected" :model-enabled="allSelected" @change="handleToggleSelectAll" />
       <span><strong class="bulk-count">{{ selectedIds.length }}</strong> 项已选中</span>
       <div class="bulk-actions">
         <el-button size="small" @click="handleBatchOta">批量OTA</el-button>
         <el-button size="small" @click="handleBatchConfig">批量配置</el-button>
         <el-button size="small" type="danger" plain @click="handleBatchUnbind">批量注销</el-button>
-        <el-button size="small" @click="clearSelection">取消选择</el-button>
+        <el-button size="small" @click="clearSelection">取消</el-button>
       </div>
     </div>
 
@@ -163,8 +165,8 @@
           background
           layout="total, sizes, prev, pager, next, jumper"
           :total="deviceStore.total"
-          :page-size="filters.pageSize"
-          :current-page="filters.page"
+          :page-size="pagination.pageSize"
+          :current-page="pagination.page"
           :page-sizes="[10, 20, 50, 100]"
           @size-change="handleSizeChange"
           @current-change="handlePageChange"
@@ -172,7 +174,7 @@
       </div>
     </el-card>
 
-    <!-- Side Panel (Device Detail) -->
+    <!-- Side Panel -->
     <div class="side-panel-overlay" :class="{ show: panelOpen }" @click="closePanel" />
     <div class="side-panel" :class="{ open: panelOpen }">
       <div class="panel-header">
@@ -180,7 +182,6 @@
         <button class="panel-close" @click="closePanel">&#10005;</button>
       </div>
       <div class="panel-body" v-if="panelDevice">
-        <!-- Device Header -->
         <div class="panel-device-header">
           <div class="panel-device-icon" :class="panelDevice.type === 'bracelet' ? 'icon-bracelet' : 'icon-pillbox'">
             {{ panelDevice.type === 'bracelet' ? '📱' : '💊' }}
@@ -191,7 +192,6 @@
           </div>
         </div>
 
-        <!-- Basic Info -->
         <div class="panel-section">
           <div class="panel-section-title">基本信息</div>
           <div class="panel-row"><span class="panel-row-label">型号芯片</span><span class="panel-row-value">{{ chipLabel(panelDevice) }}</span></div>
@@ -204,7 +204,6 @@
           <div class="panel-row"><span class="panel-row-label">运行模式</span><span class="panel-row-value">{{ modeLabel(panelDevice.mode) }}</span></div>
         </div>
 
-        <!-- Real-time Status -->
         <div class="panel-section">
           <div class="panel-section-title">实时状态</div>
           <div class="panel-row"><span class="panel-row-label">连接状态</span><span class="panel-row-value">
@@ -216,10 +215,9 @@
           <div class="panel-row"><span class="panel-row-label">信号强度</span><span class="panel-row-value">{{ signalStrength(panelDevice) }}</span></div>
           <div class="panel-row"><span class="panel-row-label">电量</span><span class="panel-row-value">{{ panelDevice.battery_pct ?? '—' }}%</span></div>
           <div class="panel-row"><span class="panel-row-label">最后心跳</span><span class="panel-row-value">{{ formatLastSeen(panelDevice.last_seen) }}</span></div>
-          <div class="panel-row"><span class="panel-row-label">最近定位</span><span class="panel-row-value" style="color:var(--el-color-primary);cursor:pointer;" @click="goToMap">查看地图 →</span></div>
+          <div class="panel-row"><span class="panel-row-label">最近定位</span><span class="panel-row-value panel-link" @click="goToMap">查看地图 →</span></div>
         </div>
 
-        <!-- OTA Progress -->
         <div class="panel-section" v-if="panelDevice.ota_progress != null">
           <div class="panel-section-title">OTA 升级进度</div>
           <div class="panel-progress">
@@ -236,7 +234,6 @@
           </div>
         </div>
 
-        <!-- Action Buttons -->
         <div class="panel-actions">
           <el-button size="default" @click="handleOTA(panelDevice)" style="flex:1;">OTA升级</el-button>
           <el-button size="default" @click="handleConfig(panelDevice)" style="flex:1;">远程配置</el-button>
@@ -276,22 +273,21 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, Upload } from '@element-plus/icons-vue'
 import { useDeviceStore } from '@/stores/device'
 import { devicesApi } from '@/api/devices'
 import type { Device } from '@/types'
+import { usePagination, useFilters, useSelection } from '@/composables'
 
 const deviceStore = useDeviceStore()
 
-// Filters
-const filters = ref({
+const { state: pagination, setPageSize, setTotal } = usePagination(20)
+const { filters, setFilter, reset: resetFilters } = useFilters({
   type: '',
   status: '',
   mode: '',
   search: '',
-  page: 1,
-  pageSize: 20,
 })
+const { selectedIds, toggleSelectAll: toggleSelectAllFn, toggleRow, clearSelection, isSelected, allSelected } = useSelection<string>()
 
 const filteredDevices = computed(() => {
   let list = deviceStore.devices
@@ -308,7 +304,6 @@ const filteredDevices = computed(() => {
   return list
 })
 
-// Stats
 const latestFw = 'v2.4.1'
 const stats = computed(() => ({
   online_devices: deviceStore.devices.filter(d => d.status === 'online').length,
@@ -317,30 +312,16 @@ const stats = computed(() => ({
   fault_count: deviceStore.devices.filter(d => d.fault === true).length,
 }))
 
-// Selection
-const selectedIds = ref<string[]>([])
-const allSelected = computed(() => {
-  const selectable = filteredDevices.value.filter(d => d.type !== 'pillbox_basic')
-  return selectable.length > 0 && selectable.every(d => selectedIds.value.includes(d.id))
-})
-
 function handleSelectionChange(rows: Device[]) {
-  selectedIds.value = rows.map(r => r.id)
+  rows.forEach(r => toggleRow(r.id, true))
 }
-function toggleSelectAll(val: boolean) {
-  if (val) {
-    const ids = filteredDevices.value.filter(d => d.type !== 'pillbox_basic').map(d => d.id)
-    selectedIds.value = [...new Set([...selectedIds.value, ...ids])]
-  } else {
-    const removable = new Set(filteredDevices.value.filter(d => d.type !== 'pillbox_basic').map(d => d.id))
-    selectedIds.value = selectedIds.value.filter(id => !removable.has(id))
-  }
+function handleToggleSelectAll(val: boolean) {
+  toggleSelectAllFn(val, filteredDevices.value.filter(d => d.type !== 'pillbox_basic').map(d => d.id))
 }
-function clearSelection() {
-  selectedIds.value = []
+function clearSelectionBtn() {
+  clearSelection()
 }
 
-// Helpers
 function deviceLabel(d: Device): string {
   const labels: Record<string, Record<string, string>> = {
     bracelet: { starter: '手环 Starter', plus: '手环 Plus', pro: '手环 Pro' },
@@ -403,14 +384,13 @@ function otaStatusText(status?: string): string {
   return map[status || ''] || '—'
 }
 
-// Actions
 async function handleSearch() {
-  filters.value.page = 1
+  pagination.page = 1
   await deviceStore.fetchList({ status: filters.value.status })
 }
 
 function handleReset() {
-  filters.value = { type: '', status: '', mode: '', search: '', page: 1, pageSize: 20 }
+  resetFilters()
   deviceStore.fetchList()
 }
 
@@ -418,16 +398,18 @@ function handleRefresh() {
   Promise.all([deviceStore.fetchList(), deviceStore.fetchStats()])
 }
 
-function handleSizeChange(size: number) { filters.value.pageSize = size; deviceStore.fetchList() }
-function handlePageChange(page: number) { filters.value.page = page; deviceStore.fetchList() }
-
-function exportDevices() {
-  ElMessage.info('导出功能开发中...')
+function handleSizeChange(size: number) {
+  setPageSize(size)
+  deviceStore.fetchList()
 }
 
-function handleRegister() {
-  ElMessage.info('设备注册功能开发中...')
+function handlePageChange(page: number) {
+  pagination.page = page
+  deviceStore.fetchList()
 }
+
+function exportDevices() { ElMessage.info('导出功能开发中...') }
+function handleRegister() { ElMessage.info('设备注册功能开发中...') }
 
 // Side Panel
 const panelOpen = ref(false)
@@ -438,22 +420,14 @@ function handleRowClick(row: Device) {
   panelOpen.value = true
 }
 
-function closePanel() {
-  panelOpen.value = false
-}
+function closePanel() { panelOpen.value = false }
+function goToMap() { ElMessage.info('地图功能开发中...') }
 
-function goToMap() {
-  ElMessage.info('地图功能开发中...')
-}
-
-// OTA (uses side panel actions)
-const otaForm = ref({ firmwareUrl: '', hash: '', force: false, changelog: '' })
-
+// OTA
 function handleOTA(row: Device) {
   closePanel()
   ElMessage.info(`准备对 ${row.device_id} 进行OTA升级`)
 }
-
 function handleBatchOta() {
   if (!selectedIds.value.length) { ElMessage.warning('请先选择设备'); return }
   ElMessage.info(`准备对 ${selectedIds.value.length} 台设备进行批量OTA`)
@@ -490,8 +464,8 @@ async function confirmConfig() {
     ElMessage.success('配置已下发')
     showConfigDialog.value = false
     await deviceStore.fetchList({
-      page: filters.value.page,
-      page_size: filters.value.pageSize,
+      page: pagination.page,
+      page_size: pagination.pageSize,
       status: filters.value.status,
       type: filters.value.type,
       tier: filters.value.tier,
@@ -506,7 +480,6 @@ function handleBatchConfig() {
   ElMessage.info(`准备对 ${selectedIds.value.length} 台设备进行批量配置`)
 }
 
-// Reboot
 async function handleReboot(row: Device) {
   try {
     await ElMessageBox.confirm(`确认重启设备 ${row.device_id}？`, '确认', { type: 'warning' })
@@ -514,7 +487,6 @@ async function handleReboot(row: Device) {
   } catch { /* cancelled */ }
 }
 
-// Unbind
 async function handleUnbind(row: Device) {
   try {
     await ElMessageBox.confirm(`确定要解绑设备 ${row.device_id} 吗？`, '确认', { type: 'warning' })
@@ -554,67 +526,77 @@ onMounted(() => {
 .page-title {
   font-size: 22px;
   font-weight: 800;
-  color: var(--el-text-color-primary);
+  color: #29404A;
   margin: 0;
 }
 .header-actions {
   display: flex;
   gap: 8px;
 }
+.btn-icon {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 12px !important;
+  border: 1px solid #D4DFD5;
+  color: #4A6260;
+  background: white;
+}
 
-/* KPI cards */
+/* KPI Cards */
 .kpi-card :deep(.el-card__body) {
-  padding: 16px;
+  padding: 18px;
   text-align: center;
 }
 .kpi-num {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 800;
   line-height: 1;
 }
 .kpi-label {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  color: #6B8980;
   margin-top: 4px;
+  font-weight: 600;
 }
-.kpi-online .kpi-num { color: var(--el-color-success); }
-.kpi-offline .kpi-num { color: var(--el-color-info); }
-.kpi-upgrade .kpi-num { color: var(--el-color-warning); }
-.kpi-fault .kpi-num { color: var(--el-color-danger); }
+.kpi-total .kpi-num { color: #5C8D73; }
+.kpi-online .kpi-num { color: #6FAF8F; }
+.kpi-offline .kpi-num { color: #6E9FC4; }
+.kpi-upgrade .kpi-num { color: #D9A441; }
+.kpi-fault .kpi-num { color: #D77B72; }
 
-/* Filter bar */
+/* Filter Bar */
 .filter-bar {
   background: white;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 14px 18px;
   display: flex;
   gap: 10px;
   margin-bottom: 16px;
-  border: 1px solid var(--el-border-color-light);
+  border: 1px solid #E5EDE6;
   flex-wrap: wrap;
   align-items: center;
+  box-shadow: 0 2px 8px rgba(60,90,70,0.04);
 }
 .filter-label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--el-text-color-regular);
+  color: #29404A;
   white-space: nowrap;
 }
-.filter-select {
-  width: 130px;
+.filter-select { width: 130px; }
+.filter-select :deep(.el-input__wrapper) {
+  border-radius: 10px !important;
 }
-.filter-search {
-  width: 240px;
-}
-.filter-spacer {
-  flex: 1;
-}
+.filter-search { width: 240px; }
+.filter-search :deep(.el-input__wrapper) { border-radius: 10px !important; }
+.filter-spacer { flex: 1; }
 
-/* Bulk banner */
+/* Bulk Banner */
 .bulk-banner {
-  background: var(--el-color-primary-light-9);
-  border: 1px solid var(--el-color-primary);
-  border-radius: 10px;
+  background: linear-gradient(135deg, #EEF4EF, #E8F0EA);
+  border: 1px solid #C8DFD0;
+  border-radius: 12px;
   padding: 10px 16px;
   margin-bottom: 12px;
   display: none;
@@ -622,12 +604,10 @@ onMounted(() => {
   gap: 12px;
   font-size: 13px;
 }
-.bulk-banner.show {
-  display: flex;
-}
+.bulk-banner.show { display: flex; }
 .bulk-count {
   font-weight: 700;
-  color: var(--el-color-primary);
+  color: #47745C;
 }
 .bulk-actions {
   display: flex;
@@ -635,8 +615,11 @@ onMounted(() => {
   margin-left: auto;
 }
 
-/* Table card */
+/* Table Card */
 .table-card :deep(.el-card__header) {
+  padding: 0;
+}
+.table-card :deep(.el-card__body) {
   padding: 0;
 }
 .table-toolbar {
@@ -644,17 +627,19 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
+  border-bottom: 1px solid #F3F5F1;
 }
 .table-title {
   font-size: 15px;
   font-weight: 700;
+  color: #29404A;
 }
 .table-actions {
   display: flex;
   gap: 8px;
 }
 
-/* Device cell */
+/* Device Cell */
 .device-cell {
   display: flex;
   align-items: center;
@@ -670,88 +655,90 @@ onMounted(() => {
   font-size: 18px;
   flex-shrink: 0;
 }
-.thumb-bracelet { background: #DBEAFE; }
-.thumb-pillbox { background: #FCE7F3; }
+.thumb-bracelet { background: #EEF4EF; }
+.thumb-pillbox { background: #F8F6F1; }
 .device-name {
   font-weight: 600;
   font-size: 13px;
+  color: #29404A;
 }
 .device-model {
   font-size: 11px;
-  color: var(--el-text-color-placeholder);
+  color: #8FA8A0;
 }
 
-/* Status badges */
+/* Status Badges */
 .status-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   padding: 3px 10px;
-  border-radius: 10px;
+  border-radius: 20px;
   font-size: 11px;
   font-weight: 600;
 }
-.status-badge.online { background: #F0FDF4; color: var(--el-color-success); }
-.status-badge.offline { background: var(--el-fill-color-light); color: var(--el-text-color-secondary); }
-.status-badge.fault { background: #FEF2F2; color: var(--el-color-danger); }
+.status-badge.online { background: #E8F4EC; color: #4A8A6A; }
+.status-badge.offline { background: #F3F5F1; color: #6B8980; }
+.status-badge.fault { background: #FDF0EE; color: #B85C54; }
 .status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
 }
-.status-dot.online { background: var(--el-color-success); }
-.status-dot.offline { background: var(--el-text-color-placeholder); }
-.status-dot.fault { background: var(--el-color-danger); }
+.status-dot.online { background: #4A8A6A; }
+.status-dot.offline { background: #8FA8A0; }
+.status-dot.fault { background: #B85C54; }
 
-/* Version tag */
+/* Version Tag */
 .version-tag {
   font-family: 'SF Mono', Consolas, monospace;
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 6px;
-  background: var(--el-fill-color-light);
+  background: #F3F5F1;
   font-weight: 500;
+  color: #4A6260;
 }
 .version-tag.outdated {
-  background: #FFFBEB;
-  color: #D97706;
+  background: #FEF7E8;
+  color: #B8860B;
   border: 1px solid #FDE68A;
 }
 
-/* Action links */
+/* Action Links */
 .action-links {
   display: flex;
   gap: 12px;
 }
 .action-link {
-  color: var(--el-color-primary);
+  color: #5C8D73;
   font-size: 12px;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
   text-decoration: none;
+  transition: color 0.15s;
 }
-.action-link:hover { text-decoration: underline; }
-.action-link.danger { color: var(--el-color-danger); }
+.action-link:hover { color: #47745C; text-decoration: underline; }
+.action-link.danger { color: #B85C54; }
+.action-link.danger:hover { color: #9A4A42; }
 
 /* Pagination */
 .pagination-wrapper {
   display: flex;
   justify-content: flex-end;
   padding: 14px 20px;
-  border-top: 1px solid var(--el-border-color-light);
+  border-top: 1px solid #F3F5F1;
 }
 
 /* ========== Side Panel ========== */
 .side-panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(41,64,74,0.3);
   z-index: 200;
   display: none;
 }
-.side-panel-overlay.show {
-  display: block;
-}
+.side-panel-overlay.show { display: block; }
 .side-panel {
   position: fixed;
   top: 0;
@@ -762,14 +749,12 @@ onMounted(() => {
   z-index: 201;
   transition: right 0.3s ease;
   overflow-y: auto;
-  box-shadow: -10px 0 40px rgba(0,0,0,0.1);
+  box-shadow: -10px 0 40px rgba(60,90,70,0.12);
 }
-.side-panel.open {
-  right: 0;
-}
+.side-panel.open { right: 0; }
 .panel-header {
   padding: 20px 24px;
-  border-bottom: 1px solid var(--el-border-color-light);
+  border-bottom: 1px solid #E5EDE6;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -778,27 +763,24 @@ onMounted(() => {
   background: white;
   z-index: 1;
 }
-.panel-title {
-  font-size: 15px;
-  font-weight: 700;
-}
+.panel-title { font-size: 15px; font-weight: 700; color: #29404A; }
 .panel-close {
   width: 32px;
   height: 32px;
   border-radius: 8px;
   border: none;
-  background: var(--el-fill-color-light);
+  background: #F3F5F1;
   cursor: pointer;
   font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.15s;
+  color: #6B8980;
 }
-.panel-close:hover { background: var(--el-border-color-light); }
+.panel-close:hover { background: #E5EDE6; }
+.panel-body { padding: 20px 24px; }
 
-.panel-body {
-  padding: 20px 24px;
-}
 .panel-device-header {
   display: flex;
   align-items: center;
@@ -808,36 +790,27 @@ onMounted(() => {
 .panel-device-icon {
   width: 56px;
   height: 56px;
-  border-radius: 16px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28px;
 }
-.icon-bracelet { background: #DBEAFE; }
-.icon-pillbox { background: #FCE7F3; }
-.panel-device-name {
-  font-size: 18px;
-  font-weight: 700;
-}
-.panel-device-id {
-  font-size: 12px;
-  color: var(--el-text-color-placeholder);
-  font-family: monospace;
-}
+.icon-bracelet { background: #EEF4EF; }
+.icon-pillbox { background: #F8F6F1; }
+.panel-device-name { font-size: 18px; font-weight: 700; color: #29404A; }
+.panel-device-id { font-size: 12px; color: #8FA8A0; font-family: monospace; }
 
-.panel-section {
-  margin-bottom: 20px;
-}
+.panel-section { margin-bottom: 20px; }
 .panel-section-title {
   font-size: 12px;
   font-weight: 700;
-  color: var(--el-text-color-secondary);
+  color: #6B8980;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 10px;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  border-bottom: 1px solid #F3F5F1;
 }
 .panel-row {
   display: flex;
@@ -845,26 +818,23 @@ onMounted(() => {
   padding: 6px 0;
   font-size: 13px;
 }
-.panel-row-label {
-  color: var(--el-text-color-secondary);
-}
-.panel-row-value {
-  font-weight: 600;
-}
+.panel-row-label { color: #6B8980; }
+.panel-row-value { font-weight: 600; color: #29404A; }
+.panel-link { color: #5C8D73; cursor: pointer; }
+.panel-link:hover { text-decoration: underline; }
 
-/* OTA progress */
-.panel-progress {
-  margin-top: 8px;
-}
+/* OTA Progress */
+.panel-progress { margin-top: 8px; }
 .progress-header {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
   margin-bottom: 4px;
+  color: #4A6260;
 }
 .progress-bar {
   height: 8px;
-  background: var(--el-border-color-light);
+  background: #E5EDE6;
   border-radius: 4px;
   overflow: hidden;
 }
@@ -873,9 +843,9 @@ onMounted(() => {
   border-radius: 4px;
   transition: width 0.5s;
 }
-.progress-fill.success { background: var(--el-color-success); }
+.progress-fill.success { background: #5C8D73; }
 .progress-fill.running {
-  background: var(--el-color-primary);
+  background: #7BAF8C;
   animation: progressPulse 1.5s infinite;
 }
 @keyframes progressPulse {
@@ -884,16 +854,15 @@ onMounted(() => {
 }
 .progress-meta {
   font-size: 11px;
-  color: var(--el-text-color-placeholder);
+  color: #8FA8A0;
   margin-top: 6px;
 }
 
-/* Panel action buttons */
 .panel-actions {
   display: flex;
   gap: 8px;
   margin-top: 20px;
   padding-top: 16px;
-  border-top: 1px solid var(--el-border-color-light);
+  border-top: 1px solid #E5EDE6;
 }
 </style>

@@ -1,49 +1,68 @@
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import router from '@/router';
-import type { User, LoginResponse, AuthState } from '@/types';
+import axios from 'axios';
+import type { User, LoginResponse, AuthState, LoginRequest } from '@/types';
+import { parseJwt } from '@/utils/auth';
 
 const STORAGE_KEY = 'eregen_admin_auth_state';
 
 export const useAuthStore = defineStore('auth', () => {
-  const parseJwt = (token: string): Record<string, any> | null => {
-    try {
-      const base64Url = token.split('.')[1];
-      if (!base64Url) return null;
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-      return JSON.parse(jsonPayload);
-    } catch { return null; }
-  };
 
   const stored = localStorage.getItem(STORAGE_KEY);
-  const initialState: AuthState = stored
-    ? { token: stored.split(',')[0], user: stored.split(',')[1] === 'null' ? null : JSON.parse(stored.split(',')[1]), expiresAt: stored.split(',')[2] ? Number(stored.split(',')[2]) : null }
-    : { token: null, user: null, expiresAt: null };
+  let initialState: AuthState = { token: null, user: null, expiresAt: null };
+  if (stored) {
+    const parts = stored.split(':::');
+    initialState = {
+      token: parts[0] || null,
+      user: parts[1] === 'null' ? null : (parts[1] ? JSON.parse(parts[1]) : null),
+      expiresAt: parts[2] ? Number(parts[2]) : null,
+    };
+  }
 
   const state = ref<AuthState>(initialState);
+  const loading = ref(false);
+  const error = ref<string | null>(null);
 
   const isExpired = computed(() => state.value.expiresAt && Date.now() >= state.value.expiresAt * 1000);
   const isLoggedIn = computed(() => !!state.value.token && !isExpired.value);
+  const user = computed(() => state.value.user);
   const getUser = computed(() => state.value.user || null);
   const getToken = () => state.value.token;
+  const checkLoggedIn = () => isLoggedIn.value;
 
   const persist = () => {
     const uStr = state.value.user ? JSON.stringify(state.value.user) : 'null';
     const eStr = state.value.expiresAt ? state.value.expiresAt.toString() : '';
-    localStorage.setItem(STORAGE_KEY, `${state.value.token || ''},${uStr},${eStr}`);
+    localStorage.setItem(STORAGE_KEY, `${state.value.token || ''}:::${uStr}:::${eStr}`);
   };
 
   watch(state.value, () => { persist(); }, { deep: true });
 
-  const login = async (resp: LoginResponse) => {
-    const jwt = parseJwt(resp.token);
-    const exp = jwt?.exp || Math.floor(Date.now() / 1000) + 7200;
-    state.value = { token: resp.token, user: resp.user, expiresAt: Number(exp) };
-    persist();
-    const rd = (router.currentRoute.value.query.redirect as string) || '/dashboard';
-    router.push({ path: rd });
-    return resp.user;
+  const login = async (input: LoginRequest | LoginResponse) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      let resp: LoginResponse;
+      if ('method' in input) {
+        const res = await axios.post('/api/v1/auth/login', input, { timeout: 10000 });
+        resp = res.data.data as LoginResponse;
+      } else {
+        resp = input as LoginResponse;
+      }
+      const jwt = parseJwt(resp.token);
+      const exp = jwt?.exp || Math.floor(Date.now() / 1000) + 7200;
+      state.value = { token: resp.token, user: resp.user, expiresAt: Number(exp) };
+      persist();
+      const rd = (router.currentRoute.value.query.redirect as string) || '/dashboard';
+      router.push({ path: rd });
+      return resp.user;
+    } catch (e: any) {
+      error.value = e?.response?.data?.msg || '登录失败';
+      throw e;
+    } finally {
+      loading.value = false;
+    }
   };
 
   const logout = () => {
@@ -78,5 +97,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { state, isLoggedIn, getUser, getToken, isExpired, login, logout, hasPermission, refreshToken, parseJwt };
+  return { state, user, isLoggedIn, getUser, getToken, checkLoggedIn, isExpired, loading, error, login, logout, hasPermission, refreshToken, parseJwt };
 });

@@ -9,6 +9,7 @@ import 'discharge_screen.dart';
 
 /// Full patient detail screen showing demographics, admission info,
 /// wristband status, verification history, and action buttons.
+/// Supports both admin-api (JWT) and hospital-api (API key) backends.
 class PatientDetailScreen extends StatefulWidget {
   final Map<String, dynamic> patient;
 
@@ -19,20 +20,23 @@ class PatientDetailScreen extends StatefulWidget {
 }
 
 class _PatientDetailScreenState extends State<PatientDetailScreen> {
-  final ApiClient _api = ApiClient();
-  late final PatientService _patientService;
-  late final VerificationService _verificationService;
+  final ApiClient _adminApi = ApiClient();
+  final HospitalApiClient _hospitalApi = HospitalApiClient();
+  late PatientService _patientService;
+  late VerificationService _verificationService;
 
   Map<String, dynamic>? _patientData;
   List<dynamic> _verifications = [];
   bool _loading = true;
   String? _error;
+  bool _usingHospitalApi = false;
 
   @override
   void initState() {
     super.initState();
-    _patientService = PatientService(_api);
-    _verificationService = VerificationService(_api);
+    _usingHospitalApi = _hospitalApi.institutionId != null;
+    _patientService = PatientService(_hospitalApi);
+    _verificationService = VerificationService(_hospitalApi);
     _loadData();
   }
 

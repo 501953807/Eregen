@@ -12,7 +12,7 @@ import (
 
 // AdminStatsHandler serves admin dashboard statistics.
 type AdminStatsHandler struct {
-	pg *store.Postgres
+	pg  *store.Postgres
 	log *zap.Logger
 }
 

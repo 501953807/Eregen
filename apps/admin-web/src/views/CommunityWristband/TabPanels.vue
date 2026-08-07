@@ -231,11 +231,11 @@ onMounted(() => { generateWeekData() })
 .section-title { font-size: 15px; font-weight: 700; }
 .bar-chart { display: flex; align-items: flex-end; gap: 16px; padding: 16px 0 8px; height: 120px; }
 .bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
-.bar { width: 36px; background: linear-gradient(180deg, #165DFF, #9B8ED8); border-radius: 3px 3px 0 0; transition: height 0.3s; }
+.bar { width: 36px; background: linear-gradient(180deg, #5C8D73, #7BAF8C); border-radius: 3px 3px 0 0; transition: height 0.3s; }
 .bar-label { font-size: 11px; color: var(--el-text-color-secondary); margin-top: 6px; }
 .bar-value { font-size: 12px; font-weight: 600; color: var(--el-text-color-primary); margin-bottom: 4px; }
 .upload-zone { border: 2px dashed var(--el-border-color-light); border-radius: 4px; padding: 32px; text-align: center; color: var(--el-text-color-placeholder); cursor: pointer; transition: border-color 0.2s; }
-.upload-zone:hover { border-color: #165DFF; color: #165DFF; }
+.upload-zone:hover { border-color: #5C8D73; color: #5C8D73; }
 .template-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .template-table th, .template-table td { padding: 8px 12px; border: 1px solid var(--el-border-color-light); text-align: left; }
 .template-table th { background: #fafafa; font-weight: 600; color: var(--el-text-color-primary); }
@@ -244,14 +244,14 @@ onMounted(() => { generateWeekData() })
 .badge-success { background: #F0FDF4; color: #16A34A; }
 .badge-danger { background: #FEF2F2; color: #DC2626; }
 .badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #EFF6FF; color: #165DFF; }
+.badge-primary { background: #DDEBE1; color: #47745C; }
 .badge-gray { background: #F3F4F6; color: #6B7280; }
 .badge-info { background: #F8FAFC; color: #94A3B8; }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
 .dot-success { background: #16A34A; }
 .dot-danger { background: #DC2626; }
 .dot-warning { background: #D97706; }
-.dot-primary { background: #165DFF; }
+.dot-primary { background: #5C8D73; }
 .dot-gray { background: #6B7280; }
 .dot-info { background: #94A3B8; }
 .mono { font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px; }

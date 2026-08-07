@@ -320,3 +320,29 @@ func (s *PostgresStore) GetElderlyAlertHistory(ctx context.Context, elderlyID st
 	}
 	return alerts, rows.Err()
 }
+
+// CreateHealthRecord inserts a new health record.
+func (s *PostgresStore) CreateHealthRecord(ctx context.Context, r *model.HealthRecordRow) error {
+	r.ID = uuid.New().String()
+	if r.Timestamp.IsZero() {
+		r.Timestamp = time.Now()
+	}
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO health_records (id, elderly_id, timestamp, hr, spo2, steps, sleep_hours)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		r.ID, r.ElderlyID, r.Timestamp, r.HR, r.SpO2, r.Steps, r.SleepHours)
+	return err
+}
+
+// CreateLocation inserts a new location record.
+func (s *PostgresStore) CreateLocation(ctx context.Context, loc *model.LocationPoint) error {
+	loc.ID = uuid.New().String()
+	if loc.Timestamp.IsZero() {
+		loc.Timestamp = time.Now()
+	}
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO location_history (id, elderly_id, lat, lon, accuracy, timestamp)
+		 VALUES ($1, $2, $3, $4, $5, $6)`,
+		loc.ID, loc.ElderlyID, loc.Lat, loc.Lon, loc.Accuracy, loc.Timestamp)
+	return err
+}

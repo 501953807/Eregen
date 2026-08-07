@@ -55,6 +55,7 @@ func (h *UserHandler) List(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
+		"code":      "OK",
 		"data":      users,
 		"page":      page,
 		"page_size": pageSize,
@@ -79,7 +80,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"data": gin.H{"id": id, "name": body.Name, "role": body.Role}})
+	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": gin.H{"id": id, "name": body.Name, "role": body.Role}})
 }
 
 // Update modifies an existing user.

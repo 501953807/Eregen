@@ -18,14 +18,14 @@ import (
 
 // UserHandler handles user profile endpoints.
 type UserHandler struct {
-	store *store.Postgres
-	redis *store.Redis
+	store store.ProfileStore
+	redis store.DeviceCacheStore
 	log   *zap.Logger
 }
 
-// NewUserHandler creates a new UserHandler.
-func NewUserHandler(store *store.Postgres, redis *store.Redis, log *zap.Logger) *UserHandler {
-	return &UserHandler{store: store, redis: redis, log: log}
+// NewUserHandler creates a new user handler.
+func NewUserHandler(s store.ProfileStore, redis store.DeviceCacheStore, log *zap.Logger) *UserHandler {
+	return &UserHandler{store: s, redis: redis, log: log}
 }
 
 // GET /api/v1/users/me

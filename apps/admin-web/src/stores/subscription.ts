@@ -9,13 +9,26 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     total: 0, active: 0, expiring: 0, expired: 0,
   })
   const loading = ref(false)
+  const page = ref(1)
+  const pageSize = ref(20)
+  const total = ref(0)
 
-  const total = computed(() => stats.value.total)
+  const activeCount = computed(() => subscriptions.value.filter(s => s.status === 'active').length)
+  const expiringCount = computed(() => subscriptions.value.filter(s => {
+    if (!s.end_date) return false
+    const days = Math.ceil((new Date(s.end_date).getTime() - Date.now()) / 86400000)
+    return days > 0 && days <= 7
+  }).length)
 
-  async function fetchList() {
+  async function fetchList(status?: string, planTier?: string) {
     loading.value = true
     try {
-      // Backend does not expose a list endpoint yet, use mock data
+      const res = await subscriptionsApi.list({ page: page.value, page_size: pageSize.value, status, plan_tier: planTier })
+      subscriptions.value = res.data?.data || []
+      total.value = subscriptions.value.length
+      if (res.data?.page) page.value = res.data.page
+    } catch (error) {
+      console.error('Failed to fetch subscriptions:', error)
       subscriptions.value = []
     } finally {
       loading.value = false
@@ -25,18 +38,24 @@ export const useSubscriptionStore = defineStore('subscription', () => {
   async function fetchStats() {
     try {
       const res = await subscriptionsApi.stats()
-      const tiers = res.data.data || []
-      let total = 0, active = 0, expiring = 0, expired = 0
+      const tiers = res.data?.data || []
+      let total = 0, active = 0, expired = 0
       for (const s of tiers) {
         total += s.count
         if (s.tier === 'starter' || s.tier === 'plus' || s.tier === 'pro') active += s.count
         if (s.tier === 'expired' || s.tier === 'past_due') expired += s.count
       }
-      stats.value = { total, active, expiring, expired }
+      stats.value = { total, active, expiring: expiringCount.value, expired }
     } catch {
       // Keep defaults
     }
   }
 
-  return { subscriptions, total, stats, loading, fetchList, fetchStats }
+  async function renewSubscription(id: string, endDate: string) {
+    await subscriptionsApi.renew(id, endDate)
+    await fetchList()
+    await fetchStats()
+  }
+
+  return { subscriptions, stats, loading, page, pageSize, total, activeCount, expiringCount, fetchList, fetchStats, renewSubscription }
 })

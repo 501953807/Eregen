@@ -28,7 +28,7 @@ func (h *RegulatoryHandler) GetDashboardOverview(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": ov})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": ov})
 }
 
 // ListRegulatoryPatients returns the patient list with fence/alert status.
@@ -46,7 +46,7 @@ func (h *RegulatoryHandler) ListRegulatoryPatients(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": patients, "page": page, "page_size": pageSize})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": patients, "page": page, "page_size": pageSize})
 }
 
 // ListAlerts returns regulatory alerts with filtering.
@@ -64,7 +64,7 @@ func (h *RegulatoryHandler) ListAlerts(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": alerts, "page": page, "page_size": pageSize})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": alerts, "page": page, "page_size": pageSize})
 }
 
 // GetAlert returns a single regulatory alert.
@@ -74,7 +74,7 @@ func (h *RegulatoryHandler) GetAlert(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "alert not found"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": alert})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": alert})
 }
 
 // AcknowledgeAlert confirms a regulatory alert.
@@ -121,7 +121,7 @@ func (h *RegulatoryHandler) CreateRegulatoryAlert(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"data": alert})
+	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": alert})
 }
 
 // GetAuditTrail returns full audit trail for a patient.
@@ -131,7 +131,7 @@ func (h *RegulatoryHandler) GetAuditTrail(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "patient not found"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": trail})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": trail})
 }
 
 // ListRuleConfigs returns all rule configurations.
@@ -141,7 +141,7 @@ func (h *RegulatoryHandler) ListRuleConfigs(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": configs})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": configs})
 }
 
 // UpdateRuleConfig updates a rule configuration.
@@ -173,7 +173,7 @@ func (h *RegulatoryHandler) ConfigureFence(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": fc, "status": "configured"})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": fc, "status": "configured"})
 }
 
 // GetFenceConfig returns geofence configuration for a hospital.
@@ -184,7 +184,7 @@ func (h *RegulatoryHandler) GetFenceConfig(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "fence config not found"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": fc})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": fc})
 }
 
 // GetComplianceReport returns periodic compliance report.
@@ -195,5 +195,5 @@ func (h *RegulatoryHandler) GetComplianceReport(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": report})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": report})
 }

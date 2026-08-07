@@ -44,12 +44,23 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// --- PostgreSQL ---
-	dbStore, err := store.New(ctx, cfg.Postgres.DSN)
-	if err != nil {
-		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
+	// --- Database (PostgreSQL or SQLite) ---
+	var dbStore *store.Store
+	var dbErr error
+	switch cfg.Storage.Type {
+	case "sqlite":
+		dbStore, dbErr = store.NewSQLite(cfg.Storage.SQLite)
+		if dbErr != nil {
+			log.Fatalf("Failed to connect to SQLite: %v", dbErr)
+		}
+		log.Println("Connected to SQLite")
+	default:
+		dbStore, dbErr = store.NewPostgres(ctx, cfg.Storage.DSN)
+		if dbErr != nil {
+			log.Fatalf("Failed to connect to PostgreSQL: %v", dbErr)
+		}
+		log.Println("Connected to PostgreSQL")
 	}
-	log.Println("Connected to PostgreSQL")
 
 	// --- Redis ---
 	redisClient := redis.NewClient(&redis.Options{

@@ -18,13 +18,13 @@ import (
 
 // OTAService manages firmware releases and OTA push jobs.
 type OTAService struct {
-	pg   *store.Postgres
+	pg   store.DeviceStore
 	nats *NatsClient
 	log  *zap.Logger
 }
 
 // NewOTAService creates a new OTA service.
-func NewOTAService(pg *store.Postgres, nats *NatsClient, log *zap.Logger) *OTAService {
+func NewOTAService(pg store.DeviceStore, nats *NatsClient, log *zap.Logger) *OTAService {
 	return &OTAService{pg: pg, nats: nats, log: log}
 }
 

@@ -18,15 +18,15 @@ import (
 
 // DeviceHandler handles device management endpoints.
 type DeviceHandler struct {
-	store *store.Postgres
-	redis *store.Redis
+	store store.DeviceStore
+	redis store.DeviceCacheStore
 	nats  *service.NatsClient
 	log   *zap.Logger
 }
 
 // NewDeviceHandler creates a new device handler.
-func NewDeviceHandler(store *store.Postgres, redis *store.Redis, nats *service.NatsClient, log *zap.Logger) *DeviceHandler {
-	return &DeviceHandler{store: store, redis: redis, nats: nats, log: log}
+func NewDeviceHandler(s store.DeviceStore, redis store.DeviceCacheStore, nats *service.NatsClient, log *zap.Logger) *DeviceHandler {
+	return &DeviceHandler{store: s, redis: redis, nats: nats, log: log}
 }
 
 // GET /api/v1/devices

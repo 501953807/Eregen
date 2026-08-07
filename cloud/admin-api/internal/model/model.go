@@ -693,3 +693,36 @@ type RegulatoryRuleConfigDB struct {
 	ConfigJSON string `json:"config_json"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }
+
+
+// SubscriptionItem represents a subscription record for listing.
+type SubscriptionItem struct {
+	ID                   string    `json:"id"`
+	UserID               string    `json:"user_id"`
+	UserName             string    `json:"user_name,omitempty"`
+	UserPhone            string    `json:"user_phone,omitempty"`
+	PlanTier             string    `json:"plan_tier"`
+	Status               string    `json:"status"`
+	BillingCycle         string    `json:"billing_cycle"`
+	StartDate            string    `json:"start_date"`
+	EndDate              string    `json:"end_date"`
+	CancellationReason   string    `json:"cancellation_reason,omitempty"`
+	TotalSpent           float64   `json:"total_spent,omitempty"`
+	Devices              []string  `json:"devices,omitempty"`
+	CreatedAt            time.Time `json:"created_at"`
+}
+
+// InstitutionSummary is a lightweight row for institution listing.
+type InstitutionSummary struct {
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	Type         string    `json:"type"`
+	Code         string    `json:"code"`
+	ContactName  string    `json:"contact_name,omitempty"`
+	ContactPhone string    `json:"contact_phone,omitempty"`
+	AccessLevel  string    `json:"access_level"`
+	Status       string    `json:"status"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	APIKeyCount  int       `json:"api_key_count"`
+}

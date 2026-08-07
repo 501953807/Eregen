@@ -73,6 +73,7 @@ func (h *DeviceHandler) List(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
+		"code":      "OK",
 		"data":      devices,
 		"page":      page,
 		"page_size": pageSize,

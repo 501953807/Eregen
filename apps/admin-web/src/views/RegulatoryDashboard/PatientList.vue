@@ -41,9 +41,9 @@ defineEmits<{ audit: [id: string]; detail: [row: any] }>()
 
 <style scoped>
 .patient-cell { display: flex; align-items: center; gap: 8px; }
-.patient-avatar { width: 28px; height: 28px; border-radius: 50%; background: #DBEAFE; color: #165DFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.patient-avatar { width: 28px; height: 28px; border-radius: 50%; background: #DDEBE1; color: #47745C; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
 .mono { font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px; }
-.dept-badge { background: #EFF6FF; color: #165DFF; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.dept-badge { background: #DDEBE1; color: #47745C; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
 .verify-tag { font-size: 12px; }
 .tag-danger { color: #DC2626; font-weight: 600; }
 .tag-warning { color: #D97706; font-weight: 600; }

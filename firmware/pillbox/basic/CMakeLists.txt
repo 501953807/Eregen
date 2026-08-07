@@ -3,22 +3,18 @@
 # © 2026 Eregen (颐贞). All rights reserved.
 
 idf_component_register(
-    SRCS "main.c" "wifi_station.c" "led_gpio.c" "battery_manage.c" "button_input.c"
+    SRCS "main.c" "led_gpio.c" "battery_manage.c" "button_input.c"
     INCLUDE_DIRS "."
     REQUIRES
-        esp_wifi
-        esp_event
-        esp_netif
-        nvs_flash
         driver
         esp_timer
+        nvs_flash
 )
 
 # Require ESP-IDF >= 5.3
 idf_build_get_property(idf_target IDF_TARGET)
 set_source_files_properties(
     ${CMAKE_CURRENT_LIST_DIR}/main.c
-    ${CMAKE_CURRENT_LIST_DIR}/wifi_station.c
     ${CMAKE_CURRENT_LIST_DIR}/led_gpio.c
     ${CMAKE_CURRENT_LIST_DIR}/battery_manage.c
     ${CMAKE_CURRENT_LIST_DIR}/button_input.c

@@ -14,12 +14,12 @@ import (
 	"io"
 	"strings"
 
+	"eregen.dev/shared/protocol"
 	"golang.org/x/crypto/pbkdf2"
 )
 
 var (
 	ErrInvalidPairingCode = errors.New("crypto: invalid pairing code")
-	ErrDecryptionFailed   = errors.New("crypto: decryption failed")
 	ErrHMACMismatch       = errors.New("crypto: HMAC verification failed")
 )
 
@@ -84,7 +84,7 @@ func DeriveSessionKey(pairingCode, deviceID string) (*SessionKeyResult, error) {
 	// Use PBKDF2 with 100,000 iterations for resistance against brute-force
 	// on weak 4-digit pairing codes (only 10,000 combinations total)
 	keyMaterial := []byte(pairingCode + ":" + deviceID)
-	key := pbkdf2.Key(keyMaterial, salt, 100000, sha256.New(), AESKeySize)
+	key := pbkdf2.Key(keyMaterial, salt, 100000, AESKeySize, sha256.New)
 
 	return &SessionKeyResult{
 		Key:  key,
@@ -103,7 +103,7 @@ func DeriveSessionKeyWithSalt(pairingCode, deviceID string, salt []byte) ([]byte
 	}
 
 	keyMaterial := []byte(pairingCode + ":" + deviceID)
-	key := pbkdf2.Key(keyMaterial, salt, 100000, sha256.New(), AESKeySize)
+	key := pbkdf2.Key(keyMaterial, salt, 100000, AESKeySize, sha256.New)
 	return key, nil
 }
 
@@ -181,7 +181,7 @@ func VerifyChallengeResponse(secretKey, challenge, response []byte) bool {
 }
 
 // SerializeBLEMessage serializes a BLE message into bytes for transmission
-func SerializeBLEMessage(msgType BLEMessageType, payload []byte) ([]byte, error) {
+func SerializeBLEMessage(msgType protocol.BLEMessageType, payload []byte) ([]byte, error) {
 	header := make([]byte, 2)
 	header[0] = byte(msgType >> 8)
 	header[1] = byte(msgType)
@@ -195,12 +195,12 @@ func SerializeBLEMessage(msgType BLEMessageType, payload []byte) ([]byte, error)
 }
 
 // DeserializeBLEMessage deserializes a BLE message from bytes
-func DeserializeBLEMessage(data []byte) (BLEMessageType, []byte, error) {
+func DeserializeBLEMessage(data []byte) (protocol.BLEMessageType, []byte, error) {
 	if len(data) < 6 {
 		return 0, nil, errors.New("crypto: message too short")
 	}
 
-	msgType := BLEMessageType(binary.BigEndian.Uint16(data[:2]))
+	msgType := protocol.BLEMessageType(binary.BigEndian.Uint16(data[:2]))
 	length := binary.BigEndian.Uint32(data[2:6])
 
 	if uint32(len(data)-6) != length {

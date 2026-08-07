@@ -378,7 +378,7 @@ cp scripts/default-ports.env .env
 
 ### Issue tracker
 
-Issues tracked via GitHub Issues using the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues tracked as local markdown files under `.scratch/<feature-slug>/issues/`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

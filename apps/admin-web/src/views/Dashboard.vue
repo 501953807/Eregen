@@ -1,39 +1,49 @@
 <template>
   <div class="dashboard">
+    <!-- Welcome Header -->
+    <div class="welcome-header">
+      <div class="welcome-text">
+        <h1 class="welcome-title">
+          <span class="greeting">{{ timeGreeting }}</span>，管理员
+          <span class="wave">👋</span>
+        </h1>
+        <p class="welcome-sub">今日健康概览 · 颐贞康养中心管理平台</p>
+      </div>
+      <div class="welcome-meta">
+        <div class="meta-date">{{ currentDate }}</div>
+        <div class="meta-status">
+          <span class="status-dot green"></span>
+          系统正常运行
+        </div>
+      </div>
+    </div>
+
     <!-- KPI Cards -->
-    <el-row :gutter="12" style="margin-bottom: 16px;">
+    <el-row :gutter="16" style="margin-bottom: 20px;">
       <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-blue">
+        <el-card shadow="hover" class="kpi-card kpi-primary">
           <div class="kpi-content">
-            <div class="kpi-icon" style="background: linear-gradient(135deg, #165DFF, #9B8ED8);">
-              <el-icon :size="28"><Monitor /></el-icon>
+            <div class="kpi-icon-wrap green">
+              <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></el-icon>
             </div>
             <div class="kpi-info">
               <div class="kpi-value">{{ store.stats.online_devices.toLocaleString() }}</div>
               <div class="kpi-label">在线设备</div>
               <div class="kpi-trend up">较昨日 +2.3%</div>
-              <svg class="sparkline" viewBox="0 0 120 30">
-                <polyline :points="sparkLinePoints(lineSparkData)" fill="none" stroke="#165DFF" stroke-width="1.5"/>
-                <circle v-for="(p, i) in lineSparkData" :key="i" :cx="sparkX(i, lineSparkData.length)" :cy="sparkY(p, lineSparkData)" r="2" fill="#165DFF" opacity="0.6"/>
-              </svg>
             </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-green">
+        <el-card shadow="hover" class="kpi-card kpi-success">
           <div class="kpi-content">
-            <div class="kpi-icon" style="background: linear-gradient(135deg, #16A34A, #22C55E);">
-              <el-icon :size="28"><UserFilled /></el-icon>
+            <div class="kpi-icon-wrap blue">
+              <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></el-icon>
             </div>
             <div class="kpi-info">
               <div class="kpi-value">{{ store.stats.total_users.toLocaleString() }}</div>
               <div class="kpi-label">活跃家属</div>
               <div class="kpi-trend up">较昨日 +5.1%</div>
-              <svg class="sparkline" viewBox="0 0 120 30">
-                <polyline :points="sparkLinePoints(userSparkData)" fill="none" stroke="#16A34A" stroke-width="1.5"/>
-                <circle v-for="(p, i) in userSparkData" :key="i" :cx="sparkX(i, userSparkData.length)" :cy="sparkY(p, userSparkData)" r="2" fill="#16A34A" opacity="0.6"/>
-              </svg>
             </div>
           </div>
         </el-card>
@@ -41,77 +51,69 @@
       <el-col :span="6">
         <el-card shadow="hover" class="kpi-card kpi-warning">
           <div class="kpi-content">
-            <div class="kpi-icon" style="background: linear-gradient(135deg, #F59E0B, #FBBF24);">
-              <el-icon :size="28"><Bell /></el-icon>
+            <div class="kpi-icon-wrap orange">
+              <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></el-icon>
             </div>
             <div class="kpi-info">
               <div class="kpi-value">{{ store.stats.active_alerts }}</div>
               <div class="kpi-label">待处理告警</div>
               <div class="kpi-trend down">较昨日 -12.5%</div>
-              <svg class="sparkline" viewBox="0 0 120 30">
-                <polyline :points="sparkLinePoints(alertSparkData)" fill="none" stroke="#F59E0B" stroke-width="1.5"/>
-                <circle v-for="(p, i) in alertSparkData" :key="i" :cx="sparkX(i, alertSparkData.length)" :cy="sparkY(p, alertSparkData)" r="2" fill="#F59E0B" opacity="0.6"/>
-              </svg>
             </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-danger">
+        <el-card shadow="hover" class="kpi-card kpi-info">
           <div class="kpi-content">
-            <div class="kpi-icon" style="background: linear-gradient(135deg, #EF4444, #F87171);">
-              <el-icon :size="28"><TrendCharts /></el-icon>
+            <div class="kpi-icon-wrap green">
+              <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 010-4h14v4M3 5v14a2 2 0 002 2h16v-5M18 14v6"/></svg></el-icon>
             </div>
             <div class="kpi-info">
               <div class="kpi-value">{{ store.stats.total_devices ? Math.round((store.stats.online_devices / store.stats.total_devices) * 100) + '%' : '—' }}</div>
               <div class="kpi-label">设备在线率</div>
               <div class="kpi-trend up">较上周 +1.2%</div>
-              <svg class="sparkline" viewBox="0 0 120 30">
-                <polyline :points="sparkLinePoints(onlineRateSparkData)" fill="none" stroke="#EF4444" stroke-width="1.5"/>
-                <circle v-for="(p, i) in onlineRateSparkData" :key="i" :cx="sparkX(i, onlineRateSparkData.length)" :cy="sparkY(p, onlineRateSparkData)" r="2" fill="#EF4444" opacity="0.6"/>
-              </svg>
             </div>
           </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <!-- Device Type Donut Chart Row -->
-    <el-row :gutter="12" style="margin-bottom: 16px;">
+    <!-- Charts Row -->
+    <el-row :gutter="16" style="margin-bottom: 16px;">
       <el-col :span="8">
-        <el-card shadow="hover">
-          <template #header><span style="font-weight: 600;">设备类型分布</span></template>
+        <el-card shadow="never">
+          <template #header><span class="card-title">设备类型分布</span></template>
           <div ref="donutChartRef" style="height: 260px;"></div>
         </el-card>
       </el-col>
       <el-col :span="8">
-        <el-card shadow="hover">
-          <template #header><span style="font-weight: 600;">套餐订阅分布</span></template>
+        <el-card shadow="never">
+          <template #header><span class="card-title">套餐订阅分布</span></template>
           <div ref="planChartRef" style="height: 260px;"></div>
         </el-card>
       </el-col>
       <el-col :span="8">
-        <el-card shadow="hover">
-          <template #header><span style="font-weight: 600;">告警优先级分布</span></template>
+        <el-card shadow="never">
+          <template #header><span class="card-title">告警优先级分布</span></template>
           <div ref="alertPriorityChartRef" style="height: 260px;"></div>
         </el-card>
       </el-col>
     </el-row>
 
-    <!-- Charts Row -->
-    <el-row :gutter="12" style="margin-bottom: 16px;">
+    <!-- Main Charts Row -->
+    <el-row :gutter="16" style="margin-bottom: 16px;">
       <el-col :span="16">
-        <el-card shadow="hover">
+        <el-card shadow="never">
           <template #header>
-            <span style="font-weight: 600;">设备在线趋势</span>
+            <span class="card-title">设备在线趋势</span>
           </template>
           <div ref="lineChartRef" style="height: 300px;"></div>
         </el-card>
       </el-col>
       <el-col :span="8">
-        <el-card shadow="hover">
+        <el-card shadow="never">
           <template #header>
-            <span style="font-weight: 600;">告警分布</span>
+            <span class="card-title">告警分布</span>
           </template>
           <div ref="pieChartRef" style="height: 300px;"></div>
         </el-card>
@@ -119,13 +121,13 @@
     </el-row>
 
     <!-- Bottom Row -->
-    <el-row :gutter="12">
+    <el-row :gutter="16">
       <el-col :span="12">
-        <el-card shadow="hover">
+        <el-card shadow="never">
           <template #header>
             <div class="card-header-with-action">
-              <span style="font-weight: 600;">最新告警</span>
-              <el-link type="primary" :underline="'never'">查看全部 →</el-link>
+              <span class="card-title">最新告警</span>
+              <el-link type="primary" :underline="'never'" style="color: var(--color-primary);">查看全部 →</el-link>
             </div>
           </template>
           <el-table :data="alertTableData" stripe style="width: 100%">
@@ -159,11 +161,11 @@
         </el-card>
       </el-col>
       <el-col :span="12">
-        <el-card shadow="hover">
+        <el-card shadow="never">
           <template #header>
             <div class="card-header-with-action">
-              <span style="font-weight: 600;">用户增长</span>
-              <el-link type="primary" :underline="'never'">详情 →</el-link>
+              <span class="card-title">用户增长</span>
+              <el-link type="primary" :underline="'never'" style="color: var(--color-primary);">详情 →</el-link>
             </div>
           </template>
           <div ref="barChartRef" style="height: 300px;"></div>
@@ -174,9 +176,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch, nextTick } from 'vue'
+import { onMounted, ref, watch, nextTick, computed } from 'vue'
 import * as echarts from 'echarts'
-import { Monitor, UserFilled, Bell, TrendCharts } from '@element-plus/icons-vue'
 import { useDashboardStore } from '@/stores/dashboard'
 import type { Alert } from '@/types'
 
@@ -195,25 +196,30 @@ let donutChart: echarts.ECharts | null = null
 let planChart: echarts.ECharts | null = null
 let alertPriorityChart: echarts.ECharts | null = null
 
-// Sparkline data for KPI cards — v2 prototype enhancement
-const lineSparkData = [42, 45, 43, 48, 50, 47, 52]
-const userSparkData = [120, 125, 132, 128, 135, 142, 150]
-const alertSparkData = [28, 25, 30, 22, 26, 20, 18]
-const onlineRateSparkData = [91, 92, 90, 93, 94, 93, 95]
+// Time-based greeting
+const timeGreeting = computed(() => {
+  const h = new Date().getHours()
+  if (h < 6) return '夜深了'
+  if (h < 12) return '上午好'
+  if (h < 18) return '下午好'
+  return '晚上好'
+})
 
-function sparkX(i: number, total: number): number {
-  return (i / (total - 1)) * 115 + 2.5
-}
-function sparkY(v: number, data: number[]): string {
-  const min = Math.min(...data)
-  const max = Math.max(...data)
-  const range = max - min || 1
-  return 28 - ((v - min) / range) * 24
-}
-function sparkLinePoints(data: number[]): string {
-  const total = data.length
-  return data.map((_, i) => `${sparkX(i, total)},${sparkY(data[i], data)}`).join(' ')
-}
+const currentDate = computed(() => {
+  return new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
+})
+
+const wellnessColors = ['#5C8D73', '#7BAF8C', '#A8C3B0', '#D9A441', '#D77B72', '#6E9FC4', '#6FAF8F']
+
+const alertTableData = ref<Array<Alert & { created_at: string }>>([])
+
+watch(
+  () => store.recentAlerts,
+  (alerts) => {
+    alertTableData.value = alerts.map(a => ({ ...a, created_at: a.created_at || '' }))
+  },
+  { immediate: true },
+)
 
 function formatTime(dateStr?: string): string {
   if (!dateStr) return '—'
@@ -231,52 +237,32 @@ function alertDotClass(type: string): string {
   if (['fall', 'medication'].includes(type)) return 'dot-warning'
   return 'dot-primary'
 }
-
 function statusBadgeClass(status: string): string {
   return status === 'pending' ? 'badge-danger' : status === 'resolved' ? 'badge-success' : 'badge-warning'
 }
 function statusDotClass(status: string): string {
   return status === 'pending' ? 'dot-danger' : status === 'resolved' ? 'dot-success' : 'dot-warning'
 }
-
 function statusLabel(status: string): string {
   return status === 'pending' ? '未处理' : status === 'resolved' ? '已处理' : '处理中'
 }
 
-const alertTableData = ref<Array<Alert & { created_at: string }>>([])
-
-watch(
-  () => store.recentAlerts,
-  (alerts) => {
-    alertTableData.value = alerts.map(a => ({ ...a, created_at: a.created_at || '' }))
-  },
-  { immediate: true },
-)
-
 function renderLineChart() {
   if (!lineChartRef.value) return
   if (!lineChart) lineChart = echarts.init(lineChartRef.value)
-
   const trend = store.chartData.alertTrend
   const dates = trend.map(d => d.date)
   const bracelet = trend.map(d => d.bracelet_count)
   const pillbox = trend.map(d => d.pillbox_count)
-
   lineChart.setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['手环', '药盒'] },
-    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    legend: { data: ['手环', '药盒'], bottom: 0 },
+    grid: { left: '3%', right: '4%', bottom: '12%', containLabel: true },
     xAxis: { type: 'category', boundaryGap: false, data: dates.length ? dates : ['暂无数据'] },
     yAxis: { type: 'value' },
     series: [
-      {
-        name: '手环', type: 'line', smooth: true, data: bracelet.length ? bracelet : [0],
-        itemStyle: { color: '#165DFF' }, areaStyle: { opacity: 0.1 },
-      },
-      {
-        name: '药盒', type: 'line', smooth: true, data: pillbox.length ? pillbox : [0],
-        itemStyle: { color: '#16A34A' }, areaStyle: { opacity: 0.1 },
-      },
+      { name: '手环', type: 'line', smooth: true, data: bracelet.length ? bracelet : [0], itemStyle: { color: '#5C8D73' }, areaStyle: { opacity: 0.08 } },
+      { name: '药盒', type: 'line', smooth: true, data: pillbox.length ? pillbox : [0], itemStyle: { color: '#6E9FC4' }, areaStyle: { opacity: 0.08 } },
     ],
   })
 }
@@ -284,7 +270,6 @@ function renderLineChart() {
 function renderPieChart() {
   if (!pieChartRef.value) return
   if (!pieChart) pieChart = echarts.init(pieChartRef.value)
-
   const items = store.chartData.alertDistribution
   pieChart.setOption({
     tooltip: { trigger: 'item' },
@@ -294,12 +279,11 @@ function renderPieChart() {
       data: items.length
         ? items.map(i => ({ value: i.value, name: i.name, itemStyle: { color: i.color } }))
         : [
-            { value: 35, name: 'SOS', itemStyle: { color: '#EF4444' } },
-            { value: 28, name: '跌倒检测', itemStyle: { color: '#F59E0B' } },
-            { value: 22, name: '心率异常', itemStyle: { color: '#165DFF' } },
-            { value: 15, name: '漏服药物', itemStyle: { color: '#16A34A' } },
+            { value: 35, name: 'SOS', itemStyle: { color: '#D77B72' } },
+            { value: 28, name: '跌倒检测', itemStyle: { color: '#D9A441' } },
+            { value: 22, name: '心率异常', itemStyle: { color: '#5C8D73' } },
+            { value: 15, name: '漏服药物', itemStyle: { color: '#6FAF8F' } },
           ],
-      emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } },
     }],
   })
 }
@@ -307,7 +291,6 @@ function renderPieChart() {
 function renderBarChart() {
   if (!barChartRef.value) return
   if (!barChart) barChart = echarts.init(barChartRef.value)
-
   const growth = store.chartData.userGrowth
   barChart.setOption({
     tooltip: { trigger: 'axis' },
@@ -322,8 +305,8 @@ function renderBarChart() {
       data: growth.length ? growth.map(g => g.new_users) : [120, 180, 250, 320, 410, 520],
       itemStyle: {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: '#165DFF' },
-          { offset: 1, color: '#9B8ED8' },
+          { offset: 0, color: '#5C8D73' },
+          { offset: 1, color: '#A8C3B0' },
         ]),
       },
     }],
@@ -341,12 +324,6 @@ async function initCharts() {
   renderAlertPriorityChart()
 }
 
-// Initialize charts on mount
-onMounted(() => {
-  initCharts()
-})
-
-// Device type donut — v2 prototype enhancement
 function renderDonutChart() {
   if (!donutChartRef.value) return
   if (!donutChart) donutChart = echarts.init(donutChartRef.value)
@@ -355,18 +332,17 @@ function renderDonutChart() {
     series: [{
       name: '设备类型', type: 'pie', radius: ['40%', '70%'], center: ['50%', '55%'],
       data: [
-        { value: 480, name: '手环-入门版', itemStyle: { color: '#165DFF' } },
-        { value: 312, name: '手环-中端版', itemStyle: { color: '#9B8ED8' } },
-        { value: 148, name: '手环-高端版', itemStyle: { color: '#D48EC0' } },
-        { value: 220, name: '药盒-智能版', itemStyle: { color: '#16A34A' } },
-        { value: 85, name: '药盒-自动版', itemStyle: { color: '#F59E0B' } },
+        { value: 480, name: '手环-入门版', itemStyle: { color: '#5C8D73' } },
+        { value: 312, name: '手环-中端版', itemStyle: { color: '#7BAF8C' } },
+        { value: 148, name: '手环-高端版', itemStyle: { color: '#A8C3B0' } },
+        { value: 220, name: '药盒-智能版', itemStyle: { color: '#6E9FC4' } },
+        { value: 85, name: '药盒-自动版', itemStyle: { color: '#D9A441' } },
       ],
       label: { fontSize: 11, formatter: '{b}\n{c}' },
     }],
   })
 }
 
-// Plan distribution donut — v2 prototype enhancement
 function renderPlanChart() {
   if (!planChartRef.value) return
   if (!planChart) planChart = echarts.init(planChartRef.value)
@@ -375,16 +351,15 @@ function renderPlanChart() {
     series: [{
       name: '套餐', type: 'pie', radius: ['40%', '70%'], center: ['50%', '55%'],
       data: [
-        { value: 189, name: 'Starter ¥29/月', itemStyle: { color: '#9B8ED8' } },
-        { value: 312, name: 'Plus ¥59/月', itemStyle: { color: '#165DFF' } },
-        { value: 148, name: 'Pro ¥99/月', itemStyle: { color: '#D48EC0' } },
+        { value: 189, name: 'Starter ¥29/月', itemStyle: { color: '#A8C3B0' } },
+        { value: 312, name: 'Plus ¥59/月', itemStyle: { color: '#5C8D73' } },
+        { value: 148, name: 'Pro ¥99/月', itemStyle: { color: '#6E9FC4' } },
       ],
       label: { fontSize: 11, formatter: '{b}\n{d}%' },
     }],
   })
 }
 
-// Alert priority donut — v2 prototype enhancement
 function renderAlertPriorityChart() {
   if (!alertPriorityChartRef.value) return
   if (!alertPriorityChart) alertPriorityChart = echarts.init(alertPriorityChartRef.value)
@@ -393,16 +368,19 @@ function renderAlertPriorityChart() {
     series: [{
       name: '告警优先级', type: 'pie', radius: ['40%', '70%'], center: ['50%', '55%'],
       data: [
-        { value: 12, name: 'P0 紧急', itemStyle: { color: '#EF4444' } },
-        { value: 38, name: 'P1 重要', itemStyle: { color: '#F59E0B' } },
-        { value: 156, name: 'P2 一般', itemStyle: { color: '#6B7280' } },
+        { value: 12, name: 'P0 紧急', itemStyle: { color: '#D77B72' } },
+        { value: 38, name: 'P1 重要', itemStyle: { color: '#D9A441' } },
+        { value: 156, name: 'P2 一般', itemStyle: { color: '#A8C3B0' } },
       ],
       label: { fontSize: 11, formatter: '{b}\n{c}条' },
     }],
   })
 }
 
-// Resize handler
+onMounted(() => {
+  initCharts()
+})
+
 function handleResize() {
   lineChart?.resize()
   pieChart?.resize()
@@ -420,47 +398,118 @@ window.addEventListener('resize', handleResize)
   padding: 0;
 }
 
-.kpi-card :deep(.el-card__body) {
-  padding: 16px 20px;
+/* Welcome Header */
+.welcome-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
 }
-.kpi-content {
+.welcome-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #29404A;
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+}
+.wave { font-size: 22px; }
+.welcome-sub {
+  font-size: 13px;
+  color: #6B8980;
+  margin: 0;
+}
+.welcome-meta {
+  text-align: right;
+}
+.meta-date {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4A6260;
+  margin-bottom: 4px;
+}
+.meta-status {
+  font-size: 12px;
+  color: #6B8980;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 6px;
+  justify-content: flex-end;
 }
-.kpi-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
+.status-dot.green {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #5C8D73;
+  box-shadow: 0 0 6px rgba(92,141,115,0.4);
+}
+
+/* KPI Cards */
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  transition: all var(--duration-normal) var(--easing);
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.kpi-card:hover {
+  transform: translateY(-3px);
+}
+
+.kpi-card :deep(.el-card__body) {
+  padding: 18px 20px;
+  border: 1px solid var(--border-light);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), var(--shadow-card);
+  border-radius: var(--radius-lg);
+}
+.kpi-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
   flex-shrink: 0;
 }
-.kpi-info {
-  flex: 1;
-}
+.kpi-icon-wrap.blue { background: linear-gradient(135deg, #5C8D73, #7BAF8C); color: #fff; }
+.kpi-icon-wrap.green { background: linear-gradient(135deg, #6FAF8F, #8BC4A8); color: #fff; }
+.kpi-icon-wrap.orange { background: linear-gradient(135deg, #D9A441, #E8BC6A); color: #fff; }
+.kpi-icon-wrap.red { background: linear-gradient(135deg, #D77B72, #E09890); color: #fff; }
+.kpi-icon-wrap.purple { background: linear-gradient(135deg, #7C3AED, #A78BFA); color: #fff; }
+.kpi-icon { display: none; }
+.kpi-info { flex: 1; }
 .kpi-value {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
-  color: var(--el-text-color-primary);
+  color: #29404A;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 4px;
 }
 .kpi-label {
   font-size: 13px;
-  color: var(--el-text-color-secondary);
+  color: #6B8980;
   margin-top: 2px;
 }
 .kpi-trend {
   font-size: 12px;
   margin-top: 4px;
 }
-.kpi-trend.up { color: #16A34A; }
-.kpi-trend.down { color: #EF4444; }
-.sparkline {
-  width: 120px;
-  height: 30px;
-  margin-top: 4px;
+.kpi-trend.up { color: #4A8A6A; }
+.kpi-trend.down { color: #D77B72; }
+
+/* Card titles */
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #29404A;
 }
 .card-header-with-action {
   display: flex;
@@ -468,28 +517,28 @@ window.addEventListener('resize', handleResize)
   align-items: center;
 }
 
-/* Status badges with dots */
+/* Status badges */
 .status-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   padding: 3px 10px;
-  border-radius: 8px;
+  border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
 }
-.badge-success { background: #F0FDF4; color: #16A34A; }
-.badge-danger { background: #FEF2F2; color: #DC2626; }
-.badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #EFF6FF; color: #165DFF; }
+.badge-success { background: #E8F4EC; color: #4A8A6A; }
+.badge-danger { background: #FDF0EE; color: #B85C54; }
+.badge-warning { background: #FEF7E8; color: #B8860B; }
+.badge-primary { background: #DDEBE1; color: #47745C; }
 .status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   display: inline-block;
 }
-.dot-success { background: #16A34A; }
-.dot-danger { background: #DC2626; }
-.dot-warning { background: #D97706; }
-.dot-primary { background: #165DFF; }
+.dot-success { background: #6FAF8F; }
+.dot-danger { background: #D77B72; }
+.dot-warning { background: #D9A441; }
+.dot-primary { background: #5C8D73; }
 </style>

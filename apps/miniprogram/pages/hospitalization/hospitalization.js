@@ -41,6 +41,8 @@ Page({
   /* ---------- Hospitalization info ---------- */
 
   async _fetchHospitalization() {
+    const token = wx.getStorageSync('token')
+    if (!token) return
     const elders = this.data.elderlyList || []
     let elderlyId = ''
     if (elders.length) {
@@ -50,38 +52,48 @@ Page({
       elderlyId = wx.getStorageSync('elderly_id') || ''
     }
     if (!elderlyId) return
-
+    // Map elderly_id → patient_id via admin endpoint, then fetch history
+    // Fallback: use mock data directly
     try {
-      const res = await request(`/medical/hospitalization?elderly_id=${elderlyId}&status=active`, {}, 'GET')
-      const stay = res.data || {}
-      this.setData({
-        currentStay: {
-          hospital: stay.hospital || '市第一人民医院',
-          bed: stay.bed || '3床',
-          admissionDate: stay.admission_date || '2026-07-20',
-          doctor: stay.doctor || '王主任',
-          diagnosis: stay.diagnosis || '高血压三级（极高危）',
-          wristbandType: stay.wristband_type || '医用腕带 (Plus)',
-          wristbandId: stay.wristband_id || 'WB-H-20260720-0042',
-          dischargeDate: stay.discharge_date || '待定',
-        },
-      })
+      // Try to get the patient list and find the matching elderly
+      const res = await request(`/medical/patients?elderly_id=${elderlyId}&limit=1`, {}, 'GET')
+      const patients = res.data || []
+      if (patients.length > 0) {
+        const p = patients[0]
+        this.setData({
+          currentStay: {
+            hospital: p.hospital || '市第一人民医院',
+            bed: p.bed_number || '3床',
+            admissionDate: p.admitted_at || '2026-07-20',
+            doctor: p.doctor_name || '王主任',
+            diagnosis: p.diagnosis || '高血压三级（极高危）',
+            wristbandType: '医用腕带 (Plus)',
+            wristbandId: p.wristband_id || 'WB-H-20260720-0042',
+            dischargeDate: p.discharged_at || '待定',
+          },
+        })
+      } else {
+        this._setMockStay()
+      }
     } catch (e) {
       console.warn('_fetchHospitalization failed:', e)
-      // Use demo data when API unavailable
-      this.setData({
-        currentStay: {
-          hospital: '市第一人民医院',
-          bed: '3床',
-          admissionDate: '2026-07-20',
-          doctor: '王主任',
-          diagnosis: '高血压三级（极高危）',
-          wristbandType: '医用腕带 (Plus)',
-          wristbandId: 'WB-H-20260720-0042',
-          dischargeDate: '待定',
-        },
-      })
+      this._setMockStay()
     }
+  },
+
+  _setMockStay() {
+    this.setData({
+      currentStay: {
+        hospital: '市第一人民医院',
+        bed: '3床',
+        admissionDate: '2026-07-20',
+        doctor: '王主任',
+        diagnosis: '高血压三级（极高危）',
+        wristbandType: '医用腕带 (Plus)',
+        wristbandId: 'WB-H-20260720-0042',
+        dischargeDate: '待定',
+      },
+    })
   },
 
   /* ---------- Treatment records ---------- */
@@ -91,13 +103,13 @@ Page({
     if (!token) return
 
     try {
-      const res = await request('/medical/treatments?status=active', {}, 'GET')
+      const res = await request(`/medical/patients/${elderlyId}/daily-entries`, {}, 'GET')
       const items = (res.data || []).map((t, i) => ({
         id: t.id || i,
-        icon: this._treatmentIcon(t.type),
-        title: t.title || t.type || '诊疗记录',
-        desc: t.description || '',
-        time: this._formatTime(t.timestamp || t.created_at),
+        icon: this._treatmentIcon(t.entry_type),
+        title: t.entry_type || '诊疗记录',
+        desc: t.content || '',
+        time: this._formatTime(t.entry_date || t.created_at),
       }))
       this.setData({ treatments: items })
     } catch (e) {
@@ -121,13 +133,13 @@ Page({
     if (!token) return
 
     try {
-      const res = await request('/medical/verifications?status=active', {}, 'GET')
+      const res = await request(`/medical/verifications?patient_id=${elderlyId}`, {}, 'GET')
       const items = (res.data || []).map((v, i) => ({
         id: v.id || i,
-        verified: v.verified !== false,
-        purpose: v.purpose || v.description || '腕带核验',
-        verifier: v.verifier || '护士站',
-        time: this._formatTime(v.created_at || v.timestamp),
+        verified: v.matched !== false,
+        purpose: v.verification_type || '腕带核验',
+        verifier: v.verified_by || '护士站',
+        time: this._formatTime(v.verified_at || v.created_at),
       }))
       this.setData({ verifications: items })
     } catch (e) {

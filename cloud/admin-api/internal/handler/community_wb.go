@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"strconv"
 
@@ -36,7 +35,7 @@ func (h *CommunityWBHandler) ListElders(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": elders, "page": page, "page_size": pageSize})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": elders, "page": page, "page_size": pageSize})
 }
 
 func (h *CommunityWBHandler) GetElder(c *gin.Context) {
@@ -45,7 +44,7 @@ func (h *CommunityWBHandler) GetElder(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "elder not found"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": elder})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": elder})
 }
 
 func (h *CommunityWBHandler) CreateElder(c *gin.Context) {
@@ -58,7 +57,7 @@ func (h *CommunityWBHandler) CreateElder(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"data": elder})
+	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": elder})
 }
 
 func (h *CommunityWBHandler) UpdateElder(c *gin.Context) {
@@ -89,7 +88,7 @@ func (h *CommunityWBHandler) GetElderStats(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": stats})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": stats})
 }
 
 // Device management
@@ -106,7 +105,7 @@ func (h *CommunityWBHandler) ListDevices(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": devices, "page": page, "page_size": pageSize})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": devices, "page": page, "page_size": pageSize})
 }
 
 func (h *CommunityWBHandler) BindElderDevice(c *gin.Context) {
@@ -132,7 +131,7 @@ func (h *CommunityWBHandler) ListWelfareTags(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": configs})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": configs})
 }
 
 func (h *CommunityWBHandler) GetElderWelfareTags(c *gin.Context) {
@@ -141,7 +140,7 @@ func (h *CommunityWBHandler) GetElderWelfareTags(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": tags})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": tags})
 }
 
 func (h *CommunityWBHandler) AssignWelfareTag(c *gin.Context) {
@@ -243,7 +242,7 @@ func (h *CommunityWBHandler) ListSigninRecords(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": records})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": records})
 }
 
 // Pharmacy
@@ -273,12 +272,31 @@ func (h *CommunityWBHandler) DispenseMedicine(c *gin.Context) {
 		SelfPay:        body.SelfPay,
 		Notes:          body.Notes,
 	}
-	log.Items = "[]" // TODO: marshal items to JSON
+	itemsJSON, err := json.Marshal(body.Items)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to serialize items"})
+		return
+	}
+	log.Items = string(itemsJSON)
 	if err := h.store.CreatePharmacyLog(c.Request.Context(), &log); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"status": "dispensed", "log_id": log.ID})
+}
+
+// ListPharmacyLogs returns pharmacy dispense logs.
+func (h *CommunityWBHandler) ListPharmacyLogs(c *gin.Context) {
+	elderID := c.Query("elder_id")
+	period := c.Query("period")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "50"))
+	records, err := h.store.ListPharmacyLogs(c.Request.Context(), elderID, period, page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": records})
 }
 
 // Minzheng sync
@@ -302,7 +320,7 @@ func (h *CommunityWBHandler) ImportMinzhengData(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"data": sync})
+	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": sync})
 }
 
 func (h *CommunityWBHandler) ListMinzhengSync(c *gin.Context) {
@@ -311,7 +329,7 @@ func (h *CommunityWBHandler) ListMinzhengSync(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": syncs})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": syncs})
 }
 
 // Batch payments
@@ -329,14 +347,9 @@ func (h *CommunityWBHandler) ExecuteBatchPayment(c *gin.Context) {
 
 	payments := make([]model.CommunityBatchPayment, 0, len(body.ElderIDs))
 	for _, elderID := range body.ElderIDs {
-		// MVP stub: simulate 90% success rate
-		status := "success"
-		if randFloat() < 0.1 {
-			status = "failed"
-		}
 		payments = append(payments, model.CommunityBatchPayment{
 			BatchID: body.BatchID, Period: body.Period, PayType: body.PayType,
-			ElderID: elderID, Status: status, Amount: 0,
+			ElderID: elderID, Amount: 0, Status: "pending",
 		})
 	}
 	if len(payments) > 0 {
@@ -351,8 +364,5 @@ func (h *CommunityWBHandler) ListBatchPayments(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": payments})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": payments})
 }
-
-// randFloat returns a pseudo-random float64 in [0, 1).
-var randFloat = func() float64 { return rand.Float64() }

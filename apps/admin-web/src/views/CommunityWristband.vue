@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
-import { communityApi, type CommunityElder, type CommunityDevice, type WelfareTagConfig } from '@/api/community'
+import { communityApi, type CommunityElder, type CommunityDevice, type WelfareTagConfig, type CommunityPharmacyLog } from '@/api/community'
 import { handleApiError, handleApiSuccess } from '@/utils/error'
 import ElderList from './CommunityWristband/ElderList.vue'
 import ElderDetailPanel from './CommunityWristband/ElderDetailPanel.vue'
@@ -155,12 +155,14 @@ async function loadMinzhengSync() {
 async function loadPharmacyLogs() {
   loading.value.pharmacy = true
   try {
-    pharmacyLogs.value = [
-      { elder_id: 'elder-1', elder_name: '张秀兰', hospital_id: '社区医院 A', items: '["氨氯地平","二甲双胍"]', total_cost: 45.50, pharmacist_id: '张护士', signed_in: true, created_at: '2026-07-23T10:30:00Z' },
-      { elder_id: 'elder-2', elder_name: '李建国', hospital_id: '社区医院 B', items: '["阿司匹林肠溶片"]', total_cost: 12.00, pharmacist_id: '李药师', signed_in: true, created_at: '2026-07-23T09:15:00Z' },
-      { elder_id: 'elder-3', elder_name: '王秀英', hospital_id: '社区医院 A', items: '["硝苯地平缓释片"]', total_cost: 28.00, pharmacist_id: '张护士', signed_in: false, created_at: '2026-07-22T14:20:00Z' },
-    ]
-  } finally { loading.value.pharmacy = false }
+    const period = dayjs().format('YYYY-MM')
+    const res = await communityApi.listPharmacyLogs({ period })
+    pharmacyLogs.value = (res.data?.data || []) as CommunityPharmacyLog[]
+  } catch {
+    pharmacyLogs.value = []
+  } finally {
+    loading.value.pharmacy = false
+  }
 }
 
 function onFileUpload(file: File) { ElMessage.success(`文件 ${file.name} 已选择，正在上传...`) }
@@ -205,12 +207,37 @@ function onFileUpload(file: File) { ElMessage.success(`文件 ${file.name} 已�
 
 <style scoped>
 .community-page { padding: 0; }
+.community-page :deep(.el-card) {
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
+  transition: all var(--duration-normal) var(--easing-out);
+}
+.community-page :deep(.el-card:hover) {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1px);
+}
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
+  pointer-events: none;
+}
+.kpi-card:hover {
+  transform: translateY(-3px);
+}
 .kpi-card :deep(.el-card__body) { padding: 18px; display: flex; flex-direction: column; align-items: center; text-align: center; border-radius: 14px; }
-.kpi-value { font-size: 28px; font-weight: 800; line-height: 1.2; }
+.kpi-value { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 4px; }
 .kpi-label { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 6px; font-weight: 600; }
-.kpi-blue .kpi-value { color: #165DFF; }
-.kpi-green .kpi-value { color: #16A34A; }
-.kpi-purple .kpi-value { color: #9B8ED8; }
+.kpi-blue .kpi-value { color: #5C8D73; }
+.kpi-green .kpi-value { color: #6FAF8F; }
+.kpi-purple .kpi-value { color: #7BAF8C; }
 .kpi-warning .kpi-value { color: #F59E0B; }
 .kpi-danger .kpi-value { color: #EF4444; }
 .kpi-orange .kpi-value { color: #EA580C; }

@@ -3,68 +3,67 @@
     <!-- Full app layout (only shown when logged in) -->
     <el-container style="height: 100%;">
       <!-- Sidebar -->
-      <el-aside width="220px" class="sidebar">
-        <div class="sidebar-top-bar"></div>
+      <el-aside width="240px" class="sidebar">
         <div class="sidebar-logo">
           <span class="logo-brand">Eregen</span>
           <span class="logo-cn">颐贞</span>
         </div>
-        <el-menu :default-active="activeMenu" background-color="transparent" text-color="rgba(255,255,255,0.7)" active-text-color="#fff" router class="sidebar-menu">
-          <el-divider class="menu-divider" content-position="left"><span class="section-label">概览</span></el-divider>
+        <el-menu :default-active="activeMenu" background-color="transparent" text-color="var(--text-sidebar)" active-text-color="var(--color-primary-dark)" router class="sidebar-menu">
+          <div class="nav-section-title">概览</div>
           <el-menu-item index="/dashboard">
-            <el-icon><DataAnalysis /></el-icon><span>仪表盘</span>
+            <el-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg></el-icon><span>健康仪表盘</span>
           </el-menu-item>
-          <el-divider class="menu-divider" content-position="left"><span class="section-label">设备管理</span></el-divider>
+          <div class="nav-section-title">设备管理</div>
           <el-menu-item index="/devices">
-            <el-icon><Watch /></el-icon><span>手环设备</span>
+            <el-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></el-icon><span>手环设备</span>
           </el-menu-item>
           <el-menu-item index="/pillboxes">
-            <el-icon><PieChart /></el-icon><span>药盒设备</span>
+            <el-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 6V4M16 6V4M3 10h18"/><circle cx="8" cy="14" r="1.5"/><circle cx="16" cy="14" r="1.5"/></svg></el-icon><span>药盒设备</span>
           </el-menu-item>
           <el-menu-item index="/ota">
-            <el-icon><Download /></el-icon><span>固件OTA</span>
+            <el-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg></el-icon><span>固件OTA</span>
           </el-menu-item>
-          <el-divider class="menu-divider" content-position="left"><span class="section-label">用药管理</span></el-divider>
+          <div class="nav-section-title">用药管理</div>
           <el-menu-item index="/medication">
-            <el-icon><Document /></el-icon><span>用药规则</span>
+            <el-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v6h-6zM9 15h6v6h-6zM3 9h6v6H3zM15 9h6v6h-6z"/></svg></el-icon><span>用药规则</span>
           </el-menu-item>
-          <el-divider class="menu-divider" content-position="left"><span class="section-label">用户管理</span></el-divider>
+          <div class="nav-section-title">用户管理</div>
           <el-menu-item index="/users">
-            <el-icon><User /></el-icon><span>家属用户</span>
+            <el-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></el-icon><span>家属用户</span>
           </el-menu-item>
           <el-menu-item index="/elderly">
-            <el-icon><Avatar /></el-icon><span>老人档案</span>
+            <el-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></el-icon><span>老人档案</span>
           </el-menu-item>
           <el-menu-item index="/institutions">
-            <el-icon><OfficeBuilding /></el-icon><span>机构管理</span>
+            <el-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 7v14M21 7v14M6 11h4M6 15h4M14 11h4M14 15h4M9 3h6v4H9z"/></svg></el-icon><span>机构管理</span>
           </el-menu-item>
-          <el-divider class="menu-divider" content-position="left"><span class="section-label">医疗管理</span></el-divider>
+          <div class="nav-section-title">医疗管理</div>
           <el-menu-item index="/medical">
-            <el-icon><FirstAidKit /></el-icon><span>医疗腕带</span>
+            <el-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 105 2H4a2 2 0 00-2 2v5a6 6 0 006 6 6 6 0 006-6V4a2 2 0 00-2-2h-1a.2.2 0 00.3.3"/><path d="M8 15v4M12 15v4M6 23h8"/></svg></el-icon><span>医疗腕带</span>
           </el-menu-item>
           <el-menu-item index="/regulatory">
-            <el-icon><Checked /></el-icon><span>监管看板</span>
+            <el-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></el-icon><span>监管看板</span>
           </el-menu-item>
           <el-menu-item index="/community-wb">
-            <el-icon><Avatar /></el-icon><span>社区老人</span>
+            <el-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></el-icon><span>社区老人</span>
           </el-menu-item>
-          <el-divider class="menu-divider" content-position="left"><span class="section-label">运营</span></el-divider>
+          <div class="nav-section-title">运营</div>
           <el-menu-item index="/alerts">
-            <el-icon><Bell /></el-icon><span>告警中心</span>
+            <el-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg></el-icon><span>告警中心</span>
           </el-menu-item>
           <el-menu-item index="/subscriptions">
-            <el-icon><List /></el-icon><span>订阅管理</span>
+            <el-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></el-icon><span>订阅管理</span>
           </el-menu-item>
           <el-menu-item index="/analytics">
-            <el-icon><TrendCharts /></el-icon><span>数据分析</span>
+            <el-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 010-4h14v4M3 5v14a2 2 0 002 2h16v-5M18 14v6"/></svg></el-icon><span>数据分析</span>
           </el-menu-item>
-          <el-divider class="menu-divider" content-position="left"><span class="section-label">系统</span></el-divider>
+          <div class="nav-section-title">系统</div>
           <el-menu-item index="/settings">
-            <el-icon><Setting /></el-icon><span>系统设置</span>
+            <el-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></el-icon><span>系统设置</span>
           </el-menu-item>
         </el-menu>
         <div class="sidebar-footer">
-          <el-avatar size="small" style="background: linear-gradient(135deg, #79A3D0, #165DFF);">管</el-avatar>
+          <el-avatar size="small" style="background: linear-gradient(135deg, #5C8D73, #7BAF8C);">管</el-avatar>
           <div>
             <div class="footer-name">{{ authStore.user.name }}</div>
             <div class="footer-role">{{ authStore.user.role === 'super_admin' ? '超级管理员' : '管理员' }}</div>
@@ -81,15 +80,15 @@
           </div>
           <div class="topbar-right">
             <div class="topbar-icon" title="搜索">
-              <el-icon :size="18"><Search /></el-icon>
+              <el-icon :size="18"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></el-icon>
             </div>
             <el-badge :value="3" :max="99">
               <div class="topbar-icon" title="通知">
-                <el-icon :size="18"><Bell /></el-icon>
+                <el-icon :size="18"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg></el-icon>
               </div>
             </el-badge>
             <div class="topbar-icon" title="主题">
-              <el-icon :size="18"><Moon /></el-icon>
+              <el-icon :size="18"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></el-icon>
             </div>
             <el-button type="danger" @click="handleLogout" plain size="small" class="logout-btn">退出</el-button>
           </div>
@@ -97,7 +96,11 @@
 
         <!-- Main content -->
         <el-main class="main-content">
-          <router-view />
+          <router-view v-slot="{ Component }">
+            <transition name="page-fade" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </router-view>
         </el-main>
       </el-container>
     </el-container>
@@ -110,11 +113,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {
-  DataAnalysis, Watch, PieChart, Download, User, Avatar,
-  OfficeBuilding, Bell, List, TrendCharts, Setting, Search, Moon,
-  Document, FirstAidKit, Checked
-} from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import LoginView from '@/views/Login.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -127,7 +125,7 @@ const activeMenu = computed(() => route.path)
 
 const currentBreadcrumb = computed(() => {
   const map: Record<string, string> = {
-    '/dashboard': '首页 / 仪表盘总览',
+    '/dashboard': '首页 / 健康仪表盘',
     '/devices': '设备管理 / 手环设备',
     '/pillboxes': '设备管理 / 药盒设备',
     '/ota': '设备管理 / 固件OTA',
@@ -151,9 +149,8 @@ async function handleLogout() {
   ElMessage.info('已安全退出')
 }
 
-// Check authentication on mount
 onMounted(async () => {
-  if (!authStore.isLoggedIn()) {
+  if (!authStore.checkLoggedIn()) {
     if (route.path !== '/login') {
       router.push({ path: '/login', query: { redirect: route.path } })
     }
@@ -170,23 +167,16 @@ html, body, #app {
   padding: 0;
   height: 100%;
   font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
-  background-color: #FFFFFF;
 }
 
 /* ==================== SIDEBAR ==================== */
 .sidebar {
-  background: linear-gradient(180deg, #0F52BA 0%, #165DFF 50%, #1A4FD6 100%);
+  background: #F3F5F1;
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 4px 0 20px rgba(0,0,0,0.12);
+  box-shadow: 2px 0 16px rgba(60,90,70,0.06), 1px 0 6px rgba(60,90,70,0.04);
   z-index: 100;
-}
-
-.sidebar-top-bar {
-  height: 3px;
-  background: linear-gradient(90deg, #79A3D0, #36D399, #79A3D0);
-  flex-shrink: 0;
 }
 
 .sidebar-logo {
@@ -194,27 +184,23 @@ html, body, #app {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(60,90,70,0.08);
   padding: 0 20px;
 }
 .logo-brand {
-  font-size: 20px;
-  font-weight: 800;
+  font-size: 18px;
+  font-weight: 700;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #FFFFFF 0%, #B8D4F0 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #47745C;
 }
 .logo-cn {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
-  color: rgba(255,255,255,0.5);
-  letter-spacing: 0.05em;
+  color: #8FA8A0;
+  margin-left: 6px;
+  letter-spacing: 0.04em;
 }
 
-/* Menu items */
 .sidebar-menu {
   flex: 1;
   overflow-y: auto;
@@ -227,75 +213,68 @@ html, body, #app {
 .sidebar-menu :deep(.el-menu-item) {
   height: 42px !important;
   line-height: 42px !important;
-  margin: 2px 8px !important;
-  border-radius: 8px !important;
+  margin: 3px 10px !important;
+  border-radius: 50px !important;
   font-size: 13.5px !important;
-  color: rgba(255,255,255,0.7) !important;
-  transition: all 0.2s ease !important;
+  color: #4A5C5A !important;
+  transition: all 0.25s ease !important;
+  position: relative;
+  padding-left: 20px !important;
 }
 .sidebar-menu :deep(.el-menu-item:hover) {
-  background: rgba(255,255,255,0.1) !important;
-  color: #FFFFFF !important;
-  transform: translateX(2px);
+  background: rgba(92,141,115,0.06) !important;
+  color: #47745C !important;
 }
 .sidebar-menu :deep(.el-menu-item.is-active) {
-  background: rgba(255,255,255,0.15) !important;
-  color: #FFFFFF !important;
+  background: rgba(92,141,115,0.12) !important;
+  color: #47745C !important;
   font-weight: 600;
 }
-.sidebar-menu :deep(.el-menu-item.is-active)::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 20px;
-  background: #FFFFFF;
-  border-radius: 0 3px 3px 0;
-}
 
-/* Section dividers */
 .menu-divider {
-  margin: 8px 16px 4px !important;
-  border-color: rgba(255,255,255,0.08) !important;
+  margin: 12px 16px 6px !important;
+  border-color: rgba(60,90,70,0.08) !important;
 }
 .section-label {
   font-size: 10px !important;
-  color: rgba(255,255,255,0.35) !important;
-  letter-spacing: 0.1em !important;
+  color: #8FA8A0 !important;
+  letter-spacing: 0.08em !important;
   text-transform: uppercase;
   font-weight: 600;
 }
 
-/* Footer user info */
 .sidebar-footer {
-  padding: 16px 20px;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 14px 16px;
+  border-top: 1px solid rgba(60,90,70,0.08);
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: rgba(0,0,0,0.1);
-  margin: 0 0;
+  gap: 10px;
+  background: #EEF2EB;
+}
+.sidebar-footer :deep(.el-avatar) {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #5C8D73, #7BAF8C) !important;
+  font-size: 13px !important;
+  font-weight: 700;
 }
 .footer-name {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255,255,255,0.9);
+  color: #29404A;
 }
 .footer-role {
   font-size: 11px;
-  color: rgba(255,255,255,0.4);
+  color: #8FA8A0;
   margin-top: 1px;
 }
 
 /* ==================== TOPBAR ==================== */
 .topbar {
   height: 64px;
-  background: rgba(255,255,255,0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid #E8ECF1;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E5EDE6;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -303,11 +282,11 @@ html, body, #app {
   position: sticky;
   top: 0;
   z-index: 50;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 4px rgba(60,90,70,0.04);
 }
 .breadcrumb {
   font-size: 13px;
-  color: #64748B;
+  color: #6B8980;
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -318,53 +297,65 @@ html, body, #app {
   height: 6px;
   min-width: 6px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #165DFF, #79A3D0);
+  background: #5C8D73;
+  box-shadow: 0 0 6px rgba(92,141,115,0.35);
+  animation: pulse-dot 2.5s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.15); }
 }
 .breadcrumb span:last-child {
-  color: #0F172A;
+  color: #29404A;
   font-weight: 600;
 }
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .topbar-icon {
   cursor: pointer;
-  color: #64748B;
-  transition: all 0.2s ease;
-  padding: 8px;
-  border-radius: 8px;
+  color: #6B8980;
+  transition: all 0.15s ease;
+  padding: 7px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid transparent;
 }
 .topbar-icon:hover {
-  color: #165DFF;
-  background: #EFF6FF;
+  color: #5C8D73;
+  background: #DDEBE1;
+  border-color: #DDEBE1;
 }
 .logout-btn {
   margin-left: 8px;
-  border-radius: 8px !important;
+  border-radius: 12px !important;
   font-size: 13px;
-  padding: 6px 16px !important;
+  padding: 6px 14px !important;
+  border: 1px solid #D4DFD5 !important;
+  color: #4A6260 !important;
+  background: #FFFFFF !important;
 }
 
-/* Badge */
 .el-badge__content {
-  background: #F87272 !important;
+  background: #D77B72 !important;
   font-size: 10px !important;
   padding: 1px 5px !important;
   min-width: 0 !important;
   height: auto !important;
   border-radius: 10px !important;
-  border: 1px solid #FFFFFF;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 1px 3px rgba(215,123,114,0.3);
 }
 
 /* ==================== MAIN CONTENT ==================== */
 .main-content {
-  background: #FFFFFF;
-  padding: 28px;
+  background: #F8F6F1;
+  background-image: linear-gradient(135deg, #F8F6F1 0%, #EFF5F0 100%);
+  padding: 28px 32px;
   overflow-y: auto;
   height: calc(100vh - 64px);
 }
@@ -376,7 +367,7 @@ html, body, #app {
 
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 768px) {
-  .sidebar { width: 70px !important; }
+  .sidebar { width: 64px !important; }
   .sidebar-logo .logo-brand,
   .sidebar-logo .logo-cn,
   .sidebar .el-menu-item span,
@@ -384,7 +375,7 @@ html, body, #app {
   .sidebar-menu :deep(.el-menu-item) {
     justify-content: center !important;
     padding: 0 !important;
-    margin: 2px 6px !important;
+    margin: 2px 4px !important;
   }
   .sidebar-footer { justify-content: center; }
   .main-content { padding: 16px; }

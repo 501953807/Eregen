@@ -16,14 +16,14 @@ import (
 
 // AlertHandler handles alert management endpoints.
 type AlertHandler struct {
-	store *store.Postgres
+	store store.AlertStore
 	svc   *service.AlertService
 	log   *zap.Logger
 }
 
 // NewAlertHandler creates a new alert handler.
-func NewAlertHandler(store *store.Postgres, svc *service.AlertService, log *zap.Logger) *AlertHandler {
-	return &AlertHandler{store: store, svc: svc, log: log}
+func NewAlertHandler(s store.AlertStore, svc *service.AlertService, log *zap.Logger) *AlertHandler {
+	return &AlertHandler{store: s, svc: svc, log: log}
 }
 
 // GET /api/v1/alerts

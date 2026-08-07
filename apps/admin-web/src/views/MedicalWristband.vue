@@ -650,6 +650,15 @@ async function handleResolveAlert(row: RegulatoryAlert) {
 .medical-page {
   padding: 0;
 }
+.medical-page :deep(.el-card) {
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
+  transition: all var(--duration-normal) var(--easing-out);
+}
+.medical-page :deep(.el-card:hover) {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1px);
+}
 
 /* KPI Cards */
 .kpi-card :deep(.el-card__body) {
@@ -661,9 +670,11 @@ async function handleResolveAlert(row: RegulatoryAlert) {
   border-radius: 14px;
 }
 .kpi-value {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
-  line-height: 1.2;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 4px;
 }
 .kpi-label {
   font-size: 12px;
@@ -671,10 +682,10 @@ async function handleResolveAlert(row: RegulatoryAlert) {
   margin-top: 6px;
   font-weight: 600;
 }
-.kpi-blue .kpi-value { color: #165DFF; }
-.kpi-green .kpi-value { color: #16A34A; }
-.kpi-purple .kpi-value { color: #9B8ED8; }
-.kpi-warning .kpi-value { color: #F59E0B; }
+.kpi-blue .kpi-value { color: #5C8D73; }
+.kpi-green .kpi-value { color: #6FAF8F; }
+.kpi-purple .kpi-value { color: #7BAF8C; }
+.kpi-warning .kpi-value { color: #D9A441; }
 
 /* Patient cell */
 .patient-cell {
@@ -693,7 +704,7 @@ async function handleResolveAlert(row: RegulatoryAlert) {
   font-weight: 600;
   flex-shrink: 0;
 }
-.avatar-blue { background: #DBEAFE; color: #165DFF; }
+.avatar-blue { background: #DDEBE1; color: #47745C; }
 .avatar-pink { background: #FCE7F3; color: #D48EC0; }
 
 /* Status badges with dots */
@@ -709,21 +720,21 @@ async function handleResolveAlert(row: RegulatoryAlert) {
 .badge-success { background: #F0FDF4; color: #16A34A; }
 .badge-danger { background: #FEF2F2; color: #DC2626; }
 .badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #EFF6FF; color: #165DFF; }
-.badge-gray { background: #F3F4F6; color: #6B7280; }
-.badge-info { background: #F8FAFC; color: #94A3B8; }
+.badge-primary { background: #DDEBE1; color: #47745C; }
+.badge-gray { background: #F3F4F6; color: #8FA8A0; }
+.badge-info { background: #EEF4F8; color: #6E9FC4; }
 .status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   display: inline-block;
 }
-.dot-success { background: #16A34A; }
-.dot-danger { background: #DC2626; }
-.dot-warning { background: #D97706; }
-.dot-primary { background: #165DFF; }
-.dot-gray { background: #6B7280; }
-.dot-info { background: #94A3B8; }
+.dot-success { background: #6FAF8F; }
+.dot-danger { background: #D77B72; }
+.dot-warning { background: #D9A441; }
+.dot-primary { background: #5C8D73; }
+.dot-gray { background: #8FA8A0; }
+.dot-info { background: #6E9FC4; }
 
 .mono {
   font-family: 'SF Mono', 'Consolas', monospace;

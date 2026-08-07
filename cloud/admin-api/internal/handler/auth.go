@@ -37,17 +37,15 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		dbUser, err := h.store.GetUserByCredential(c.Request.Context(), req.Method, req.Credential, req.Secret)
 		if err == nil {
 			userInfo = &struct{ ID, Name, Role string }{ID: dbUser.ID, Name: dbUser.Name, Role: dbUser.Role}
+		} else {
+			h.logger.Warn("db auth failed", zap.Error(err))
 		}
 	}
 
 	if userInfo == nil {
-		var err error
-		userInfo, err = auth.VerifyLogin(req.Method, req.Credential, req.Secret)
-		if err != nil {
-			h.logger.Warn("login failed", zap.String("method", req.Method), zap.String("credential", req.Credential))
-			c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "invalid credentials"})
-			return
-		}
+		h.logger.Warn("no auth path succeeded", zap.String("method", req.Method), zap.String("credential", req.Credential))
+		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "invalid credentials"})
+		return
 	}
 
 	token, err := auth.GenerateToken(userInfo.ID, userInfo.Role, h.jwtSecret)

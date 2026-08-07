@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { dashboardApi } from '@/api/dashboard'
-import type { DashboardStats, Alert, TrendPoint } from '@/types'
+import type { DashboardStats, Alert } from '@/types'
 import type { AlertTrendPoint, AlertDistributionItem, UserGrowthPoint } from '@/api/dashboard'
 
 export const useDashboardStore = defineStore('dashboard', () => {

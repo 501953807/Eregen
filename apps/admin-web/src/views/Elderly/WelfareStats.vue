@@ -60,7 +60,9 @@
           <el-option label="社区医院 B" value="B" />
           <el-option label="社区医院 C" value="C" />
         </el-select>
-        <el-button type="primary" :icon="Search">查询</el-button>
+        <el-button type="primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>查询
+        </el-button>
       </div>
       <el-card shadow="never" class="chart-card">
         <template #header><span class="panel-title">近 7 天签到趋势</span></template>
@@ -107,7 +109,9 @@
       <div class="filter-bar">
         <el-button type="primary">＋ 手动发药</el-button>
         <el-date-picker v-model="pharmacyMonth" type="month" placeholder="月份" value-format="YYYY-MM" />
-        <el-input v-model="pharmacySearch" placeholder="搜索老人姓名 / 药品名" clearable style="width: 220px;" :prefix-icon="Search" />
+        <el-input v-model="pharmacySearch" placeholder="搜索老人姓名 / 药品名" clearable style="width: 220px;">
+          <template #prefix><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></template>
+        </el-input>
       </div>
       <el-card shadow="never" class="table-card">
         <el-table :data="pharmacyRecords" stripe>
@@ -194,7 +198,9 @@
           <el-option label="社区医院 B" value="B" />
           <el-option label="社区医院 C" value="C" />
         </el-select>
-        <el-button type="primary" :icon="Refresh">刷新</el-button>
+        <el-button type="primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>刷新
+        </el-button>
       </div>
       <el-row :gutter="16" style="margin-bottom: 16px;">
         <el-col :span="8">
@@ -275,7 +281,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Search, Refresh } from '@element-plus/icons-vue'
 
 const props = defineProps<{ activePage: string }>()
 const emit = defineEmits<{ 'toggle-welfare': [row: any, enabled: boolean]; 'view-bound': [row: any] }>()
@@ -352,9 +357,9 @@ const welfareDist = [
   { code: 'medical_assist', label: '医疗', count: 67, pct: 67, color: '#00897b' },
 ]
 const hospitalDist = [
-  { name: '社区医院A', count: 234, pct: 100, color: '#165DFF' },
-  { name: '社区医院B', count: 156, pct: 67, color: '#9B8ED8' },
-  { name: '社区医院C', count: 92, pct: 39, color: '#D48EC0' },
+  { name: '社区医院A', count: 234, pct: 100, color: '#5C8D73' },
+  { name: '社区医院B', count: 156, pct: 67, color: '#7BAF8C' },
+  { name: '社区医院C', count: 92, pct: 39, color: '#A8C3B0' },
 ]
 const ruleAlerts = [
   { code: 'R_C01', desc: '重复领取', count: 3, tagType: 'danger' },
@@ -370,13 +375,13 @@ const ruleAlerts = [
 .filter-bar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
 .table-card { margin-bottom: 20px; }
 .pagination-wrapper { display: flex; justify-content: flex-end; margin-top: 16px; }
-.panel-title { font-size: 15px; font-weight: 700; color: var(--el-text-color-primary); border-left: 3px solid #165DFF; padding-left: 8px; }
+.panel-title { font-size: 15px; font-weight: 700; color: var(--el-text-color-primary); border-left: 3px solid #5C8D73; padding-left: 8px; }
 .upload-zone { border: 2px dashed var(--el-border-color); border-radius: 12px; padding: 32px; text-align: center; cursor: pointer; }
 .upload-inner p { font-size: 13px; color: var(--el-text-color-secondary); }
 .upload-icon { font-size: 36px; margin-bottom: 8px; }
 .bar-chart { display: flex; align-items: flex-end; gap: 16px; padding: 16px 0; height: 130px; }
 .bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
-.bar { width: 32px; background: linear-gradient(180deg, #165DFF, #9B8ED8); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.3s; }
+.bar { width: 32px; background: linear-gradient(180deg, #5C8D73, #7BAF8C); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.3s; }
 .bar-label { font-size: 11px; color: var(--el-text-color-placeholder); margin-top: 6px; }
 .bar-value { font-size: 12px; font-weight: 600; color: var(--el-text-color-primary); margin-bottom: 4px; }
 .h-bars { display: flex; flex-direction: column; gap: 6px; }
@@ -387,12 +392,12 @@ const ruleAlerts = [
 .h-bar-val { width: 40px; color: var(--el-text-color-placeholder); font-size: 12px; flex-shrink: 0; text-align: right; }
 .stat-box :deep(.el-card__body) { padding: 16px; }
 .stat-center { text-align: center; padding: 12px 0; }
-.stat-big-num { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #165DFF, #9B8ED8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.stat-big-num { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #5C8D73, #7BAF8C); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 .activity-stats { display: flex; flex-direction: column; gap: 12px; }
 .act-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; gap: 8px; }
 .act-row span:first-child { color: var(--el-text-color-secondary); white-space: nowrap; }
 .payment-stats { text-align: center; padding: 8px 0; }
-.pay-total { font-size: 24px; font-weight: 800; color: #165DFF; }
+.pay-total { font-size: 24px; font-weight: 800; color: #5C8D73; }
 .pay-metrics { display: flex; justify-content: space-around; }
 .pay-metric { text-align: center; }
 .alert-list { display: flex; flex-direction: column; gap: 8px; }
@@ -402,18 +407,18 @@ const ruleAlerts = [
 .badge-success { background: #F0FDF4; color: #16A34A; }
 .badge-danger { background: #FEF2F2; color: #DC2626; }
 .badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #EFF6FF; color: #165DFF; }
+.badge-primary { background: #DDEBE1; color: #47745C; }
 .badge-gray { background: #F3F4F6; color: #6B7280; }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
 .dot-success { background: #16A34A; }
 .dot-danger { background: #DC2626; }
 .dot-warning { background: #D97706; }
-.dot-primary { background: #165DFF; }
+.dot-primary { background: #5C8D73; }
 .dot-gray { background: #6B7280; }
 .kpi-card :deep(.el-card__body) { padding: 18px; display: flex; flex-direction: column; align-items: center; text-align: center; border-radius: 14px; }
-.kpi-value { font-size: 28px; font-weight: 800; line-height: 1.2; }
+.kpi-value { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 4px; }
 .kpi-label { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 6px; font-weight: 600; }
-.kpi-blue .kpi-value { color: #165DFF; }
+.kpi-blue .kpi-value { color: #5C8D73; }
 .kpi-green .kpi-value { color: #16A34A; }
 .kpi-warning .kpi-value { color: #F59E0B; }
 .kpi-danger .kpi-value { color: #EF4444; }

@@ -39,6 +39,7 @@ func (h *ElderlyHandler) List(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
+		"code":      "OK",
 		"data":      profiles,
 		"page":      page,
 		"page_size": pageSize,
@@ -53,7 +54,7 @@ func (h *ElderlyHandler) Detail(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "elderly not found"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": profile})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": profile})
 }
 
 // Create adds a new elderly profile.
@@ -75,7 +76,7 @@ func (h *ElderlyHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"data": profile})
+	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": profile})
 }
 
 // Update modifies an existing elderly profile.
@@ -98,7 +99,7 @@ func (h *ElderlyHandler) Update(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": profile})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": profile})
 }
 
 // Delete removes an elderly profile.
@@ -119,7 +120,7 @@ func (h *ElderlyHandler) HealthStats(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": stats})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": stats})
 }
 
 // HealthRecords returns recent health records for an elderly person.
@@ -134,8 +135,48 @@ func (h *ElderlyHandler) HealthRecords(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": records})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": records})
 }
+
+// CreateHealthRecord adds a new health record for an elderly person.
+func (h *ElderlyHandler) CreateHealthRecord(c *gin.Context) {
+	elderlyID := c.Param("id")
+	var body struct {
+		HR         *int     `json:"hr"`
+		SpO2       *int     `json:"spo2"`
+		Steps      *int64   `json:"steps"`
+		SleepHours *float64 `json:"sleep_hours"`
+		Timestamp  string   `json:"timestamp"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	record := &model.HealthRecordRow{ElderlyID: elderlyID}
+	if body.HR != nil {
+		record.HR = body.HR
+	}
+	if body.SpO2 != nil {
+		record.SpO2 = body.SpO2
+	}
+	if body.Steps != nil {
+		record.Steps = body.Steps
+	}
+	if body.SleepHours != nil {
+		record.SleepHours = body.SleepHours
+	}
+	if body.Timestamp != "" {
+		if t, err := time.Parse(time.RFC3339, body.Timestamp); err == nil {
+			record.Timestamp = t
+		}
+	}
+	if err := h.store.CreateHealthRecord(c.Request.Context(), record); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": record})
+}
+
 
 // MedicationRules returns medication rules for an elderly person.
 func (h *ElderlyHandler) MedicationRules(c *gin.Context) {
@@ -145,7 +186,7 @@ func (h *ElderlyHandler) MedicationRules(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": rules})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": rules})
 }
 
 // CreateMedicationRule adds a new medication rule for an elderly person.
@@ -161,7 +202,7 @@ func (h *ElderlyHandler) CreateMedicationRule(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"data": body})
+	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": body})
 }
 
 // UpdateMedicationRule updates an existing medication rule.
@@ -197,7 +238,7 @@ func (h *ElderlyHandler) DeviceList(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": devices})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": devices})
 }
 
 // LocationHistory returns location history for an elderly person.
@@ -212,8 +253,38 @@ func (h *ElderlyHandler) LocationHistory(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": locations})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": locations})
 }
+
+// CreateLocation adds a new location record for an elderly person.
+func (h *ElderlyHandler) CreateLocation(c *gin.Context) {
+	elderlyID := c.Param("id")
+	var body struct {
+		Lat      float64  `json:"lat" binding:"required"`
+		Lon      float64  `json:"lon" binding:"required"`
+		Accuracy *float64 `json:"accuracy"`
+		Timestamp string   `json:"timestamp"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	loc := &model.LocationPoint{ElderlyID: elderlyID, Lat: body.Lat, Lon: body.Lon}
+	if body.Accuracy != nil {
+		loc.Accuracy = body.Accuracy
+	}
+	if body.Timestamp != "" {
+		if t, err := time.Parse(time.RFC3339, body.Timestamp); err == nil {
+			loc.Timestamp = t
+		}
+	}
+	if err := h.store.CreateLocation(c.Request.Context(), loc); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": loc})
+}
+
 
 // AlertHistory returns alert history for an elderly person.
 func (h *ElderlyHandler) AlertHistory(c *gin.Context) {
@@ -227,7 +298,7 @@ func (h *ElderlyHandler) AlertHistory(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": alerts})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": alerts})
 }
 
 // ConvertToProfileSummary builds a model.ElderlyProfile from DB row values.

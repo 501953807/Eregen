@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Eregen Platform - Vue App Manager
-# Manages Vue frontend apps (admin-web, family-app, etc.)
+# Manages Vue frontend apps (admin-web only).
+# Flutter apps (family-app, nurse-terminal) use flutter-app.sh.
 # © 2026 Eregen (颐贞). All rights reserved.
 # Fully compatible with bash 3.2 (macOS default).
 
@@ -12,12 +13,18 @@ source "$_LIB_DIR/common.sh"
 unset _LIB_DIR
 
 # --- App Registry (bash 3.2 compatible — no associative arrays) ---
-VUE_APPS_LIST="admin-web|family-app"
+# Only Vue/Vite apps here. Flutter apps managed by flutter-app.sh.
+VUE_APPS_LIST="admin-web"
 
 _vue_app_dir() {
   case "$1" in
     admin-web) echo "apps/admin-web" ;;
-    family-app) echo "apps/family-app" ;;
+  esac
+}
+
+_vue_app_port_var() {
+  case "$1" in
+    admin-web) echo "PORT_ADMIN_WEB" ;;
   esac
 }
 
@@ -40,25 +47,41 @@ vue_start() {
   app_dir=$(_vue_app_dir "$app_name")
   local full_path="$PROJECT_ROOT/$app_dir"
 
-  # Check if already running
-  local existing_pid
-  if existing_pid=$(read_pid "$app_name"); then
-    log_warn "$app_name is already running (PID $existing_pid)"
-    return 0
+  # Determine port
+  local port=""
+  if [ -n "${2:-}" ]; then
+    port="$2"
+  else
+    # Read port from .env (already sourced by load_env)
+    local port_var
+    port_var=$(_vue_app_port_var "$app_name")
+    if [ -n "$port_var" ] && [ -n "${!port_var:-}" ]; then
+      port="${!port_var}"
+    else
+      # Fallback to vite.config.ts default
+      port=$(grep -o 'port: [0-9]*' "$full_path/vite.config.ts" 2>/dev/null | grep -o '[0-9]*' | head -1)
+      port="${port:-3000}"
+    fi
+  fi
+
+  # Stop existing process if running (restart scenario)
+  if read_pid "$app_name" >/dev/null 2>&1; then
+    log_info "Stopping existing $app_name instance..."
+    vue_stop "$app_name"
+    sleep 1
+  fi
+
+  # Clean up port if occupied by unrelated process
+  if [ -n "$(lsof -t :$port 2>/dev/null)" ]; then
+    log_warn "Port $port occupied, killing existing process..."
+    kill_by_port "$port" "true"
+    sleep 0.5
   fi
 
   # Check npm is installed
   if ! command -v npm &>/dev/null; then
     log_error "npm is not installed. Install Node.js first."
     return 1
-  fi
-
-  # Determine port
-  local port=""
-  if [ -n "${2:-}" ]; then
-    port="$2"
-  else
-    port=$(get_port "ADMIN_WEB" "3001")
   fi
 
   # Auto-install node_modules if missing
@@ -70,17 +93,19 @@ vue_start() {
   # Ensure PID directory exists
   ensure_pid_dir
 
-  # Start the dev server (Vite uses --port, not PORT env var)
+  # Start the dev server
+  # Vite's strictPort:true in vite.config.ts prevents port-hopping
   log_info "Starting $app_name on port $port..."
-  (cd "$full_path" && npx vite --host 0.0.0.0 --port "$port" > "$PID_DIR/${app_name}.log" 2>&1 &)
-  local pid=$!
-  write_pid "$app_name" "$pid"
+  (cd "$full_path" && npx vite --host 0.0.0.0 --port "$port" > "$PID_DIR/${app_name}.log" 2>&1) &
+  # Capture background job PID (bash 3.2 compatible)
+  vapid=$!
+  write_pid "$app_name" "$vapid"
 
   # Wait for app to be ready - validate both port and HTML response
   local waited=0
   while [ $waited -lt 30 ]; do
     if wait_for_health "$port" "/index.html" 30 "$app_name"; then
-      log_success "$app_name started on http://localhost:$port (PID $pid)"
+      log_success "$app_name started on http://localhost:$port (PID $vapid)"
       return 0
     fi
     sleep 1
@@ -125,10 +150,14 @@ vue_status() {
   local port=""
   case "$app_name" in
     admin-web)
-      port=$(get_port "ADMIN_WEB" "3001")
-      ;;
-    family-app)
-      port=$(get_port "FAMILY_APP" "5173")
+      local port_var="PORT_ADMIN_WEB"
+      if [ -n "${!port_var:-}" ]; then
+        port="${!port_var}"
+      else
+        local full_path="$PROJECT_ROOT/apps/$app_dir"
+        port=$(grep -o 'port: [0-9]*' "$full_path/vite.config.ts" 2>/dev/null | grep -o '[0-9]*' | head -1)
+        port="${port:-3000}"
+      fi
       ;;
   esac
 

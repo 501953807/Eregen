@@ -72,13 +72,26 @@ firmware/
 ## 数据流
 
 ```
-设备 → MQTT → Gateway → NATS → [API Server / Push Service / Data Pipeline]
-                                    ↓
-                            [SQLite/PostgreSQL]
-                                    ↓
-                        [Admin API] ←→ [Admin Web]
-                        [Hospital API] ←→ [Nurse Terminal]
+设备 → MQTT → Gateway → NATS JetStream → [API Server / Push Service / Data Pipeline]
+    │                                    │
+    ├─ bracelet/BR-XXXX/up ──────────────┤ 主题: eregen.event.>
+    ├─ medical/wb/MW-XXXX/up ────────────┤ 主题: eregen.medical.wb.>
+    └─ community/wb/CW-XXXX/up ──────────┘ 主题: eregen.community.wb.>
+                                              ↓
+                                      [PostgreSQL / SQLite]
+                                              ↓
+                                  [Admin API] ←→ [Admin Web]
+                                  [Hospital API] ←→ [外部医院HIS]
+                                  [Nurse Terminal] ←→ [Admin API]
 ```
+
+### NATS JetStream 主题说明
+
+| 主题 | 设备类型 | 消息类型 | 消费者 |
+|------|---------|---------|--------|
+| `eregen.event.>` | 手环、药盒 | heartbeat, location, health, sos, fall, med_status | API Server |
+| `eregen.medical.wb.>` | 医用腕带 | patient_register, verification_scan, device_status, alert_tag | API Server |
+| `eregen.community.wb.>` | 社区腕带 | community_signin, community_welfare_update, community_dispense | API Server |
 
 ## API 端点总览
 
