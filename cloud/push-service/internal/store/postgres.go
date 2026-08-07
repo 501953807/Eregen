@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+
+	"eregen.dev/push/internal/model"
 )
 
 // Member represents a family account that receives push notifications.

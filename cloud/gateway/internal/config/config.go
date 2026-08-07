@@ -1,5 +1,3 @@
-// © 2026 Eregen (颐贞). All rights reserved.
-
 // Package config loads gateway configuration from YAML + env overrides.
 package config
 
@@ -13,13 +11,11 @@ import (
 
 // Config holds all gateway configuration.
 type Config struct {
-	LogLevel   string        `yaml:"log_level"`
-	MQTT       MQTTConfig    `yaml:"mqtt"`
-	NATS       NATSConfig    `yaml:"nats"`
+	LogLevel   string       `yaml:"log_level"`
+	MQTT       MQTTConfig   `yaml:"mqtt"`
+	NATS       NATSConfig   `yaml:"nats"`
 	Storage    StorageConfig `yaml:"storage"`
-	Redis      RedisConfig   `yaml:"redis"`
-	InfluxDB   InfluxDBConfig `yaml:"influxdb"`
-	Auth       AuthConfig    `yaml:"auth"`
+	Auth       AuthConfig   `yaml:"auth"`
 }
 
 // StorageConfig selects between postgres and sqlite backend.
@@ -49,29 +45,9 @@ type TLSConfig struct {
 
 // NATSConfig holds NATS JetStream settings.
 type NATSConfig struct {
-	URL           string `yaml:"url"`
+	URL             string `yaml:"url"`
 	JetStreamDomain string `yaml:"jetstream_domain"`
-	StreamName    string `yaml:"stream_name"`
-}
-
-// PostgresConfig holds PostgreSQL connection settings.
-type PostgresConfig struct {
-	DSN string `yaml:"dsn"`
-}
-
-// RedisConfig holds Redis connection settings.
-type RedisConfig struct {
-	Address  string `yaml:"address"`
-	Password string `yaml:"password"`
-	DB       int    `yaml:"db"`
-}
-
-// InfluxDBConfig holds InfluxDB v2 connection settings.
-type InfluxDBConfig struct {
-	URL      string `yaml:"url"`
-	Token    string `yaml:"token"`
-	Org      string `yaml:"org"`
-	Bucket   string `yaml:"bucket"`
+	StreamName      string `yaml:"stream_name"`
 }
 
 // AuthConfig holds authentication settings.
@@ -97,8 +73,6 @@ func Load() Config {
 	overrideString(&cfg.Storage.Type, "GATEWAY_STORAGE_TYPE")
 	overrideString(&cfg.Storage.DSN, "GATEWAY_POSTGRES_DSN")
 	overrideString(&cfg.Storage.SQLite, "GATEWAY_SQLITE_PATH")
-	overrideString(&cfg.Redis.Address, "GATEWAY_REDIS_ADDRESS")
-	overrideString(&cfg.InfluxDB.URL, "GATEWAY_INFLUXDB_URL")
 
 	// CRITICAL: Auth secret MUST be set via environment variable — no default allowed
 	authSecret := os.Getenv("GATEWAY_AUTH_SECRET")
@@ -135,24 +109,14 @@ func defaultConfig() Config {
 			},
 		},
 		NATS: NATSConfig{
-			URL:           "nats://localhost:4222",
+			URL:             "nats://localhost:4222",
 			JetStreamDomain: "EREGEN",
-			StreamName:    "DEVICE_EVENTS",
+			StreamName:      "DEVICE_EVENTS",
 		},
 		Storage: StorageConfig{
-			Type:   "postgres",
+			Type:   "sqlite",
 			DSN:    "host=localhost port=5432 user=eregen password=eregen dbname=eregen sslmode=disable",
 			SQLite: "./data/gateway.sqlite",
-		},
-		Redis: RedisConfig{
-			Address: "localhost:6379",
-			DB:      0,
-		},
-		InfluxDB: InfluxDBConfig{
-			URL:    "http://localhost:8086",
-			Token:  "eregen-token",
-			Org:    "eregen",
-			Bucket: "eregen-telemetry",
 		},
 		Auth: AuthConfig{
 			SecretKey: "dev-secret-key-change-in-production",

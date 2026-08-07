@@ -304,5 +304,16 @@ patient := handler.NewPatientHandler(s)
 		}
 	}
 
+	// Public medical endpoints (for family app / mini program — no JWT auth required)
+	publicMed := r.Group("/api/v1/medical")
+	{
+		publicMed.GET("/patients/:id/history", patient.GetPatientHistory)
+		publicMed.GET("/patients/:id/expenses", clinical.ListExpenses)
+		publicMed.GET("/patients/:id/medications", clinical.ListMedications)
+		publicMed.GET("/patients/:id/test-results", clinical.ListTestResults)
+		publicMed.GET("/patients/:id/daily-entries", clinical.ListDailyEntries)
+		publicMed.GET("/verifications", clinical.ListVerifications)
+	}
+
 	return r
 }

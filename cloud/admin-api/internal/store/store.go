@@ -4,6 +4,7 @@ package store
 // Store is the composite interface that PostgresStore and SqliteStore implement.
 // It combines all domain interfaces for the top-level dependency.
 type Store interface {
+	AuditStore
 	DashboardStore
 	DeviceStore
 	UserStore

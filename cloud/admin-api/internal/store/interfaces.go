@@ -213,3 +213,11 @@ type InstitutionStore interface {
 	CreateInstitutionAPIKey(ctx context.Context, institutionID, name string) (string, error)
 	RevokeInstitutionAPIKey(ctx context.Context, institutionID, keyID string) error
 }
+
+type AuditStore interface {
+	CreateAuditLog(ctx context.Context, log *model.AuditLog) error
+	ListAuditLogs(ctx context.Context, limit int) ([]model.AuditLog, error)
+	ListAuditLogsByUser(ctx context.Context, userID string, limit int) ([]model.AuditLog, error)
+	ListAuditLogsByAction(ctx context.Context, action string, limit int) ([]model.AuditLog, error)
+}
+

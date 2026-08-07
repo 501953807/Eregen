@@ -118,3 +118,51 @@ func (a *HealthAnalyzer) AnalyzeBatch(elderlyID string, metrics map[string]float
 	}
 	return results
 }
+
+// ComputeBaseline calculates a baseline from historical data.
+func (a *HealthAnalyzer) ComputeBaseline(elderlyID string, metric string, records []model.HealthRecord) float64 {
+	if len(records) == 0 {
+		return 0
+	}
+	var sum float64
+	count := 0
+	for _, r := range records {
+		var value float64
+		switch metric {
+		case "heart_rate":
+			if r.HeartRate != nil {
+				value = float64(*r.HeartRate)
+			}
+		case "spo2":
+			if r.SpO2 != nil {
+				value = float64(*r.SpO2)
+			}
+		case "steps":
+			if r.Steps != nil {
+				value = float64(*r.Steps)
+			}
+		case "bp_systolic":
+			if r.SystolicBP != nil {
+				value = float64(*r.SystolicBP)
+			}
+		case "temperature":
+			if r.Temperature != nil {
+				value = *r.Temperature
+			}
+		}
+		if value > 0 {
+			sum += value
+			count++
+		}
+	}
+	if count == 0 {
+		return 0
+	}
+	return sum / float64(count)
+}
+
+// AnalyzeWithBaseline evaluates health data against computed baseline.
+func (a *HealthAnalyzer) AnalyzeWithBaseline(elderlyID string, metric string, value float64, records []model.HealthRecord) *model.AnalysisResult {
+	baseline := a.ComputeBaseline(elderlyID, metric, records)
+	return a.Analyze(elderlyID, metric, value, baseline)
+}

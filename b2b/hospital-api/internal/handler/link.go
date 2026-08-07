@@ -59,3 +59,18 @@ func (h *LinkHandler) ListByElderly(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": links})
 }
+
+// HospitalAPIEndpoints documents the available B2B hospital API endpoints.
+// These are the standard interfaces for HIS integration.
+var HospitalAPIEndpoints = map[string]string{
+	"POST /api/v2/b2b/hospitals":                    "Register hospital institution",
+	"GET  /api/v2/b2b/hospitals/:id":                "Get institution details",
+	"PUT  /api/v2/b2b/hospitals/:id":                "Update institution",
+	"POST /api/v2/b2b/hospitals/:id/medical/wb/admit":     "Admit patient (HIS sync)",
+	"POST /api/v2/b2b/hospitals/:id/medical/wb/discharge": "Discharge patient (HIS sync)",
+	"POST /api/v2/b2b/hospitals/:id/medical/wb/orders":    "Sync medical orders",
+	"GET  /api/v2/b2b/hospitals/:id/medical/wb/patients":  "List patients",
+	"GET  /api/v2/b2b/hospitals/:id/health-data":          "Query health data",
+	"POST /api/v2/b2b/health-data":                      "Receive health data from HIS",
+	"GET  /api/v2/b2b/patients/:eregen_id/report":        "Generate health report",
+}

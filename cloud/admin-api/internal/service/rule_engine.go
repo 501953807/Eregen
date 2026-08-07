@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"time"
 
@@ -48,21 +49,38 @@ func (e *RuleEngine) Run() {
 
 // checkNoVerify detects patients admitted without any verification records (R01).
 func (e *RuleEngine) checkNoVerify() {
-	alerts, err := e.store.ListRegulatoryAlerts(context.Background(), "", "", "pending", "", 1, 100)
+	patients, err := e.store.ListPatients(context.Background(), 1, 1000, "admitted")
 	if err != nil {
-		e.log.Error("R01: list alerts failed", zap.Error(err))
+		e.log.Error("R01: list patients failed", zap.Error(err))
 		return
 	}
-	for _, a := range alerts {
-		if a.RuleCode == "R01" && a.Severity == "high" {
-			pid := ""
-			if a.PatientID != nil {
-				pid = *a.PatientID
-			}
-			e.log.Warn("R01 alert detected", zap.String("patient_id", pid))
+	verifications, err := e.store.ListVerifications(context.Background(), 1, 1000)
+	if err != nil {
+		e.log.Error("R01: list verifications failed", zap.Error(err))
+		return
+	}
+	verified := make(map[string]bool)
+	for _, v := range verifications {
+		if v.Matched && v.PatientID != nil {
+			verified[*v.PatientID] = true
 		}
 	}
-	e.log.Info("R01: checked alerts", zap.Int("count", len(alerts)))
+	for _, p := range patients {
+		if verified[p.ID] {
+			continue
+		}
+		pID := p.ID
+		_ = e.store.CreateRegulatoryAlert(context.Background(), &model.RegulatoryAlert{
+			RuleCode:   "R01",
+			PatientID:  &pID,
+			HospitalID: "",
+			Department: p.Department,
+			Severity:   "high",
+			AlertType:  "no_verify",
+			Detail:     fmt.Sprintf("Patient admitted without verification: %s (%s)", p.Name, p.AdmissionNo),
+		})
+		e.log.Warn("R01: admission without verification", zap.String("patient_id", p.ID))
+	}
 }
 
 // checkFenceViolation detects patients outside their geofence (R02).
@@ -73,35 +91,38 @@ func (e *RuleEngine) checkFenceViolation() {
 		return
 	}
 	for _, log := range logs {
-		if !log.InsideFence {
-			e.log.Debug("R02: fence violation detected",
-				zap.String("patient_id", log.PatientID),
-				zap.Float64("lat", log.Lat),
-				zap.Float64("lng", log.Lng))
+		if !log.InsideFence && log.PatientID != "" {
+			pid := log.PatientID
+			_ = e.store.CreateRegulatoryAlert(context.Background(), &model.RegulatoryAlert{
+				RuleCode:  "R02",
+				PatientID: &pid,
+				Severity:  "medium",
+				AlertType: "fence_violation",
+				Detail:    fmt.Sprintf("Patient outside geofence: lat=%.4f lng=%.4f", log.Lat, log.Lng),
+			})
 		}
 	}
 }
 
 // checkFakeAdmission detects suspicious admissions without daily nursing entries (R03).
 func (e *RuleEngine) checkFakeAdmission() {
-	patients, err := e.store.ListPatients(context.Background(), 1, 1000, "")
+	patients, err := e.store.ListPatients(context.Background(), 1, 1000, "admitted")
 	if err != nil {
 		e.log.Error("R03: list patients failed", zap.Error(err))
 		return
 	}
 	for _, p := range patients {
-		if p.Status != "admitted" {
-			continue
-		}
 		history, err := e.store.GetPatientHistory(context.Background(), p.ID)
-		if err != nil {
-			e.log.Debug("R03: no history for patient", zap.String("patient_id", p.ID))
-			continue
-		}
-		if len(history.DailyEntries) == 0 {
-			e.log.Warn("R03: suspicious admission — no daily nursing entries",
-				zap.String("patient_id", p.ID),
-				zap.String("admission_no", p.AdmissionNo))
+		if err != nil || len(history.DailyEntries) == 0 {
+			pID := p.ID
+			_ = e.store.CreateRegulatoryAlert(context.Background(), &model.RegulatoryAlert{
+				RuleCode:  "R03",
+				PatientID: &pID,
+				Severity:  "medium",
+				AlertType: "fake_admission",
+				Detail:    fmt.Sprintf("Suspicious admission — no daily nursing entries: %s (%s)", p.Name, p.AdmissionNo),
+			})
+			e.log.Warn("R03: suspicious admission", zap.String("patient_id", p.ID))
 		}
 	}
 }
@@ -111,7 +132,7 @@ func (e *RuleEngine) checkExpenseSpike() {
 	e.log.Info("R04: checking expense anomalies")
 	now := time.Now()
 	today := now.Format("2006-01-02")
-	// Get all admitted patients
+	yesterday := now.AddDate(0, 0, -7).Format("2006-01-02")
 	patients, err := e.store.ListPatients(context.Background(), 1, 500, "admitted")
 	if err != nil {
 		e.log.Error("R04: list patients failed", zap.Error(err))
@@ -122,20 +143,28 @@ func (e *RuleEngine) checkExpenseSpike() {
 		if err != nil {
 			continue
 		}
-		// Sum today's expenses
-		var todayTotal float64
+		var todayTotal, weekTotal float64
 		for _, exp := range expenses {
-			if time.Unix(exp.CreatedAt.Unix(), 0).Format("2006-01-02") == today {
+			dateStr := exp.CreatedAt.Format("2006-01-02")
+			if dateStr == today {
 				todayTotal += exp.Amount
 			}
+			if dateStr >= yesterday {
+				weekTotal += exp.Amount
+			}
 		}
-		if todayTotal > 0 {
-			e.log.Debug("R04: patient daily expense",
-				zap.String("patient_id", p.ID),
-				zap.Float64("amount", todayTotal))
+		if todayTotal > 0 && weekTotal > 0 && todayTotal > weekTotal*3 {
+			pID := p.ID
+			_ = e.store.CreateRegulatoryAlert(context.Background(), &model.RegulatoryAlert{
+				RuleCode:  "R04",
+				PatientID: &pID,
+				Severity:  "high",
+				AlertType: "expense_spike",
+				Detail:    fmt.Sprintf("Daily expense %.0f exceeds 3x weekly average %.0f: %s", todayTotal, weekTotal, p.Name),
+			})
+			e.log.Warn("R04: expense spike detected", zap.String("patient_id", p.ID), zap.Float64("amount", todayTotal))
 		}
 	}
-	e.log.Info("R04: checked expense anomalies")
 }
 
 // checkMedVerifyMismatch detects medications without corresponding verification records (R05).
@@ -151,10 +180,11 @@ func (e *RuleEngine) checkMedVerifyMismatch() {
 		e.log.Error("R05: list verifications failed", zap.Error(err))
 		return
 	}
-	// Build set of verified patient IDs
+	// Build set of patients with recent verification (within 24h)
 	verifiedMap := make(map[string]bool)
+	twentyFourHoursAgo := time.Now().Add(-24 * time.Hour)
 	for _, v := range verifications {
-		if v.Matched && v.PatientID != nil {
+		if v.Matched && v.PatientID != nil && v.VerifiedAt.After(twentyFourHoursAgo) {
 			verifiedMap[*v.PatientID] = true
 		}
 	}
@@ -164,9 +194,15 @@ func (e *RuleEngine) checkMedVerifyMismatch() {
 			continue
 		}
 		if len(meds) > 0 && !verifiedMap[p.ID] {
-			e.log.Warn("R05: patient has medications but no verification",
-				zap.String("patient_id", p.ID),
-				zap.Int("med_count", len(meds)))
+			pID := p.ID
+			_ = e.store.CreateRegulatoryAlert(context.Background(), &model.RegulatoryAlert{
+				RuleCode:  "R05",
+				PatientID: &pID,
+				Severity:  "medium",
+				AlertType: "med_verify_mismatch",
+				Detail:    fmt.Sprintf("Patient has %d medications but no recent verification: %s", len(meds), p.Name),
+			})
+			e.log.Warn("R05: med-verification mismatch", zap.String("patient_id", p.ID))
 		}
 	}
 }
@@ -194,9 +230,15 @@ func (e *RuleEngine) checkFrequentTransfer() {
 			}
 		}
 		if transferCount > 3 {
-			e.log.Warn("R06: frequent transfer detected",
-				zap.String("patient_id", p.ID),
-				zap.Int("transfers", transferCount))
+			pID := p.ID
+			_ = e.store.CreateRegulatoryAlert(context.Background(), &model.RegulatoryAlert{
+				RuleCode:  "R06",
+				PatientID: &pID,
+				Severity:  "high",
+				AlertType: "frequent_transfer",
+				Detail:    fmt.Sprintf("Patient transferred %d times in 7 days: %s", transferCount, p.Name),
+			})
+			e.log.Warn("R06: frequent transfer detected", zap.String("patient_id", p.ID), zap.Int("transfers", transferCount))
 		}
 	}
 }
@@ -232,16 +274,23 @@ func (e *RuleEngine) checkLongNoDischarge() {
 		e.log.Error("R08: list patients failed", zap.Error(err))
 		return
 	}
-	 fourteenDaysAgo := time.Now().AddDate(0, 0, -14)
-	 for _, p := range patients {
-		 // Check if admitted more than 14 days ago
-		 if !p.CreatedAt.IsZero() && p.CreatedAt.Before(fourteenDaysAgo) {
-			 e.log.Warn("R08: patient admitted >14 days without discharge",
-				 zap.String("patient_id", p.ID),
-				 zap.String("admission_no", p.AdmissionNo),
-				 zap.Time("admitted_at", p.CreatedAt))
-		 }
-	 }
+	fourteenDaysAgo := time.Now().AddDate(0, 0, -14)
+	for _, p := range patients {
+		if !p.CreatedAt.IsZero() && p.CreatedAt.Before(fourteenDaysAgo) {
+			pID := p.ID
+			_ = e.store.CreateRegulatoryAlert(context.Background(), &model.RegulatoryAlert{
+				RuleCode:  "R08",
+				PatientID: &pID,
+				Severity:  "medium",
+				AlertType: "post_discharge",
+				Detail:    fmt.Sprintf("Patient admitted >14 days without discharge: %s (%s)", p.Name, p.AdmissionNo),
+			})
+			e.log.Warn("R08: patient admitted >14 days without discharge",
+				zap.String("patient_id", p.ID),
+				zap.String("admission_no", p.AdmissionNo),
+				zap.Time("admitted_at", p.CreatedAt))
+		}
+	}
 }
 
 // checkCommunityDuplicate detects same elder signing at different hospitals in same month (R_C01).
@@ -374,25 +423,91 @@ func (e *RuleEngine) checkCommunityZombie() {
 // checkCommunityBenefitFailed detects activated welfare tags with failed bank payments (R_C05).
 func (e *RuleEngine) checkCommunityBenefitFailed() {
 	e.log.Info("R_C05: checking benefit payment failures")
-	// Check batch payments for failed status
-	// This would require a ListBatchPayments method with status filter
-	// For now, log a warning that this rule needs implementation
-	e.log.Debug("R_C05: check benefit payment failures (placeholder)")
+	elders, err := e.store.ListCommunityElders(context.Background(), 1, 500, "active")
+	if err != nil {
+		e.log.Error("R_C05: list elders failed", zap.Error(err))
+		return
+	}
+	for _, elder := range elders {
+		welfareTags, err := e.store.ListElderWelfareTags(context.Background(), elder.ID)
+		if err != nil || len(welfareTags) == 0 {
+			continue
+		}
+		for _, tag := range welfareTags {
+			payments, err := e.store.ListBatchPayments(context.Background(), "", 1, 100)
+			if err != nil {
+				continue
+			}
+			for _, pay := range payments {
+				if pay.ElderID == elder.ID && pay.Status == "failed" {
+					e.log.Warn("R_C05: benefit payment failed",
+						zap.String("elder_id", elder.ID),
+						zap.String("tag_code", tag.TagCode),
+						zap.String("payment_id", pay.ID))
+				}
+			}
+		}
+	}
 }
 
-// checkCommunityCrossDistrict detects same welfare tag used across multiple districts (R_C06).
+// checkCommunityCrossDistrict detects same welfare tag used across multiple institutions (R_C06).
 func (e *RuleEngine) checkCommunityCrossDistrict() {
 	e.log.Info("R_C06: checking cross-district welfare usage")
-	// This would require checking welfare tag assignments across different districts
-	// For now, log a warning
-	e.log.Debug("R_C06: check cross-district welfare usage (placeholder)")
+	tagConfigs, err := e.store.ListWelfareTagConfigs(context.Background())
+	if err != nil {
+		e.log.Error("R_C06: list welfare tags failed", zap.Error(err))
+		return
+	}
+	for _, tag := range tagConfigs {
+		elders, err := e.store.ListCommunityElders(context.Background(), 1, 500, "active")
+		if err != nil {
+			continue
+		}
+		hospitalSet := make(map[string]bool)
+		for _, elder := range elders {
+			welfareTags, err := e.store.ListElderWelfareTags(context.Background(), elder.ID)
+			if err != nil {
+				continue
+			}
+			for _, wt := range welfareTags {
+				if wt.TagCode == tag.TagCode {
+					if elder.HospitalID != "" {
+						hospitalSet[elder.HospitalID] = true
+					}
+				}
+			}
+		}
+		if len(hospitalSet) > 1 {
+			e.log.Warn("R_C06: welfare tag used across multiple institutions",
+				zap.String("tag_code", tag.TagCode),
+				zap.Int("institution_count", len(hospitalSet)))
+		}
+	}
 }
 
 // checkCommunityBenefitExpired detects expired welfare tags still in use (R_C07).
 func (e *RuleEngine) checkCommunityBenefitExpired() {
 	e.log.Info("R_C07: checking expired welfare tags")
-	// ListElderWelfareTags not available, skip for now
-	e.log.Debug("R_C07: check expired welfare tags (placeholder)")
+	elders, err := e.store.ListCommunityElders(context.Background(), 1, 500, "active")
+	if err != nil {
+		e.log.Error("R_C07: list elders failed", zap.Error(err))
+		return
+	}
+	today := time.Now().Format("2006-01-02")
+	for _, elder := range elders {
+		welfareTags, err := e.store.ListElderWelfareTags(context.Background(), elder.ID)
+		if err != nil {
+			continue
+		}
+		for _, tag := range welfareTags {
+			if tag.ValidTo != "" && tag.ValidTo < today {
+				e.log.Warn("R_C07: expired welfare tag still active",
+					zap.String("elder_id", elder.ID),
+					zap.String("tag_code", tag.TagCode),
+					zap.String("valid_to", tag.ValidTo))
+			}
+		}
+	}
 }
 
 // checkCommunityDeath detects deceased elders with active wristbands (R_C08).
