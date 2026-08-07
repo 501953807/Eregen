@@ -18,14 +18,15 @@ import (
 
 // OTAService manages firmware releases and OTA push jobs.
 type OTAService struct {
-	pg   store.DeviceStore
+	pg   store.AdminDomain
+	devs store.DeviceLister
 	nats *NatsClient
 	log  *zap.Logger
 }
 
 // NewOTAService creates a new OTA service.
-func NewOTAService(pg store.DeviceStore, nats *NatsClient, log *zap.Logger) *OTAService {
-	return &OTAService{pg: pg, nats: nats, log: log}
+func NewOTAService(pg store.AdminDomain, devs store.DeviceLister, nats *NatsClient, log *zap.Logger) *OTAService {
+	return &OTAService{pg: pg, devs: devs, nats: nats, log: log}
 }
 
 // CreateFirmwareRelease registers a new firmware version in the system.
@@ -184,7 +185,7 @@ func (s *OTAService) GetOTAJob(ctx context.Context, id string) (*model.OTAJob, e
 
 // GetMatchingDevices returns all devices matching type and tier.
 func (s *OTAService) GetMatchingDevices(ctx context.Context, deviceType, tier string) ([]model.Device, error) {
-	devices, _, err := s.pg.ListDevices(ctx, "", &deviceType, 1, 1000)
+	devices, _, err := s.devs.ListDevices(ctx, "", &deviceType, 1, 1000)
 	if err != nil {
 		return nil, err
 	}

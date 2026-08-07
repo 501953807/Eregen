@@ -92,7 +92,7 @@ func main() {
 		})
 
 		// Create OTA service and wire progress callback
-		otaSvc := service.NewOTAService(pg, natsClient, log)
+		otaSvc := service.NewOTAService(pg, pg, natsClient, log)
 		eventHandler.SetOTACallback(func(ctx context.Context, jobID, deviceID, status string) error {
 			return otaSvc.UpdateProgress(ctx, jobID, deviceID, status)
 		})

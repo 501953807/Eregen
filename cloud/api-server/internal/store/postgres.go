@@ -1433,3 +1433,123 @@ func scanRules(rows any) ([]model.MedicationRule, error) {
 	}
 	return rules, it.Err()
 }
+
+// LatestHealthByElderlyID returns the most recent health record for an elderly person.
+func (p *Postgres) LatestHealthByElderlyID(ctx context.Context, elderlyID string, since time.Time) (*model.HealthRecord, error) {
+	q := `SELECT id, elderly_id, timestamp, hr, spo2, steps, sleep_hours, bp_systolic, bp_diastolic
+		  FROM health_records WHERE elderly_id = $1 AND timestamp >= $2
+		  ORDER BY timestamp DESC LIMIT 1`
+	r := &model.HealthRecord{}
+	err := p.pool.QueryRow(ctx, q, elderlyID, since).Scan(
+		&r.ID, &r.ElderlyID, &r.Timestamp, &r.HR, &r.SPO2, &r.Steps,
+		&r.SleepHours, &r.BPSystolic, &r.BPDiastolic,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+// HealthRecordsByElderlyIDs returns health records for multiple elderly IDs within days.
+func (p *Postgres) HealthRecordsByElderlyIDs(ctx context.Context, elderIDs []string, days int) ([]model.HealthRecord, error) {
+	if len(elderIDs) == 0 {
+		return nil, nil
+	}
+	args := make([]any, len(elderIDs)+1)
+	ph := make([]string, len(elderIDs))
+	for i, id := range elderIDs {
+		args[i] = id
+		ph[i] = "$" + strconv.Itoa(i+1)
+	}
+	args[len(elderIDs)] = days
+	q := "SELECT id, elderly_id, timestamp, hr, spo2, steps, sleep_hours, bp_systolic, bp_diastolic FROM health_records " +
+		"WHERE elderly_id IN (" + strings.Join(ph, ",") + ") AND timestamp >= now() - (interval '1 day' * $0) " +
+		"ORDER BY timestamp DESC LIMIT 100"
+	rows, err := p.pool.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var records []model.HealthRecord
+	for rows.Next() {
+		var r model.HealthRecord
+		if err := rows.Scan(&r.ID, &r.ElderlyID, &r.Timestamp, &r.HR, &r.SPO2, &r.Steps,
+			&r.SleepHours, &r.BPSystolic, &r.BPDiastolic); err != nil {
+			return nil, err
+		}
+		records = append(records, r)
+	}
+	return records, rows.Err()
+}
+
+// HealthTrendByElderlyID computes aggregated health metrics for risk scoring.
+func (p *Postgres) HealthTrendByElderlyID(ctx context.Context, elderlyID string, days int) (avgHR, avgSpO2, totalSteps int64, lastHR, lastSpO2 *int, err error) {
+	q := `SELECT AVG(hr)::bigint, MAX(hr), MIN(hr) FROM health_records
+		  WHERE elderly_id = $1 AND timestamp >= now() - interval '7 days' AND hr IS NOT NULL`
+	err = p.pool.QueryRow(ctx, q, elderlyID).Scan(&avgHR, &lastHR, &lastSpO2)
+	if err != nil {
+		return
+	}
+
+	q2 := `SELECT AVG(spo2)::bigint FROM health_records
+		   WHERE elderly_id = $1 AND timestamp >= now() - interval '7 days' AND spo2 IS NOT NULL`
+	err = p.pool.QueryRow(ctx, q2, elderlyID).Scan(&avgSpO2)
+	if err != nil {
+		return
+	}
+
+	q3 := `SELECT COALESCE(SUM(steps),0)::bigint FROM health_records
+		   WHERE elderly_id = $1 AND timestamp >= now() - interval '7 days'`
+	err = p.pool.QueryRow(ctx, q3, elderlyID).Scan(&totalSteps)
+	return
+}
+
+// GetElderlyName returns the name of an elderly profile.
+func (p *Postgres) GetElderlyName(ctx context.Context, elderlyID string) (string, error) {
+	var name string
+	err := p.pool.QueryRow(ctx, `SELECT name FROM elderly_profiles WHERE id = $1`, elderlyID).Scan(&name)
+	return name, err
+}
+
+// SubscriptionTierStats returns subscription count by tier.
+func (p *Postgres) SubscriptionTierStats(ctx context.Context) ([]struct{ Tier string; Count int }, error) {
+	rows, err := p.pool.Query(ctx, `SELECT plan_tier, COUNT(*)::int FROM subscriptions GROUP BY plan_tier`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var stats []struct{ Tier string; Count int }
+	for rows.Next() {
+		var s struct{ Tier string; Count int }
+		if err := rows.Scan(&s.Tier, &s.Count); err != nil {
+			return nil, err
+		}
+		stats = append(stats, s)
+	}
+	return stats, rows.Err()
+}
+
+// GetAlertElderlyID returns the elderly_id associated with an alert.
+func (p *Postgres) GetAlertElderlyID(ctx context.Context, alertID string) (string, error) {
+	var elderlyID string
+	err := p.pool.QueryRow(ctx, `SELECT elderly_id FROM alerts WHERE id = $1`, alertID).Scan(&elderlyID)
+	return elderlyID, err
+}
+
+// MedRuleElderlyID returns the elderly_id for a medication rule.
+func (p *Postgres) MedRuleElderlyID(ctx context.Context, ruleID string) (string, error) {
+	var elderlyID string
+	err := p.pool.QueryRow(ctx, `SELECT elderly_id FROM medication_rules WHERE id = $1 AND active = true`, ruleID).Scan(&elderlyID)
+	return elderlyID, err
+}
+
+// CheckElderlyAccess verifies if a user owns an elderly profile.
+func (p *Postgres) CheckElderlyAccess(ctx context.Context, elderlyID, userID string) (bool, error) {
+	var count int
+	err := p.pool.QueryRow(ctx,
+		"SELECT COUNT(*) FROM elderly_profiles WHERE id = $1 AND user_id = $2",
+		elderlyID, userID).Scan(&count)
+	return count > 0, err
+}
+
+// MedRuleElderlyID returns the elderly_id for a medication rule.

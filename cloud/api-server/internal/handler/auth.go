@@ -20,15 +20,15 @@ import (
 
 // AuthHandler handles authentication endpoints.
 type AuthHandler struct {
-	store store.AuthStore
-	redis store.SessionStore
+	store store.UserDomain
+	redis store.SessionDomain
 	auth  *middleware.JWTAuth
 	sms   *service.SMSProvider
 	log   *zap.Logger
 }
 
 // NewAuthHandler creates a new auth handler.
-func NewAuthHandler(pg store.AuthStore, redis store.SessionStore, auth *middleware.JWTAuth, sms *service.SMSProvider, log *zap.Logger) *AuthHandler {
+func NewAuthHandler(pg store.UserDomain, redis store.SessionDomain, auth *middleware.JWTAuth, sms *service.SMSProvider, log *zap.Logger) *AuthHandler {
 	return &AuthHandler{store: pg, redis: redis, auth: auth, sms: sms, log: log}
 }
 
