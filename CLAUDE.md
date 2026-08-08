@@ -389,3 +389,60 @@ Five canonical labels: needs-triage, needs-info, ready-for-agent, ready-for-huma
 ### Domain docs
 
 Single-context layout with `CONTEXT.md` at root and `docs/adr/` for ADRs. See `docs/agents/domain.md`.
+
+---
+
+## 文档管理规范
+
+### 文档目录结构
+
+```
+docs/
+├── specs/                          # 设计规格文档（项目真相来源）
+│   ├── 00-global-architecture.md   # 全局架构
+│   ├── 01-bracelet-firmware.md     # 手环固件规格
+│   ├── 02-pillbox-firmware.md      # 药盒固件规格
+│   ├── 03-cloud-platform.md        # 云平台规格
+│   ├── 04-family-app.md            # 家属APP规格
+│   ├── 05-admin-web.md             # 管理后台规格
+│   ├── 06-website.md               # 品牌官网规格
+│   ├── 07-miniprogram.md           # 小程序规格
+│   ├── 08-b2b-integration.md       # B2B对接规格
+│   ├── 09-medical-wristband.md     # 医用腕带规格
+│   ├── 10-subsystem-verification.md # 子系统验证方案
+│   ├── 11-nurse-terminal.md        # 护士终端规格
+│   ├── project_total_construction_scheme_v2.md  # 总建设方案
+│   ├── supply-chain/               # 供应链管理
+│   │   ├── hardware-procurement-list.md  # 硬件采购清单
+│   │   ├── test-strip-procurement.md     # 试纸采购流程
+│   │   ├── bp-device-procurement.md      # 血压计采购流程
+│   │   └── supplier-evaluation-criteria.md # 供应商评估标准
+│   └── registration/               # 医疗器械注册
+│       └── registration-checklist.md     # 注册资料清单
+├── superpowers/                    # AI辅助开发文档
+│   ├── specs/                      # 设计方案（已确认）
+│   └── plans/                      # 实施计划（可执行）
+└── archive/                        # 归档文档（过时内容）
+```
+
+### 文档维护原则
+
+1. **单一真相来源**：每个功能模块只有一份权威规格文档，位于 `docs/specs/`
+2. **版本控制**：文档版本与代码版本同步，重大更新更新版本号
+3. **归档机制**：过时的文档移动到 `docs/archive/`，不直接删除
+4. **禁止提交文档到GitHub**：`docs/` 目录仅在本地维护，不推送到远程仓库
+
+### 新增文档流程
+
+1. 确定文档归属目录（specs/superpowers/archive）
+2. 遵循现有文档格式规范
+3. 更新相关索引文档（如 README.md、CLAUDE.md）
+4. 本地保存，不提交到Git
+
+### 文档更新触发条件
+
+- 新功能/新模块设计完成
+- 重大架构变更
+- 技术选型调整
+- 需求变更确认
+
