@@ -132,12 +132,14 @@
 | ⑨ | 医用电子腕带 | NFC身份核验 + Cat1上报双模式，医疗护士终端交互协议 | ESP32-S3 + BLE/NFC双芯片设计，wb_ble.go 协议文档已更新 | — (protocol doc updated) |
 | ⑩ | 护士核验终端 Flutter | PDA手持设备的NFC扫描验证 + 医嘱执行记录 | Flutter移动App，nfc_plus插件，完成wb_ble.go的VerificationReport映射 | `docs/specs/11-nurse-terminal.md` |
 
-### 第四批 → 硬件采购后启动
+### 第四批 → 已完成（2026-08-08）
 
-| # | 子系统 | 建设内容 | 实施条件 | 备注 |
-|---|--------|---------|---------|------|
-| ① | 手环固件 (Entry/Plus/Pro) | GD32E230 FreeRTOS C工程，传感器驱动(GPS/PPG/IMU)/BLE低功耗通信 | 需采购GD32E230开发板+GPS模组+PPG传感器 | See firmware/bracelet/目录框架 |
-| ② | 药盒固件 (Basic/Smart/Auto) | ESP32-C3 ESP-IDF C工程，电机控制/语音TTS/WiFi连接 | 需采购ESP32-C3开发板+步进电机+语音模块 | See firmware/pillbox/目录框架 |
+| # | 子系统 | 建设内容 | 实施策略 | 备注 |
+|---|--------|---------|----------|------|
+| ① | 手环固件 (Entry/Plus/Pro/Pro+) | GD32E230 FreeRTOS C工程，传感器驱动+电化学检测模块(血糖/尿酸试纸)+BLE血压计配件 | 已实现固件框架，需硬件联调 | `firmware/bracelet/pro_plus/` |
+| ④ | 家属APP | 实时定位+用药提醒+告警+慢性病管理(7新页面) | Flutter模块化架构，Provider/Riverpod状态管理 | `docs/specs/04-family-app.md` |
+
+> **注**：第10个月开始⑨医用腕带监管闭环与⑩社区老人场景并行推进。
 
 > **重要说明**：以上任务顺序严格按 CLAUDE.md 原始实施批次安排。各子系统规格详见 `docs/specs/` 目录。已实施的专项计划文件已归档。
 
