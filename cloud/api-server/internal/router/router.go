@@ -157,6 +157,10 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 
 	medicalH := handler.NewMedicalHandler(pg, log)
 
+	// Chronic daily task handler
+	chronicTaskSvc := service.NewChronicTaskService(pg, log)
+	chronicTaskH := handler.NewChronicTaskHandler(chronicTaskSvc, log)
+
 	// Audit logger and handler
 	auditLogger := service.NewAuditLogger(10000, log)
 	auditH := handler.NewAuditHandler(auditLogger, log)
@@ -338,6 +342,13 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 
 		// User's own audit logs
 		protected.GET("/users/me/audit-logs", auditH.MyLogs)
+
+		// Chronic daily tasks
+		chronic := protected.Group("/chronic")
+		{
+			chronic.GET("/:elderly_id/daily-tasks", chronicTaskH.List)
+			chronic.PUT("/:elderly_id/daily-tasks/:task_id", chronicTaskH.MarkComplete)
+		}
 
 		data := protected.Group("/data")
 		{

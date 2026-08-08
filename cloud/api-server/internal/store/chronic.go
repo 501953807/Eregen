@@ -394,10 +394,90 @@ func (s *ChronicStore) ListHealthReports(ctx context.Context, elderlyID string) 
 	return records, nil
 }
 
+// GlucoseTrendData holds aggregated glucose trend information.
+type GlucoseTrendData struct {
+	DailyAvg []DailyAvgPoint `json:"daily_avg"`
+	Overall  TrendSummary    `json:"overall"`
+}
+
+// DailyAvgPoint represents one day's glucose statistics.
+type DailyAvgPoint struct {
+	Date string  `json:"date"`
+	Avg  float64 `json:"avg"`
+	Min  float64 `json:"min"`
+	Max  float64 `json:"max"`
+}
+
+// TrendSummary aggregates overall statistics for the queried period.
+type TrendSummary struct {
+	Avg      float64 `json:"avg"`
+	Min      float64 `json:"min"`
+	Max      float64 `json:"max"`
+	Count    int     `json:"count"`
+	InRange  int     `json:"in_range"` // readings within 3.9-7.8 mmol/L
+}
+
 // boolToInt converts a bool to 0/1 int for SQLite (INTEGER column).
 func boolToInt(b bool) int {
 	if b {
 		return 1
 	}
 	return 0
+}
+
+// GetGlucoseTrend returns aggregated glucose trend data for visualization.
+func (s *ChronicStore) GetGlucoseTrend(ctx context.Context, elderlyID string, days int) (*GlucoseTrendData, error) {
+	if days <= 0 {
+		days = 30
+	}
+	from := time.Now().AddDate(0, 0, -days)
+
+	// Daily aggregation
+	dailyQ := `
+		SELECT
+			COALESCE(date(measurement_time), '') AS day,
+			AVG(value) AS avg_val,
+			MIN(value) AS min_val,
+			MAX(value) AS max_val
+		FROM chronic_glucose_records
+		WHERE elderly_id = $1 AND measurement_time >= $2
+		GROUP BY day
+		ORDER BY day ASC`
+
+	dailyRows, err := s.db.QueryContext(ctx, dailyQ, elderlyID, from)
+	if err != nil {
+		return nil, fmt.Errorf("glucose trend daily query: %w", err)
+	}
+	defer dailyRows.Close()
+
+	var dailyAvgs []DailyAvgPoint
+	for dailyRows.Next() {
+		var p DailyAvgPoint
+		if err := dailyRows.Scan(&p.Date, &p.Avg, &p.Min, &p.Max); err != nil {
+			return nil, fmt.Errorf("scan daily avg point: %w", err)
+		}
+		dailyAvgs = append(dailyAvgs, p)
+	}
+	if err := dailyRows.Err(); err != nil {
+		return nil, fmt.Errorf("daily avg iteration: %w", err)
+	}
+
+	// Overall summary
+	summary := &TrendSummary{}
+	summaryQ := `
+		SELECT
+			COALESCE(AVG(value), 0) AS avg_val,
+			COALESCE(MIN(value), 0) AS min_val,
+			COALESCE(MAX(value), 0) AS max_val,
+			COUNT(*) AS cnt,
+			COUNT(CASE WHEN value >= 3.9 AND value <= 7.8 THEN 1 END) AS in_range_cnt
+		FROM chronic_glucose_records
+		WHERE elderly_id = $1 AND measurement_time >= $2`
+	if err := s.db.QueryRowContext(ctx, summaryQ, elderlyID, from).Scan(
+		&summary.Avg, &summary.Min, &summary.Max, &summary.Count, &summary.InRange,
+	); err != nil {
+		return nil, fmt.Errorf("glucose trend summary query: %w", err)
+	}
+
+	return &GlucoseTrendData{DailyAvg: dailyAvgs, Overall: *summary}, nil
 }

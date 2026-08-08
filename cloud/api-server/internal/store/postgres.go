@@ -1543,6 +1543,43 @@ func (p *Postgres) MedRuleElderlyID(ctx context.Context, ruleID string) (string,
 	return elderlyID, err
 }
 
+// ---------- ChronicDailyTask ----------
+
+// ListDailyTasks returns daily tasks for an elderly person on a given date.
+func (p *Postgres) ListDailyTasks(ctx context.Context, elderlyID string, taskDate string) ([]model.ChronicDailyTask, error) {
+	q := `SELECT id, elderly_id, task_type, scheduled_time, completed, completed_at, task_date
+		  FROM chronic_daily_tasks WHERE elderly_id = $1 AND task_date = $2
+		  ORDER BY scheduled_time ASC`
+	rows, err := p.pool.Query(ctx, q, elderlyID, taskDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []model.ChronicDailyTask
+	for rows.Next() {
+		var t model.ChronicDailyTask
+		var completedAtRaw sql.NullTime
+		if err := rows.Scan(&t.ID, &t.ElderlyID, &t.TaskType, &t.ScheduledTime, &t.Completed, &completedAtRaw, &t.TaskDate); err != nil {
+			return nil, err
+		}
+		if completedAtRaw.Valid {
+			t.CompletedAt = &completedAtRaw.Time
+		}
+		tasks = append(tasks, t)
+	}
+	return tasks, rows.Err()
+}
+
+// UpdateDailyTaskComplete marks a daily task as completed.
+func (p *Postgres) UpdateDailyTaskComplete(ctx context.Context, taskID string) error {
+	q := `UPDATE chronic_daily_tasks SET completed = 1, completed_at = CURRENT_TIMESTAMP WHERE id = $1`
+	_, err := p.pool.Exec(ctx, q, taskID)
+	return err
+}
+
+// CheckElderlyAccess verifies if a user owns an elderly profile.
+
 // CheckElderlyAccess verifies if a user owns an elderly profile.
 func (p *Postgres) CheckElderlyAccess(ctx context.Context, elderlyID, userID string) (bool, error) {
 	var count int

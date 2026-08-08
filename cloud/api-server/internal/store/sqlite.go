@@ -205,6 +205,49 @@ func (s *SqliteStore) ValidateToken(ctx context.Context, token string) (string, 
 	return userID, nil
 }
 
+// ListDailyTasks returns daily tasks for an elderly person on a given date.
+func (s *SqliteStore) ListDailyTasks(ctx context.Context, elderlyID string, taskDate string) ([]model.ChronicDailyTask, error) {
+	query := `SELECT id, elderly_id, task_type, scheduled_time, completed, completed_at, task_date
+		FROM chronic_daily_tasks WHERE elderly_id = ? AND task_date = ?
+		ORDER BY scheduled_time ASC`
+	rows, err := s.db.QueryContext(ctx, query, elderlyID, taskDate)
+	if err != nil {
+		return nil, fmt.Errorf("list daily tasks: %w", err)
+	}
+	defer rows.Close()
+
+	var tasks []model.ChronicDailyTask
+	for rows.Next() {
+		var t model.ChronicDailyTask
+		var completedAtRaw sql.NullString
+		if err := rows.Scan(&t.ID, &t.ElderlyID, &t.TaskType, &t.ScheduledTime, &t.Completed, &completedAtRaw, &t.TaskDate); err != nil {
+			return nil, fmt.Errorf("scan daily task: %w", err)
+		}
+		if completedAtRaw.Valid && completedAtRaw.String != "" {
+			var parsedAt time.Time
+			if parsedAt, err = time.Parse(time.RFC3339, completedAtRaw.String); err == nil {
+				t.CompletedAt = &parsedAt
+			}
+		}
+		tasks = append(tasks, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate daily tasks: %w", err)
+	}
+	return tasks, nil
+}
+
+// UpdateDailyTaskComplete marks a daily task as completed.
+func (s *SqliteStore) UpdateDailyTaskComplete(ctx context.Context, taskID string) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE chronic_daily_tasks SET completed = 1, completed_at = datetime('now') WHERE id = ?`,
+		taskID)
+	if err != nil {
+		return fmt.Errorf("update daily task complete: %w", err)
+	}
+	return nil
+}
+
 // migrate creates tables if they don't exist using schema from admin-api.
 func migrate(db *sql.DB) error {
 	migrations := []string{
