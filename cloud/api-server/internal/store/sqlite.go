@@ -253,6 +253,81 @@ func migrate(db *sql.DB) error {
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
+		// 血糖检测记录
+		`CREATE TABLE IF NOT EXISTS chronic_glucose_records (
+			id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+			elderly_id TEXT NOT NULL,
+			value REAL NOT NULL,
+			unit TEXT DEFAULT 'mmol/L',
+			test_mode TEXT DEFAULT 'random',
+			measurement_time DATETIME NOT NULL,
+			detected_at DATETIME DEFAULT (datetime('now')),
+			source TEXT DEFAULT 'test_strip',
+			quality REAL,
+			temperature REAL
+		)`,
+		// 尿酸检测记录
+		`CREATE TABLE IF NOT EXISTS chronic_uric_acid_records (
+			id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+			elderly_id TEXT NOT NULL,
+			value REAL NOT NULL,
+			unit TEXT DEFAULT 'μmol/L',
+			measurement_time DATETIME NOT NULL,
+			detected_at DATETIME DEFAULT (datetime('now')),
+			source TEXT DEFAULT 'test_strip'
+		)`,
+		// 血压记录
+		`CREATE TABLE IF NOT EXISTS chronic_bp_records (
+			id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+			elderly_id TEXT NOT NULL,
+			systolic INTEGER NOT NULL,
+			diastolic INTEGER NOT NULL,
+			pulse INTEGER,
+			measurement_time DATETIME NOT NULL,
+			detected_at DATETIME DEFAULT (datetime('now'))
+		)`,
+		// 饮食记录
+		`CREATE TABLE IF NOT EXISTS chronic_diet_records (
+			id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+			elderly_id TEXT NOT NULL,
+			meal_type TEXT NOT NULL,
+			food_items TEXT NOT NULL,
+			total_carbs REAL,
+			total_calories REAL,
+			recorded_at DATETIME DEFAULT (datetime('now'))
+		)`,
+		// 运动记录
+		`CREATE TABLE IF NOT EXISTS chronic_exercise_records (
+			id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+			elderly_id TEXT NOT NULL,
+			type TEXT NOT NULL,
+			duration_min INTEGER,
+			calories REAL,
+			avg_hr INTEGER,
+			max_hr INTEGER,
+			recorded_at DATETIME DEFAULT (datetime('now'))
+		)`,
+		// 每日任务
+		`CREATE TABLE IF NOT EXISTS chronic_daily_tasks (
+			id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+			elderly_id TEXT NOT NULL,
+			task_type TEXT NOT NULL,
+			scheduled_time TEXT NOT NULL,
+			completed INTEGER DEFAULT 0,
+			completed_at DATETIME,
+			task_date DATE DEFAULT (date('now'))
+		)`,
+		// 周期报告
+		`CREATE TABLE IF NOT EXISTS chronic_health_reports (
+			id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+			elderly_id TEXT NOT NULL,
+			report_type TEXT NOT NULL,
+			period_start DATE NOT NULL,
+			period_end DATE NOT NULL,
+			data_summary TEXT,
+			ai_recommendations TEXT,
+			generated_at DATETIME DEFAULT (datetime('now'))
+		)`,
 	}
 
 	for _, migration := range migrations {
