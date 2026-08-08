@@ -169,6 +169,10 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 	chronicBPSvc := service.NewChronicBPService(chronic, log)
 	chronicBPH := handler.NewChronicBPHandler(chronicBPSvc, log)
 
+	// Chronic report service and handler
+	chronicReportSvc := service.NewChronicReportService(chronic, log)
+	chronicReportH := handler.NewChronicReportHandler(chronicReportSvc, log)
+
 	// Audit logger and handler
 	auditLogger := service.NewAuditLogger(10000, log)
 	auditH := handler.NewAuditHandler(auditLogger, log)
@@ -367,6 +371,10 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 			chronic.POST("/:elderly_id/blood-pressure", chronicBPH.CreateRecord)
 			chronic.GET("/:elderly_id/blood-pressure", chronicBPH.ListRecords)
 			chronic.POST("/:elderly_id/bp-device/sync", chronicBPH.SyncFromDevice)
+
+			// Health report endpoints
+			chronic.POST("/:elderly_id/report/generate", chronicReportH.GenerateReport)
+			chronic.GET("/:elderly_id/report/:type", chronicReportH.GetReport)
 		}
 
 		data := protected.Group("/data")
