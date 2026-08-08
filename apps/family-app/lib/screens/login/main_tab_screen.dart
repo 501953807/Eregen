@@ -4,9 +4,10 @@ import '../home/home_page.dart';
 import '../health/health_page.dart';
 import '../alerts/alerts_page.dart';
 import '../medication/medication_page.dart';
+import '../chronic/chronic_home_page.dart';
 import '../settings/settings_page.dart';
 
-/// Post-login bottom-tab shell — 4 prototype pages.
+/// Post-login bottom-tab shell — 5 prototype pages + chronic care.
 class MainTabScreen extends StatefulWidget {
   const MainTabScreen({super.key});
 
@@ -22,6 +23,7 @@ class _MainTabScreenState extends State<MainTabScreen> {
     HealthPage(),
     AlertsPage(),
     MedicationPage(),
+    ChronicHomePage(),
     SettingsPage(),
   ];
 

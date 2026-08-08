@@ -12,6 +12,7 @@ class BottomNavBar extends StatelessWidget {
     _TabItem('健康', Icons.monitor_heart_outlined, Icons.monitor_heart),
     _TabItem('告警', Icons.notifications_none_rounded, Icons.notifications_active),
     _TabItem('用药', Icons.medication_outlined, Icons.medication),
+    _TabItem('慢病', Icons.insights_outlined, Icons.insights),
     _TabItem('我的', Icons.person_outline, Icons.person),
     _TabItem('福利', Icons.card_giftcard_outlined, Icons.card_giftcard),
   ];
