@@ -16,7 +16,7 @@ import (
 )
 
 // New creates the full Gin engine with all route groups.
-func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth *middleware.JWTAuth, deviceAuth *middleware.DeviceAuth, sms *service.SMSProvider, push *service.PushProvider, log *zap.Logger, wsHub *ws.Hub, corsOrigins []string) *gin.Engine {
+func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth *middleware.JWTAuth, deviceAuth *middleware.DeviceAuth, sms *service.SMSProvider, push *service.PushProvider, log *zap.Logger, wsHub *ws.Hub, corsOrigins []string, chronic *store.ChronicStore) *gin.Engine {
 	r := gin.Default()
 
 	// Security Headers Middleware - protects against common web vulnerabilities
@@ -160,6 +160,14 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 	// Chronic daily task handler
 	chronicTaskSvc := service.NewChronicTaskService(pg, log)
 	chronicTaskH := handler.NewChronicTaskHandler(chronicTaskSvc, log)
+
+	// Blood glucose service and handler
+	chronicGlucoseSvc := service.NewChronicGlucoseService(chronic, log)
+	chronicGlucoseH := handler.NewChronicGlucoseHandler(chronicGlucoseSvc, log)
+
+	// Blood pressure service and handler
+	chronicBPSvc := service.NewChronicBPService(chronic, log)
+	chronicBPH := handler.NewChronicBPHandler(chronicBPSvc, log)
 
 	// Audit logger and handler
 	auditLogger := service.NewAuditLogger(10000, log)
@@ -343,11 +351,22 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 		// User's own audit logs
 		protected.GET("/users/me/audit-logs", auditH.MyLogs)
 
-		// Chronic daily tasks
+		// Chronic endpoints
 		chronic := protected.Group("/chronic")
 		{
 			chronic.GET("/:elderly_id/daily-tasks", chronicTaskH.List)
 			chronic.PUT("/:elderly_id/daily-tasks/:task_id", chronicTaskH.MarkComplete)
+
+			// Blood glucose endpoints
+			chronic.POST("/:elderly_id/glucose", chronicGlucoseH.CreateRecord)
+			chronic.GET("/:elderly_id/glucose", chronicGlucoseH.ListRecords)
+			chronic.GET("/:elderly_id/glucose/trend", chronicGlucoseH.GetTrend)
+			chronic.POST("/:elderly_id/test-strip/read", chronicGlucoseH.TestStripRead)
+
+			// Blood pressure endpoints
+			chronic.POST("/:elderly_id/blood-pressure", chronicBPH.CreateRecord)
+			chronic.GET("/:elderly_id/blood-pressure", chronicBPH.ListRecords)
+			chronic.POST("/:elderly_id/bp-device/sync", chronicBPH.SyncFromDevice)
 		}
 
 		data := protected.Group("/data")

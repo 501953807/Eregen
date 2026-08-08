@@ -19,6 +19,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
+	_ "modernc.org/sqlite"
 )
 
 func main() {
@@ -128,7 +129,17 @@ func main() {
 
 	deviceAuth := middleware.NewDeviceAuth(pg, log, cfg.DeviceSecret)
 
-	r := router.New(pg, redisLayer, natsClient, authMW, deviceAuth, sms, push, log, wsHub, cfg.CORSOrigins)
+	// SQLite ChronicStore for chronic disease records (glucose, BP, diet, etc.)
+	var chronicStore *store.ChronicStore
+	sqliteDB, sqliteErr := store.NewSqlite(cfg.SQLitePath)
+	if sqliteErr != nil {
+		log.Warn("sqlite chronic store init failed (chronic endpoints unavailable)", zap.Error(sqliteErr))
+	} else {
+		chronicStore = store.NewChronicStore(sqliteDB)
+		defer sqliteDB.Close()
+	}
+
+	r := router.New(pg, redisLayer, natsClient, authMW, deviceAuth, sms, push, log, wsHub, cfg.CORSOrigins, chronicStore)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,
