@@ -169,6 +169,18 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 	chronicBPSvc := service.NewChronicBPService(chronic, log)
 	chronicBPH := handler.NewChronicBPHandler(chronicBPSvc, log)
 
+	// Uric acid service and handler
+	chronicUricAcidSvc := service.NewChronicUricAcidService(chronic, log)
+	chronicUricAcidH := handler.NewChronicUricAcidHandler(chronicUricAcidSvc, log)
+
+	// Diet service and handler
+	chronicDietSvc := service.NewChronicDietService(chronic, log)
+	chronicDietH := handler.NewChronicDietHandler(chronicDietSvc, log)
+
+	// Exercise service and handler
+	chronicExerciseSvc := service.NewChronicExerciseService(chronic, log)
+	chronicExerciseH := handler.NewChronicExerciseHandler(chronicExerciseSvc, log)
+
 	// Chronic report service and handler
 	chronicReportSvc := service.NewChronicReportService(chronic, log)
 	chronicReportH := handler.NewChronicReportHandler(chronicReportSvc, log)
@@ -371,6 +383,18 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 			chronic.POST("/:elderly_id/blood-pressure", chronicBPH.CreateRecord)
 			chronic.GET("/:elderly_id/blood-pressure", chronicBPH.ListRecords)
 			chronic.POST("/:elderly_id/bp-device/sync", chronicBPH.SyncFromDevice)
+
+			// Uric acid endpoints
+			chronic.POST("/:elderly_id/uric-acid", chronicUricAcidH.CreateRecord)
+			chronic.GET("/:elderly_id/uric-acid", chronicUricAcidH.ListRecords)
+
+			// Diet endpoints
+			chronic.POST("/:elderly_id/diet", chronicDietH.CreateRecord)
+			chronic.GET("/:elderly_id/diet", chronicDietH.ListRecords)
+
+			// Exercise endpoints
+			chronic.POST("/:elderly_id/exercise", chronicExerciseH.CreateRecord)
+			chronic.GET("/:elderly_id/exercise", chronicExerciseH.ListRecords)
 
 			// Health report endpoints
 			chronic.POST("/:elderly_id/report/generate", chronicReportH.GenerateReport)
