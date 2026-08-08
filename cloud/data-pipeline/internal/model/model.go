@@ -20,6 +20,7 @@ type AnalysisResult struct {
 	Baseline    float64   `json:"baseline"`     // 7-day average
 	Deviation   float64   `json:"deviation"`    // percentage deviation from baseline
 	RiskLevel   RiskLevel `json:"risk_level"`
+	Message     string    `json:"message,omitempty"` // human-readable description of the anomaly
 	Timestamp   time.Time `json:"timestamp"`
 	CreatedAt   time.Time `json:"created_at"`
 }
@@ -66,4 +67,30 @@ type Geofence struct {
 	RadiusMeters int     `json:"radius_meters"`
 	Active       bool    `json:"active"`
 	CreatedAt    time.Time `json:"created_at"`
+}
+
+// Recommendation holds a single chronic-care actionable item.
+type Recommendation struct {
+	ID           uint64    `json:"id"`
+	ElderlyID    string    `json:"elderly_id"`
+	Category     string    `json:"category"`     // "glucose", "uric_acid", "blood_pressure"
+	Severity     string    `json:"severity"`     // "P0", "P1", "P2"
+	Title        string    `json:"title"`
+	Description  string    `json:"description"`
+	Action       string    `json:"action"`        // suggested next action
+	SourceMetric string    `json:"source_metric"` // which metric triggered this
+	Value        float64   `json:"value"`         // the actual measurement value
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+// HealthRecord represents a single device health data point.
+type HealthRecord struct {
+	ID           uint64     `json:"id"`
+	ElderlyID    string     `json:"elderly_id"`
+	HeartRate    *float64   `json:"heart_rate,omitempty"`
+	SpO2         *float64   `json:"spo2,omitempty"`
+	Steps        *int       `json:"steps,omitempty"`
+	SystolicBP   *int       `json:"systolic_bp,omitempty"`
+	Temperature  *float64   `json:"temperature,omitempty"`
+	RecordedAt   time.Time  `json:"recorded_at"`
 }
