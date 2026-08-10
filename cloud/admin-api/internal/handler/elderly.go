@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -73,9 +74,11 @@ func (h *ElderlyHandler) Create(c *gin.Context) {
 
 	profile, err := h.store.CreateElderly(c.Request.Context(), body.Name, body.BirthDate, body.UserID, body.HealthTiers, body.AvatarURL)
 	if err != nil {
+		log.Printf("CreateElderly failed: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
+	log.Printf("CreateElderly success: id=%s, name=%s", profile.ID, profile.Name)
 	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": profile})
 }
 

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -77,6 +78,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 	}
 	id, err := h.store.CreateUser(c.Request.Context(), body.Name, body.Email, body.Phone, body.Role, body.Password)
 	if err != nil {
+		log.Printf("CreateUser failed: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}

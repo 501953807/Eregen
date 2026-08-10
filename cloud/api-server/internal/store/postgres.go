@@ -33,6 +33,12 @@ func (p *Postgres) Pool() *pgxpool.Pool {
 	return p.pool
 }
 
+// Raw returns a RawDB for dynamic SQL queries.
+// Uses ? placeholders; converted to $1, $2 internally.
+func (p *Postgres) Raw() RawDB {
+	return &pgxRaw{pool: p.pool}
+}
+
 // ---------- User ----------
 
 func (p *Postgres) CreateUser(ctx context.Context, u *model.User) error {

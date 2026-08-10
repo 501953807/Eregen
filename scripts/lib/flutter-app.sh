@@ -14,11 +14,12 @@ source "$_LIB_DIR/common.sh"
 unset _LIB_DIR
 
 # --- App Registry (bash 3.2 compatible — no associative arrays) ---
-FLUTTER_APPS_LIST="family-app"
+FLUTTER_APPS_LIST="family-app|nurse-terminal"
 
 flutter_app_dir() {
   case "$1" in
     family-app) echo "apps/family-app" ;;
+    nurse-terminal) echo "apps/nurse_terminal" ;;
   esac
 }
 
@@ -56,16 +57,18 @@ flutter_start() {
   log_info "Starting $app ($target)..."
   cd "$full_dir"
 
-  # Build device flag
   local device_flag=""
   local port=5173  # Default for web
+  case "$1" in
+    family-app) port="${PORT_FAMILY_APP:-5173}" ;;
+    nurse-terminal) port="${PORT_NURSE_TERMINAL:-5374}" ;;
+  esac
   case "$target" in
     device:*)
       device_flag="-d ${target#device:}"
       ;;
     chrome)
       device_flag="-d $target"
-      port=5173
       ;;
     *)
       device_flag="-d $target"
@@ -78,8 +81,11 @@ flutter_start() {
     dart_defines+=" --dart-define=AMAP_KEY=$AMAP_KEY"
   fi
 
-  # Run in background
-  flutter run $device_flag$dart_defines > "$PID_DIR/${app}.log" 2>&1 &
+  # Run in background with dart-define for API base URL
+  local dart_define_args=""
+  dart_define_args+=" --dart-define=API_BASE_URL=http://localhost:${port}"
+
+  flutter run $device_flag$dart_defines$dart_define_args > "$PID_DIR/${app}.log" 2>&1 &
   local pid=$!
   write_pid "$app" "$pid"
 

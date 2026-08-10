@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
@@ -18,6 +19,12 @@ import (
 )
 
 func main() {
+	if os.Getenv("DATA_PIPELINE_ENABLED") != "true" {
+		log.Println("data-pipeline skipped (DATA_PIPELINE_ENABLED != true)")
+		log.Println("data-pipeline stopped")
+		return
+	}
+
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("config load: %v", err)

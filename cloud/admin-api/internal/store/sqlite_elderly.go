@@ -81,11 +81,11 @@ func (s *SqliteStore) GetElderly(ctx context.Context, id string) (*model.Elderly
 // CreateElderly inserts a new elderly profile.
 func (s *SqliteStore) CreateElderly(ctx context.Context, name, birthDate, userID string, healthTiers []string, avatarURL string) (*model.ElderlyProfile, error) {
 	tiersJSON, _ := json.Marshal(healthTiers)
-	var id string
-	err := s.db.QueryRowContext(ctx,
-		`INSERT INTO elderly_profiles (name, user_id, birth_date, health_tiers, avatar_url, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now')) RETURNING id`,
-		name, userID, birthDate, string(tiersJSON), avatarURL).Scan(&id)
+	id := uuid.New().String()
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO elderly_profiles (id, name, user_id, birth_date, avatar_url, health_tiers, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+		id, name, userID, birthDate, avatarURL, string(tiersJSON))
 	if err != nil {
 		return nil, fmt.Errorf("create elderly: %w", err)
 	}

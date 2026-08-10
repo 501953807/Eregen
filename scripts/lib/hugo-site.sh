@@ -67,15 +67,15 @@ hugo_start() {
 
   # Start Hugo server
   log_info "Starting $site_name on port $port..."
-  (cd "$full_path" && hugo server --bind 0.0.0.0 --port "$port" > "$PID_DIR/${site_name}.log" 2>&1 &)
-  local pid=$!
-  write_pid "$site_name" "$pid"
+  (cd "$full_path" && hugo server --bind 0.0.0.0 --port "$port" > "$PID_DIR/${site_name}.log" 2>&1) &
+  local _hugo_bg_pid=$!
+  write_pid "$site_name" "$_hugo_bg_pid"
 
   # Wait for port to become available (up to 30s)
   local waited=0
   while [ $waited -lt 30 ]; do
     if check_process_running "$port"; then
-      log_success "$site_name started on http://localhost:$port (PID $pid)"
+      log_success "$site_name started on http://localhost:$port (PID $_hugo_bg_pid)"
       return 0
     fi
     sleep 1

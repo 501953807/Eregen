@@ -36,9 +36,13 @@ func (h *HealthCheckHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": req})
 }
 
-// GET /api/v2/b2b/health-checks/:elderly_id — get health checks for an elderly person
+// GET /api/v2/b2b/health-checks?elderly_id=xxx — get health checks for an elderly person
 func (h *HealthCheckHandler) GetForElderly(c *gin.Context) {
-	elderlyID := c.Param("elderly_id")
+	elderlyID := c.Query("elderly_id")
+	if elderlyID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "elderly_id query parameter is required"})
+		return
+	}
 	limit, _ := parseIntParam(c, "limit", 50)
 
 	records, err := h.store.GetHealthChecksForElderly(c.Request.Context(), elderlyID, limit)

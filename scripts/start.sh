@@ -87,6 +87,7 @@ case "$COMMAND" in
         vue_start admin-web "$EXTRA_PORT" || log_warn "Failed to start admin-web"
         hugo_start website "$EXTRA_PORT" || log_warn "Failed to start website"
         flutter_start family-app chrome || log_warn "Failed to start family-app"
+        flutter_start nurse-terminal chrome || log_warn "Failed to start nurse-terminal"
         log_success "All services started (check individual logs for errors)"
         ;;
       cloud)
@@ -103,6 +104,7 @@ case "$COMMAND" in
         vue_start admin-web "$EXTRA_PORT"
         hugo_start website "$EXTRA_PORT"
         flutter_start family-app chrome
+        flutter_start nurse-terminal chrome
         ;;
       firmware)
         firmware_list_targets
@@ -114,6 +116,9 @@ case "$COMMAND" in
         go_start "$SERVICE" "$EXTRA_PORT"
         ;;
       family-app)
+        flutter_start "$SERVICE" "$EXTRA_PORT"
+        ;;
+      nurse-terminal)
         flutter_start "$SERVICE" "$EXTRA_PORT"
         ;;
       admin-web)

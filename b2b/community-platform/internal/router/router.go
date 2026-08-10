@@ -27,7 +27,8 @@ func Register(r *gin.Engine, pg *store.Postgres, log *zap.Logger) {
 	healthChecks := r.Group("/api/v2/b2b/health-checks")
 	{
 		healthChecks.POST("", healthH.Create)
-		healthChecks.GET("/:elderly_id", healthH.GetForElderly)
+		// Use query param for elderly lookup to avoid Gin wildcard conflict
+		healthChecks.GET("", healthH.GetForElderly)
 		healthChecks.GET("/:id", healthH.GetByID)
 		healthChecks.PUT("/:id", healthH.Update)
 		healthChecks.DELETE("/:id", healthH.Delete)
@@ -36,7 +37,8 @@ func Register(r *gin.Engine, pg *store.Postgres, log *zap.Logger) {
 	carePlans := r.Group("/api/v2/b2b/care-plans")
 	{
 		carePlans.POST("", careH.Create)
-		carePlans.GET("/:elderly_id", careH.GetForElderly)
+		// Use query param for elderly lookup to avoid Gin wildcard conflict
+		carePlans.GET("", careH.GetForElderly)
 		carePlans.GET("/:id", careH.GetByID)
 		carePlans.PUT("/:id", careH.Update)
 		carePlans.DELETE("/:id", careH.Delete)

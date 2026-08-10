@@ -87,6 +87,8 @@ _build_extra_env() {
   case "$service" in
     api-server)
       echo "JWT_SECRET=${JWT_SECRET:-changeme}"
+      echo "CSRF_SECRET=${CSRF_SECRET:-eregen_csrf_dev_secret_2024}"
+      echo "DEVICE_SECRET=${DEVICE_SECRET:-eregen_device_dev_secret_2024}"
       echo "DB_URL=${DB_URL:-postgres://eregen:eregen@localhost:5432/eregen?sslmode=disable}"
       ;;
     push-service)
@@ -111,6 +113,7 @@ _build_extra_env() {
     gateway)
       echo "MQTT_BROKER=${MQTT_BROKER:-localhost:1883}"
       echo "NATS_URL=${NATS_URL:-nats://localhost:4222}"
+      echo "GATEWAY_AUTH_SECRET=${GATEWAY_AUTH_SECRET:-eregen_gateway_dev_secret_2024}"
       ;;
   esac
 }

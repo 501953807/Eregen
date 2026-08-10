@@ -323,7 +323,7 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 			alerts.GET("", alertH.List)
 			alerts.GET("/:alert_id", auth.ResolveAlertID(), alertH.Get)
 			alerts.PUT("/:alert_id", auth.ResolveAlertID(), alertH.Update)
-			alerts.PUT("/:id/handle", auditMW.LogAction(service.ActionAlertResolve, "alert", "", nil), alertHandleH.Handle)
+			alerts.PUT("/:alert_id/handle", auditMW.LogAction(service.ActionAlertResolve, "alert", "", nil), alertHandleH.Handle)
 			alerts.POST("/share-location", auditMW.LogAction(service.ActionAdminAction, "alert", "", nil), alertHandleH.ShareLocation)
 			alerts.POST("/sos/call", alertH.SOSCall)
 			alerts.PUT("/:alert_id/resolve", auditMW.LogAction(service.ActionAlertResolve, "alert", "", nil), emergencyH.ResolveAlert)

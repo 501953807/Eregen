@@ -38,6 +38,12 @@ func NewSqliteStore(db *sql.DB) *SqliteStore {
 	return &SqliteStore{db: db}
 }
 
+// Raw returns a RawDB for dynamic SQL queries.
+// SQLite uses ? placeholders directly, no conversion needed.
+func (s *SqliteStore) Raw() RawDB {
+	return &sqlRaw{db: s.db}
+}
+
 // Health checks SQLite connectivity.
 func (s *SqliteStore) Health(ctx context.Context) error {
 	var val int
