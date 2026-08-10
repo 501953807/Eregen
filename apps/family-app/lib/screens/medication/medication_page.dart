@@ -235,9 +235,9 @@ class _MedicationPageState extends State<MedicationPage> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('今日服药进度', style: TextStyle(fontSize: 14, color: Color(0xFFFFFFFF), opacity: 0.9)),
-              Text('2026年7月24日 周五', style: TextStyle(fontSize: 11, color: Color(0xFFFFFFFF), opacity: 0.7)),
+            children: [
+              Text('今日服药进度', style: TextStyle(fontSize: 14, color: Color(0xFFFFFFFF).withOpacity(0.9))),
+              Text('2026年7月24日 周五', style: TextStyle(fontSize: 11, color: Color(0xFFFFFFFF).withOpacity(0.7))),
             ],
           ),
           const SizedBox(height: 16),
@@ -260,7 +260,7 @@ class _MedicationPageState extends State<MedicationPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text('$_todayTaken/$_todayTotal', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
-                        Text('已服用', style: const TextStyle(fontSize: 9, color: Color(0xFFFFFFFF), opacity: 0.7)),
+                        Text('已服用', style: TextStyle(fontSize: 9, color: Color(0xFFFFFFFF).withOpacity(0.7))),
                       ],
                     ),
                   ],
@@ -275,13 +275,13 @@ class _MedicationPageState extends State<MedicationPage> {
                       text: TextSpan(
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
                         children: [
-                          TextSpan(text: '${(_adherenceRate * 100).toInt()}%', style: const TextStyle(opacity: 1)),
+                          TextSpan(text: '${(_adherenceRate * 100).toInt()}%', style: const TextStyle(color: Colors.white)),
                           const TextSpan(text: ' 服药率'),
                         ],
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text('漏服 0 次 · 延迟 1 次', style: const TextStyle(fontSize: 12, color: Color(0xFFFFFFFF), opacity: 0.9)),
+                    Text('漏服 0 次 · 延迟 1 次', style: TextStyle(fontSize: 12, color: Color(0xFFFFFFFF).withOpacity(0.9))),
                   ],
                 ),
               ),
@@ -321,36 +321,36 @@ class _MedicationPageState extends State<MedicationPage> {
   // ===== Period Tabs =====
   Widget _buildPeriodTabs() {
     final periods = [
-      (label: '上午', count: '3项'),
-      (label: '中午', count: '2项'),
-      (label: '下午', hasMissed: true),
-      (label: '晚上', count: '2项'),
-      (label: '睡前', count: '1项'),
+      ('上午', '3项', null),
+      ('中午', '2项', null),
+      ('下午', null, true),
+      ('晚上', '2项', null),
+      ('睡前', '1项', null),
     ];
     return Row(
       children: periods.map((p) {
-        final isActive = p.label == _activePeriod;
+        final isActive = p.$1 == _activePeriod;
         return Padding(
           padding: const EdgeInsets.only(right: 6),
           child: GestureDetector(
-            onTap: () => setState(() => _activePeriod = p.label),
+            onTap: () => setState(() => _activePeriod = p.$1),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: isActive ? AppTheme.primary : (_darkMode ? const Color(0xFF374151) : Colors.white),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: p.hasMissed && !isActive ? AppTheme.statusDanger : (isActive ? AppTheme.primary : const Color(0xFFE5E7EB))),
+                border: Border.all(color: (p.$3 ?? false) && !isActive ? AppTheme.statusDanger : (isActive ? AppTheme.primary : const Color(0xFFE5E7EB))),
                 boxShadow: isActive ? [BoxShadow(color: AppTheme.primary.withValues(alpha: 0.2), blurRadius: 8)] : [],
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(p.label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? Colors.white : (_darkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)))),
-                  if (p.count != null) ...[
+                  Text(p.$1, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? Colors.white : (_darkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)))),
+                  if (p.$2 != null) ...[
                     const SizedBox(width: 4),
-                    Text(p.count!, style: TextStyle(fontSize: 10, color: isActive ? const Color(0xFFFFFFFF).withValues(alpha: 0.7) : const Color(0xFF9CA3AF))),
+                    Text(p.$2!, style: TextStyle(fontSize: 10, color: isActive ? const Color(0xFFFFFFFF).withValues(alpha: 0.7) : const Color(0xFF9CA3AF))),
                   ],
-                  if (p.hasMissed && !isActive) ...[
+                  if ((p.$3 ?? false) && !isActive) ...[
                     const SizedBox(width: 4),
                     Container(width: 6, height: 6, decoration: const BoxDecoration(color: AppTheme.statusDanger, shape: BoxShape.circle)),
                   ],
@@ -583,19 +583,19 @@ class _MedicationPageState extends State<MedicationPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(cfg.$2, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                          Text(cfg.$3, style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF))),
+                          Text(cfg.$1, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          Text(cfg.$2, style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF))),
                         ],
                       ),
                     ),
                     GestureDetector(
                       onTap: () {},
                       child: Container(
-                        width: 48, height: 28, decoration: BoxDecoration(color: cfg.$4 ? AppTheme.statusNormal : const Color(0xFFD1D5DB), borderRadius: BorderRadius.circular(14)),
+                        width: 48, height: 28, decoration: BoxDecoration(color: cfg.$3 ? AppTheme.statusNormal : const Color(0xFFD1D5DB), borderRadius: BorderRadius.circular(14)),
                         child: AnimatedAlign(
                           duration: const Duration(milliseconds: 200),
-                          alignment: cfg.$4 ? Alignment.centerRight : Alignment.centerLeft,
-                          child: Container(width: 22, height: 22, margin: EdgeInsets.only(left: cfg.$4 ? 24 : 3), decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle), shadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 3)]),
+                          alignment: cfg.$3 ? Alignment.centerRight : Alignment.centerLeft,
+                          child: Container(width: 22, height: 22, margin: EdgeInsets.only(left: cfg.$3 ? 24 : 3), decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 3)])),
                         ),
                       ),
                     ),
@@ -682,14 +682,14 @@ class _MedicationPageState extends State<MedicationPage> {
           ),
           const SizedBox(height: 10),
           Row(
-            children: const [
-              _legendChip(Color(0xFFDCFCE7), AppTheme.statusNormal, '全按时'),
-              SizedBox(width: 12),
-              _legendChip(Color(0xFFFEF9C3), AppTheme.statusWarning, '部分延迟'),
-              SizedBox(width: 12),
-              _legendChip(Color(0xFFFEE2E2), AppTheme.statusDanger, '有漏服'),
-              SizedBox(width: 12),
-              _legendChip(Color(0xFFF3F4F6), Color(0xFFD1D5DB), '无数据'),
+            children: [
+              _legendChip(const Color(0xFFDCFCE7), AppTheme.statusNormal, '全按时'),
+              const SizedBox(width: 12),
+              _legendChip(const Color(0xFFFEF9C3), AppTheme.statusWarning, '部分延迟'),
+              const SizedBox(width: 12),
+              _legendChip(const Color(0xFFFEE2E2), AppTheme.statusDanger, '有漏服'),
+              const SizedBox(width: 12),
+              _legendChip(const Color(0xFFF3F4F6), const Color(0xFFD1D5DB), '无数据'),
             ],
           ),
         ],

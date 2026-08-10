@@ -22,7 +22,7 @@ class VerificationScreen extends StatefulWidget {
 }
 
 class _VerificationScreenState extends State<VerificationScreen> {
-  final ApiClient _api = ApiClient();
+  final HospitalApiClient _api = HospitalApiClient();
   late final VerificationService _verificationService;
   final MedicalWristbandService _nfcService = MedicalWristbandService();
 

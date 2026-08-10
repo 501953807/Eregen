@@ -42,9 +42,9 @@ class VerificationService {
 
     final res = await api.get(
       '/api/v2/b2b/institutions/$instId/nurses/verifications',
-      params: queryParams,
+      queryParameters: queryParams,
     );
-    return (res['data'] as List<dynamic>?) ?? [];
+    return (res['data'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
   }
 
   /// Get verification statistics for a patient.

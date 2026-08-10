@@ -383,7 +383,7 @@ class _HomePageState extends State<HomePage> {
           const Expanded(child: Text('今日步数偏低，建议饭后散步15分钟', style: TextStyle(fontSize: 12, color: Color(0xFF065F46)))),
           GestureDetector(
             onTap: () => setState(() => _showHealthTip = false),
-            child: const Text('\u{2715}', style: TextStyle(fontSize: 14, color: Color(0xFF065F46), opacity: 0.5)),
+            child: Text('\u{2715}', style: TextStyle(fontSize: 14, color: Color(0xFF065F46))),
           ),
         ],
       ),

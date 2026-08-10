@@ -19,11 +19,11 @@ type Subscriber struct {
 	nc     *nats.Conn
 	js     nats.JetStreamContext
 	alert  chan model.AlertPushEvent
-	pgStore *store.Postgres
+	pgStore *store.Store
 }
 
 // NewSubscriber creates a NATS JetStream consumer for push events.
-func NewSubscriber(natsURL string, pgStore *store.Postgres) (*Subscriber, error) {
+func NewSubscriber(natsURL string, pgStore *store.Store) (*Subscriber, error) {
 	nc, err := nats.Connect(natsURL)
 	if err != nil {
 		return nil, fmt.Errorf("connect nats: %w", err)

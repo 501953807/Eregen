@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
 import '../services/patient_service.dart';
+import '../services/medical_wristband_ble_service.dart';
 import 'patient_detail_screen.dart';
 
 /// Home screen showing the list of admitted patients.

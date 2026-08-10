@@ -65,7 +65,7 @@ class NurseTerminalTheme {
     fontSize: 15.0,
     fontWeight: FontWeight.w400,
     color: gray700,
-    lineHeight: 1.6,
+    height: 1.6,
     fontFamily: 'PingFang SC',
   );
 
@@ -86,7 +86,7 @@ class NurseTerminalTheme {
   );
 
   // Button color scheme — upgraded hover/ripple effects
-  static const ElevatedButtonThemeData elevatedButtonTheme = ElevatedButtonThemeData(
+  static final ElevatedButtonThemeData elevatedButtonTheme = ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
       foregroundColor: Colors.white,
       backgroundColor: primary,
@@ -98,7 +98,7 @@ class NurseTerminalTheme {
     ),
   );
 
-  static const TextButtonThemeData textButtonTheme = TextButtonThemeData(
+  static final TextButtonThemeData textButtonTheme = TextButtonThemeData(
     style: TextButton.styleFrom(
       foregroundColor: primary,
       padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
@@ -106,13 +106,14 @@ class NurseTerminalTheme {
     ),
   );
 
-  static const IconButtonThemeData iconButtonTheme = IconButtonThemeData(
-    padding: EdgeInsets.all(8.0),
-    splashRadius: 24.0,
+  static final IconButtonThemeData iconButtonTheme = IconButtonThemeData(
+    style: ButtonStyle(
+      padding: MaterialStatePropertyAll(EdgeInsets.all(8.0)),
+    ),
   );
 
   // Card decoration with subtle shadow and brand-aligned border
-  static const BoxDecoration cardDecoration = BoxDecoration(
+  static final BoxDecoration cardDecoration = BoxDecoration(
     color: bgCard,
     borderRadius: BorderRadius.circular(radiusLarge),
     boxShadow: [
@@ -131,8 +132,5 @@ class NurseTerminalTheme {
   static const double safeBottomPadding = 34.0;
 
   // AppBar elevation override
-  static const AppBar appBar = AppBar(
-    elevation: 2,
-    surfaceTintColor: Colors.transparent,
-  );
+  static const double appBarElevation = 2.0;
 }

@@ -7,11 +7,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "modernc.org/sqlite"
 
 	smsChannel "eregen.dev/push/internal/channel/sms"
 	wechatChannel "eregen.dev/push/internal/channel/wechat"
@@ -28,22 +29,43 @@ func main() {
 		log.Fatalf("config load: %v", err)
 	}
 
-	log.Printf("push-service starting (port=%d)", cfg.Port)
+	log.Printf("push-service starting (port=%d, db=%s)", cfg.Port, cfg.StorageType)
 
-	// PostgreSQL connection for family member lookup
-	db, err := sql.Open("postgres", cfg.PostgresDSN)
-	if err != nil {
-		log.Fatalf("postgres connect: %v", err)
+	// Database connection
+	var db *sql.DB
+	switch cfg.StorageType {
+	case "postgres":
+		db, err = sql.Open("postgres", cfg.PostgresDSN)
+		if err != nil {
+			log.Fatalf("postgres connect: %v", err)
+		}
+	default:
+		// Expand ~ in path
+		sqlitePath := cfg.SQLitePath
+		if len(sqlitePath) > 1 && sqlitePath[0] == '~' {
+			home, _ := os.UserHomeDir()
+			sqlitePath = filepath.Join(home, sqlitePath[2:])
+		}
+		// Ensure directory exists
+		if dir := filepath.Dir(sqlitePath); dir != "" {
+			if mkErr := os.MkdirAll(dir, 0755); mkErr != nil {
+				log.Fatalf("mkdir sqlite path: %v", mkErr)
+			}
+		}
+		db, err = sql.Open("sqlite", sqlitePath)
+		if err != nil {
+			log.Fatalf("sqlite connect: %v", err)
+		}
 	}
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(5 * time.Minute)
 	if err = db.Ping(); err != nil {
-		log.Fatalf("postgres ping: %v", err)
+		log.Fatalf("db ping: %v", err)
 	}
 	defer db.Close()
 
-	pgStore := store.NewPostgres(db)
+	pgStore, err := store.NewStore(cfg.StorageType, cfg.PostgresDSN, cfg.SQLitePath)
 
 	// NATS subscriber for device events from gateway — passes pgStore for DB lookups
 	natsSub, err := publisher.NewSubscriber(cfg.NATSURL, pgStore)

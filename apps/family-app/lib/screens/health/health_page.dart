@@ -80,7 +80,7 @@ class _HealthPageState extends State<HealthPage> {
       child: Container(
         color: _darkMode ? const Color(0xFF1F2937) : Colors.white,
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-        boxShadows: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4)],
+        decoration: BoxDecoration(boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4)]),
         child: Column(
           children: [
             Row(
@@ -248,9 +248,9 @@ class _HealthPageState extends State<HealthPage> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('综合健康评分', style: TextStyle(fontSize: 14, color: Color(0xFFFFFFFF), opacity: 0.9)),
-              Text('本周平均', style: TextStyle(fontSize: 12, color: Color(0xFFFFFFFF), fontWeight: FontWeight.w600)),
+            children: [
+              Text('综合健康评分', style: TextStyle(fontSize: 14, color: Color(0xFFFFFFFF).withOpacity(0.9))),
+              Text('本周平均', style: TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 16),
@@ -273,13 +273,12 @@ class _HealthPageState extends State<HealthPage> {
                       strokeWidth: 8,
                       backgroundColor: Colors.transparent,
                       valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                      transform: Matrix4.rotationZ(0),
                     ),
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text('$healthScore', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white)),
-                        Text(healthScoreLabel, style: const TextStyle(fontSize: 10, color: Color(0xFFFFFFFF), opacity: 0.7)),
+                        Text(healthScoreLabel, style: TextStyle(fontSize: 10, color: Color(0xFFFFFFFF).withOpacity(0.7))),
                       ],
                     ),
                   ],
@@ -295,12 +294,12 @@ class _HealthPageState extends State<HealthPage> {
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
                         children: [
                           const TextSpan(text: '82分 '),
-                          TextSpan(text: scoreTrend, style: const TextStyle(opacity: 0.9)),
+                          TextSpan(text: scoreTrend, style: const TextStyle(color: Colors.white)),
                         ],
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(scoreDetails, style: const TextStyle(fontSize: 12, color: Color(0xFFFFFFFF), opacity: 0.9, height: 1.6)),
+                    Text(scoreDetails, style: TextStyle(fontSize: 12, color: Color(0xFFFFFFFF).withOpacity(0.9), height: 1.6)),
                   ],
                 ),
               ),
@@ -434,7 +433,7 @@ class _HealthPageState extends State<HealthPage> {
   Widget _buildSummaryRow2() {
     return Row(
       children: [
-        _summaryCard('\u{1F50B} 今日电量', '$deviceBattery%', '预计3天', neutral: true, suffix: '%'),
+        _summaryCard('\u{1F50B} 今日电量', '$deviceBattery%', '预计3天', false, neutral: true, suffix: '%'),
         const SizedBox(width: 10),
         _summaryCard('\u{1F3DA} 今日距离', '$todayDistance km', '较昨日 +0.3km', true),
       ],
@@ -486,12 +485,12 @@ class _HealthPageState extends State<HealthPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: const [
+          children: [
             Text('异常提醒', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
             SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: AppTheme.statusDanger, borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(color: AppTheme.statusDanger, borderRadius: BorderRadius.all(Radius.circular(10))),
               child: Text('3', style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w700)),
             ),
           ],
@@ -652,12 +651,11 @@ class _HeartRateChartPainter extends CustomPainter {
     final paintGrid = Paint()
       ..color = darkMode ? const Color(0xFF374151) : const Color(0xFFE5E7EB)
       ..strokeWidth = 0.5
-      ..strokeStyle = PaintingStyle.stroke;
+      ..style = PaintingStyle.stroke;
     final dashPaint = Paint()
       ..color = darkMode ? const Color(0xFF374151) : const Color(0xFFE5E7EB)
       ..strokeWidth = 1
-      ..strokeDashArray = const [6, 3]
-      ..strokeStyle = PaintingStyle.stroke;
+      ..style = PaintingStyle.stroke;
 
     // Grid lines
     for (double y = 20; y < size.height - 30; y += 35) {
@@ -737,8 +735,10 @@ class _HeartRateChartPainter extends CustomPainter {
     final yLabels = ['100', '80', '60', '40'];
     for (int i = 0; i < yLabels.length; i++) {
       final y = 20 + i * 35;
-      TextSpan(yLabels[i], labelStyle).toTextPainter()
-        ..layout(minWidth: 0, maxWidth: 40)
+      TextPainter(
+        text: TextSpan(text: yLabels[i], style: labelStyle),
+        textDirection: TextDirection.ltr,
+      )..layout(minWidth: 0, maxWidth: 40)
         ..paint(canvas, Offset(2, y - 4));
     }
 
@@ -778,7 +778,7 @@ class _StepsBarChartPainter extends CustomPainter {
     canvas.drawLine(
       Offset(40, targetY),
       Offset(w - 10, targetY),
-      Paint()..color = const Color(0xFFEF4444)..strokeWidth = 1..strokeDashArray = const [6, 3],
+      Paint()..color = const Color(0xFFEF4444)..strokeWidth = 1,
     );
     TextPainter(
       text: TextSpan(text: '目标 5k', style: const TextStyle(fontSize: 9, color: Color(0xFFEF4444), fontWeight: FontWeight.w600)),

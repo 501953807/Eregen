@@ -163,14 +163,32 @@ class HospitalApiClient {
     return json.decode(response.body) as Map<String, dynamic>;
   }
 
-  Future<Map<String, dynamic>> get(String path) async {
-    final url = Uri.parse('$baseUrl$path');
+  Future<Map<String, dynamic>> get(String path, {Map<String, String>? queryParameters}) async {
+    final url = queryParameters != null
+        ? Uri.parse('$baseUrl$path').replace(queryParameters: queryParameters)
+        : Uri.parse('$baseUrl$path');
     final response = await http.get(
       url,
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': 'Bearer $_apiKey',
       },
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Hospital API error: ${response.statusCode}');
+    }
+    return json.decode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> put(String path, Map<String, dynamic>? body) async {
+    final url = Uri.parse('$baseUrl$path');
+    final response = await http.put(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': 'Bearer $_apiKey',
+      },
+      body: body != null ? json.encode(body) : null,
     );
     if (response.statusCode != 200) {
       throw Exception('Hospital API error: ${response.statusCode}');

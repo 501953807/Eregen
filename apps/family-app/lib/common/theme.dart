@@ -99,7 +99,7 @@ class AppTheme {
     fontSize: 16.0,
     fontWeight: FontWeight.w400,
     color: gray700,
-    lineHeight: 1.6,
+    height: 1.6,
     fontFamily: fontFamily,
   );
 
@@ -107,7 +107,7 @@ class AppTheme {
     fontSize: 15.0,
     fontWeight: FontWeight.w400,
     color: gray600,
-    lineHeight: 1.6,
+    height: 1.6,
     fontFamily: fontFamily,
   );
 
@@ -115,7 +115,7 @@ class AppTheme {
     fontSize: 13.0,
     fontWeight: FontWeight.w400,
     color: gray500,
-    lineHeight: 1.5,
+    height: 1.5,
     fontFamily: fontFamily,
   );
 
@@ -132,7 +132,6 @@ class AppTheme {
     fontWeight: FontWeight.w500,
     color: gray500,
     letterSpacing: 0.04,
-    textTransform: TextTransform.uppercase,
     fontFamily: fontFamily,
   );
 
@@ -172,10 +171,51 @@ class AppTheme {
   ];
 
   // Interactive states — add subtle scale on press
-  static const Animation<double> defaultPressAnimation = Tween<double>(
+  static final Tween<double> defaultPressAnimation = Tween<double>(
     begin: 1.0,
     end: 0.98,
-  ) .chain(CurveTween(curve: Curves.easeOut));
+  );
+
+  // Text colors — named aliases for common usage
+  static const Color textPrimary = Color(0xFF1F2937);   /* gray800 */
+  static const Color textSecondary = Color(0xFF4B5563); /* gray600 */
+  static const Color textMuted = Color(0xFF6B7280);     /* gray500 */
+
+  static const TextStyle timeLabel = TextStyle(
+    fontSize: 11.0,
+    fontWeight: FontWeight.w400,
+    color: gray400,
+    fontFamily: fontFamily,
+  );
+
+  // Accent color — vibrant teal for highlights and active states
+  static const Color accent = Color(0xFF06B6D4);         /* Cyan for accent */
+
+  // Additional theme properties referenced by screens
+  static const double cardRadius = radiusLarge; // alias for backward compat
+  static const double cardRadiusLg = 16.0;
+  static const Color primaryBg = Color(0xFFF9F5);
+  static final shadowMd = [
+    BoxShadow(color: Color(0x4D5552), blurRadius: 8.0, offset: Offset(0, 2)),
+    BoxShadow(color: Color(0x1AF59E0B), blurRadius: 4.0, offset: Offset(0, 1)),
+  ];
+  static final shadowSm = [
+    BoxShadow(color: Color(0x33F59E0B), blurRadius: 4.0, offset: Offset(0, 1)),
+  ];
+
+  // SOS button gradient — red to deep red for emergency
+  static const sosGradient = LinearGradient(
+    colors: [Color(0xFFEF4444), Color(0xFFB91C1C)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // Header gradient — amber to deep amber for branding
+  static const headerGradient = LinearGradient(
+    colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
   // Navigation — tab bar with unified accent
   static const Color tabBarInactive = Color(0x999999);
@@ -187,7 +227,13 @@ class AppTheme {
   // Card style — consistent radius and elevation
   static const BoxDecoration cardDecoration = BoxDecoration(
     color: bgCard,
-    borderRadius: BorderRadius.circular(radiusLarge),
-    boxShadow: [boxShadowSm[0]],
+    borderRadius: BorderRadius.all(Radius.circular(16.0)),
+    boxShadow: [
+      BoxShadow(
+        color: Color(0x33F59E0B),
+        blurRadius: 4.0,
+        offset: Offset(0, 1),
+      ),
+    ],
   );
 }

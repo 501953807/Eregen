@@ -20,14 +20,14 @@ class AuthService {
   /// Set and persist a JWT token.
   Future<void> setToken(String token) async {
     await _secureStorage.write(key: _tokenKey, value: token);
-    _apiClient.instance._token = token;
+    _apiClient.setToken(token);
   }
 
   /// Remove the stored token (logout).
   Future<void> logout() async {
     await _secureStorage.delete(key: _tokenKey);
-    _apiClient.instance._token = null;
-    _apiClient.instance.clearAuth();
+    _apiClient.setToken(null);
+    await _apiClient.clearAuth();
   }
 
   /// Check if user is authenticated (token exists and not expired).
@@ -37,7 +37,7 @@ class AuthService {
 
     // Optional: verify token is still valid by calling /api/v1/users/me
     try {
-      await _apiClient.instance.getUserProfile();
+      await _apiClient.getUserProfile();
       return true;
     } catch (e) {
       // Token expired or invalid — clear it
@@ -50,7 +50,7 @@ class AuthService {
   /// Throws [Exception] on failure.
   Future<Map<String, dynamic>> login({required String phone, required String otp}) async {
     try {
-      final resp = await _apiClient.instance.login(phone: phone, otp: otp);
+      final resp = await _apiClient.login(phone: phone, otp: otp);
       final token = resp['token'] as String?;
       if (token != null) {
         await setToken(token);
@@ -63,7 +63,7 @@ class AuthService {
 
   /// Send OTP to the given phone number.
   Future<void> sendOtp(String phone) async {
-    await _apiClient.instance.sendOtp(phone);
+    await _apiClient.sendOtp(phone);
   }
 
   /// Refresh token if using refresh endpoint (stub for future use).

@@ -10,7 +10,9 @@ type Config struct {
 	NATSURL          string
 	EMQXHost         string
 	EMQXPort         int
+	StorageType      string // "postgres" or "sqlite"
 	PostgresDSN      string
+	SQLitePath       string
 	RedisAddr        string
 	RedisPassword    string
 	FCMKeyPath       string
@@ -26,11 +28,14 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
+	dbType := getEnv("DATABASE_TYPE", "sqlite")
 	c := &Config{
 		NATSURL:         getEnv("NATS_URL", "nats://nats:4222"),
 		EMQXHost:        getEnv("EMQX_MQTT_HOST", "emqx"),
 		EMQXPort:        getIntEnv("EMQX_MQTT_PORT", 1883),
+		StorageType:     dbType,
 		PostgresDSN:     getEnv("POSTGRES_DSN", "postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable"),
+		SQLitePath:      getEnv("SQLITE_PATH", "~/.eregen/data/push.db"),
 		RedisAddr:       getEnv("REDIS_ADDR", "redis:6379"),
 		RedisPassword:   getEnv("REDIS_PASSWORD", ""),
 		FCMKeyPath:      getEnv("FCM_KEY_PATH", ""),

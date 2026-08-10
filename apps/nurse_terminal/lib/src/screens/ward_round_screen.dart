@@ -77,7 +77,7 @@ class _WardRoundScreenState extends State<WardRoundScreen> {
     });
 
     try {
-      final observations = <String, dynamic>[];
+      final observations = <dynamic>[];
       if (_falls) observations.add('falls_risk');
       if (_confusion) observations.add('confusion');
       if (_pain) observations.add('pain');

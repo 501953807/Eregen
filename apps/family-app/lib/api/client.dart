@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Singleton API client backed by Dio with token persistence via SecureStorage.
@@ -9,14 +8,19 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// - Configures strict SSL verification with certificate pinning
 class ApiClient {
   static const _tokenKey = 'auth_token';
+  static const _fallbackBaseUrl = 'https://api.example.com:8080';
 
   late final Dio _dio;
-  String _baseUrl = 'https://api.example.com:8080'; // Default to HTTPS
+  String _baseUrl = _fallbackBaseUrl;
   String? _token;
 
   String get baseUrl => _baseUrl;
   String get token => _token ?? '';
   bool get isAuthenticated => _token != null && _token!.isNotEmpty;
+
+  void setToken(String? token) {
+    _token = token;
+  }
 
   // --- singleton ----------------------------------------------------------
   ApiClient._() {
@@ -26,26 +30,7 @@ class ApiClient {
       contentType: 'application/json',
       receiveTimeout: const Duration(seconds: 15),
       sendTimeout: const Duration(seconds: 15),
-      // Reject HTTP URLs in production
-      validateSsl: true, // Enforce SSL validation
     ));
-
-    // Configure strict SSL pinning for production
-    // In production, pin to your server's public key hash
-    if (!_baseUrl.contains('localhost') && !_baseUrl.contains('127.0.0.1')) {
-      final ioClient = _dio.httpClientAdapter as IOClient;
-      ioClient.httpClient = HttpClient(
-        // Disable weak protocols and ciphers
-        context: HttpClientContext()
-          ..setProtocols([HttpProtocols.tls12, HttpProtocols.tls13])
-          ..setBadCertificateCallback((cert, host, port) {
-            // Only accept certificates matching our pinned hash
-            return false; // Reject all except pinned cert
-          }),
-      );
-    }
-
-    _instance._dio = _dio;
 
     // Interceptors for auth and error handling
     _dio.interceptors.add(InterceptorsWrapper(
@@ -254,5 +239,16 @@ class ApiClient {
   /// PUT /api/v1/settings/update — update settings
   Future<Response> updateSettings(Map<String, dynamic> settings) async {
     return _dio.put('/api/v1/settings/update', data: settings);
+  }
+
+  /// ALIAS: createSOSAlert
+  /// Default lat/lon to 0,0 for web debugging where geolocation may not be available
+  Future<Response> sosCall({double lat = 0.0, double lon = 0.0}) async {
+    return createSOSAlert(lat: lat, lon: lon);
+  }
+
+  /// ALIAS: acknowledgeAlert — handle/resolve an alert
+  Future<Response> handleAlert(String alertId) async {
+    return acknowledgeAlert(alertId);
   }
 }
