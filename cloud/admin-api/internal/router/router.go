@@ -98,6 +98,14 @@ patient := handler.NewPatientHandler(s)
 	institution := handler.NewInstitutionHandler(s)
 	person := handler.NewPersonHandler(s)
 	lifecycle := handler.NewLifecycleHandler(s)
+	alertRule := handler.NewAlertRuleHandler(s)
+	medication := handler.NewMedicationHandler(s)
+	healthRecord := handler.NewHealthRecordHandler(s)
+	healthGuidance := handler.NewHealthGuidanceHandler(s)
+	healthReport := handler.NewHealthReportHandler(s)
+	compliance := handler.NewComplianceHandler(s)
+	deviceBinding := handler.NewDeviceBindingHandler(s)
+	notification := handler.NewNotificationHandler(s)
 
 	// Rate limiter — fail open if Redis is unavailable
 	rateLimiter, rlErr := middleware.NewAdminRateLimiter()
@@ -389,6 +397,87 @@ patient := handler.NewPatientHandler(s)
 		publicMed.GET("/patients/:id/test-results", clinical.ListTestResults)
 		publicMed.GET("/patients/:id/daily-entries", clinical.ListDailyEntries)
 		publicMed.GET("/verifications", clinical.ListVerifications)
+	}
+
+	// Unified person-centric API routes (issues 05-14 handlers)
+	// Alert rules per chain
+	alertRules := api.Group("/alert-rules")
+	{
+		alertRules.GET("", alertRule.List)
+		alertRules.POST("", alertRule.Create)
+		alertRules.PUT("/:id", alertRule.Update)
+		alertRules.DELETE("/:id", alertRule.Delete)
+	}
+	// Medication rules & executions per person
+	medR := api.Group("/medications")
+	{
+		medR.GET("", medication.ListRules)
+		medR.POST("", medication.CreateRule)
+		medR.PUT("/:ruleId", medication.UpdateRule)
+		medR.DELETE("/:ruleId", medication.DeleteRule)
+		medR.POST("/executions", medication.CreateExecution)
+		medR.GET("/executions", medication.ListExecutions)
+	}
+	// Health records per person
+	healthR := api.Group("/health-records")
+	{
+		healthR.POST("", healthRecord.Create)
+		healthR.GET("", healthRecord.List)
+		healthR.GET("/summary", healthRecord.GetSummary)
+		healthR.PUT("/summary", healthRecord.UpdateSummary)
+	}
+	// Health guidance per person
+	guidanceR := api.Group("/guidance")
+	{
+		guidanceR.POST("", healthGuidance.CreateDelivery)
+		guidanceR.GET("", healthGuidance.ListDeliveries)
+		guidanceR.POST("/evaluate", healthGuidance.Evaluate)
+	}
+	// Health report templates & reports
+	templatesR := api.Group("/health-report-templates")
+	{
+		templatesR.POST("", healthReport.CreateTemplate)
+		templatesR.GET("", healthReport.ListTemplates)
+	}
+	reportsR := api.Group("/health-reports")
+	{
+		reportsR.POST("", healthReport.CreateReport)
+		reportsR.GET("", healthReport.ListReports)
+	}
+	// Compliance checks per person
+	complianceR := api.Group("/compliance-checks")
+	{
+		complianceR.POST("/run", compliance.RunCheck)
+		complianceR.GET("", compliance.ListChecks)
+		complianceR.PUT("/checks/:checkId", compliance.ReviewCheck)
+	}
+	complianceRulesR := api.Group("/compliance-rules")
+	{
+		complianceRulesR.POST("", compliance.CreateRule)
+		complianceRulesR.GET("", compliance.ListRules)
+	}
+	// Device bindings per person
+	bindingsR := api.Group("/device-bindings")
+	{
+		bindingsR.POST("", deviceBinding.Bind)
+		bindingsR.GET("", deviceBinding.ListBindings)
+		bindingsR.DELETE("/:bindingId", deviceBinding.Unbind)
+	}
+	bindingsDevicesR := api.Group("/person-devices")
+	{
+		bindingsDevicesR.GET("", deviceBinding.ListDevices)
+	}
+	// Notifications
+	notifTemplatesR := api.Group("/notification-templates")
+	{
+		notifTemplatesR.POST("", notification.CreateTemplate)
+		notifTemplatesR.GET("", notification.ListTemplates)
+	}
+	notifLogsR := api.Group("/notifications")
+	{
+		notifLogsR.POST("", notification.CreateLog)
+		notifLogsR.GET("", notification.ListLogs)
+		notifLogsR.PUT("/:logId/status", notification.UpdateStatus)
 	}
 
 	return r
