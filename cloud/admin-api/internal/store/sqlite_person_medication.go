@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"eregen.dev/admin-api/internal/model"
@@ -76,7 +77,7 @@ func (s *SqliteStore) UpdateMedicationRuleV2(ctx context.Context, id string, upd
 	args = append(args, id)
 	_, err := s.db.ExecContext(ctx,
 		fmt.Sprintf("UPDATE medication_rules_v2 SET %s, updated_at = datetime('now') WHERE id = ?",
-			fmt.Sprintf("%s", setClauses[0])), args...)
+			strings.Join(setClauses, ", ")), args...)
 	return err
 }
 
