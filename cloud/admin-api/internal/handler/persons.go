@@ -57,6 +57,13 @@ func (h *PersonHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": p})
 }
 
+func ptr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
 func (h *PersonHandler) Create(c *gin.Context) {
 	var body struct {
 		IDCard           string `json:"id_card" binding:"required"`
@@ -75,9 +82,9 @@ func (h *PersonHandler) Create(c *gin.Context) {
 		IDCard:           body.IDCard,
 		Name:             body.Name,
 		Gender:           body.Gender,
-		Phone:            body.Phone,
-		EmergencyContact: body.EmergencyContact,
-		Address:          body.Address,
+		Phone:            ptr(body.Phone),
+		EmergencyContact: ptr(body.EmergencyContact),
+		Address:          ptr(body.Address),
 		Status:           "active",
 	}
 	if body.BirthDate != "" {

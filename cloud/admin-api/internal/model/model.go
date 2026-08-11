@@ -400,7 +400,7 @@ type CommunityElder struct {
 	Gender          int        `json:"gender"`
 	Age             int        `json:"age,omitempty"`
 	Address         string     `json:"address,omitempty"`
-	EmergencyContact string    `json:"emergency_contact,omitempty"`
+	EmergencyContact *string    `json:"emergency_contact,omitempty"`
 	BankAccount     string     `json:"bank_account,omitempty"`
 	HospitalID      string     `json:"hospital_id,omitempty"`
 	Status          string     `json:"status"`
@@ -720,7 +720,7 @@ type SubscriptionItem struct {
 	ID                   string    `json:"id"`
 	UserID               string    `json:"user_id"`
 	UserName             string    `json:"user_name,omitempty"`
-	UserPhone            string    `json:"user_phone,omitempty"`
+	UserPhone            *string    `json:"user_phone,omitempty"`
 	PlanTier             string    `json:"plan_tier"`
 	Status               string    `json:"status"`
 	BillingCycle         string    `json:"billing_cycle"`
@@ -767,9 +767,9 @@ type Person struct {
 	Name             string     `json:"name"`
 	Gender           int        `json:"gender"`
 	BirthDate        *time.Time `json:"birth_date,omitempty"`
-	Phone            string     `json:"phone"`
-	EmergencyContact string     `json:"emergency_contact"`
-	Address          string     `json:"address"`
+	Phone            *string     `json:"phone"`
+	EmergencyContact *string     `json:"emergency_contact"`
+	Address          *string     `json:"address"`
 	AvatarURL        *string    `json:"avatar_url,omitempty"`
 	Status           string     `json:"status"`
 	CreatedAt        time.Time  `json:"created_at"`

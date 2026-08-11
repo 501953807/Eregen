@@ -4,6 +4,7 @@ package store
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -531,6 +532,8 @@ func migrate(db *sql.DB) error {
 			certification_doc TEXT,
 			next_review_date DATE,
 			linked_person_id TEXT REFERENCES persons(id),
+			status TEXT DEFAULT 'pending' CHECK (status IN ('pending','active','suspended','cancelled','admitted','in_treatment','discharged','archived','certified','deactivated')),
+			reason TEXT,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
@@ -809,7 +812,10 @@ func migrate(db *sql.DB) error {
 
 	for _, migration := range migrations {
 		if _, err := db.Exec(migration); err != nil {
-			return fmt.Errorf("migration failed: %w\nSQL: %s", err, migration)
+			// Ignore "duplicate column name" — migration was already applied
+			if !strings.Contains(err.Error(), "duplicate column name") {
+				return fmt.Errorf("migration failed: %w\nSQL: %s", err, migration)
+			}
 		}
 	}
 	return nil

@@ -54,7 +54,7 @@ func (s *SqliteStore) CreatePerson(ctx context.Context, p *model.Person) error {
 
 func (s *SqliteStore) GetPerson(ctx context.Context, id string) (*model.Person, error) {
 	var p model.Person
-	var birthRaw, avatarRaw string
+	var birthRaw, avatarRaw sql.NullString
 	err := s.db.QueryRowContext(ctx,
 		`SELECT id, id_card, name, gender, birth_date, phone, emergency_contact, address, avatar_url, status, created_at, updated_at
 		 FROM persons WHERE id = ?`, id).Scan(
@@ -66,16 +66,16 @@ func (s *SqliteStore) GetPerson(ctx context.Context, id string) (*model.Person, 
 	if err != nil {
 		return nil, fmt.Errorf("get person: %w", err)
 	}
-	p.BirthDate = parseDateOrNil(birthRaw)
-	if avatarRaw != "" {
-		p.AvatarURL = &avatarRaw
+	p.BirthDate = parseDateOrNil(birthRaw.String)
+	if avatarRaw.Valid && avatarRaw.String != "" {
+		p.AvatarURL = &avatarRaw.String
 	}
 	return &p, nil
 }
 
 func (s *SqliteStore) GetPersonByIDCard(ctx context.Context, idCard string) (*model.Person, error) {
 	var p model.Person
-	var birthRaw, avatarRaw string
+	var birthRaw, avatarRaw sql.NullString
 	err := s.db.QueryRowContext(ctx,
 		`SELECT id, id_card, name, gender, birth_date, phone, emergency_contact, address, avatar_url, status, created_at, updated_at
 		 FROM persons WHERE id_card = ?`, idCard).Scan(
@@ -87,9 +87,9 @@ func (s *SqliteStore) GetPersonByIDCard(ctx context.Context, idCard string) (*mo
 	if err != nil {
 		return nil, fmt.Errorf("get person by id_card: %w", err)
 	}
-	p.BirthDate = parseDateOrNil(birthRaw)
-	if avatarRaw != "" {
-		p.AvatarURL = &avatarRaw
+	p.BirthDate = parseDateOrNil(birthRaw.String)
+	if avatarRaw.Valid && avatarRaw.String != "" {
+		p.AvatarURL = &avatarRaw.String
 	}
 	return &p, nil
 }
@@ -118,14 +118,14 @@ func (s *SqliteStore) ListPersons(ctx context.Context, page, pageSize int, busin
 	var persons []model.Person
 	for rows.Next() {
 		var p model.Person
-		var birthRaw, avatarRaw string
+		var birthRaw, avatarRaw sql.NullString
 		if err := rows.Scan(&p.ID, &p.IDCard, &p.Name, &p.Gender, &birthRaw, &p.Phone, &p.EmergencyContact,
 			&p.Address, &avatarRaw, &p.Status, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("scan person: %w", err)
 		}
-		p.BirthDate = parseDateOrNil(birthRaw)
-		if avatarRaw != "" {
-			p.AvatarURL = &avatarRaw
+		p.BirthDate = parseDateOrNil(birthRaw.String)
+		if avatarRaw.Valid && avatarRaw.String != "" {
+			p.AvatarURL = &avatarRaw.String
 		}
 		persons = append(persons, p)
 	}

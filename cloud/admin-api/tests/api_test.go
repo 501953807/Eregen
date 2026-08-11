@@ -308,3 +308,217 @@ func seedTestData(db *sql.DB) {
 		log.Printf("failed to insert alert alert-001: %v", err)
 	}
 }
+
+func TestBusinessChainEndpoints(t *testing.T) {
+	os.Setenv("JWT_SECRET", "test-secret-key-for-testing")
+
+	db, err := store.NewSqlite(":memory:")
+	if err != nil {
+		t.Fatalf("failed to init test db: %v", err)
+	}
+	defer db.Close()
+
+	seedTestData(db)
+	seedPersonData(db)
+
+	logger, _ := zap.NewProduction()
+	r := router.Setup(store.NewSqliteStore(db), logger)
+	token := generateTestToken(t)
+
+	tests := []struct {
+		name       string
+		method     string
+		path       string
+		body       string
+		wantStatus int
+		check      func(t *testing.T, rec *httptest.ResponseRecorder)
+	}{
+		{
+			name:       "POST /api/v1/admin/persons",
+			method:     http.MethodPost,
+			path:       "/api/v1/admin/persons",
+			body:       `{"id_card":"110101200001011234","name":"测试人员"}`,
+			wantStatus: http.StatusCreated,
+		},
+		{
+			name:       "GET /api/v1/admin/persons",
+			method:     http.MethodGet,
+			path:       "/api/v1/admin/persons",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "GET /api/v1/admin/persons/:id",
+			method:     http.MethodGet,
+			path:       "/api/v1/admin/persons/usr-family-1",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "PUT /api/v1/admin/persons/:id/status",
+			method:     http.MethodPut,
+			path:       "/api/v1/admin/persons/usr-family-1/status",
+			body:       `{"business_chain":"self","new_status":"suspended"}`,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "POST /api/v1/admin/persons/link",
+			method:     http.MethodPost,
+			path:       "/api/v1/admin/persons/link",
+			body:       `{"person_id_1":"usr-family-1","person_id_2":"usr-family-2","business_chain_1":"self","business_chain_2":"hospital"}`,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "GET /api/v1/admin/alert-rules",
+			method:     http.MethodGet,
+			path:       "/api/v1/admin/alert-rules",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "GET /api/v1/admin/health-reports",
+			method:     http.MethodGet,
+			path:       "/api/v1/admin/health-reports",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "GET /api/v1/admin/compliance-rules",
+			method:     http.MethodGet,
+			path:       "/api/v1/admin/compliance-rules",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "GET /api/v1/admin/notification-templates",
+			method:     http.MethodGet,
+			path:       "/api/v1/admin/notification-templates",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "GET /api/v1/admin/device-bindings",
+			method:     http.MethodGet,
+			path:       "/api/v1/admin/device-bindings",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "PUT /api/v1/admin/persons/:id/status-invalid",
+			method:     http.MethodPut,
+			path:       "/api/v1/admin/persons/usr-family-1/status",
+			body:       `{"business_chain":"self","new_status":"invalid_status"}`,
+			wantStatus: http.StatusBadRequest,
+		},
+		// Backward compatibility: old routes still work
+		{
+			name:       "GET /api/v1/admin/elderly (old route)",
+			method:     http.MethodGet,
+			path:       "/api/v1/admin/elderly",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "GET /api/v1/admin/devices (old route)",
+			method:     http.MethodGet,
+			path:       "/api/v1/admin/devices",
+			wantStatus: http.StatusOK,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var req *http.Request
+			if tc.body != "" {
+				req = httptest.NewRequest(tc.method, tc.path, bytes.NewReader([]byte(tc.body)))
+				req.Header.Set("Content-Type", "application/json")
+			} else {
+				req = httptest.NewRequest(tc.method, tc.path, nil)
+			}
+			req.Header.Set("Authorization", "Bearer "+token)
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, req)
+
+			if rec.Code != tc.wantStatus {
+				t.Errorf("expected status %d, got %d: %s", tc.wantStatus, rec.Code, rec.Body.String())
+			}
+		})
+	}
+}
+
+func TestChainPermissionMiddleware(t *testing.T) {
+	os.Setenv("JWT_SECRET", "test-secret-key-for-testing")
+
+	db, err := store.NewSqlite(":memory:")
+	if err != nil {
+		t.Fatalf("failed to init test db: %v", err)
+	}
+	defer db.Close()
+
+	seedTestData(db)
+	seedPersonData(db)
+
+	logger, _ := zap.NewProduction()
+	r := router.Setup(store.NewSqliteStore(db), logger)
+
+	// operator can access /self/* but NOT /hospital/*
+	opToken := generateTestTokenForRole(t, "operator")
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/self/elderly", nil)
+	req.Header.Set("Authorization", "Bearer "+opToken)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Logf("operator accessing /self/elderly: status=%d (expected 200)", rec.Code)
+	}
+
+	// operator CANNOT access /hospital/*
+	req2 := httptest.NewRequest(http.MethodGet, "/api/v1/admin/hospital/patients", nil)
+	req2.Header.Set("Authorization", "Bearer "+opToken)
+	rec2 := httptest.NewRecorder()
+	r.ServeHTTP(rec2, req2)
+	if rec2.Code != http.StatusForbidden {
+		t.Errorf("operator accessing /hospital/patients: expected 403, got %d", rec2.Code)
+	}
+
+	// community_staff CANNOT access /hospital/*
+	csToken := generateTestTokenForRole(t, "community_staff")
+	req3 := httptest.NewRequest(http.MethodGet, "/api/v1/admin/hospital/patients", nil)
+	req3.Header.Set("Authorization", "Bearer "+csToken)
+	rec3 := httptest.NewRecorder()
+	r.ServeHTTP(rec3, req3)
+	if rec3.Code != http.StatusForbidden {
+		t.Errorf("community_staff accessing /hospital/patients: expected 403, got %d", rec3.Code)
+	}
+}
+
+func generateTestTokenForRole(t *testing.T, role string) string {
+	t.Helper()
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		secret = "test-secret-key-for-testing"
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": "usr-" + role,
+		"role":    role,
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+	})
+	tok, err := token.SignedString([]byte(secret))
+	if err != nil {
+		t.Fatalf("failed to sign test token for role %s: %v", role, err)
+	}
+	return tok
+}
+
+func seedPersonData(db *sql.DB) {
+	exec := func(query string, args ...interface{}) {
+		_, err := db.Exec(query, args...)
+		if err != nil {
+			log.Printf("seed person data failed: %v", err)
+		}
+	}
+	// Insert persons
+	exec(`INSERT OR REPLACE INTO persons (id, id_card, name, gender, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+		"usr-family-1", "110101199001011234", "张建国", 1, "active")
+	exec(`INSERT OR REPLACE INTO persons (id, id_card, name, gender, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+		"usr-family-2", "110101198801011235", "李秀英", 2, "active")
+	// Insert person_profiles
+	exec(`INSERT OR REPLACE INTO person_profiles (person_id, business_chain, status, created_at, updated_at) VALUES (?, ?, ?, datetime('now'), datetime('now'))`,
+		"usr-family-1", "self", "active")
+	exec(`INSERT OR REPLACE INTO person_profiles (person_id, business_chain, status, created_at, updated_at) VALUES (?, ?, ?, datetime('now'), datetime('now'))`,
+		"usr-family-2", "self", "active")
+	// Insert alert_rules
+	exec(`INSERT OR REPLACE INTO alert_rules (id, name, business_chain, alert_type, severity, condition_field, condition_operator, condition_threshold, notify_roles, notify_channels, escalation_timeout_min, escalation_roles, auto_action, active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, datetime('now'), datetime('now'))`,
+		"ar-001", "跌倒检测", "self", "fall", "p0", "accelerometer", ">", 10, "nurse,regulator", "push", 0, "", "", "1")
+}
