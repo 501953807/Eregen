@@ -569,14 +569,34 @@ type HealthRecordRow struct {
 
 // MedicationRuleRow represents a medication rule.
 type MedicationRuleRow struct {
-	ID           string   `json:"id"`
-	ElderlyID    string   `json:"elderly_id"`
-	ScheduleTime string   `json:"schedule_time"`
-	DoseCount    int      `json:"dose_count"`
-	PillType     string   `json:"pill_type"`
-	DaysOfWeek   []int    `json:"days_of_week"`
-	Active       bool     `json:"active"`
-	CreatedAt    string   `json:"created_at"`
+	ID                   string    `json:"id"`
+	PersonID             string    `json:"person_id"`
+	BusinessChain        string    `json:"business_chain"`
+	SourceType           string    `json:"source_type"`
+	SourceID             string    `json:"source_id"`
+	ElderlyID            string    `json:"elderly_id"`
+	Dosage               string    `json:"dosage"`
+	Frequency            string    `json:"frequency"`
+	Route                string    `json:"route"`
+	ScheduleTime         string    `json:"schedule_time"`          // legacy alias
+	ScheduleTime1        string    `json:"schedule_time1"`
+	ScheduleTime2        string    `json:"schedule_time2"`
+	ScheduleTime3        string    `json:"schedule_time3"`
+	DaysOfWeek           string    `json:"days_of_week"`
+	Duration             string    `json:"duration"`
+	PreMeal              int       `json:"pre_meal"`
+	PostMeal             int       `json:"post_meal"`
+	SpecialInstructions  string    `json:"special_instructions"`
+	PrescribedBy         string    `json:"prescribed_by"`
+	PrescribedAt         string    `json:"prescribed_at"`
+	DrugName             string    `json:"drug_name"`
+	GenericName          string    `json:"generic_name"`
+	DrugCategory         string    `json:"drug_category"`
+	DoseCount            int       `json:"dose_count"`
+	PillType             string    `json:"pill_type"`
+	Active               bool      `json:"active"`
+	CreatedAt            string    `json:"created_at"`
+	UpdatedAt            string    `json:"updated_at"`
 }
 
 // DeviceSummaryRow is a device linked to an elderly person.
