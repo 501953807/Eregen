@@ -107,3 +107,8 @@ func (s *PostgresStore) ListNotificationTemplates(ctx context.Context, chain mod
 func (s *PostgresStore) CreateNotificationLog(ctx context.Context, l *model.NotificationLog) error { return ErrNotImplemented }
 func (s *PostgresStore) UpdateNotificationStatus(ctx context.Context, logID string, status string, sentAt, readAt *time.Time) error { return ErrNotImplemented }
 func (s *PostgresStore) ListNotificationLogs(ctx context.Context, personID string, chain model.BusinessChain, limit int) ([]model.NotificationLog, error) { return nil, ErrNotImplemented }
+
+// LifecycleStore stub implementations for PostgresStore
+func (s *PostgresStore) TransitionStatus(ctx context.Context, personID string, chain model.BusinessChain, newStatus, reason string) error { return ErrNotImplemented }
+func (s *PostgresStore) GetPersonStatus(ctx context.Context, personID string, chain model.BusinessChain) (string, error) { return "", ErrNotImplemented }
+func (s *PostgresStore) LinkPersons(ctx context.Context, personID1, personID2 string, chain1, chain2 model.BusinessChain) error { return ErrNotImplemented }

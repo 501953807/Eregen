@@ -31,4 +31,5 @@ type Store interface {
 	ComplianceStore
 	DeviceBindingStore
 	NotificationStore
+	LifecycleStore
 }

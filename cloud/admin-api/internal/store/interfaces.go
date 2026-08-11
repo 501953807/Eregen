@@ -238,6 +238,13 @@ type PersonStore interface {
 	ListPersonWelfareTags(ctx context.Context, personID string) ([]model.PersonWelfareTag, error)
 }
 
+// LifecycleStore manages person lifecycle transitions across business chains.
+type LifecycleStore interface {
+	TransitionStatus(ctx context.Context, personID string, chain model.BusinessChain, newStatus, reason string) error
+	GetPersonStatus(ctx context.Context, personID string, chain model.BusinessChain) (string, error)
+	LinkPersons(ctx context.Context, personID1, personID2 string, chain1, chain2 model.BusinessChain) error
+}
+
 type MedicationRuleStore interface {
 	ListMedicationRules(ctx context.Context, personID string, chain model.BusinessChain) ([]model.MedicationRuleRow, error)
 	CreateMedicationRuleV2(ctx context.Context, r *model.MedicationRuleRow) error
