@@ -133,13 +133,13 @@ func (s *SqliteStore) ListMedicationExecutions(ctx context.Context, personID str
 func (s *SqliteStore) AssignRole(ctx context.Context, binding *model.PersonRoleBinding) error {
 	binding.ID = uuid.New().String()
 	binding.CreatedAt = time.Now()
+	expiresAt := binding.ExpiresAt
 	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO user_role_bindings (id, user_id, business_chain, role, institution_id,
 		 granted_by, expires_at, active)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		binding.ID, binding.UserID, binding.BusinessChain, binding.Role,
-		binding.InstitutionID, binding.GrantedBy,
-		func() *time.Time { if binding.ExpiresAt != nil { return binding.ExpiresAt } return nil }(),
+		binding.InstitutionID, binding.GrantedBy, expiresAt,
 		binding.Active)
 	return err
 }
