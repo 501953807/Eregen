@@ -4,7 +4,9 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
+	"eregen.dev/admin-api/internal/model"
 	"eregen.dev/admin-api/internal/store"
 	"eregen.dev/shared/validation"
 
@@ -20,13 +22,22 @@ func NewPersonHandler(s store.PersonStore) *PersonHandler {
 }
 
 func (h *PersonHandler) List(c *gin.Context) {
-	page, pageSize, err := validation.ValidatePagination(
-		strconv.Atoi(c.Query("page")),
-		strconv.Atoi(c.Query("page_size")), 100)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid pagination"})
-		return
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
+	page := 1
+	pageSize := 20
+	if pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil {
+			page = p
+		}
 	}
+	if pageSizeStr != "" {
+		if p, err := strconv.Atoi(pageSizeStr); err == nil {
+			pageSize = p
+		}
+	}
+	page, pageSize, _ = validation.ValidatePagination(page, pageSize, 100)
+
 	persons, err := h.store.ListPersons(c.Request.Context(), page, pageSize,
 		c.Query("business_chain"), c.Query("status"))
 	if err != nil {
@@ -60,7 +71,7 @@ func (h *PersonHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
-	p := &Person{
+	p := &model.Person{
 		IDCard:           body.IDCard,
 		Name:             body.Name,
 		Gender:           body.Gender,
@@ -70,9 +81,9 @@ func (h *PersonHandler) Create(c *gin.Context) {
 		Status:           "active",
 	}
 	if body.BirthDate != "" {
-		t, err := parseTimeBody(body.BirthDate)
+		t, err := time.Parse("2006-01-02", body.BirthDate)
 		if err == nil {
-			p.BirthDate = t
+			p.BirthDate = &t
 		}
 	}
 	if err := h.store.CreatePerson(c.Request.Context(), p); err != nil {
@@ -95,6 +106,15 @@ func (h *PersonHandler) Update(c *gin.Context) {
 	delete(body, "created_at")
 	if err := h.store.UpdatePerson(c.Request.Context(), id, body); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK"})
+}
+
+func (h *PersonHandler) Delete(c *gin.Context) {
+	id := c.Param("id")
+	if err := h.store.DeletePerson(c.Request.Context(), id); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "person not found"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK"})
