@@ -359,12 +359,6 @@ func nullableInt64Ptr(i *int64) interface{} {
 	}
 	return *i
 }
-func nullableIntPtr(i *int) interface{} {
-	if i == nil {
-		return nil
-	}
-	return *i
-}
 
 func (s *SqliteStore) ListHealthRecordsV2(ctx context.Context, personID string, chain model.BusinessChain, recordType string, limit int) ([]model.HealthRecordV2, error) {
 	query := `SELECT id, person_id, business_chain, record_type, source, device_id, recorded_at,
