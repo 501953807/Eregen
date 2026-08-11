@@ -214,7 +214,11 @@ func (s *SqliteStore) GetRegulatoryOverview(ctx context.Context, department stri
 		q += " WHERE department=?"
 		args = append(args, department)
 	}
-	err := s.db.QueryRowContext(ctx, q, args...).Scan(
+	err := s.db.QueryRowContext(ctx, `
+		SELECT COALESCE(COUNT(*), 0), COALESCE(SUM(CASE WHEN status='admitted' THEN 1 ELSE 0 END), 0),
+				COALESCE(SUM(CASE WHEN status='admitted' AND fence_status='outside' THEN 1 ELSE 0 END), 0),
+				COALESCE(SUM(CASE WHEN status='admitted' AND (verify_gap_hours >= 24 OR last_verify_at IS NULL) THEN 1 ELSE 0 END), 0)
+			FROM medical_wristband_patients`).Scan(
 		&ov.TotalAdmitted, &ov.TodayAdmit, &ov.FenceViolationsToday, &ov.NoVerify24h)
 	if err != nil {
 		return nil, err
@@ -223,7 +227,7 @@ func (s *SqliteStore) GetRegulatoryOverview(ctx context.Context, department stri
 }
 
 func (s *SqliteStore) ListRegulatoryPatients(ctx context.Context, department string, page, pageSize int) ([]model.RegulatoryPatientRow, error) {
-	q := `SELECT id, name, admission_no, department, bed_number, bound_at, last_verify_at,
+	q := `SELECT id, name, admission_no, department, bed_number, created_at, last_verify_at,
 				verify_gap_hours, fence_status, fence_exit_duration_sec, tag_ids, status
 			FROM medical_wristband_patients WHERE 1=1`
 	args := []interface{}{}

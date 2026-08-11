@@ -149,8 +149,11 @@ func migrate(db *sql.DB) error {
 			user_id TEXT NOT NULL,
 			plan_tier TEXT NOT NULL,
 			status TEXT DEFAULT 'active',
+			billing_cycle TEXT DEFAULT 'monthly',
 			starts_at DATETIME,
 			expires_at DATETIME,
+			cancellation_reason TEXT,
+			total_spent REAL DEFAULT 0,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
@@ -179,8 +182,21 @@ func migrate(db *sql.DB) error {
 			key TEXT PRIMARY KEY,
 			setting_value TEXT DEFAULT '{}'
 		)`,
+		`CREATE TABLE IF NOT EXISTS b2b_institutions (
+			id TEXT PRIMARY KEY,
+			name TEXT NOT NULL,
+			type TEXT NOT NULL,
+			code TEXT UNIQUE,
+			contact_name TEXT,
+			contact_phone TEXT,
+			access_level TEXT DEFAULT 'basic',
+			status TEXT DEFAULT 'active',
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
 		`CREATE TABLE IF NOT EXISTS b2b_api_keys (
 			id TEXT PRIMARY KEY,
+			institution_id TEXT REFERENCES b2b_institutions(id),
 			name TEXT NOT NULL,
 			key_hash TEXT NOT NULL,
 			key_prefix TEXT,
@@ -446,16 +462,16 @@ func migrate(db *sql.DB) error {
 			completed_at TEXT NOT NULL DEFAULT (datetime('now'))
 		)`,
 		// Pre-seed: community welfare tag config
-		`INSERT OR IGNORE INTO community_welfare_tag_config (tag_code, tag_name, issuer, renewal_period_days, benefit_amount) VALUES
-			('orphan', '孤寡老人', '民政局', 365, 0),
-			('poverty_level_1', '特困一级', '民政局', 365, 800),
-			('poverty_level_2', '特困二级', '民政局', 365, 500),
-			('disability_level_1', '残疾一级', '残联', 365, 1200),
-			('disability_level_2', '残疾二级', '残联', 365, 800),
-			('special_disease', '特病补助', '医保局', 180, 2000),
-			('bus_discount', '乘车补贴', '民政局', 365, 360),
-			('elder_care_subsidy', '高龄津贴', '民政局', 365, 200),
-			('nursing_subsidy', '护理补贴', '民政局', 365, 600)`,
+		`INSERT OR IGNORE INTO community_welfare_tag_config (id, tag_code, tag_name, issuer, renewal_period_days, benefit_amount) VALUES
+			('wtc_orphan', 'orphan', '孤寡老人', '民政局', 365, 0),
+			('wtc_poverty_level_1', 'poverty_level_1', '特困一级', '民政局', 365, 800),
+			('wtc_poverty_level_2', 'poverty_level_2', '特困二级', '民政局', 365, 500),
+			('wtc_disability_level_1', 'disability_level_1', '残疾一级', '残联', 365, 1200),
+			('wtc_disability_level_2', 'disability_level_2', '残疾二级', '残联', 365, 800),
+			('wtc_special_disease', 'special_disease', '特病补助', '医保局', 180, 2000),
+			('wtc_bus_discount', 'bus_discount', '乘车补贴', '民政局', 365, 360),
+			('wtc_elder_care_subsidy', 'elder_care_subsidy', '高龄津贴', '民政局', 365, 200),
+			('wtc_nursing_subsidy', 'nursing_subsidy', '护理补贴', '民政局', 365, 600)`,
 		// Pre-seed: default regulatory rule configs
 		`INSERT OR IGNORE INTO regulatory_rule_config (rule_code, rule_name, enabled, config_json) VALUES
 			('R01', '挂床住院', 1, '{"max_verify_gap_hours":24,"severity":"high"}'),

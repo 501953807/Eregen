@@ -157,3 +157,4 @@ apps/website/website-static.log
 apps/website/website.log
 dump.rdb
 cloud/config/
+login-snapshot.yml

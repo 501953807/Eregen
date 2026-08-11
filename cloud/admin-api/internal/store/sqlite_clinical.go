@@ -214,8 +214,8 @@ func (s *SqliteStore) UpdateVerificationStatus(ctx context.Context, id, status s
 func (s *SqliteStore) GetTodayVerificationStats(ctx context.Context) (*model.MedicalVerificationStats, error) {
 	var stats model.MedicalVerificationStats
 	err := s.db.QueryRowContext(ctx, `
-		SELECT COUNT(*), SUM(CASE WHEN matched=1 THEN 1 ELSE 0 END), SUM(CASE WHEN matched=0 THEN 1 ELSE 0 END)
-		FROM medical_verifications WHERE DATE(verified_at)=DATE('now')`).Scan(
+		SELECT COALESCE(COUNT(*), 0), COALESCE(SUM(CASE WHEN matched=1 THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN matched=0 THEN 1 ELSE 0 END), 0)
+		FROM medical_verifications WHERE verified_at IS NOT NULL AND DATE(verified_at)=DATE('now')`).Scan(
 		&stats.Total, &stats.Matched, &stats.Unmatched)
 	if err != nil {
 		return nil, fmt.Errorf("get verification stats: %w", err)

@@ -12,12 +12,11 @@ type Config struct {
 }
 
 func Load() *Config {
-	dbType := getEnv("DATABASE_TYPE", "sqlite")
 	return &Config{
 		Port:         getEnv("PORT", "8085"),
-		DatabaseType: dbType,
-		DatabaseURL:  getEnv("DATABASE_URL", ""),
-		SQLitePath:   getEnv("SQLITE_PATH", "eregen.db"),
+		DatabaseType: getEnv("DATABASE_TYPE", "sqlite"),
+		DatabaseURL:  getEnv("POSTGRES_DSN", getEnv("DATABASE_URL", "")),
+		SQLitePath:   getEnv("SQLITE_PATH", "./data/eregen.db"),
 		RedisURL:     getEnv("REDIS_URL", ""),
 		// JWT_SECRET must be set in production
 		JWTSecret: getEnv("JWT_SECRET", ""),

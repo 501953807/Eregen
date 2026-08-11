@@ -233,7 +233,7 @@ func (s *SqliteStore) UpdateWelfareTagConfig(ctx context.Context, c *model.Commu
 
 func (s *SqliteStore) ListWelfareTagConfigs(ctx context.Context) ([]model.CommunityWelfareTagConfig, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, tag_code, tag_name, issuer, renewal_period_days, benefit_amount, enabled, created_at, updated_at
+		`SELECT id, tag_code, tag_name, issuer, renewal_period_days, benefit_amount, enabled
 		 FROM community_welfare_tag_config ORDER BY tag_code`)
 	if err != nil {
 		return nil, err
@@ -244,7 +244,7 @@ func (s *SqliteStore) ListWelfareTagConfigs(ctx context.Context) ([]model.Commun
 	for rows.Next() {
 		var c model.CommunityWelfareTagConfig
 		if err := rows.Scan(&c.ID, &c.TagCode, &c.TagName, &c.Issuer, &c.RenewalPeriodDays,
-			&c.BenefitAmount, &c.Enabled, &c.CreatedAt, &c.UpdatedAt); err != nil {
+			&c.BenefitAmount, &c.Enabled); err != nil {
 			return nil, err
 		}
 		configs = append(configs, c)
@@ -255,10 +255,10 @@ func (s *SqliteStore) ListWelfareTagConfigs(ctx context.Context) ([]model.Commun
 func (s *SqliteStore) GetWelfareTagConfig(ctx context.Context, tagCode string) (*model.CommunityWelfareTagConfig, error) {
 	var c model.CommunityWelfareTagConfig
 	err := s.db.QueryRowContext(ctx,
-		`SELECT id, tag_code, tag_name, issuer, renewal_period_days, benefit_amount, enabled, created_at, updated_at
+		`SELECT id, tag_code, tag_name, issuer, renewal_period_days, benefit_amount, enabled
 		 FROM community_welfare_tag_config WHERE tag_code=?`, tagCode).Scan(
 		&c.ID, &c.TagCode, &c.TagName, &c.Issuer, &c.RenewalPeriodDays,
-		&c.BenefitAmount, &c.Enabled, &c.CreatedAt, &c.UpdatedAt)
+		&c.BenefitAmount, &c.Enabled)
 	if err != nil {
 		return nil, err
 	}
