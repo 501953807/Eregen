@@ -103,10 +103,10 @@
         </el-table-column>
         <el-table-column label="操作" width="180">
           <template #default="{ row }">
-            <el-group>
+            <div class="action-buttons">
               <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
               <el-button size="danger" @click="handleDelete(row.id)">删除</el-button>
-            </el-group>
+            </div>
           </template>
         </el-table-column>
       </el-table>

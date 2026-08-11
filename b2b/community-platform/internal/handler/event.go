@@ -11,11 +11,11 @@ import (
 )
 
 type EventHandler struct {
-	store *store.Postgres
+	store store.Store
 	log   *zap.Logger
 }
 
-func NewEventHandler(store *store.Postgres, log *zap.Logger) *EventHandler {
+func NewEventHandler(store store.Store, log *zap.Logger) *EventHandler {
 	return &EventHandler{store: store, log: log}
 }
 

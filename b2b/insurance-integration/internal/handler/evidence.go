@@ -11,11 +11,11 @@ import (
 )
 
 type EvidenceHandler struct {
-	store *store.Postgres
+	store store.Store
 	log   *zap.Logger
 }
 
-func NewEvidenceHandler(store *store.Postgres, log *zap.Logger) *EvidenceHandler {
+func NewEvidenceHandler(store store.Store, log *zap.Logger) *EvidenceHandler {
 	return &EvidenceHandler{store: store, log: log}
 }
 

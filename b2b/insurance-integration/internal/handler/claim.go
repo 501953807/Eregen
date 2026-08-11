@@ -12,11 +12,11 @@ import (
 )
 
 type ClaimHandler struct {
-	store *store.Postgres
+	store store.Store
 	log   *zap.Logger
 }
 
-func NewClaimHandler(store *store.Postgres, log *zap.Logger) *ClaimHandler {
+func NewClaimHandler(store store.Store, log *zap.Logger) *ClaimHandler {
 	return &ClaimHandler{store: store, log: log}
 }
 

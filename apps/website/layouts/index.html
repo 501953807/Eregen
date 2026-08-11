@@ -1,6 +1,6 @@
 {{ define "main" }}
-<!-- Navbar with smooth scroll -->
-<nav class="navbar" id="navbar">
+<!-- Navbar -->
+<nav class="nav" id="navbar">
   <div class="nav-inner">
     <a class="nav-brand" href="/">
       <div class="nav-logo">颐</div>
@@ -14,29 +14,27 @@
       <li><a href="#about">关于</a></li>
     </ul>
     <div class="nav-actions">
-      <a href="#" class="btn-outline">登录</a>
+      <a href="#" class="btn btn-outline">登录</a>
       <a href="#" class="btn btn-primary btn-lg">免费下载APP</a>
     </div>
   </div>
 </nav>
 
-<!-- Hero Section — improved layout with smoother visuals -->
+<!-- Hero Section -->
 <section class="hero">
-  <div class="hero-bg-shapes">
-    <div class="hero-shape s1"></div>
-    <div class="hero-shape s2"></div>
-    <div class="hero-shape s3"></div>
-  </div>
   <div class="hero-inner">
     <div class="hero-content">
-      <div class="hero-badge">&#128218; {{ .Site.Params.heroBadge | default "技术驱动 · 守护每一刻" }}</div>
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        {{ .Site.Params.heroBadge | default "技术驱动 · 守护每一刻" }}
+      </div>
       <h1 class="hero-title">
         {{ .Site.Params.heroTitle | safeHTML }}
       </h1>
       <p class="hero-subtitle">{{ .Site.Params.heroSubtitle }}</p>
       <div class="hero-cta">
-        <a href="#" class="btn btn-hero-primary btn-lg">&#128241; 下载家属APP</a>
-        <a href="#products" class="btn btn-hero-secondary btn-lg">&#8594; 了解更多</a>
+        <a href="#" class="btn btn-primary btn-lg">&#128241; 下载家属APP</a>
+        <a href="#products" class="btn btn-outline btn-lg">&#8594; 了解更多</a>
       </div>
       <div class="hero-trust">
         <span class="trust-item"><span class="trust-icon">&#128274;</span>医疗级精度</span>
@@ -49,17 +47,17 @@
         <div class="device-screen">
           <div class="device-heart">&#9825;</div>
           <div class="device-hr">72</div>
-          <div class="device-hr-label">bpm 正常</div>
+          <div class="device-hr-label" style="color:var(--success);font-size:12px;font-weight:600;">bpm 正常</div>
           <div class="device-stats">
-            <div class="device-stat">
+            <div class="device-stat" style="text-align:center;">
               <div class="device-stat-val" style="color:var(--success);">98%</div>
               <div class="device-stat-lbl">血氧</div>
             </div>
-            <div class="device-stat">
+            <div class="device-stat" style="text-align:center;">
               <div class="device-stat-val" style="color:var(--primary);">3,456</div>
               <div class="device-stat-lbl">步数</div>
             </div>
-            <div class="device-stat">
+            <div class="device-stat" style="text-align:center;">
               <div class="device-stat-val" style="color:var(--info);">85%</div>
               <div class="device-stat-lbl">电量</div>
             </div>
@@ -67,26 +65,26 @@
         </div>
       </div>
       <div class="floating-card fc1">
-        <div class="fc-icon green">&#10003;</div>
+        <div class="fc-icon">&#10003;</div>
         <div>
-          <strong style="font-size:13px;">用药提醒</strong><br>
-          <span style="font-size:11px;color:var(--gray-400);">已播报 · 08:00</span>
+          <strong style="font-size:12px;color:var(--text-primary);">用药提醒</strong><br>
+          <span style="font-size:11px;color:var(--text-tertiary);">已播报 · 08:00</span>
         </div>
       </div>
       <div class="floating-card fc2">
-        <div class="fc-icon blue">&#128205;</div>
+        <div class="fc-icon">&#128205;</div>
         <div>
-          <strong style="font-size:13px;">位置正常</strong><br>
-          <span style="font-size:11px;color:var(--gray-400);">安全区域内</span>
+          <strong style="font-size:12px;color:var(--text-primary);">位置正常</strong><br>
+          <span style="font-size:11px;color:var(--text-tertiary);">安全区域内</span>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Products Section — improved asymmetric grid -->
-<section id="products">
-  <div class="section-inner">
+<!-- Products Section -->
+<section class="section" id="products">
+  <div class="container">
     <div class="section-header fade-in">
       <div class="section-tag">三档产品线</div>
       <h2 class="section-title">满足不同需求的智能健康方案</h2>
@@ -112,9 +110,9 @@
   </div>
 </section>
 
-<!-- Features Section — upgrade to warmer palette, less gradient noise -->
-<section class="features-section" id="features">
-  <div class="section-inner">
+<!-- Features Section -->
+<section class="section section-alt" id="features">
+  <div class="container">
     <div class="section-header fade-in">
       <div class="section-tag">核心功能</div>
       <h2 class="section-title">全方位的健康守护</h2>
@@ -123,8 +121,7 @@
     <div class="features-grid">
       {{ range .Site.Params.features }}
       <div class="feature-card fade-in">
-        <!-- Unified accent color for icons instead of multiple colors -->
-        <div class="feature-icon" style="background: linear-gradient(135deg, #FDE68A, #FCD34D); color: var(--primary-deep);">{{ .icon }}</div>
+        <div class="feature-icon">{{ .icon }}</div>
         <div class="feature-title">{{ .title }}</div>
         <div class="feature-desc">{{ .desc }}</div>
       </div>
@@ -133,9 +130,9 @@
   </div>
 </section>
 
-<!-- Ecosystem Section — single accent system -->
-<section id="ecosystem">
-  <div class="section-inner">
+<!-- Ecosystem Section -->
+<section class="section" id="ecosystem">
+  <div class="container">
     <div class="section-header fade-in">
       <div class="section-tag">生态系统</div>
       <h2 class="section-title">软硬件一体的完整生态</h2>
@@ -143,7 +140,7 @@
     </div>
     <div class="ecosystem-flow fade-in">
       <div class="eco-node">
-        <div class="eco-icon">&#128188;</div>
+        <div class="eco-icon">&#128170;</div>
         <div class="eco-label">智能手环</div>
       </div>
       <span class="eco-arrow">&#8594;</span>
@@ -170,9 +167,9 @@
   </div>
 </section>
 
-<!-- Testimonials Section — real names instead of generic placeholders -->
-<section class="testimonials-section">
-  <div class="section-inner">
+<!-- Testimonials Section -->
+<section class="section section-alt">
+  <div class="container">
     <div class="section-header fade-in">
       <div class="section-tag">用户心声</div>
       <h2 class="section-title">来自真实家庭的反馈</h2>
@@ -215,45 +212,52 @@
   </div>
 </section>
 
-<!-- CTA Section — improved warm palette -->
+<!-- CTA Section -->
 <section class="cta-section">
-  <h2 class="cta-title fade-in">开始守护家人的健康</h2>
-  <p class="cta-desc fade-in">下载颐贞家属APP，或前往门店体验我们的产品</p>
-  <div class="cta-buttons fade-in">
-    <button class="btn-white btn-lg">&#128241; App Store 下载</button>
-    <button class="btn-ghost btn-lg">&#128230; 安卓 APK 下载</button>
+  <div class="container">
+    <h2 class="cta-title fade-in">开始守护家人的健康</h2>
+    <p class="cta-desc fade-in">下载颐贞家属APP，或前往门店体验我们的产品</p>
+    <div class="cta-buttons fade-in">
+      <button class="btn btn-white btn-lg">&#128241; App Store 下载</button>
+      <button class="btn btn-ghost btn-lg">&#128230; 安卓 APK 下载</button>
+    </div>
+    <div class="cta-trust fade-in">
+      <span>&#128274; 端到端加密</span>
+      <span>&#9733; ISO 认证</span>
+      <span>&#128100; 5000+家庭信赖</span>
+    </div>
   </div>
 </section>
 
-<!-- Footer with legal links and skip link -->
-<footer class="footer">
+<!-- Footer -->
+<footer>
   <div class="footer-inner">
     <div class="footer-grid">
       <div>
         <div class="footer-brand-name">颐贞 Eregen</div>
         <div class="footer-brand-desc">{{ .Site.Params.slogan }}。为每一位长辈打造全链路的智能健康管理方案。</div>
       </div>
-      <div>
-        <div class="footer-col-title">产品</div>
-        <ul class="footer-links">
+      <div class="footer-col">
+        <h4>产品</h4>
+        <ul>
           <li><a href="#products">智能手环 Starter</a></li>
           <li><a href="#products">智能手环 Plus</a></li>
           <li><a href="#products">智能手环 Pro</a></li>
           <li><a href="#products">智能药盒系列</a></li>
         </ul>
       </div>
-      <div>
-        <div class="footer-col-title">支持</div>
-        <ul class="footer-links">
+      <div class="footer-col">
+        <h4>支持</h4>
+        <ul>
           <li><a href="#">帮助中心</a></li>
           <li><a href="#">联系客服</a></li>
           <li><a href="#">开发者API</a></li>
           <li><a href="#">B2B合作</a></li>
         </ul>
       </div>
-      <div>
-        <div class="footer-col-title">公司</div>
-        <ul class="footer-links">
+      <div class="footer-col">
+        <h4>公司</h4>
+        <ul>
           <li><a href="#about">关于我们</a></li>
           <li><a href="#">新闻动态</a></li>
           <li><a href="#">加入我们</a></li>
@@ -267,30 +271,23 @@
       <span>京ICP备XXXXXXXX号</span>
     </div>
   </div>
-  <!-- Skip link for accessibility -->
-  <div style="position:fixed;top:-9999px;left:0;width:1px;height:1px;overflow:hidden;"><a href="#main-content">Skip to main content</a></div>
 </footer>
 
 <script>
-// Scroll animations using IntersectionObserver
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: 0.1, rootMargin: "-50px 0px -50px 0px" });
+}, { threshold: 0.08, rootMargin: '-40px 0px -40px 0px' });
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
-// Navbar scroll effect
 window.addEventListener('scroll', () => {
-  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20);
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 10);
 });
 
-// Smooth anchor links for hash navigation
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', function (e) {
     e.preventDefault();
     const target = document.querySelector(this.getAttribute('href'));
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 });
 </script>

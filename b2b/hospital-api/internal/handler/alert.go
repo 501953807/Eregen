@@ -11,11 +11,11 @@ import (
 )
 
 type AlertHandler struct {
-	store *store.Postgres
+	store store.Store
 	log   *zap.Logger
 }
 
-func NewAlertHandler(store *store.Postgres, log *zap.Logger) *AlertHandler {
+func NewAlertHandler(store store.Store, log *zap.Logger) *AlertHandler {
 	return &AlertHandler{store: store, log: log}
 }
 

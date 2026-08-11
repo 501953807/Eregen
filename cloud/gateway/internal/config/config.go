@@ -70,9 +70,9 @@ func Load() Config {
 	// Override from environment variables (optional overrides)
 	overrideString(&cfg.MQTT.Broker, "GATEWAY_MQTT_BROKER")
 	overrideString(&cfg.NATS.URL, "GATEWAY_NATS_URL")
-	overrideString(&cfg.Storage.Type, "GATEWAY_STORAGE_TYPE")
-	overrideString(&cfg.Storage.DSN, "GATEWAY_POSTGRES_DSN")
-	overrideString(&cfg.Storage.SQLite, "GATEWAY_SQLITE_PATH")
+	overrideString(&cfg.Storage.Type, "DATABASE_TYPE")
+	overrideString(&cfg.Storage.DSN, "POSTGRES_DSN")
+	overrideString(&cfg.Storage.SQLite, "SQLITE_PATH")
 
 	// CRITICAL: Auth secret MUST be set via environment variable — no default allowed
 	authSecret := os.Getenv("GATEWAY_AUTH_SECRET")
@@ -116,7 +116,7 @@ func defaultConfig() Config {
 		Storage: StorageConfig{
 			Type:   "sqlite",
 			DSN:    "host=localhost port=5432 user=eregen password=eregen dbname=eregen sslmode=disable",
-			SQLite: "./data/gateway.sqlite",
+			SQLite: "./data/eregen.db",
 		},
 		Auth: AuthConfig{
 			SecretKey: "dev-secret-key-change-in-production",

@@ -14,11 +14,11 @@ import (
 )
 
 type ExportHandler struct {
-	store *store.Postgres
+	store store.Store
 	log   *zap.Logger
 }
 
-func NewExportHandler(store *store.Postgres, log *zap.Logger) *ExportHandler {
+func NewExportHandler(store store.Store, log *zap.Logger) *ExportHandler {
 	return &ExportHandler{store: store, log: log}
 }
 

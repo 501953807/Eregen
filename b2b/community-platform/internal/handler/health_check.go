@@ -11,11 +11,11 @@ import (
 )
 
 type HealthCheckHandler struct {
-	store *store.Postgres
+	store store.Store
 	log   *zap.Logger
 }
 
-func NewHealthCheckHandler(store *store.Postgres, log *zap.Logger) *HealthCheckHandler {
+func NewHealthCheckHandler(store store.Store, log *zap.Logger) *HealthCheckHandler {
 	return &HealthCheckHandler{store: store, log: log}
 }
 

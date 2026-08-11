@@ -11,11 +11,11 @@ import (
 )
 
 type ProviderHandler struct {
-	store *store.Postgres
+	store store.Store
 	log   *zap.Logger
 }
 
-func NewProviderHandler(store *store.Postgres, log *zap.Logger) *ProviderHandler {
+func NewProviderHandler(store store.Store, log *zap.Logger) *ProviderHandler {
 	return &ProviderHandler{store: store, log: log}
 }
 

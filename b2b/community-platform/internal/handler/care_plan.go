@@ -12,11 +12,11 @@ import (
 )
 
 type CarePlanHandler struct {
-	store *store.Postgres
+	store store.Store
 	log   *zap.Logger
 }
 
-func NewCarePlanHandler(store *store.Postgres, log *zap.Logger) *CarePlanHandler {
+func NewCarePlanHandler(store store.Store, log *zap.Logger) *CarePlanHandler {
 	return &CarePlanHandler{store: store, log: log}
 }
 

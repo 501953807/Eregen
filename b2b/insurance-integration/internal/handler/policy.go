@@ -13,11 +13,11 @@ import (
 )
 
 type PolicyHandler struct {
-	store *store.Postgres
+	store store.Store
 	log   *zap.Logger
 }
 
-func NewPolicyHandler(store *store.Postgres, log *zap.Logger) *PolicyHandler {
+func NewPolicyHandler(store store.Store, log *zap.Logger) *PolicyHandler {
 	return &PolicyHandler{store: store, log: log}
 }
 

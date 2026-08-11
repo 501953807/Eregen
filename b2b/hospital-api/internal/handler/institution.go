@@ -16,11 +16,11 @@ import (
 )
 
 type InstitutionHandler struct {
-	store *store.Postgres
+	store store.Store
 	log   *zap.Logger
 }
 
-func NewInstitutionHandler(store *store.Postgres, log *zap.Logger) *InstitutionHandler {
+func NewInstitutionHandler(store store.Store, log *zap.Logger) *InstitutionHandler {
 	return &InstitutionHandler{store: store, log: log}
 }
 

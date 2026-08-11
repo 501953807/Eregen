@@ -8,7 +8,9 @@ import (
 
 type Config struct {
 	NATSURL          string
+	StorageType      string // "postgres" or "sqlite"
 	PostgresDSN      string
+	SQLitePath       string
 	InfluxDBURL      string
 	InfluxDBToken    string
 	InfluxDBOrg      string
@@ -25,7 +27,9 @@ type Config struct {
 func Load() (*Config, error) {
 	c := &Config{
 		NATSURL:          getEnv("NATS_URL", "nats://nats:4222"),
-		PostgresDSN:      getEnv("POSTGRES_DSN", "postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable"),
+		PostgresDSN:      getEnv("POSTGRES_DSN", getEnv("DATABASE_URL", "postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable")),
+		StorageType:      getEnv("DATABASE_TYPE", "sqlite"),
+		SQLitePath:       getEnv("SQLITE_PATH", "./data/eregen.db"),
 		InfluxDBURL:      getEnv("INFLUXDB_URL", "http://influxdb:8086"),
 		InfluxDBToken:    getEnv("INFLUXDB_TOKEN", "eregen_token"),
 		InfluxDBOrg:      getEnv("INFLUXDB_ORG", "eregen"),

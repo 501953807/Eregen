@@ -28,22 +28,60 @@ func main() {
 	log, _ := zap.NewProduction()
 	defer log.Sync()
 
-	// PostgreSQL via pgxpool
+	// SQLite or PostgreSQL
 	var pg *store.Postgres
 	var pgPool *pgxpool.Pool
-	var err error
-
-	pgConfig, err := pgxpool.ParseConfig(cfg.DBURL)
-	if err != nil {
-		log.Fatal("invalid postgres URL", zap.Error(err))
+	dbType := cfg.StorageType
+	if dbType == "" {
+		dbType = "sqlite"
 	}
-	pgConfig.MaxConns = 10
-	pgPool, err = pgxpool.NewWithConfig(context.Background(), pgConfig)
-	if err != nil {
-		log.Fatal("failed to connect to postgres", zap.Error(err))
+	switch dbType {
+	case "postgres":
+		if cfg.DBURL == "" {
+			log.Fatal("DB_URL/POSTGRES_DSN is required when STORAGE_TYPE=postgres")
+		}
+		pgConfig, err := pgxpool.ParseConfig(cfg.DBURL)
+		if err != nil {
+			log.Fatal("invalid postgres URL", zap.Error(err))
+		}
+		pgConfig.MaxConns = 10
+		pgPool, err = pgxpool.NewWithConfig(context.Background(), pgConfig)
+		if err != nil {
+			log.Fatal("failed to connect to postgres", zap.Error(err))
+		}
+		pg = store.NewPostgres(pgPool, log)
+		defer pgPool.Close()
+	default: // sqlite
+		sqliteErr := func() error {
+			db, err := store.NewSqlite(cfg.SQLitePath)
+			if err != nil {
+				return err
+			}
+			defer db.Close()
+			return nil
+		}()
+		if sqliteErr != nil {
+			log.Warn("sqlite init failed (using postgres fallback if DB_URL set)", zap.Error(sqliteErr))
+			// Fall through to postgres if DB_URL is set
+			if cfg.DBURL != "" {
+				pgConfig, err := pgxpool.ParseConfig(cfg.DBURL)
+				if err != nil {
+					log.Fatal("invalid postgres URL", zap.Error(err))
+				}
+				pgConfig.MaxConns = 10
+				pgPool, err = pgxpool.NewWithConfig(context.Background(), pgConfig)
+				if err != nil {
+					log.Fatal("failed to connect to postgres", zap.Error(err))
+				}
+				pg = store.NewPostgres(pgPool, log)
+				defer pgPool.Close()
+			} else {
+				log.Fatal("sqlite init failed and no DB_URL set")
+			}
+		} else {
+			log.Info("api-server using SQLite", zap.String("path", cfg.SQLitePath))
+		}
 	}
-	pg = store.NewPostgres(pgPool, log)
-	defer pgPool.Close()
 
 	// Redis
 	rdbOpts, err := redis.ParseURL(cfg.RedisURL)

@@ -16,7 +16,6 @@ services:
       POSTGRES_DB: eregen
       POSTGRES_USER: eregen
       POSTGRES_PASSWORD: eregen
-      POSTGRES_DB_B2B: eregen_b2b
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/00-init.sql
@@ -137,6 +136,8 @@ services:
     environment:
       JWT_SECRET: eregen-dev-secret-change-in-production
       DB_URL: postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable
+      STORAGE_TYPE: postgres
+      SQLITE_PATH: /data/api-server.sqlite
       REDIS_URL: redis://redis:6379/0
       NATS_URL: nats://nats:4222
       INFLUXDB_URL: http://influxdb:8086
@@ -144,6 +145,8 @@ services:
       INFLUXDB_ORG: eregen
       INFLUXDB_BUCKET: health_data
       PORT: "8080"
+    volumes:
+      - ./cloud/api-server/data:/data
     depends_on:
       - postgres
       - redis
@@ -161,6 +164,7 @@ services:
     environment:
       NATS_URL: nats://nats:4222
       POSTGRES_DSN: postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable
+      STORAGE_TYPE: postgres
       INFLUXDB_URL: http://influxdb:8086
       INFLUXDB_TOKEN: eregen_token
       INFLUXDB_ORG: eregen
@@ -184,6 +188,7 @@ services:
     environment:
       NATS_URL: nats://nats:4222
       POSTGRES_DSN: postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable
+      STORAGE_TYPE: postgres
       FCM_KEY_PATH: /run/secrets/fcm_key
       WECHAT_APP_ID: ""
       WECHAT_APP_SECRET: ""
@@ -191,6 +196,8 @@ services:
       SMS_ACCESS_SECRET: ""
       SMS_SIGN_NAME: 颐贞
       PUSH_SERVICE_PORT: "8085"
+    volumes:
+      - ./cloud/push-service/data:/data
     depends_on:
       - nats
       - postgres
@@ -207,8 +214,11 @@ services:
       - "8089:8089"
     environment:
       DATABASE_URL: postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable
+      DATABASE_TYPE: postgres
       JWT_SECRET: eregen-admin-secret-change-in-production
       PORT: "8089"
+    volumes:
+      - ./cloud/admin-api/data:/data
     depends_on:
       - postgres
     networks:
@@ -224,8 +234,11 @@ services:
     ports:
       - "8082:8082"
     environment:
-      DATABASE_URL: postgres://eregen:eregen@postgres:5432/eregen_b2b?sslmode=disable
+      DATABASE_URL: postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable
+      DATABASE_TYPE: postgres
       PORT: "8082"
+    volumes:
+      - ./b2b/hospital-api/data:/data
     depends_on:
       - postgres
     networks:
@@ -240,8 +253,11 @@ services:
     ports:
       - "8084:8084"
     environment:
-      DATABASE_URL: postgres://eregen:eregen@postgres:5432/eregen_b2b?sslmode=disable
+      DATABASE_URL: postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable
+      DATABASE_TYPE: postgres
       PORT: "8084"
+    volumes:
+      - ./b2b/insurance-integration/data:/data
     depends_on:
       - postgres
     networks:
@@ -256,8 +272,11 @@ services:
     ports:
       - "8083:8083"
     environment:
-      DATABASE_URL: postgres://eregen:eregen@postgres:5432/eregen_b2b?sslmode=disable
+      DATABASE_URL: postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable
+      DATABASE_TYPE: postgres
       PORT: "8083"
+    volumes:
+      - ./b2b/community-platform/data:/data
     depends_on:
       - postgres
     networks:
@@ -348,6 +367,12 @@ volumes:
   prometheus-data:
   grafana-data:
   loki-data:
+  api-server-data:
+  push-service-data:
+  admin-api-data:
+  hospital-api-data:
+  insurance-integration-data:
+  community-platform-data:
 
 networks:
   eregen-network:

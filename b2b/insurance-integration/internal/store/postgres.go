@@ -13,18 +13,18 @@ import (
 	"go.uber.org/zap"
 )
 
-type Postgres struct {
+type PostgresStore struct {
 	pool *pgxpool.Pool
 	log  *zap.Logger
 }
 
-func NewPostgres(pool *pgxpool.Pool, log *zap.Logger) *Postgres {
-	return &Postgres{pool: pool, log: log}
+func NewPostgresStore(pool *pgxpool.Pool, log *zap.Logger) *PostgresStore {
+	return &PostgresStore{pool: pool, log: log}
 }
 
 // ---------- Insurance Provider ----------
 
-func (s *Postgres) UpdateProvider(ctx context.Context, p *model.InsuranceProvider) error {
+func (s *PostgresStore) UpdateProvider(ctx context.Context, p *model.InsuranceProvider) error {
 	_, err := s.pool.Exec(ctx,
 		`UPDATE b2b_insurance_providers SET name=$1, code=$2, api_endpoint=$3, active=$4, updated_at=now() WHERE id=$5`,
 		p.Name, p.Code, p.APIEndpoint, p.Active, p.ID,
@@ -32,7 +32,7 @@ func (s *Postgres) UpdateProvider(ctx context.Context, p *model.InsuranceProvide
 	return err
 }
 
-func (s *Postgres) CreateProvider(ctx context.Context, p *model.InsuranceProvider) error {
+func (s *PostgresStore) CreateProvider(ctx context.Context, p *model.InsuranceProvider) error {
 	p.ID = uuid.New().String()
 	p.CreatedAt = time.Now()
 	p.Active = true
@@ -44,7 +44,7 @@ func (s *Postgres) CreateProvider(ctx context.Context, p *model.InsuranceProvide
 	return err
 }
 
-func (s *Postgres) GetProviderByID(ctx context.Context, id string) (*model.InsuranceProvider, error) {
+func (s *PostgresStore) GetProviderByID(ctx context.Context, id string) (*model.InsuranceProvider, error) {
 	p := &model.InsuranceProvider{}
 	q := `SELECT id, name, code, api_endpoint, active, created_at FROM b2b_insurance_providers WHERE id = $1`
 	err := s.pool.QueryRow(ctx, q, id).Scan(
@@ -53,7 +53,7 @@ func (s *Postgres) GetProviderByID(ctx context.Context, id string) (*model.Insur
 	return p, err
 }
 
-func (s *Postgres) ListProviders(ctx context.Context, page, pageSize int) ([]model.InsuranceProvider, int, error) {
+func (s *PostgresStore) ListProviders(ctx context.Context, page, pageSize int) ([]model.InsuranceProvider, int, error) {
 	offset := (page - 1) * pageSize
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, name, code, api_endpoint, active, created_at FROM b2b_insurance_providers ORDER BY name LIMIT $1 OFFSET $2`,
@@ -80,7 +80,7 @@ func (s *Postgres) ListProviders(ctx context.Context, page, pageSize int) ([]mod
 
 // ---------- Policy ----------
 
-func (s *Postgres) CreatePolicy(ctx context.Context, policy *model.Policy) error {
+func (s *PostgresStore) CreatePolicy(ctx context.Context, policy *model.Policy) error {
 	policy.ID = uuid.New().String()
 	policy.CreatedAt = time.Now()
 	if policy.Status == "" {
@@ -97,7 +97,7 @@ func (s *Postgres) CreatePolicy(ctx context.Context, policy *model.Policy) error
 	return err
 }
 
-func (s *Postgres) GetPoliciesForElderly(ctx context.Context, elderlyID string) ([]model.Policy, error) {
+func (s *PostgresStore) GetPoliciesForElderly(ctx context.Context, elderlyID string) ([]model.Policy, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, elderly_id, provider_id, plan_name, plan_code, policy_number,
 				start_date, end_date, coverage_limit, premium, status, created_at
@@ -122,7 +122,7 @@ func (s *Postgres) GetPoliciesForElderly(ctx context.Context, elderlyID string) 
 	return policies, nil
 }
 
-func (s *Postgres) GetPolicyByID(ctx context.Context, id string) (*model.Policy, error) {
+func (s *PostgresStore) GetPolicyByID(ctx context.Context, id string) (*model.Policy, error) {
 	p := &model.Policy{}
 	q := `SELECT id, elderly_id, provider_id, plan_name, plan_code, policy_number,
 		   start_date, end_date, coverage_limit, premium, status, created_at
@@ -137,7 +137,7 @@ func (s *Postgres) GetPolicyByID(ctx context.Context, id string) (*model.Policy,
 
 // ---------- Claim ----------
 
-func (s *Postgres) CreateClaim(ctx context.Context, claim *model.InsuranceClaim) error {
+func (s *PostgresStore) CreateClaim(ctx context.Context, claim *model.InsuranceClaim) error {
 	claim.ID = uuid.New().String()
 	claim.CreatedAt = time.Now()
 	claim.UpdatedAt = claim.CreatedAt
@@ -160,14 +160,14 @@ func (s *Postgres) CreateClaim(ctx context.Context, claim *model.InsuranceClaim)
 	return err
 }
 
-func (s *Postgres) UpdateClaimStatus(ctx context.Context, claimID string, status model.ClaimStatus, notes string) error {
+func (s *PostgresStore) UpdateClaimStatus(ctx context.Context, claimID string, status model.ClaimStatus, notes string) error {
 	now := time.Now()
 	q := `UPDATE b2b_claims SET status = $1, reviewed_at = $2, reviewer_notes = $3, updated_at = $4 WHERE id = $5`
 	_, err := s.pool.Exec(ctx, q, status, &now, notes, now, claimID)
 	return err
 }
 
-func (s *Postgres) GetClaimsForElderly(ctx context.Context, elderlyID string) ([]model.InsuranceClaim, error) {
+func (s *PostgresStore) GetClaimsForElderly(ctx context.Context, elderlyID string) ([]model.InsuranceClaim, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, elderly_id, family_member_id, provider_id, claim_type, status, incident_date,
 				claim_amount, coverage_limit, description, evidence_files, submitted_at, reviewed_at,
@@ -196,7 +196,7 @@ func (s *Postgres) GetClaimsForElderly(ctx context.Context, elderlyID string) ([
 	return claims, nil
 }
 
-func (s *Postgres) GetClaimByID(ctx context.Context, claimID string) (*model.InsuranceClaim, error) {
+func (s *PostgresStore) GetClaimByID(ctx context.Context, claimID string) (*model.InsuranceClaim, error) {
 	c := &model.InsuranceClaim{}
 	q := `SELECT id, elderly_id, family_member_id, provider_id, claim_type, status, incident_date,
 		   claim_amount, coverage_limit, description, evidence_files, submitted_at, reviewed_at,
@@ -214,7 +214,7 @@ func (s *Postgres) GetClaimByID(ctx context.Context, claimID string) (*model.Ins
 	return c, nil
 }
 
-func (s *Postgres) ListClaims(ctx context.Context, status model.ClaimStatus, page, pageSize int) ([]model.InsuranceClaim, int, error) {
+func (s *PostgresStore) ListClaims(ctx context.Context, status model.ClaimStatus, page, pageSize int) ([]model.InsuranceClaim, int, error) {
 	offset := (page - 1) * pageSize
 	var q string
 	var args []any
@@ -265,7 +265,7 @@ func (s *Postgres) ListClaims(ctx context.Context, status model.ClaimStatus, pag
 
 // ---------- Evidence File ----------
 
-func (s *Postgres) AddEvidenceFile(ctx context.Context, file *model.EvidenceFile) error {
+func (s *PostgresStore) AddEvidenceFile(ctx context.Context, file *model.EvidenceFile) error {
 	file.ID = uuid.New().String()
 	file.UploadedAt = time.Now()
 	q := `INSERT INTO b2b_evidence_files (id, claim_id, file_type, file_name, file_url, uploaded_at)
@@ -276,7 +276,7 @@ func (s *Postgres) AddEvidenceFile(ctx context.Context, file *model.EvidenceFile
 	return err
 }
 
-func (s *Postgres) GetEvidenceForClaim(ctx context.Context, claimID string) ([]model.EvidenceFile, error) {
+func (s *PostgresStore) GetEvidenceForClaim(ctx context.Context, claimID string) ([]model.EvidenceFile, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, claim_id, file_type, file_name, file_url, uploaded_at FROM b2b_evidence_files WHERE claim_id = $1`,
 		claimID,
@@ -299,7 +299,7 @@ func (s *Postgres) GetEvidenceForClaim(ctx context.Context, claimID string) ([]m
 
 // ---------- Health Data Export ----------
 
-func (s *Postgres) CreateExport(ctx context.Context, export *model.HealthDataExport) error {
+func (s *PostgresStore) CreateExport(ctx context.Context, export *model.HealthDataExport) error {
 	export.ID = uuid.New().String()
 	export.GeneratedAt = time.Now()
 	export.Status = "generating"
@@ -313,13 +313,13 @@ func (s *Postgres) CreateExport(ctx context.Context, export *model.HealthDataExp
 	return err
 }
 
-func (s *Postgres) MarkExportReady(ctx context.Context, exportID string, fileURL string) error {
+func (s *PostgresStore) MarkExportReady(ctx context.Context, exportID string, fileURL string) error {
 	q := `UPDATE b2b_health_exports SET status = 'ready', file_url = $1, updated_at = now() WHERE id = $2`
 	_, err := s.pool.Exec(ctx, q, fileURL, exportID)
 	return err
 }
 
-func (s *Postgres) GetExportByID(ctx context.Context, id string) (*model.HealthDataExport, error) {
+func (s *PostgresStore) GetExportByID(ctx context.Context, id string) (*model.HealthDataExport, error) {
 	e := &model.HealthDataExport{}
 	q := `SELECT id, elderly_id, claim_id, export_type, period_start, period_end,
 		   file_url, generated_at, status FROM b2b_health_exports WHERE id = $1`
@@ -330,7 +330,7 @@ func (s *Postgres) GetExportByID(ctx context.Context, id string) (*model.HealthD
 	return e, err
 }
 
-func (s *Postgres) UpdatePolicy(ctx context.Context, policy *model.Policy) error {
+func (s *PostgresStore) UpdatePolicy(ctx context.Context, policy *model.Policy) error {
 	_, err := s.pool.Exec(ctx,
 		`UPDATE b2b_policies SET plan_name=$1, plan_code=$2, policy_number=$3,
 			 start_date=$4, end_date=$5, coverage_limit=$6, premium=$7, status=$8, updated_at=now()
@@ -344,7 +344,7 @@ func (s *Postgres) UpdatePolicy(ctx context.Context, policy *model.Policy) error
 
 // ---------- Premium Reminder ----------
 
-func (s *Postgres) CreateReminder(ctx context.Context, reminder *model.PremiumReminder) error {
+func (s *PostgresStore) CreateReminder(ctx context.Context, reminder *model.PremiumReminder) error {
 	reminder.ID = uuid.New().String()
 	reminder.CreatedAt = time.Now()
 	q := `INSERT INTO b2b_premium_reminders (id, policy_id, elderly_id, family_id, remind_date, amount, sent, created_at)
@@ -356,7 +356,7 @@ func (s *Postgres) CreateReminder(ctx context.Context, reminder *model.PremiumRe
 	return err
 }
 
-func (s *Postgres) GetUpcomingReminders(ctx context.Context, daysAhead int) ([]model.PremiumReminder, error) {
+func (s *PostgresStore) GetUpcomingReminders(ctx context.Context, daysAhead int) ([]model.PremiumReminder, error) {
 	threshold := time.Now().AddDate(0, 0, daysAhead)
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, policy_id, elderly_id, family_id, remind_date, amount, sent, created_at

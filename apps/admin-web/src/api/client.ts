@@ -31,13 +31,23 @@ apiClient.interceptors.request.use(
 );
 
 apiClient.interceptors.response.use(
-  (response: AxiosResponse<any>) => {
+  (response: AxiosResponse<any>): any => {
     const { code, msg, data } = response.data || {};
-    if ((response.status >= 200 && response.status < 300) && (!code || (code >= 200 && code < 300))) {
-      return { code, msg: msg || '成功', data };
+    // Handle 4xx/5xx even when code field is missing (e.g. {"error":"msg"})
+    if (response.status >= 400) {
+      const errMsg = msg || response.data?.error || '业务请求失败，请重试';
+      if (response.status === 401) {
+        const authStore = useAuthStore();
+        authStore.logout();
+        ElMessage.warning('会话已过期，请重新登录');
+        const redirectPath = window.location.pathname;
+        router.push({ path: '/login', query: { redirect: redirectPath } });
+        return Promise.reject({ code: 401, msg: '未授权', data: null });
+      }
+      ElMessage.error(errMsg);
+      return Promise.reject({ code: response.status, msg: errMsg, data: null });
     }
-    ElMessage.error(msg || '业务请求失败，请重试');
-    return Promise.reject({ code, msg: msg || '业务失败', data });
+    return { code, msg: msg || '成功', data };
   },
   (error: AxiosError) => {
     const authStore = useAuthStore();

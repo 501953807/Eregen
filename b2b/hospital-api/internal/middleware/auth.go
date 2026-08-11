@@ -19,7 +19,7 @@ const (
 )
 
 // APIKeyAuth validates the X-API-Key header against stored hashes.
-func APIKeyAuth(pgStore *store.Postgres, log *zap.Logger) gin.HandlerFunc {
+func APIKeyAuth(s store.Store, log *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		rawKey := c.GetHeader("X-API-Key")
 		if rawKey == "" {
@@ -31,7 +31,7 @@ func APIKeyAuth(pgStore *store.Postgres, log *zap.Logger) gin.HandlerFunc {
 		// Strip "Bearer " prefix if present
 		key := strings.TrimPrefix(rawKey, "Bearer ")
 
-		inst, err := pgStore.GetInstitutionByAPIKey(c.Request.Context(), key)
+		inst, err := s.GetInstitutionByAPIKey(c.Request.Context(), key)
 		if err != nil {
 			log.Debug("invalid API key", zap.String("key_prefix", key[:min(8, len(key))]))
 			c.JSON(http.StatusForbidden, gin.H{"error": "invalid or expired API key"})

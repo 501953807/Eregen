@@ -56,9 +56,9 @@ func Load() *Config {
 		RefreshExpiry: getEnvAsInt("REFRESH_EXPIRY", 604800),
 
 		// Use empty string as default; must be explicitly configured in production
-		DBURL:       getEnv("DB_URL", ""),
-		StorageType: getEnv("STORAGE_TYPE", "postgres"),
-		SQLitePath:  getEnv("SQLITE_PATH", "./data/api-server.sqlite"),
+		DBURL:       getEnv("POSTGRES_DSN", getEnv("DATABASE_URL", "")),
+		StorageType: getEnv("DATABASE_TYPE", "sqlite"),
+		SQLitePath:  getEnv("SQLITE_PATH", "./data/eregen.db"),
 		RedisURL:      getEnv("REDIS_URL", "redis://localhost:6379/0"),
 		NATSURL:       getEnv("NATS_URL", "nats://localhost:4222"),
 		InfluxDBURL:   getEnv("INFLUXDB_URL", "http://localhost:8086"),

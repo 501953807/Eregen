@@ -176,12 +176,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch, nextTick, computed } from 'vue'
+import { onMounted, ref, watch, nextTick, computed, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
 import { useDashboardStore } from '@/stores/dashboard'
+import { useTheme } from '@/composables/useTheme'
 import type { Alert } from '@/types'
 
 const store = useDashboardStore()
+const { isDark } = useTheme()
 const lineChartRef = ref<HTMLElement>()
 const pieChartRef = ref<HTMLElement>()
 const barChartRef = ref<HTMLElement>()
@@ -314,7 +316,7 @@ function renderBarChart() {
 }
 
 async function initCharts() {
-  await store.refreshAll()
+  const ok = await store.refreshAll().catch(e => { console.warn('Dashboard API failed, using mock data:', e); return null })
   await nextTick()
   renderLineChart()
   renderPieChart()
@@ -377,8 +379,10 @@ function renderAlertPriorityChart() {
   })
 }
 
-onMounted(() => {
-  initCharts()
+watch(isDark, () => {
+  nextTick(() => {
+    initCharts()
+  })
 })
 
 function handleResize() {
@@ -390,7 +394,20 @@ function handleResize() {
   alertPriorityChart?.resize()
 }
 
-window.addEventListener('resize', handleResize)
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  lineChart?.dispose()
+  pieChart?.dispose()
+  barChart?.dispose()
+  donutChart?.dispose()
+  planChart?.dispose()
+  alertPriorityChart?.dispose()
+})
+
+onMounted(() => {
+  initCharts()
+  window.addEventListener('resize', handleResize)
+})
 </script>
 
 <style scoped>

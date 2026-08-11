@@ -13,18 +13,18 @@ import (
 	"go.uber.org/zap"
 )
 
-type Postgres struct {
+type PostgresStore struct {
 	pool *pgxpool.Pool
 	log  *zap.Logger
 }
 
-func NewPostgres(pool *pgxpool.Pool, log *zap.Logger) *Postgres {
-	return &Postgres{pool: pool, log: log}
+func NewPostgresStore(pool *pgxpool.Pool, log *zap.Logger) *PostgresStore {
+	return &PostgresStore{pool: pool, log: log}
 }
 
 // ---------- Institution ----------
 
-func (s *Postgres) CreateInstitution(ctx context.Context, inst *model.Institution) error {
+func (s *PostgresStore) CreateInstitution(ctx context.Context, inst *model.Institution) error {
 	inst.ID = uuid.New().String()
 	now := time.Now()
 	inst.CreatedAt = now
@@ -44,7 +44,7 @@ func (s *Postgres) CreateInstitution(ctx context.Context, inst *model.Institutio
 	return err
 }
 
-func (s *Postgres) GetInstitutionByID(ctx context.Context, id string) (*model.Institution, error) {
+func (s *PostgresStore) GetInstitutionByID(ctx context.Context, id string) (*model.Institution, error) {
 	inst := &model.Institution{}
 	q := `SELECT id, name, type, code, contact_name, contact_phone, access_level, status, created_at, updated_at
 		   FROM b2b_institutions WHERE id = $1`
@@ -56,7 +56,7 @@ func (s *Postgres) GetInstitutionByID(ctx context.Context, id string) (*model.In
 	return inst, err
 }
 
-func (s *Postgres) GetInstitutionByCode(ctx context.Context, code string) (*model.Institution, error) {
+func (s *PostgresStore) GetInstitutionByCode(ctx context.Context, code string) (*model.Institution, error) {
 	inst := &model.Institution{}
 	q := `SELECT id, name, type, code, contact_name, contact_phone, access_level, status, created_at, updated_at
 		   FROM b2b_institutions WHERE code = $1 AND status = 'active'`
@@ -68,7 +68,7 @@ func (s *Postgres) GetInstitutionByCode(ctx context.Context, code string) (*mode
 	return inst, err
 }
 
-func (s *Postgres) ListInstitutions(ctx context.Context, page, pageSize int) ([]model.Institution, int, error) {
+func (s *PostgresStore) ListInstitutions(ctx context.Context, page, pageSize int) ([]model.Institution, int, error) {
 	offset := (page - 1) * pageSize
 	q := fmt.Sprintf(`SELECT id, name, type, code, contact_name, contact_phone, access_level, status, created_at, updated_at
 					   FROM b2b_institutions ORDER BY created_at DESC LIMIT $1 OFFSET $2`)
@@ -93,7 +93,7 @@ func (s *Postgres) ListInstitutions(ctx context.Context, page, pageSize int) ([]
 	return list, total, nil
 }
 
-func (s *Postgres) UpdateInstitution(ctx context.Context, id string, inst *model.Institution) error {
+func (s *PostgresStore) UpdateInstitution(ctx context.Context, id string, inst *model.Institution) error {
 	inst.UpdatedAt = time.Now()
 	q := `UPDATE b2b_institutions SET name=$1, type=$2, code=$3, contact_name=$4, contact_phone=$5,
 		   access_level=$6, status=$7, updated_at=$8 WHERE id=$9`
@@ -107,7 +107,7 @@ func (s *Postgres) UpdateInstitution(ctx context.Context, id string, inst *model
 
 // ---------- API Key ----------
 
-func (s *Postgres) CreateAPIKey(ctx context.Context, key *model.InstitutionAPIKey) error {
+func (s *PostgresStore) CreateAPIKey(ctx context.Context, key *model.InstitutionAPIKey) error {
 	key.ID = uuid.New().String()
 	key.CreatedAt = time.Now()
 	if !key.Active {
@@ -121,7 +121,7 @@ func (s *Postgres) CreateAPIKey(ctx context.Context, key *model.InstitutionAPIKe
 	return err
 }
 
-func (s *Postgres) GetInstitutionByAPIKey(ctx context.Context, keyHash string) (*model.Institution, error) {
+func (s *PostgresStore) GetInstitutionByAPIKey(ctx context.Context, keyHash string) (*model.Institution, error) {
 	inst := &model.Institution{}
 	q := `SELECT i.id, i.name, i.type, i.code, i.contact_name, i.contact_phone,
 				i.access_level, i.status, i.created_at, i.updated_at
@@ -138,7 +138,7 @@ func (s *Postgres) GetInstitutionByAPIKey(ctx context.Context, keyHash string) (
 
 // ---------- Elderly-Institution Link ----------
 
-func (s *Postgres) LinkElderlyToInstitution(ctx context.Context, link *model.ElderlyInstitutionLink) error {
+func (s *PostgresStore) LinkElderlyToInstitution(ctx context.Context, link *model.ElderlyInstitutionLink) error {
 	link.ID = uuid.New().String()
 	link.Active = true
 	link.CreatedAt = time.Now()
@@ -159,7 +159,7 @@ func (s *Postgres) LinkElderlyToInstitution(ctx context.Context, link *model.Eld
 	return err
 }
 
-func (s *Postgres) GetActiveLinksForInstitution(ctx context.Context, instID string) ([]model.ElderlyInstitutionLink, error) {
+func (s *PostgresStore) GetActiveLinksForInstitution(ctx context.Context, instID string) ([]model.ElderlyInstitutionLink, error) {
 	q := `SELECT id, elderly_id, institution_id, admitted_at, discharged_at, primary_doc, notes, active, created_at, updated_at
 		   FROM b2b_elderly_links WHERE institution_id = $1 AND active = true
 		   ORDER BY created_at DESC`
@@ -185,7 +185,7 @@ func (s *Postgres) GetActiveLinksForInstitution(ctx context.Context, instID stri
 	return links, nil
 }
 
-func (s *Postgres) GetActiveLinksForElderly(ctx context.Context, elderlyID string) ([]model.ElderlyInstitutionLink, error) {
+func (s *PostgresStore) GetActiveLinksForElderly(ctx context.Context, elderlyID string) ([]model.ElderlyInstitutionLink, error) {
 	q := `SELECT id, elderly_id, institution_id, admitted_at, discharged_at, primary_doc, notes, active, created_at, updated_at
 		   FROM b2b_elderly_links WHERE elderly_id = $1 AND active = true
 		   ORDER BY created_at DESC`
@@ -213,7 +213,7 @@ func (s *Postgres) GetActiveLinksForElderly(ctx context.Context, elderlyID strin
 
 // ---------- Health Data ----------
 
-func (s *Postgres) StoreVitals(ctx context.Context, v *model.VitalSignRecord) error {
+func (s *PostgresStore) StoreVitals(ctx context.Context, v *model.VitalSignRecord) error {
 	q := `INSERT INTO b2b_vital_signs (id, elderly_id, institution_id, patient_id,
 		   heart_rate, spo2, systolic_bp, diastolic_bp, temperature, steps, recorded_at)
 		   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`
@@ -225,7 +225,7 @@ func (s *Postgres) StoreVitals(ctx context.Context, v *model.VitalSignRecord) er
 	return err
 }
 
-func (s *Postgres) BulkStoreVitals(ctx context.Context, vitals []*model.VitalSignRecord) error {
+func (s *PostgresStore) BulkStoreVitals(ctx context.Context, vitals []*model.VitalSignRecord) error {
 	for _, v := range vitals {
 		if err := s.StoreVitals(ctx, v); err != nil {
 			s.log.Warn("store vital sign", zap.Error(err))
@@ -234,7 +234,7 @@ func (s *Postgres) BulkStoreVitals(ctx context.Context, vitals []*model.VitalSig
 	return nil
 }
 
-func (s *Postgres) GetVitalsForElderly(ctx context.Context, elderlyID string, days int) ([]model.VitalSignRecord, error) {
+func (s *PostgresStore) GetVitalsForElderly(ctx context.Context, elderlyID string, days int) ([]model.VitalSignRecord, error) {
 	q := `SELECT id, elderly_id, institution_id, patient_id,
 		   heart_rate, spo2, systolic_bp, diastolic_bp, temperature, steps, recorded_at
 		   FROM b2b_vital_signs WHERE elderly_id = $1 AND recorded_at > now() - interval $2 day
@@ -258,7 +258,7 @@ func (s *Postgres) GetVitalsForElderly(ctx context.Context, elderlyID string, da
 	return vitals, rows.Err()
 }
 
-func (s *Postgres) LinkElderlyToExternalPatient(ctx context.Context, elderlyID, patientID, eregenID string) error {
+func (s *PostgresStore) LinkElderlyToExternalPatient(ctx context.Context, elderlyID, patientID, eregenID string) error {
 	_, err := s.pool.Exec(ctx,
 		`INSERT INTO b2b_patient_links (id, external_patient_id, local_elderly_id, created_at)
 		 VALUES ($1, $2, $3, now())`,
@@ -266,7 +266,7 @@ func (s *Postgres) LinkElderlyToExternalPatient(ctx context.Context, elderlyID, 
 	return err
 }
 
-func (s *Postgres) FindElderlyByExternalPatient(ctx context.Context, patientID string) (string, error) {
+func (s *PostgresStore) FindElderlyByExternalPatient(ctx context.Context, patientID string) (string, error) {
 	var elderlyID string
 	err := s.pool.QueryRow(ctx,
 		`SELECT local_elderly_id FROM b2b_patient_links WHERE external_patient_id = $1`,
@@ -276,7 +276,7 @@ func (s *Postgres) FindElderlyByExternalPatient(ctx context.Context, patientID s
 
 // ---------- Diagnoses ----------
 
-func (s *Postgres) StoreDiagnoses(ctx context.Context, records []*model.DiagnosisRecord) error {
+func (s *PostgresStore) StoreDiagnoses(ctx context.Context, records []*model.DiagnosisRecord) error {
 	for _, r := range records {
 		if err := s.storeSingleDiagnosis(ctx, r); err != nil {
 			s.log.Warn("store diagnosis", zap.Error(err))
@@ -285,7 +285,7 @@ func (s *Postgres) StoreDiagnoses(ctx context.Context, records []*model.Diagnosi
 	return nil
 }
 
-func (s *Postgres) storeSingleDiagnosis(ctx context.Context, r *model.DiagnosisRecord) error {
+func (s *PostgresStore) storeSingleDiagnosis(ctx context.Context, r *model.DiagnosisRecord) error {
 	r.ID = uuid.New().String()
 	q := `INSERT INTO b2b_diagnoses (id, elderly_id, institution_id, patient_id,
 		   diagnosis_code, diagnosis_name, severity, diagnosed_at)
@@ -297,7 +297,7 @@ func (s *Postgres) storeSingleDiagnosis(ctx context.Context, r *model.DiagnosisR
 	return err
 }
 
-func (s *Postgres) GetDiagnosesForElderly(ctx context.Context, elderlyID string, days int) ([]model.DiagnosisRecord, error) {
+func (s *PostgresStore) GetDiagnosesForElderly(ctx context.Context, elderlyID string, days int) ([]model.DiagnosisRecord, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, elderly_id, institution_id, patient_id, diagnosis_code, diagnosis_name, severity, diagnosed_at
 		   FROM b2b_diagnoses WHERE elderly_id = $1 AND diagnosed_at > now() - interval $2
@@ -323,7 +323,7 @@ func (s *Postgres) GetDiagnosesForElderly(ctx context.Context, elderlyID string,
 
 // ---------- Medications ----------
 
-func (s *Postgres) StoreMedications(ctx context.Context, records []*model.MedicationRecord) error {
+func (s *PostgresStore) StoreMedications(ctx context.Context, records []*model.MedicationRecord) error {
 	for _, r := range records {
 		if err := s.storeSingleMedication(ctx, r); err != nil {
 			s.log.Warn("store medication", zap.Error(err))
@@ -332,7 +332,7 @@ func (s *Postgres) StoreMedications(ctx context.Context, records []*model.Medica
 	return nil
 }
 
-func (s *Postgres) storeSingleMedication(ctx context.Context, r *model.MedicationRecord) error {
+func (s *PostgresStore) storeSingleMedication(ctx context.Context, r *model.MedicationRecord) error {
 	r.ID = uuid.New().String()
 	q := `INSERT INTO b2b_medications (id, elderly_id, institution_id, patient_id,
 		   medication_name, dose, frequency, route, duration, prescribed_at)
@@ -344,7 +344,7 @@ func (s *Postgres) storeSingleMedication(ctx context.Context, r *model.Medicatio
 	return err
 }
 
-func (s *Postgres) GetMedicationsForElderly(ctx context.Context, elderlyID string) ([]model.MedicationRecord, error) {
+func (s *PostgresStore) GetMedicationsForElderly(ctx context.Context, elderlyID string) ([]model.MedicationRecord, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, elderly_id, institution_id, patient_id, medication_name, dose, frequency, route, duration, prescribed_at
 		   FROM b2b_medications WHERE elderly_id = $1 ORDER BY prescribed_at DESC`,

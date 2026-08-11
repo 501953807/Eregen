@@ -1,6 +1,13 @@
 {{ define "main" }}
+<div class="breadcrumb">
+  <div class="breadcrumb-inner">
+    <a href="/">首页</a>
+    <span class="breadcrumb-sep">&#8594;</span>
+    <span>{{ .Title }}</span>
+  </div>
+</div>
 <div class="page-hero">
-  <div class="page-hero-inner">
+  <div class="page-hero-inner fade-in">
     <h1>{{ .Title }}</h1>
     {{ if .Description }}<p class="page-hero-desc">{{ .Description }}</p>{{ end }}
   </div>

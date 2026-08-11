@@ -8,10 +8,10 @@ import (
 	"go.uber.org/zap"
 )
 
-func Register(r *gin.Engine, pg *store.Postgres, log *zap.Logger) {
-	eventH := handler.NewEventHandler(pg, log)
-	healthH := handler.NewHealthCheckHandler(pg, log)
-	careH := handler.NewCarePlanHandler(pg, log)
+func Register(r *gin.Engine, st store.Store, log *zap.Logger) {
+	eventH := handler.NewEventHandler(st, log)
+	healthH := handler.NewHealthCheckHandler(st, log)
+	careH := handler.NewCarePlanHandler(st, log)
 
 	events := r.Group("/api/v2/b2b/events")
 	{

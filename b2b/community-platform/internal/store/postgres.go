@@ -13,18 +13,18 @@ import (
 	"go.uber.org/zap"
 )
 
-type Postgres struct {
+type PostgresStore struct {
 	pool *pgxpool.Pool
 	log  *zap.Logger
 }
 
-func NewPostgres(pool *pgxpool.Pool, log *zap.Logger) *Postgres {
-	return &Postgres{pool: pool, log: log}
+func NewPostgresStore(pool *pgxpool.Pool, log *zap.Logger) *PostgresStore {
+	return &PostgresStore{pool: pool, log: log}
 }
 
 // ---------- Community Event ----------
 
-func (s *Postgres) CreateEvent(ctx context.Context, evt *model.CommunityEvent) error {
+func (s *PostgresStore) CreateEvent(ctx context.Context, evt *model.CommunityEvent) error {
 	evt.ID = uuid.New().String()
 	evt.CreatedAt = time.Now()
 	if evt.Status == "" {
@@ -40,7 +40,7 @@ func (s *Postgres) CreateEvent(ctx context.Context, evt *model.CommunityEvent) e
 	return err
 }
 
-func (s *Postgres) ListEvents(ctx context.Context, serviceType model.ServiceType, page, pageSize int) ([]model.CommunityEvent, int, error) {
+func (s *PostgresStore) ListEvents(ctx context.Context, serviceType model.ServiceType, page, pageSize int) ([]model.CommunityEvent, int, error) {
 	offset := (page - 1) * pageSize
 	var q string
 	var args []any
@@ -85,7 +85,7 @@ func (s *Postgres) ListEvents(ctx context.Context, serviceType model.ServiceType
 
 // ---------- Event Registration ----------
 
-func (s *Postgres) RegisterForEvent(ctx context.Context, reg *model.EventRegistration) error {
+func (s *PostgresStore) RegisterForEvent(ctx context.Context, reg *model.EventRegistration) error {
 	reg.ID = uuid.New().String()
 	reg.RegisteredAt = time.Now()
 	if reg.Status == "" {
@@ -99,7 +99,7 @@ func (s *Postgres) RegisterForEvent(ctx context.Context, reg *model.EventRegistr
 	return err
 }
 
-func (s *Postgres) GetRegistrationsForEvent(ctx context.Context, eventID string) ([]model.EventRegistration, error) {
+func (s *PostgresStore) GetRegistrationsForEvent(ctx context.Context, eventID string) ([]model.EventRegistration, error) {
 	q := `SELECT id, event_id, elderly_id, caregiver_id, status, registered_at
 		   FROM b2b_event_registrations WHERE event_id = $1 ORDER BY registered_at DESC`
 	rows, err := s.pool.Query(ctx, q, eventID)
@@ -121,7 +121,7 @@ func (s *Postgres) GetRegistrationsForEvent(ctx context.Context, eventID string)
 
 // ---------- Health Check Record ----------
 
-func (s *Postgres) CreateHealthCheck(ctx context.Context, record *model.HealthCheckRecord) error {
+func (s *PostgresStore) CreateHealthCheck(ctx context.Context, record *model.HealthCheckRecord) error {
 	record.ID = uuid.New().String()
 	q := `INSERT INTO b2b_health_checks (id, elderly_id, check_date, bp_systolic, bp_diastolic,
 		   hr, spo2, weight, height, glucose, notes, checked_by)
@@ -134,7 +134,7 @@ func (s *Postgres) CreateHealthCheck(ctx context.Context, record *model.HealthCh
 	return err
 }
 
-func (s *Postgres) GetHealthChecksForElderly(ctx context.Context, elderlyID string, limit int) ([]model.HealthCheckRecord, error) {
+func (s *PostgresStore) GetHealthChecksForElderly(ctx context.Context, elderlyID string, limit int) ([]model.HealthCheckRecord, error) {
 	q := `SELECT id, elderly_id, check_date, bp_systolic, bp_diastolic, hr, spo2,
 		   weight, height, glucose, notes, checked_by
 		   FROM b2b_health_checks WHERE elderly_id = $1 ORDER BY check_date DESC LIMIT $2`
@@ -159,7 +159,7 @@ func (s *Postgres) GetHealthChecksForElderly(ctx context.Context, elderlyID stri
 
 // ---------- Care Plan ----------
 
-func (s *Postgres) CreateCarePlan(ctx context.Context, plan *model.CarePlan) error {
+func (s *PostgresStore) CreateCarePlan(ctx context.Context, plan *model.CarePlan) error {
 	plan.ID = uuid.New().String()
 	plan.CreatedAt = time.Now()
 	if plan.Status == "" {
@@ -177,7 +177,7 @@ func (s *Postgres) CreateCarePlan(ctx context.Context, plan *model.CarePlan) err
 	return err
 }
 
-func (s *Postgres) GetCarePlansForElderly(ctx context.Context, elderlyID string) ([]model.CarePlan, error) {
+func (s *PostgresStore) GetCarePlansForElderly(ctx context.Context, elderlyID string) ([]model.CarePlan, error) {
 	q := `SELECT id, elderly_id, title, description, tasks, assigned_to, status, start_date, end_date, created_at
 		   FROM b2b_care_plans WHERE elderly_id = $1 AND status = 'active'`
 	rows, err := s.pool.Query(ctx, q, elderlyID)
@@ -202,7 +202,7 @@ func (s *Postgres) GetCarePlansForElderly(ctx context.Context, elderlyID string)
 
 // ---------- Event CRUD ----------
 
-func (s *Postgres) GetEventByID(ctx context.Context, id string) (*model.CommunityEvent, error) {
+func (s *PostgresStore) GetEventByID(ctx context.Context, id string) (*model.CommunityEvent, error) {
 	e := &model.CommunityEvent{}
 	q := `SELECT id, name, description, service_type, location, start_time, end_time,
 		   max_participants, status, created_at FROM b2b_events WHERE id = $1`
@@ -213,12 +213,12 @@ func (s *Postgres) GetEventByID(ctx context.Context, id string) (*model.Communit
 	return e, err
 }
 
-func (s *Postgres) DeleteEvent(ctx context.Context, id string) error {
+func (s *PostgresStore) DeleteEvent(ctx context.Context, id string) error {
 	_, err := s.pool.Exec(ctx, `DELETE FROM b2b_events WHERE id = $1`, id)
 	return err
 }
 
-func (s *Postgres) CancelEventRegistration(ctx context.Context, eventID, elderlyID string) error {
+func (s *PostgresStore) CancelEventRegistration(ctx context.Context, eventID, elderlyID string) error {
 	_, err := s.pool.Exec(ctx,
 		`UPDATE b2b_event_registrations SET status = 'cancelled' WHERE event_id = $1 AND elderly_id = $2 AND status = 'confirmed'`,
 		eventID, elderlyID,
@@ -226,7 +226,7 @@ func (s *Postgres) CancelEventRegistration(ctx context.Context, eventID, elderly
 	return err
 }
 
-func (s *Postgres) ActiveRegistrationsCount(ctx context.Context, eventID string) (int, error) {
+func (s *PostgresStore) ActiveRegistrationsCount(ctx context.Context, eventID string) (int, error) {
 	var count int
 	err := s.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM b2b_event_registrations WHERE event_id = $1 AND status = 'confirmed'`,
@@ -237,7 +237,7 @@ func (s *Postgres) ActiveRegistrationsCount(ctx context.Context, eventID string)
 
 // ---------- Care Plan CRUD ----------
 
-func (s *Postgres) GetCarePlanByID(ctx context.Context, id string) (*model.CarePlan, error) {
+func (s *PostgresStore) GetCarePlanByID(ctx context.Context, id string) (*model.CarePlan, error) {
 	p := &model.CarePlan{}
 	q := `SELECT id, elderly_id, title, description, tasks, assigned_to, status, start_date, end_date, created_at
 		   FROM b2b_care_plans WHERE id = $1`
@@ -253,7 +253,7 @@ func (s *Postgres) GetCarePlanByID(ctx context.Context, id string) (*model.CareP
 	return p, nil
 }
 
-func (s *Postgres) UpdateCarePlan(ctx context.Context, id string, plan *model.CarePlan) error {
+func (s *PostgresStore) UpdateCarePlan(ctx context.Context, id string, plan *model.CarePlan) error {
 	plan.CreatedAt = time.Now() // reuse CreatedAt as UpdatedAt placeholder
 	tasksData, _ := json.Marshal(plan.Tasks)
 	_, err := s.pool.Exec(ctx,
@@ -263,14 +263,14 @@ func (s *Postgres) UpdateCarePlan(ctx context.Context, id string, plan *model.Ca
 	return err
 }
 
-func (s *Postgres) DeleteCarePlan(ctx context.Context, id string) error {
+func (s *PostgresStore) DeleteCarePlan(ctx context.Context, id string) error {
 	_, err := s.pool.Exec(ctx, `DELETE FROM b2b_care_plans WHERE id = $1`, id)
 	return err
 }
 
 // ---------- Health Check CRUD ----------
 
-func (s *Postgres) GetHealthCheckByID(ctx context.Context, id string) (*model.HealthCheckRecord, error) {
+func (s *PostgresStore) GetHealthCheckByID(ctx context.Context, id string) (*model.HealthCheckRecord, error) {
 	r := &model.HealthCheckRecord{}
 	q := `SELECT id, elderly_id, check_date, bp_systolic, bp_diastolic, hr, spo2,
 		   weight, height, glucose, notes, checked_by FROM b2b_health_checks WHERE id = $1`
@@ -282,7 +282,7 @@ func (s *Postgres) GetHealthCheckByID(ctx context.Context, id string) (*model.He
 	return r, err
 }
 
-func (s *Postgres) UpdateHealthCheck(ctx context.Context, id string, record *model.HealthCheckRecord) error {
+func (s *PostgresStore) UpdateHealthCheck(ctx context.Context, id string, record *model.HealthCheckRecord) error {
 	_, err := s.pool.Exec(ctx,
 		`UPDATE b2b_health_checks SET check_date=$1, bp_systolic=$2, bp_diastolic=$3, hr=$4, spo2=$5,
 		   weight=$6, height=$7, glucose=$8, notes=$9, checked_by=$10 WHERE id=$11`,
@@ -292,7 +292,7 @@ func (s *Postgres) UpdateHealthCheck(ctx context.Context, id string, record *mod
 	return err
 }
 
-func (s *Postgres) DeleteHealthCheck(ctx context.Context, id string) error {
+func (s *PostgresStore) DeleteHealthCheck(ctx context.Context, id string) error {
 	_, err := s.pool.Exec(ctx, `DELETE FROM b2b_health_checks WHERE id = $1`, id)
 	return err
 }

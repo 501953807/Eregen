@@ -10,18 +10,18 @@ import (
 	"go.uber.org/zap"
 )
 
-func Register(r *gin.Engine, pg *store.Postgres, log *zap.Logger) {
-	instH := handler.NewInstitutionHandler(pg, log)
-	healthH := handler.NewHealthDataHandler(pg, log)
-	linkH := handler.NewLinkHandler(pg, log)
-	alertH := handler.NewAlertHandler(pg, log)
+func Register(r *gin.Engine, st store.Store, log *zap.Logger) {
+	instH := handler.NewInstitutionHandler(st, log)
+	healthH := handler.NewHealthDataHandler(st, log)
+	linkH := handler.NewLinkHandler(st, log)
+	alertH := handler.NewAlertHandler(st, log)
 
 	// Public: institution registration (no auth required)
 	r.POST("/api/v2/b2b/institutions", instH.Create)
 
 	// Protected by API key auth
 	b2b := r.Group("/api/v2/b2b")
-	b2b.Use(middleware.APIKeyAuth(pg, log))
+	b2b.Use(middleware.APIKeyAuth(st, log))
 	{
 		// Institution management
 		institutions := b2b.Group("/institutions")

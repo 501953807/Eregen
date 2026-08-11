@@ -271,7 +271,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useDeviceStore } from '@/stores/device'
 import { devicesApi } from '@/api/devices'

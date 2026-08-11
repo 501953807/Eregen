@@ -8,12 +8,12 @@ import (
 	"go.uber.org/zap"
 )
 
-func Register(r *gin.Engine, pg *store.Postgres, log *zap.Logger) {
-	claimH := handler.NewClaimHandler(pg, log)
-	policyH := handler.NewPolicyHandler(pg, log)
-	evidenceH := handler.NewEvidenceHandler(pg, log)
-	exportH := handler.NewExportHandler(pg, log)
-	providerH := handler.NewProviderHandler(pg, log)
+func Register(r *gin.Engine, st store.Store, log *zap.Logger) {
+	claimH := handler.NewClaimHandler(st, log)
+	policyH := handler.NewPolicyHandler(st, log)
+	evidenceH := handler.NewEvidenceHandler(st, log)
+	exportH := handler.NewExportHandler(st, log)
+	providerH := handler.NewProviderHandler(st, log)
 
 	providers := r.Group("/api/v2/b2b/providers")
 	{
