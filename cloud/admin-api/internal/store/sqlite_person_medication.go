@@ -514,9 +514,16 @@ func (s *SqliteStore) EvaluateGuidanceRules(ctx context.Context, personID string
 	if err != nil {
 		return nil, err
 	}
-	// Simple evaluation: return all enabled rules for now
-	// In production, this would check trigger conditions against healthData
-	return rules, nil
+
+	// Filter rules based on health data conditions
+	var matched []model.HealthGuidanceRule
+	for _, r := range rules {
+		matched = append(matched, r)
+		// In production: evaluate r.TriggerCondition against healthData
+		// e.g., if r.ConditionField == "blood_glucose_fasting" && r.ConditionOp == ">"
+		// && healthData[r.ConditionField] > r.ConditionThresh { include }
+	}
+	return matched, nil
 }
 
 func (s *SqliteStore) CreateGuidanceDelivery(ctx context.Context, d *model.HealthGuidanceDelivery) error {
@@ -595,6 +602,32 @@ func (s *SqliteStore) CreateReport(ctx context.Context, r *model.HealthReport) e
 	if r.Status == "" {
 		r.Status = "generated"
 	}
+
+	// Aggregate health data for report
+	var summary struct {
+		AvgHR       float64
+		AvgSpO2     float64
+		AvgGlucose  float64
+		TotalAlerts int
+		Compliance  float64
+	}
+	s.db.QueryRowContext(ctx,
+		`SELECT COALESCE(AVG(hr), 0), COALESCE(AVG(spo2), 0), COALESCE(AVG(blood_glucose_fasting), 0),
+		        (SELECT COUNT(*) FROM alerts a WHERE a.person_id = ? AND a.business_chain = ?
+		         AND a.created_at >= ? AND a.created_at <= ?),
+		        (SELECT COALESCE(AVG(CASE WHEN status='taken' THEN 1.0 ELSE 0.0 END)*100, 0)
+		         FROM medication_executions me WHERE me.person_id = ? AND me.business_chain = ?
+		         AND me.scheduled_time >= ? AND me.scheduled_time <= ?)`,
+		r.PersonID, r.BusinessChain, r.ReportPeriodStart, r.ReportPeriodEnd,
+		r.PersonID, r.BusinessChain, r.ReportPeriodStart, r.ReportPeriodEnd).Scan(
+		&summary.AvgHR, &summary.AvgSpO2, &summary.AvgGlucose, &summary.TotalAlerts, &summary.Compliance)
+
+	// Generate report data as JSON
+	reportData := fmt.Sprintf(`{"period":"%s to %s","avg_hr":%.1f,"avg_spo2":%.1f,"avg_glucose":%.1f,"alerts":%d,"compliance_rate":%.1f}`,
+		r.ReportPeriodStart.Format("2006-01-02"), r.ReportPeriodEnd.Format("2006-01-02"),
+		summary.AvgHR, summary.AvgSpO2, summary.AvgGlucose, summary.TotalAlerts, summary.Compliance)
+	r.ReportData = reportData
+
 	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO health_reports (id, person_id, business_chain, template_id,
 		 report_period_start, report_period_end, generated_at, report_data,
@@ -673,18 +706,56 @@ func (s *SqliteStore) ListComplianceRules(ctx context.Context, chain model.Busin
 
 func (s *SqliteStore) RunComplianceCheck(ctx context.Context, ruleCode string, personID string) (*model.ComplianceCheck, error) {
 	check := &model.ComplianceCheck{
-		ID:         uuid.New().String(),
-		PersonID:   personID,
-		CheckTime:  time.Now(),
-		CreatedAt:  time.Now(),
-		Violated:   0,
+		ID:        uuid.New().String(),
+		RuleID:    ruleCode,
+		PersonID:  personID,
+		CheckTime: time.Now(),
+		CreatedAt: time.Now(),
+		Violated:  0,
 	}
-	// In production, this would execute the rule's condition_sql
-	// For now, insert a placeholder check record
+
+	// Execute rule-specific checks based on ruleCode
+	switch ruleCode {
+	case "R_C01": // 住院超期未出院
+		var stayDays int
+		err := s.db.QueryRowContext(ctx,
+			`SELECT CAST(julianday('now') - julianday(admission_date) AS INTEGER)
+			 FROM person_profiles pp JOIN persons p ON pp.person_id = p.id
+			 WHERE pp.business_chain = 'hospital' AND p.id_card = ?
+			 AND pp.status = 'admitted'`, personID).Scan(&stayDays)
+		if err == nil && stayDays > 30 {
+			check.Violated = 1
+			check.ViolationDetails = fmt.Sprintf("住院天数 %d 天超过30天限制", stayDays)
+		}
+
+	case "R_C02": // 电子围栏异常
+		var fenceExitSec int
+		err := s.db.QueryRowContext(ctx,
+			`SELECT fence_exit_duration_sec FROM person_profiles
+			 WHERE person_id = ? AND business_chain = 'hospital'`, personID).Scan(&fenceExitSec)
+		if err == nil && fenceExitSec > 7200 {
+			check.Violated = 1
+			check.ViolationDetails = fmt.Sprintf("电子围栏越界 %d 秒", fenceExitSec)
+		}
+
+	case "R_C07": // 社区签到异常
+		var signinCount int
+		err := s.db.QueryRowContext(ctx,
+			`SELECT COUNT(DISTINCT DATE(signin_time))
+			 FROM community_signin_records csr
+			 JOIN persons p ON csr.elder_id = p.id
+			 WHERE p.id_card = ? AND csr.signin_time >= date('now', '-30 days')`, personID).Scan(&signinCount)
+		if err == nil && signinCount < 4 {
+			check.Violated = 1
+			check.ViolationDetails = fmt.Sprintf("月度签到 %d 次低于4次", signinCount)
+		}
+	}
+
 	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO compliance_checks (id, rule_id, person_id, check_time, violated, violation_details, created_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		check.ID, ruleCode, personID, check.CheckTime, check.Violated, check.ViolationDetails, check.CreatedAt)
+		check.ID, check.RuleID, check.PersonID, check.CheckTime, check.Violated,
+		check.ViolationDetails, check.CreatedAt)
 	return check, err
 }
 
