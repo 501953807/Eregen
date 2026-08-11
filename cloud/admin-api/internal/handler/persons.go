@@ -119,3 +119,68 @@ func (h *PersonHandler) Delete(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK"})
 }
+
+// CreateProfile creates a business-chain profile for a person.
+func (h *PersonHandler) CreateProfile(c *gin.Context) {
+	var pp model.PersonProfile
+	if err := c.ShouldBindJSON(&pp); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	if err := h.store.CreateProfile(c.Request.Context(), &pp); err != nil {
+		log.Printf("CreateProfile failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": pp})
+}
+
+// GetProfile retrieves a business-chain profile for a person.
+func (h *PersonHandler) GetProfile(c *gin.Context) {
+	personID := c.Param("id")
+	chain := c.Query("chain")
+	pp, err := h.store.GetProfile(c.Request.Context(), personID, model.BusinessChain(chain))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "profile not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": pp})
+}
+
+// AssignWelfareTag assigns a welfare tag to a person.
+func (h *PersonHandler) AssignWelfareTag(c *gin.Context) {
+	var wt model.PersonWelfareTag
+	if err := c.ShouldBindJSON(&wt); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	if err := h.store.AssignPersonWelfareTag(c.Request.Context(), &wt); err != nil {
+		log.Printf("AssignWelfareTag failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK"})
+}
+
+// RevokeWelfareTag revokes a welfare tag from a person.
+func (h *PersonHandler) RevokeWelfareTag(c *gin.Context) {
+	personID := c.Param("id")
+	tagCode := c.Param("tag_code")
+	if err := h.store.RevokePersonWelfareTag(c.Request.Context(), personID, tagCode); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK"})
+}
+
+// ListWelfareTags returns all welfare tags for a person.
+func (h *PersonHandler) ListWelfareTags(c *gin.Context) {
+	personID := c.Param("id")
+	tags, err := h.store.ListPersonWelfareTags(c.Request.Context(), personID)
+	if err != nil {
+		log.Printf("ListWelfareTags failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": tags})
+}

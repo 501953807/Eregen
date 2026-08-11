@@ -69,7 +69,7 @@ import dayjs from 'dayjs'
 import type { CommunityElder } from '@/api/community'
 
 const props = defineProps<{ modelValue: boolean; row: CommunityElder | null }>()
-const emit = defineEmits<{ 'update:modelValue': [v: boolean] }>()
+const emit = defineEmits<{ 'update:modelValue': [v: boolean]; close: [] }>()
 
 const visible = ref(false)
 const tags = ref<any[]>([])

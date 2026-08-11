@@ -165,7 +165,7 @@ import { ref, computed, onMounted } from 'vue'
 import dayjs from 'dayjs'
 
 const props = defineProps<{ activeTab: string; elders: any[]; loading: Record<string, boolean> }>()
-const emit = defineEmits<{ 'view-tag-elders': [code: string, name: string]; 'execute-payment': []; 'file-upload': [file: File] }>()
+const emit = defineEmits<{ 'view-tag-elders': [code: string, name: string]; 'execute-payment': []; 'file-upload': [file: File]; 'add-tag': [] }>()
 
 // Welfare
 const welfareTags = ref<any[]>([])
@@ -222,6 +222,10 @@ function handleFileUpload(event: Event) {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
   if (file) { emit('file-upload', file); target.value = '' }
+}
+async function loadSigninRecords() {
+  // Placeholder: would fetch from API
+  signinRecords.value = []
 }
 
 onMounted(() => { generateWeekData() })

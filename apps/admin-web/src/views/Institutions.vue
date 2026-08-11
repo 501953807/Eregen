@@ -214,7 +214,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { institutionsApi, type B2BInstitution } from '@/api/institutions'
 
 const loading = ref(false)
@@ -324,7 +324,7 @@ function viewDetail(row: B2BInstitution) {
 
 function generateKey(row: B2BInstitution) {
   ElMessage.info('正在生成 API 密钥...')
-  institutionsApi.generateApiKey(row.id, row.name)
+  institutionsApi.generateApiKey(row.id, row.name, 365)
     .then(res => {
       ElMessageBox.alert(`密钥值（请妥善保存，仅显示一次）：<br><code style="font-family:monospace;">${res.data?.key_value || ''}</code>`, 'API 密钥', {
         dangerouslyUseHTMLString: true,

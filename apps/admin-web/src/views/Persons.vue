@@ -112,6 +112,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { personApi } from '@/api/business-chains'
 import type { Person } from '@/types'
 
@@ -164,7 +165,7 @@ const fetchPersons = async () => {
       status: filters.status,
     })
     if (res.data) {
-      persons.value = res.data
+      persons.value = (res as unknown as { data: Person[]; page: number; page_size: number }).data
     }
   } catch (e) {
     console.error('Failed to fetch persons:', e)

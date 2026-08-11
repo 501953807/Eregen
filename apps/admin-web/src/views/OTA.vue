@@ -84,7 +84,7 @@
     <el-dialog v-model="showCreateDialog" title="创建固件版本" width="550px" destroy-on-close>
       <el-form :model="createForm" label-width="120px">
         <el-form-item label="设备类型" required>
-          <el-select v-model="createForm.type" style="width: 100%;">
+          <el-select v-model="createForm.device_type" style="width: 100%;">
             <el-option label="手环" value="bracelet" />
             <el-option label="药盒" value="pillbox" />
           </el-select>

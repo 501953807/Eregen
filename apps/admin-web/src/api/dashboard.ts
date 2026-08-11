@@ -28,8 +28,8 @@ export const dashboardApi = {
   alertDistribution() {
     return apiClient.get<{ data: AlertDistributionItem[] }>('/admin/stats/alert-distribution')
   },
-  userGrowth() {
-    return apiClient.get<{ data: UserGrowthPoint[] }>('/admin/stats/user-growth')
+  userGrowth(params?: Record<string, any>) {
+    return apiClient.get<{ data: UserGrowthPoint[] }>('/admin/stats/user-growth', { params })
   },
   recentAlerts(params?: Record<string, any>) {
     return apiClient.get<{ data: Alert[] }>('/admin/alerts', { params: { ...params, limit: 10 } })

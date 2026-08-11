@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { ElNotification } from 'element-plus'
 import { elderlyApi } from '@/api/elderly'
 import { handleApiError, handleApiSuccess } from '@/utils/error'
 import ElderlyTable from './Elderly/ElderlyTable.vue'
@@ -60,7 +61,7 @@ function openEdit(row: ElderlyRow) {
   editingElder.value = row
   editForm.value = { name: row.name || '', id_card: row.id_card || '', birth_date: row.birth_date || '', gender: row.gender || '', emergency_contact: row.emergency_contact || '', address: row.address || '', status: row.status || '正常' }
   showEditDialog.value = true
-  elderlyApi.detail(row.id).then(res => {
+  elderlyApi.detail(row.id).then((res: any) => {
     if (res.data) {
       editForm.value.name = res.data.name || editForm.value.name
       editForm.value.id_card = res.data.id_card || editForm.value.id_card

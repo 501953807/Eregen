@@ -96,6 +96,8 @@ patient := handler.NewPatientHandler(s)
 	communityWB := handler.NewCommunityWBHandler(s)
 	subscription := handler.NewSubscriptionHandler(s)
 	institution := handler.NewInstitutionHandler(s)
+	person := handler.NewPersonHandler(s)
+	lifecycle := handler.NewLifecycleHandler(s)
 
 	// Rate limiter — fail open if Redis is unavailable
 	rateLimiter, rlErr := middleware.NewAdminRateLimiter()
@@ -197,6 +199,23 @@ patient := handler.NewPatientHandler(s)
 			setting.POST("/password", settings.ChangePassword)
 		}
 
+		// Person unified management (self/hospital/community chains)
+		persons := api.Group("/persons")
+		{
+			persons.GET("", person.List)
+			persons.GET("/:id", person.Get)
+			persons.POST("", person.Create)
+			persons.PUT("/:id", person.Update)
+			persons.DELETE("/:id", person.Delete)
+			persons.POST("/profile", person.CreateProfile)
+			persons.GET("/:id/profile", person.GetProfile)
+			persons.POST("/welfare-tags", person.AssignWelfareTag)
+			persons.DELETE("/:id/welfare-tags/:tag_code", person.RevokeWelfareTag)
+			persons.GET("/:id/welfare-tags", person.ListWelfareTags)
+		}
+		// Person lifecycle / cross-chain transitions
+		api.PUT("/persons/:id/status", lifecycle.TransitionStatus)
+		api.POST("/persons/link", lifecycle.LinkPerson)
 		// Medical wristband management
 		med := api.Group("/medical")
 		{

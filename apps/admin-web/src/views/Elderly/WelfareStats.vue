@@ -30,12 +30,12 @@
           </el-table-column>
           <el-table-column label="启用" width="80" align="center">
             <template #default="{ row }">
-              <el-switch v-model="row.enabled" @change="v => $emit('toggle-welfare', row, v)" />
+              <el-switch v-model="row.enabled" @change="(_v: any) => ($emit as any)('toggle-welfare', row, _v)" />
             </template>
           </el-table-column>
           <el-table-column label="操作" width="160" fixed="right">
             <template #default="{ row }">
-              <el-button link type="primary" size="small" @click="v => $emit('view-bound', row)">查看绑定</el-button>
+              <el-button link type="primary" size="small" @click="(_v: any) => $emit('view-bound', row)">查看绑定</el-button>
               <el-button link type="primary" size="small">编辑</el-button>
             </template>
           </el-table-column>

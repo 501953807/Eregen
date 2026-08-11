@@ -39,7 +39,7 @@
       <el-table-column prop="code" label="规则代码" width="100"><template #default="{ row }"><span class="mono">{{ row.code }}</span></template></el-table-column>
       <el-table-column prop="name" label="规则名称" width="160" />
       <el-table-column prop="enabled" label="启用" width="80">
-        <template #default="{ row }"><el-switch v-model="row.enabled" @change="v => $emit('update-rule', row)" /></template>
+        <template #default="{ row }"><el-switch v-model="row.enabled" @change="(v: boolean) => $emit('update-rule', row)" /></template>
       </el-table-column>
       <el-table-column prop="config" label="配置">
         <template #default="{ row }"><el-button size="small" @click="$emit('edit-rule', row)">编辑</el-button></template>

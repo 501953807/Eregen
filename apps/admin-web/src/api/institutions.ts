@@ -28,7 +28,7 @@ export const institutionsApi = {
     return Promise.resolve({ data: null as B2BInstitution | null })
   },
 
-  create(_data: { name: string; code: string; type: string; contact_name?: string; contact_phone?: string; access_level?: string }) {
+  create(_data: { name: string; code: string; type: string; contact_name?: string; contact_phone?: string; access_level?: string; status?: string }) {
     return Promise.resolve({ data: null as B2BInstitution | null })
   },
 
@@ -36,7 +36,11 @@ export const institutionsApi = {
     return Promise.resolve({ data: null as B2BInstitution | null })
   },
 
-  generateApiKey(_id: string, _name: string, _expiresIn: number) {
+  delete(_id: string) {
+    return Promise.resolve({ message: 'ok' })
+  },
+
+  generateApiKey(_id: string, _name: string, _expiresIn?: number) {
     return Promise.resolve({ data: null as APIKeyResult | null })
   },
 }

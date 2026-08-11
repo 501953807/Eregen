@@ -12,7 +12,7 @@ export const useUsersStore = defineStore('users', () => {
     loading.value = true
     try {
       const res = await usersApi.list({ ...params, role: 'family' })
-      familyUsers.value = res.data || []
+      familyUsers.value = (res as any).data || []
     } finally {
       loading.value = false
     }
@@ -22,7 +22,7 @@ export const useUsersStore = defineStore('users', () => {
     loading.value = true
     try {
       const res = await usersApi.listElderly(params)
-      elderlyProfiles.value = res.data || []
+      elderlyProfiles.value = (res as any).data || []
     } finally {
       loading.value = false
     }

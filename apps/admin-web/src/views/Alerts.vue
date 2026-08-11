@@ -218,9 +218,9 @@ const filteredAlerts = computed(() => {
 })
 
 const stats = computed(() => ({
-  p0: allAlerts.value.filter(a => (a.severity === 'P0' || a.severity === 'high') && a.status === 'pending').length,
-  p1: allAlerts.value.filter(a => (a.severity === 'P1' || a.severity === 'medium') && a.status === 'pending').length,
-  p2: allAlerts.value.filter(a => (a.severity === 'P2' || a.severity === 'low') && a.status === 'pending').length,
+  p0: allAlerts.value.filter(a => (a.severity === 'p0' || a.severity === 'high') && a.status === 'pending').length,
+  p1: allAlerts.value.filter(a => (a.severity === 'p1' || a.severity === 'medium') && a.status === 'pending').length,
+  p2: allAlerts.value.filter(a => (a.severity === 'p2' || a.severity === 'low') && a.status === 'pending').length,
 }))
 
 function alertBadgeClass(type: string): string {
@@ -292,7 +292,7 @@ function connectSSE() {
       const newAlerts = data.alerts.filter((a: Alert) => !existingIds.has(a.id))
       if (newAlerts.length) {
         allAlerts.value = [...newAlerts, ...allAlerts.value]
-        newAlerts.forEach(a => {
+        newAlerts.forEach((a: Alert) => {
           ElMessage.warning({ message: `🔔 新告警: ${alertTypeLabel(a.alert_type)} (${a.severity})`, duration: 5000 })
         })
       }

@@ -31,7 +31,7 @@
     </div>
     <template #footer>
       <el-button @click="visible = false">关闭</el-button>
-      <el-button type="primary" @click="$emit('edit', row)">编辑档案</el-button>
+      <el-button type="primary" @click="($emit as any)('edit', row)">编辑档案</el-button>
     </template>
   </el-dialog>
 </template>

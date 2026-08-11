@@ -45,7 +45,7 @@
 import { ref, watch } from 'vue'
 
 const props = defineProps<{ modelValue: boolean; patient: any }>()
-const emit = defineEmits<{ 'update:modelValue': [v: boolean] }>()
+const emit = defineEmits<{ 'update:modelValue': [v: boolean]; close: [] }>()
 
 const visible = ref(false)
 watch(() => props.modelValue, v => { visible.value = v })

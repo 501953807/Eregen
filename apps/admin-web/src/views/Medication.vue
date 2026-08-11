@@ -154,7 +154,7 @@
 
 <script setup lang='ts'>
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage, ElNotification, ElLoading } from 'element-plus'
+import { ElMessage, ElMessageBox, ElNotification, ElLoading } from 'element-plus'
 import type { MedicationRule } from '@/types'
 import { medicationApi } from '@/api/medication'
 
@@ -164,7 +164,13 @@ const showDialog = ref(false)
 const searchQuery = ref('')
 
 // Form state for create/edit (using camelCase for local state)
-const form = ref<Omit<MedicationRule, 'id' | 'elderly_id' | 'active' | 'created_at'> & { id?: string }>({})
+const form = ref<Omit<MedicationRule, 'id' | 'elderly_id' | 'created_at'> & { id?: string; active?: boolean }>({
+  pill_type: '',
+  dose_count: 1,
+  schedule_time: '',
+  days_of_week: [],
+  active: true,
+})
 
 // Rules data
 const rules = ref<MedicationRule[]>([])
@@ -176,8 +182,11 @@ const currentElder = ref<any>({ name: '张大爷', id: 'elderly_123' })
 const stats = computed(() => {
   const now = new Date()
   const currentHour = now.getHours()
-  const active = rules.value.filter(r => r.active).length
-  const missed = rules.value.filter(r => !r.taken && parseInt(r.scheduleTime.split(':')[0]) < currentHour).length
+  const active = rules.value.filter(r => r.active === true).length
+  const missed = rules.value.filter(r => {
+    const scheduleTime = (r as any).scheduleTime || r.schedule_time
+    return scheduleTime && parseInt(scheduleTime.split(':')[0]) < currentHour
+  }).length
   return {
     activeRules: active,
     missedCount: missed,
@@ -206,7 +215,7 @@ function periodLabels(days: string[]): string {
 // Filtered rules based on search
 const filteredRules = computed(() => {
   if (!searchQuery.value) return rules.value
-  return rules.value.filter(r => r.pillType.toLowerCase().includes(searchQuery.value.toLowerCase()))
+  return rules.value.filter(r => r.pillType && r.pillType.toLowerCase().includes(searchQuery.value.toLowerCase()))
 })
 
 // Load data on mount
@@ -236,8 +245,8 @@ function openCreateDialog() {
     dose_count: 1,
     schedule_time: '',
     days_of_week: [],
-    active: true
-  }
+    active: true,
+  } as Omit<MedicationRule, 'id' | 'elderly_id' | 'created_at'> & { id?: string }
   showDialog.value = true
 }
 
@@ -255,7 +264,9 @@ function handleEdit(rule: MedicationRule) {
 
 // Handle delete
 async function handleDelete(id: string) {
-  const confirmText = ElMessage.confirm(`确定要删除用药规则 "${id}" 吗？`, '警告', {
+  const confirmText = await ElMessageBox.confirm(`确定要删除用药规则 "${id}" 吗？`, '警告', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
     type: 'warning'
   }).catch(() => 'cancel')
 

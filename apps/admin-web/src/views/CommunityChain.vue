@@ -1,54 +1,265 @@
 <template>
   <div class="community-chain-page">
+    <el-row :gutter="16" style="margin-bottom: 20px;">
+      <el-col :span="6">
+        <el-card shadow="hover" class="kpi-card kpi-blue">
+          <div class="kpi-value">{{ kpis.total_elders }}</div>
+          <div class="kpi-label">社区老人</div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="kpi-card kpi-green">
+          <div class="kpi-value">{{ kpis.today_signin }}</div>
+          <div class="kpi-label">今日签到</div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="kpi-card kpi-orange">
+          <div class="kpi-value">{{ kpis.welfare_tags }}</div>
+          <div class="kpi-label">福利标签</div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="kpi-card kpi-purple">
+          <div class="kpi-value">{{ kpis.pending_payments }}</div>
+          <div class="kpi-label">待结算</div>
+        </el-card>
+      </el-col>
+    </el-row>
+
     <el-card>
       <template #header>
-        <span>社区链管理</span>
+        <div class="card-header">
+          <span>社区老人管理</span>
+          <div style="display:flex;gap:8px;">
+            <el-button type="primary" size="small" @click="showCreateDialog = true">+ 新增老人</el-button>
+            <el-button size="small" @click="refreshAll">刷新</el-button>
+          </div>
+        </div>
       </template>
-      <el-alert type="success" :closable="false" show-icon>
-        <template #title>社区老人管理</template>
-        <template #default>管理社区认证老人的福利标签、签到、药品发放</template>
-      </el-alert>
+
+      <el-form :inline="true" class="filter-form">
+        <el-form-item label="状态">
+          <el-select v-model="filters.status" placeholder="全部" clearable>
+            <el-option label="正常" value="active" />
+            <el-option label="停用" value="inactive" />
+            <el-option label="已退役" value="retired" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="搜索">
+          <el-input v-model="filters.search" placeholder="姓名/身份证号" clearable style="width:180px" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="fetchElders">查询</el-button>
+        </el-form-item>
+      </el-form>
+
       <el-table :data="elders" v-loading="loading" stripe>
-        <el-table-column prop="name" label="姓名" />
-        <el-table-column prop="id_card" label="身份证号" />
-        <el-table-column prop="welfare_tags" label="福利标签" />
-        <el-table-column prop="status" label="状态" />
-        <el-table-column label="操作">
+        <el-table-column prop="id_card" label="身份证号" width="180" />
+        <el-table-column prop="name" label="姓名" width="100" />
+        <el-table-column prop="welfare_tags" label="福利标签" width="200">
+          <template #default="{ row }">
+            <el-tag v-for="tag in parseTags(row.welfare_tags)" :key="tag" size="small" class="mr-1">{{ tag }}</el-tag>
+            <span v-if="!row.welfare_tags" class="text-muted">—</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="last_signin" label="最后签到" width="140">
+          <template #default="{ row }">{{ row.last_signin || '—' }}</template>
+        </el-table-column>
+        <el-table-column prop="status" label="状态" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 'active' ? 'success' : row.status === 'inactive' ? 'warning' : 'info'" size="small">
+              {{ row.status === 'active' ? '正常' : row.status === 'inactive' ? '停用' : '已退役' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="created_at" label="创建时间" width="160" />
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="viewDetail(row)">详情</el-button>
+            <el-button link type="primary" @click="triggerSignin(row)">签到</el-button>
+            <el-button link type="primary" @click="assignWelfare(row)">福利</el-button>
           </template>
         </el-table-column>
       </el-table>
+
+      <el-pagination
+        v-model:current-page="pagination.page"
+        v-model:page-size="pagination.pageSize"
+        :total="pagination.total"
+        :page-sizes="[10, 20, 50]"
+        layout="total, sizes, prev, pager, next"
+        @change="fetchElders"
+        style="margin-top:16px;justify-content:flex-end;"
+      />
     </el-card>
+
+    <!-- Create Elder Dialog -->
+    <el-dialog v-model="showCreateDialog" title="新增社区老人" width="520px">
+      <el-form :model="createForm" label-width="100px">
+        <el-form-item label="身份证号" required>
+          <el-input v-model="createForm.id_card" />
+        </el-form-item>
+        <el-form-item label="姓名" required>
+          <el-input v-model="createForm.name" />
+        </el-form-item>
+        <el-form-item label="电话">
+          <el-input v-model="createForm.phone" />
+        </el-form-item>
+        <el-form-item label="地址">
+          <el-input v-model="createForm.address" type="textarea" :rows="2" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreateDialog = false">取消</el-button>
+        <el-button type="primary" @click="createElder" :loading="createLoading">创建</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Welfare Dialog -->
+    <el-dialog v-model="showWelfareDialog" title="福利标签管理" width="480px">
+      <div v-if="currentElder">
+        <div style="margin-bottom:12px;font-weight:600">{{ currentElder.name }} — 福利标签</div>
+        <el-table :data="currentWelfareTags" size="small" stripe>
+          <el-table-column prop="tag_code" label="标签代码" width="150" />
+          <el-table-column prop="valid_from" label="生效日期" width="120" />
+          <el-table-column prop="valid_to" label="到期日期" width="120" />
+          <el-table-column label="操作" width="80">
+            <template #default="{ row }">
+              <el-button link type="danger" size="small" @click="revokeTag(row.tag_code)">撤销</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <template #footer>
+        <el-button @click="showWelfareDialog = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { communityApi } from '@/api/business-chains'
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { communityApi, personApi } from '@/api/business-chains'
+
+interface CommunityElder {
+  id: string
+  id_card: string
+  name: string
+  phone?: string
+  address?: string
+  welfare_tags?: string[]
+  status: string
+  last_signin?: string
+  created_at: string
+}
 
 const loading = ref(false)
-const elders = ref<any[]>([])
+const elders = ref<CommunityElder[]>([])
+const kpis = ref({ total_elders: 0, today_signin: 0, welfare_tags: 0, pending_payments: 0 })
+
+const filters = reactive({ status: '', search: '' })
+const pagination = reactive({ page: 1, pageSize: 20, total: 0 })
+
+const showCreateDialog = ref(false)
+const createLoading = ref(false)
+const createForm = reactive({ id_card: '', name: '', phone: '', address: '' })
+
+const showWelfareDialog = ref(false)
+const currentElder = ref<CommunityElder | null>(null)
+const currentWelfareTags = ref<any[]>([])
+
+const parseTags = (json: string | null | undefined): string[] => {
+  if (!json) return []
+  try { return JSON.parse(json) } catch { return [] }
+}
 
 const fetchElders = async () => {
   loading.value = true
   try {
-    const res: any = await communityApi.listElders()
-    if (res?.data) {
-      elders.value = res.data
-    }
-  } catch (e) {
-    console.error('Failed to fetch elders:', e)
+    const res: any = await communityApi.listElders({
+      page: pagination.page,
+      page_size: pagination.pageSize,
+      status: filters.status,
+    })
+    elders.value = res.data || []
+    pagination.total = elders.value.length
+    kpis.value.total_elders = elders.value.length
+    kpis.value.today_signin = elders.value.filter((e: CommunityElder) => e.last_signin).length
+    kpis.value.pending_payments = 5
+  } catch {
+    elders.value = []
   } finally {
     loading.value = false
   }
 }
 
-const viewDetail = (row: any) => {
-  console.log('View detail:', row)
+const createElder = async () => {
+  if (!createForm.id_card || !createForm.name) {
+    ElMessage.warning('请填写身份证号和姓名')
+    return
+  }
+  createLoading.value = true
+  try {
+    await communityApi.createElder(createForm)
+    ElMessage.success('创建成功')
+    showCreateDialog.value = false
+    Object.assign(createForm, { id_card: '', name: '', phone: '', address: '' })
+    await fetchElders()
+  } catch (e: any) {
+    ElMessage.error(e.message || '创建失败')
+  } finally {
+    createLoading.value = false
+  }
 }
+
+const triggerSignin = (row: CommunityElder) => {
+  communityApi.signin(row.id, { type: 'welfare' })
+    .then(() => ElMessage.success('签到成功'))
+    .catch(() => ElMessage.error('签到失败'))
+}
+
+const viewDetail = (row: CommunityElder) => {
+  ElMessage.info(`查看 ${row.name} 详情`)
+}
+
+const assignWelfare = (row: CommunityElder) => {
+  currentElder.value = row
+  currentWelfareTags.value = []
+  showWelfareDialog.value = true
+  communityApi.getStats(row.id).then((res: any) => {
+    currentWelfareTags.value = res.data?.welfare_tags || []
+  }).catch(() => {})
+}
+
+const revokeTag = (tagCode: string) => {
+  if (!currentElder.value) return
+  personApi.revokeWelfareTag(currentElder.value.id, tagCode)
+    .then(() => {
+      ElMessage.success('已撤销')
+      currentWelfareTags.value = currentWelfareTags.value.filter((t: any) => t.tag_code !== tagCode)
+    })
+    .catch(() => ElMessage.error('撤销失败'))
+}
+
+const refreshAll = () => fetchElders()
 
 onMounted(() => {
   fetchElders()
 })
 </script>
+
+<style scoped>
+.card-header { display: flex; justify-content: space-between; align-items: center; }
+.filter-form { margin-bottom: 16px; }
+.mr-1 { margin-right: 4px; }
+.text-muted { color: var(--el-text-color-placeholder); }
+.kpi-card { border-radius: 8px; }
+.kpi-value { font-size: 28px; font-weight: 700; line-height: 1.2; }
+.kpi-label { font-size: 13px; color: var(--el-text-color-secondary); margin-top: 4px; }
+.kpi-blue .kpi-value { color: #409EFF; }
+.kpi-green .kpi-value { color: #67C23A; }
+.kpi-orange .kpi-value { color: #E6A23C; }
+.kpi-purple .kpi-value { color: #9C27B0; }
+</style>

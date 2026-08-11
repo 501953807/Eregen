@@ -15,9 +15,7 @@ export function useSelection<T = string>() {
 
   function toggleSelectAll(val: boolean, items: T[]) {
     if (val) {
-      const existing = new Set(selectedIds.value)
-      items.forEach(id => existing.add(id as unknown as T))
-      selectedIds.value = [...existing] as T[]
+      selectedIds.value = [...new Set([...selectedIds.value, ...items])] as T[]
     } else {
       selectedIds.value = []
     }
@@ -27,11 +25,13 @@ export function useSelection<T = string>() {
 
   function toggleRow(row: T, selected: boolean) {
     if (selected) {
-      if (!selectedIds.value.includes(row as unknown as T)) {
-        selectedIds.value = [...selectedIds.value, row as unknown as T]
+      const ids = selectedIds.value as unknown as T[]
+      if (!ids.includes(row)) {
+        selectedIds.value = [...ids, row]
       }
     } else {
-      selectedIds.value = selectedIds.value.filter(id => id !== row)
+      const ids = selectedIds.value as unknown as T[]
+      selectedIds.value = ids.filter(id => id !== row)
     }
     indeterminate.value = selectedIds.value.length > 0 && !allSelected.value
     allSelected.value = false
@@ -44,7 +44,7 @@ export function useSelection<T = string>() {
   }
 
   function isSelected(id: T): boolean {
-    return selectedIds.value.includes(id as unknown as T)
+    return (selectedIds.value as unknown as T[]).includes(id)
   }
 
   return { selectedIds, allSelected, indeterminate, selectedCount, toggleSelectAll, toggleRow, clearSelection, isSelected }

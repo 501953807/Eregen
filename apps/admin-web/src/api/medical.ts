@@ -59,6 +59,7 @@ export interface HospitalAdmission {
   diagnosis?: string
   emergency_contact?: string
   allergies?: string
+  expected_stay_days?: number
   admitted_at: string
   expected_discharge_at?: string
   discharged_at?: string

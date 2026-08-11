@@ -3,6 +3,12 @@ import { useAuthStore } from '@/stores/auth';
 import { ElMessage } from 'element-plus';
 import router from '@/router';
 
+export interface ApiResponse<T> {
+  code: number;
+  msg?: string;
+  data: T;
+}
+
 const baseURL = import.meta.env.VITE_API_BASE_URL
   ? import.meta.env.VITE_API_BASE_URL
   : (import.meta.env.DEV ? 'http://localhost:8089' : '/api/v1');

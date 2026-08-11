@@ -105,7 +105,7 @@
         @row-click="handleRowClick"
         highlight-current-row
       >
-        <el-table-column type="selection" width="40" :selectable="row => row.type !== 'pillbox_basic'" />
+        <el-table-column type="selection" width="40" :selectable="(row: Device) => !(row.type === 'pillbox' && row.tier === 'basic')" />
         <el-table-column label="设备信息" min-width="160">
           <template #default="{ row }">
             <div class="device-cell">
@@ -165,8 +165,8 @@
           background
           layout="total, sizes, prev, pager, next, jumper"
           :total="deviceStore.total"
-          :page-size="pagination.pageSize"
-          :current-page="pagination.page"
+          :page-size="pState.pageSize"
+          :current-page="pState.page"
           :page-sizes="[10, 20, 50, 100]"
           @size-change="handleSizeChange"
           @current-change="handlePageChange"
@@ -280,7 +280,8 @@ import { usePagination, useFilters, useSelection } from '@/composables'
 
 const deviceStore = useDeviceStore()
 
-const { state: pagination, setPageSize, setTotal } = usePagination(20)
+const pagination = usePagination(20)
+const { state: pState, setPageSize: setPageSizeFn, setTotal } = pagination
 const { filters, setFilter, reset: resetFilters } = useFilters({
   type: '',
   status: '',
@@ -309,14 +310,14 @@ const stats = computed(() => ({
   online_devices: deviceStore.devices.filter(d => d.status === 'online').length,
   offline_devices: deviceStore.devices.filter(d => d.status !== 'online').length,
   outdated_firmware: deviceStore.devices.filter(d => d.firmware_version && d.firmware_version !== latestFw).length,
-  fault_count: deviceStore.devices.filter(d => d.fault === true).length,
+  fault_count: deviceStore.devices.filter(d => d.status === 'fault').length,
 }))
 
 function handleSelectionChange(rows: Device[]) {
   rows.forEach(r => toggleRow(r.id, true))
 }
 function handleToggleSelectAll(val: boolean) {
-  toggleSelectAllFn(val, filteredDevices.value.filter(d => d.type !== 'pillbox_basic').map(d => d.id))
+  toggleSelectAllFn(val, filteredDevices.value.filter(d => !(d.type === 'pillbox' && d.tier === 'basic')).map(d => d.id))
 }
 function clearSelectionBtn() {
   clearSelection()
@@ -327,7 +328,7 @@ function deviceLabel(d: Device): string {
     bracelet: { starter: '手环 Starter', plus: '手环 Plus', pro: '手环 Pro' },
     pillbox: { basic: '药盒 Basic', smart: '药盒 Smart', auto: '药盒 Auto' },
   }
-  return labels[d.type]?.[d.tier] || `${d.type}-${d.tier}`
+  return (d.type ? labels[d.type]?.[d.tier || ''] : '') || `${d.type || ''}-${d.tier || ''}`
 }
 
 function chipLabel(d: Device): string {
@@ -385,7 +386,7 @@ function otaStatusText(status?: string): string {
 }
 
 async function handleSearch() {
-  pagination.page = 1
+  pState.value.page = 1
   await deviceStore.fetchList({ status: filters.value.status })
 }
 
@@ -399,12 +400,12 @@ function handleRefresh() {
 }
 
 function handleSizeChange(size: number) {
-  setPageSize(size)
+  setPageSizeFn(size)
   deviceStore.fetchList()
 }
 
 function handlePageChange(page: number) {
-  pagination.page = page
+  pState.value.page = page
   deviceStore.fetchList()
 }
 
@@ -464,11 +465,10 @@ async function confirmConfig() {
     ElMessage.success('配置已下发')
     showConfigDialog.value = false
     await deviceStore.fetchList({
-      page: pagination.page,
-      page_size: pagination.pageSize,
+      page: pState.value.page,
+      page_size: pState.value.pageSize,
       status: filters.value.status,
       type: filters.value.type,
-      tier: filters.value.tier,
     })
   } catch {
     ElMessage.error('配置下发失败')
