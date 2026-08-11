@@ -21,4 +21,14 @@ type Store interface {
 	CommunityWBStore
 	SubscriptionStore
 	InstitutionStore
+	PersonStore
+	MedicationRuleStore
+	PersonRoleStore
+	AlertRuleStore
+	HealthRecordStore
+	HealthGuidanceStore
+	HealthReportStore
+	ComplianceStore
+	DeviceBindingStore
+	NotificationStore
 }

@@ -180,4 +180,21 @@ flutter build appbundle --release
 
 ---
 
-© 2026 Eregen (颐贞). All rights reserved.
+## 8. 业务链上下文
+
+### 8.1 仅服务于住院链
+
+护士终端 Flutter App 仅服务于住院链（hospital）业务：
+- 身份：nurse 角色，通过 admin-api 认证获取 JWT token
+- 数据隔离：通过 `institution_id` 绑定所属医院，仅能访问本机构患者
+- 跨链不可见：无法查看自营链（self）或社区链（community）的任何数据
+
+### 8.2 与身份模型的关联
+
+护士在执行巡检查房时：
+1. 扫描腕带 → 获取 `person_id`
+2. 查询 `persons` 表获取身份信息（姓名、年龄等基础信息）
+3. 查询 `person_profiles` 表（business_chain='hospital'）获取住院业务信息
+4. 执行核验 → 写入 `medical_verifications` 表
+
+护士终端不感知 `elderly_profiles`（自营）或 `community_elders`（社区）的存在。

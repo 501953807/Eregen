@@ -739,3 +739,290 @@ type AuditLog struct {
 	UserAgent  string                 `json:"user_agent"`
 	CreatedAt  time.Time              `json:"created_at"`
 }
+
+// Person represents a unified identity across all business chains.
+type Person struct {
+	ID               string     `json:"id"`
+	IDCard           string     `json:"id_card"`
+	Name             string     `json:"name"`
+	Gender           int        `json:"gender"`
+	BirthDate        *time.Time `json:"birth_date,omitempty"`
+	Phone            string     `json:"phone"`
+	EmergencyContact string     `json:"emergency_contact"`
+	Address          string     `json:"address"`
+	AvatarURL        *string    `json:"avatar_url,omitempty"`
+	Status           string     `json:"status"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+}
+
+// PersonProfile holds business-chain-specific extension fields for a person.
+type PersonProfile struct {
+	PersonID            string     `json:"person_id"`
+	BusinessChain       string     `json:"business_chain"`
+	SubscriptionTier    string     `json:"subscription_tier,omitempty"`
+	SubscriptionStatus  string     `json:"subscription_status,omitempty"`
+	SubscriptionStart   *time.Time `json:"subscription_start,omitempty"`
+	SubscriptionEnd     *time.Time `json:"subscription_end,omitempty"`
+	HealthRiskLevel     string     `json:"health_risk_level,omitempty"`
+	AdmissionNo         string     `json:"admission_no,omitempty"`
+	Department          string     `json:"department,omitempty"`
+	BedNumber           string     `json:"bed_number,omitempty"`
+	BloodType           string     `json:"blood_type,omitempty"`
+	AttendingDoctor     string     `json:"attending_doctor,omitempty"`
+	Diagnosis           string     `json:"diagnosis,omitempty"`
+	AdmissionDate       *time.Time `json:"admission_date,omitempty"`
+	ExpectedDischarge   *time.Time `json:"expected_discharge_date,omitempty"`
+	DischargeDate       *time.Time `json:"discharge_date,omitempty"`
+	DischargeType       string     `json:"discharge_type,omitempty"`
+	HospitalID          string     `json:"hospital_id,omitempty"`
+	HospitalIDCommunity string     `json:"hospital_id_community,omitempty"`
+	MinzhengCertified   int        `json:"minzheng_certified"`
+	SubsidyType         string     `json:"subsidy_type,omitempty"`
+	CertificationDate   *time.Time `json:"certification_date,omitempty"`
+	CertificationDoc    string     `json:"certification_doc,omitempty"`
+	NextReviewDate      *time.Time `json:"next_review_date,omitempty"`
+	LinkedPersonID      string     `json:"linked_person_id,omitempty"`
+	CreatedAt           time.Time  `json:"created_at"`
+	UpdatedAt           time.Time  `json:"updated_at"`
+}
+
+// PersonWelfareTag links a person to a welfare tag.
+type PersonWelfareTag struct {
+	PersonID string    `json:"person_id"`
+	TagCode  string    `json:"tag_code"`
+	ValidFrom time.Time `json:"valid_from"`
+	ValidTo  time.Time `json:"valid_to"`
+}
+
+// PersonRoleBinding represents a user's role assignment to a business chain.
+type PersonRoleBinding struct {
+	ID            string     `json:"id"`
+	UserID        string     `json:"user_id"`
+	BusinessChain string     `json:"business_chain"`
+	Role          string     `json:"role"`
+	InstitutionID string     `json:"institution_id,omitempty"`
+	GrantedBy     string     `json:"granted_by,omitempty"`
+	GrantedAt     time.Time  `json:"granted_at"`
+	ExpiresAt     *time.Time `json:"expires_at,omitempty"`
+	Active        int        `json:"active"`
+	CreatedAt     time.Time  `json:"created_at"`
+}
+
+// AlertRule defines an alert configuration for a business chain.
+type AlertRule struct {
+	ID                  string    `json:"id"`
+	Name                string    `json:"name"`
+	BusinessChain       string    `json:"business_chain"`
+	AlertType           string    `json:"alert_type"`
+	Severity            string    `json:"severity"`
+	ConditionField      string    `json:"condition_field"`
+	ConditionOperator   string    `json:"condition_operator"`
+	ConditionThreshold  *int      `json:"condition_threshold,omitempty"`
+	ConditionDurationMin *int     `json:"condition_duration_min,omitempty"`
+	NotifyRoles         string    `json:"notify_roles"`
+	NotifyChannels      string    `json:"notify_channels"`
+	NotifyInstitutionIDs string   `json:"notify_institution_ids"`
+	EscalationTimeoutMin int     `json:"escalation_timeout_min"`
+	EscalationRoles     string    `json:"escalation_roles"`
+	AutoAction          string    `json:"auto_action"`
+	Active              int       `json:"active"`
+	CreatedAt           time.Time `json:"created_at"`
+	UpdatedAt           time.Time `json:"updated_at"`
+}
+
+// HealthRecordV2 is the extended health record supporting all chains.
+type HealthRecordV2 struct {
+	ID              string     `json:"id"`
+	PersonID        string     `json:"person_id"`
+	BusinessChain   string     `json:"business_chain"`
+	RecordType      string     `json:"record_type"`
+	Source          string     `json:"source"`
+	DeviceID        string     `json:"device_id,omitempty"`
+	RecordedAt      time.Time  `json:"recorded_at"`
+	HeartRate       *int       `json:"heart_rate,omitempty"`
+	BloodPressureSys *int      `json:"blood_pressure_sys,omitempty"`
+	BloodPressureDia *int      `json:"blood_pressure_dia,omitempty"`
+	SpO2            *int       `json:"spo2,omitempty"`
+	Temperature     *float64   `json:"temperature,omitempty"`
+	RespiratoryRate *int       `json:"respiratory_rate,omitempty"`
+	PulseRate       *int       `json:"pulse_rate,omitempty"`
+	GlucoseFasting  *float64   `json:"blood_glucose_fasting,omitempty"`
+	GlucosePost     *float64   `json:"blood_glucose_postprandial,omitempty"`
+	UricAcid        *float64   `json:"uric_acid,omitempty"`
+	Creatinine      *float64   `json:"creatinine,omitempty"`
+	HbA1c           *float64   `json:"hemoglobin_a1c,omitempty"`
+	Weight          *float64   `json:"weight,omitempty"`
+	Height          *float64   `json:"height,omitempty"`
+	BMI             *float64   `json:"bmi,omitempty"`
+	Steps           *int64     `json:"steps,omitempty"`
+	SleepHours      *float64   `json:"sleep_hours,omitempty"`
+	ExerciseMinutes *int       `json:"exercise_minutes,omitempty"`
+	Notes           string     `json:"notes,omitempty"`
+	CreatedAt       time.Time  `json:"created_at"`
+}
+
+// PersonHealthSummary is the pre-computed health summary.
+type PersonHealthSummary struct {
+	PersonID          string    `json:"person_id"`
+	BusinessChain     string    `json:"business_chain"`
+	LatestHR          *int      `json:"latest_hr,omitempty"`
+	LatestSpO2        *int      `json:"latest_spo2,omitempty"`
+	LatestBPSys       *int      `json:"latest_bp_sys,omitempty"`
+	LatestBPDia       *int      `json:"latest_bp_dia,omitempty"`
+	LatestGlucoseFasting *float64 `json:"latest_glucose_fasting,omitempty"`
+	LatestUricAcid    *float64  `json:"latest_uric_acid,omitempty"`
+	LatestSteps       *int64    `json:"latest_steps,omitempty"`
+	LatestSleepHours  *float64  `json:"latest_sleep_hours,omitempty"`
+	RiskScore         *float64  `json:"risk_score,omitempty"`
+	TrendDirection    string    `json:"trend_direction,omitempty"`
+	LastUpdated       time.Time `json:"last_updated"`
+	ARecommendation   string    `json:"ai_recommendation,omitempty"`
+}
+
+// HealthGuidanceRule defines a health guidance rule.
+type HealthGuidanceRule struct {
+	ID              string    `json:"id"`
+	Name            string    `json:"name"`
+	BusinessChain   string    `json:"business_chain"`
+	TriggerCondition string   `json:"trigger_condition"`
+	ConditionField  string    `json:"condition_field,omitempty"`
+	ConditionOp     string    `json:"condition_operator,omitempty"`
+	ConditionThresh *float64  `json:"condition_threshold,omitempty"`
+	GuidanceType    string    `json:"guidance_type"`
+	Title           string    `json:"title"`
+	Content         string    `json:"content"`
+	Priority        int       `json:"priority"`
+	Enabled         int       `json:"enabled"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+// HealthGuidanceDelivery records a guidance push.
+type HealthGuidanceDelivery struct {
+	ID           string    `json:"id"`
+	PersonID     string    `json:"person_id"`
+	BusinessChain string   `json:"business_chain"`
+	RuleID       string    `json:"rule_id"`
+	GuidanceType string    `json:"guidance_type"`
+	Title        string    `json:"title"`
+	Content      string    `json:"content"`
+	Channel      string    `json:"channel"`
+	DeliveredAt  time.Time `json:"delivered_at"`
+	ReadStatus   int       `json:"read_status"`
+	Feedback     string    `json:"feedback,omitempty"`
+}
+
+// HealthReportTemplate defines a report template.
+type HealthReportTemplate struct {
+	ID             string    `json:"id"`
+	Name           string    `json:"name"`
+	BusinessChain  string    `json:"business_chain"`
+	Frequency      string    `json:"frequency"`
+	TemplateType   string    `json:"template_type"`
+	IncludeSections string   `json:"include_sections"`
+	Enabled        int       `json:"enabled"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
+// HealthReport records a generated report.
+type HealthReport struct {
+	ID                 string     `json:"id"`
+	PersonID           string     `json:"person_id"`
+	BusinessChain      string     `json:"business_chain"`
+	TemplateID         string     `json:"template_id,omitempty"`
+	ReportPeriodStart  time.Time  `json:"report_period_start"`
+	ReportPeriodEnd    time.Time  `json:"report_period_end"`
+	GeneratedAt        time.Time  `json:"generated_at"`
+	ReportData         string     `json:"report_data,omitempty"`
+	DeliveredChannels  string     `json:"delivered_channels,omitempty"`
+	Status             string     `json:"status"`
+	CreatedAt          time.Time  `json:"created_at"`
+}
+
+// ComplianceRule defines a compliance check rule.
+type ComplianceRule struct {
+	ID            string    `json:"id"`
+	RuleCode      string    `json:"rule_code"`
+	Name          string    `json:"name"`
+	Description   string    `json:"description"`
+	BusinessChain string    `json:"business_chain"`
+	RuleType      string    `json:"rule_type"`
+	ConditionSQL  string    `json:"condition_sql"`
+	Severity      string    `json:"severity"`
+	ActionRequired string   `json:"action_required,omitempty"`
+	Enabled       int       `json:"enabled"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+// ComplianceCheck records a compliance check result.
+type ComplianceCheck struct {
+	ID                string     `json:"id"`
+	RuleID            string     `json:"rule_id"`
+	PersonID          string     `json:"person_id"`
+	CheckTime         time.Time  `json:"check_time"`
+	Violated          int        `json:"violated"`
+	ViolationDetails  string     `json:"violation_details,omitempty"`
+	ReviewedBy        string     `json:"reviewed_by,omitempty"`
+	ReviewedAt        *time.Time `json:"reviewed_at,omitempty"`
+	ReviewResult      string     `json:"review_result,omitempty"`
+	ActionTaken       string     `json:"action_taken,omitempty"`
+	CreatedAt         time.Time  `json:"created_at"`
+}
+
+// DeviceBinding links a device to a person on a business chain.
+type DeviceBinding struct {
+	ID            string     `json:"id"`
+	DeviceID      string     `json:"device_id"`
+	PersonID      string     `json:"person_id"`
+	BusinessChain string     `json:"business_chain"`
+	BoundAt       time.Time  `json:"bound_at"`
+	UnboundAt     *time.Time `json:"unbound_at,omitempty"`
+	BindingType   string     `json:"binding_type"`
+	CreatedAt     time.Time  `json:"created_at"`
+}
+
+// NotificationTemplate defines a notification template.
+type NotificationTemplate struct {
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	BusinessChain string   `json:"business_chain"`
+	Channel      string    `json:"channel"`
+	Subject      string    `json:"subject,omitempty"`
+	BodyTemplate string    `json:"body_template"`
+	Enabled      int       `json:"enabled"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+// NotificationLog records a notification send.
+type NotificationLog struct {
+	ID             string     `json:"id"`
+	PersonID       string     `json:"person_id"`
+	BusinessChain  string     `json:"business_chain"`
+	TemplateID     string     `json:"template_id,omitempty"`
+	RecipientRole  string     `json:"recipient_role,omitempty"`
+	RecipientID    string     `json:"recipient_id,omitempty"`
+	Channel        string     `json:"channel"`
+	Status         string     `json:"status"`
+	SentAt         *time.Time `json:"sent_at,omitempty"`
+	ReadAt         *time.Time `json:"read_at,omitempty"`
+	ErrorMessage   string     `json:"error_message,omitempty"`
+	CreatedAt      time.Time  `json:"created_at"`
+}
+
+
+type MedicationExecution struct {
+	ID                 string `json:"id"`
+	PersonID           string `json:"person_id"`
+	BusinessChain      string `json:"business_chain"`
+	RuleID             string `json:"rule_id"`
+	ScheduledTime      string `json:"scheduled_time"`
+	ActualTime         string `json:"actual_time,omitempty"`
+	Status             string `json:"status"`
+	TakenBy            string `json:"taken_by"`
+	DeviceID           string `json:"device_id"`
+	VerificationMethod string `json:"verification_method"`
+	Notes              string `json:"notes"`
+	CreatedAt          string `json:"created_at"`
+}

@@ -221,3 +221,89 @@ type AuditStore interface {
 	ListAuditLogsByAction(ctx context.Context, action string, limit int) ([]model.AuditLog, error)
 }
 
+
+type PersonStore interface {
+	CreatePerson(ctx context.Context, p *model.Person) error
+	GetPerson(ctx context.Context, id string) (*model.Person, error)
+	GetPersonByIDCard(ctx context.Context, idCard string) (*model.Person, error)
+	ListPersons(ctx context.Context, page, pageSize int, businessChain, status string) ([]model.Person, error)
+	UpdatePerson(ctx context.Context, id string, updates map[string]any) error
+	DeletePerson(ctx context.Context, id string) error
+	CreateProfile(ctx context.Context, pp *model.PersonProfile) error
+	GetProfile(ctx context.Context, personID string, chain model.BusinessChain) (*model.PersonProfile, error)
+	ListProfiles(ctx context.Context, chain model.BusinessChain) ([]model.PersonProfile, error)
+	UpdateProfile(ctx context.Context, pp *model.PersonProfile) error
+	AssignPersonWelfareTag(ctx context.Context, wt *model.PersonWelfareTag) error
+	RevokePersonWelfareTag(ctx context.Context, personID, tagCode string) error
+	ListPersonWelfareTags(ctx context.Context, personID string) ([]model.PersonWelfareTag, error)
+}
+
+type MedicationRuleStore interface {
+	ListMedicationRules(ctx context.Context, personID string, chain model.BusinessChain) ([]model.MedicationRuleRow, error)
+	CreateMedicationRuleV2(ctx context.Context, r *model.MedicationRuleRow) error
+	UpdateMedicationRuleV2(ctx context.Context, id string, updates map[string]any) error
+	DeleteMedicationRuleV2(ctx context.Context, id string) error
+	CreateMedicationExecution(ctx context.Context, e *model.MedicationExecution) error
+	ListMedicationExecutions(ctx context.Context, personID string, chain model.BusinessChain, limit int) ([]model.MedicationExecution, error)
+}
+
+type PersonRoleStore interface {
+	AssignRole(ctx context.Context, binding *model.PersonRoleBinding) error
+	ListRoles(ctx context.Context, userID string) ([]model.PersonRoleBinding, error)
+	ListRolesByChain(ctx context.Context, chain model.BusinessChain) ([]model.PersonRoleBinding, error)
+	RevokeRole(ctx context.Context, bindingID string) error
+	GetEffectiveRole(ctx context.Context, userID string, chain model.BusinessChain) (string, bool)
+}
+
+type AlertRuleStore interface {
+	CreateAlertRule(ctx context.Context, r *model.AlertRule) error
+	GetAlertRule(ctx context.Context, id string) (*model.AlertRule, error)
+	ListAlertRules(ctx context.Context, chain model.BusinessChain) ([]model.AlertRule, error)
+	UpdateAlertRule(ctx context.Context, id string, updates map[string]any) error
+	DeleteAlertRule(ctx context.Context, id string) error
+}
+
+type HealthRecordStore interface {
+	CreateHealthRecordV2(ctx context.Context, r *model.HealthRecordV2) error
+	ListHealthRecordsV2(ctx context.Context, personID string, chain model.BusinessChain, recordType string, limit int) ([]model.HealthRecordV2, error)
+	GetHealthSummaryV2(ctx context.Context, personID string, chain model.BusinessChain) (*model.PersonHealthSummary, error)
+	UpdateHealthSummaryV2(ctx context.Context, s *model.PersonHealthSummary) error
+}
+
+type HealthGuidanceStore interface {
+	CreateGuidanceRule(ctx context.Context, r *model.HealthGuidanceRule) error
+	ListGuidanceRules(ctx context.Context, chain model.BusinessChain, enabledOnly bool) ([]model.HealthGuidanceRule, error)
+	EvaluateGuidanceRules(ctx context.Context, personID string, chain model.BusinessChain, healthData map[string]any) ([]model.HealthGuidanceRule, error)
+	CreateGuidanceDelivery(ctx context.Context, d *model.HealthGuidanceDelivery) error
+	ListGuidanceDeliveries(ctx context.Context, personID string, chain model.BusinessChain, limit int) ([]model.HealthGuidanceDelivery, error)
+}
+
+type HealthReportStore interface {
+	CreateReportTemplate(ctx context.Context, t *model.HealthReportTemplate) error
+	ListReportTemplates(ctx context.Context, chain model.BusinessChain) ([]model.HealthReportTemplate, error)
+	CreateReport(ctx context.Context, r *model.HealthReport) error
+	ListReports(ctx context.Context, personID string, chain model.BusinessChain, limit int) ([]model.HealthReport, error)
+}
+
+type ComplianceStore interface {
+	CreateComplianceRule(ctx context.Context, r *model.ComplianceRule) error
+	ListComplianceRules(ctx context.Context, chain model.BusinessChain) ([]model.ComplianceRule, error)
+	RunComplianceCheck(ctx context.Context, ruleCode string, personID string) (*model.ComplianceCheck, error)
+	ListComplianceChecks(ctx context.Context, personID string, limit int) ([]model.ComplianceCheck, error)
+	ReviewCheck(ctx context.Context, checkID string, reviewerID string, result string, notes string) error
+}
+
+type DeviceBindingStore interface {
+	BindDevice(ctx context.Context, binding *model.DeviceBinding) error
+	UnbindDevice(ctx context.Context, bindingID string) error
+	ListDeviceBindings(ctx context.Context, personID string, chain model.BusinessChain) ([]model.DeviceBinding, error)
+	ListDevicesByPerson(ctx context.Context, personID string) ([]model.DeviceSummary, error)
+}
+
+type NotificationStore interface {
+	CreateNotificationTemplate(ctx context.Context, t *model.NotificationTemplate) error
+	ListNotificationTemplates(ctx context.Context, chain model.BusinessChain) ([]model.NotificationTemplate, error)
+	CreateNotificationLog(ctx context.Context, l *model.NotificationLog) error
+	UpdateNotificationStatus(ctx context.Context, logID string, status string, sentAt, readAt *time.Time) error
+	ListNotificationLogs(ctx context.Context, personID string, chain model.BusinessChain, limit int) ([]model.NotificationLog, error)
+}
