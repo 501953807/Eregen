@@ -472,4 +472,48 @@ npm run preview
 
 ---
 
+## 8. 业务链权限与页面隔离
+
+### 8.1 角色-页面映射矩阵
+
+| 页面路由 | super_admin | operator | hospital_doc | nurse | community_staff | regulator |
+|---------|-------------|----------|--------------|-------|-----------------|-----------|
+| `/dashboard` | ✅ | ✅ 自营数据 | ❌ | ❌ | ❌ | ❌ |
+| `/elderly` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `/devices` | ✅ | ✅ 自营设备 | ❌ | ❌ | ❌ | ❌ |
+| `/medical/workstation` | ✅ | ❌ | ✅ | ✅ 执行 | ❌ | ❌ |
+| `/medical-wristband` | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ |
+| `/community-wb` | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| `/regulatory` | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| `/subscriptions` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `/settings` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+### 8.2 关键变更说明
+
+1. **operator（运营平台）**：仅能看到自营链数据（老人档案、自营设备、订阅），看不到住院链和社区链
+2. **hospital_doc（医院医生）**：仅能看到住院链数据，看到社区链只读
+3. **community_staff（社区工作人员）**：仅能看到社区链数据
+4. **regulator（监管角色）**：能看到住院链和社区链（只读），不能看自营链
+5. **super_admin（超级用户）**：能看到所有链的全部数据
+
+### 8.3 路由守卫实现
+
+```typescript
+// router/guards.ts
+const roleChainMap: Record<Role, BusinessChain[]> = {
+  super_admin: ['self', 'hospital', 'community', 'regulatory'],
+  operator: ['self'],
+  hospital_doc: ['hospital'],
+  nurse: ['hospital'],
+  community_staff: ['community'],
+  regulator: ['hospital', 'community', 'regulatory'],
+}
+
+function checkChainAccess(role: Role, requiredChain: BusinessChain): boolean {
+  return roleChainMap[role]?.includes(requiredChain) ?? false
+}
+```
+
+---
+
 © 2026 Eregen (颐贞). All rights reserved.

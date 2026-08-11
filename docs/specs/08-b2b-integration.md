@@ -382,4 +382,48 @@ GET /api/v2/b2b/hospitals/:id/medical/wb/patients/:id/verifications?from=&to=
 
 ---
 
+## 10. 业务链费用采集与合规检测
+
+### 10.1 医疗费用账单字段扩展
+
+为支持合规检测（R_C06/R_C07/R_C08），`medical_expenses` 表需增加以下字段：
+
+```sql
+-- 现有字段保留
+id, patient_id, expense_date, item_name, category, amount, quantity, unit_price, notes
+
+-- 新增合规检测字段
+diagnosis_code TEXT,                  -- ICD编码，用于同病种费用对比
+dept_id TEXT,                         -- 科室ID，用于同科室费用对比
+billing_source TEXT CHECK (billing_source IN ('his','manual','pharmacy','lab','radiology')),
+insurance_type TEXT CHECK (insurance_type IN ('employee','resident','self')),
+approved_amount REAL,                 -- 医保报销金额
+patient_amount REAL                   -- 患者自付金额
+```
+
+### 10.2 合规检测数据源
+
+| 规则 | 数据来源 | 检测逻辑 |
+|------|---------|---------|
+| R_C06 费用异常 | medical_expenses | 住院总费用 vs 同科室同病种平均费用（含药品费/检查费/治疗费分项） |
+| R_C07 分项异常 | medical_expenses | 药品费/检查费/治疗费分项 vs 标准费用 |
+| R_C08 重复收费 | medical_expenses | 同一天同一 item_name + category 计数 > 1 |
+| R_C10 出院集中 | medical_expenses | 出院前24h费用 / 总费用 比例 > 50% |
+
+### 10.3 B2B 角色与业务链映射
+
+| B2B 服务 | 业务链 | 权限范围 |
+|---------|--------|---------|
+| hospital-api | 住院链 | 只能访问本机构（institution_id）的患者数据 |
+| community-platform | 社区链 | 只能访问本机构（institution_id）的老人数据 |
+| insurance-integration | 监管链 | 可跨机构查询（只读），用于合规审计 |
+
+### 10.4 跨链数据可见性
+
+- **operator**（运营平台）：仅通过 admin-api 管理自营链，不能通过 B2B 接口访问住院链和社区链
+- **regulator**（医保监管）：通过 insurance-integration 可查询所有医院的费用数据，用于跨机构合规检测
+- **hospital_doc/nurse/community_staff**：仅能访问所属机构的数据
+
+---
+
 © 2026 Eregen (颐贞). All rights reserved.

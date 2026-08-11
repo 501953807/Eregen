@@ -939,4 +939,159 @@ CLI 覆盖：`./scripts/start.sh start gateway --port 9081` 覆盖 `PORT_GATEWAY
 
 ---
 
+## 9. 业务链统一身份模型
+
+### 9.1 统一身份基表
+
+所有业务链使用统一 `persons` 表，以身份证号为主键：
+
+```sql
+CREATE TABLE persons (
+    id TEXT PRIMARY KEY,
+    id_card TEXT UNIQUE NOT NULL,    -- 身份证号（必填，三条链统一）
+    name TEXT NOT NULL,
+    gender INTEGER CHECK (gender IN (0,1,2)),
+    birth_date DATE,
+    phone TEXT,
+    emergency_contact TEXT,
+    address TEXT,
+    avatar_url TEXT,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active','suspended','deceased')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### 9.2 业务链扩展表
+
+```sql
+CREATE TABLE person_profiles (
+    person_id TEXT PRIMARY KEY REFERENCES persons(id),
+    business_chain TEXT NOT NULL CHECK (business_chain IN ('self','hospital','community')),
+
+    -- 自营链字段
+    subscription_tier TEXT CHECK (subscription_tier IN ('starter','plus','pro','pro_plus')),
+    subscription_status TEXT CHECK (subscription_status IN ('trial','active','expired','cancelled')),
+    subscription_start DATE,
+    subscription_end DATE,
+    health_risk_level TEXT CHECK (health_risk_level IN ('low','medium','high','critical')),
+
+    -- 住院链字段
+    admission_no TEXT,
+    department TEXT,
+    bed_number TEXT,
+    blood_type TEXT CHECK (blood_type IN ('A','B','AB','O','unknown')),
+    attending_doctor TEXT,
+    diagnosis TEXT,
+    admission_date DATE,
+    expected_discharge_date DATE,
+    discharge_date DATE,
+    discharge_type TEXT CHECK (discharge_type IN ('recovered','transferred','refused','deceased')),
+    hospital_id TEXT,
+
+    -- 社区链字段
+    hospital_id_community TEXT,
+    minzheng_certified INTEGER DEFAULT 0,
+    subsidy_type TEXT,
+    certification_date DATE,
+    certification_doc TEXT,
+    next_review_date DATE,
+
+    linked_person_id TEXT REFERENCES persons(id),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### 9.3 设备管理与业务链映射
+
+```
+自营链设备（operator 可见）：
+├── bracelet (手环)：Starter/Plus/Pro/Pro+ 三档
+│   └── 功能：心率、血氧、GPS定位、SOS、跌倒检测、血压计配件
+└── pillbox (药盒)：Basic/Smart/Auto 三档
+    └── 功能：定时语音提醒、光电检测、库存预警、TTS播报
+
+住院链设备（hospital_doc/nurse 可见）：
+└── medical_wristband (医用腕带)
+    └── 功能：NFC身份核验、电子围栏、巡检查房、生命体征监测
+
+社区链设备（community_staff 可见）：
+└── community_wristband (社区腕带)
+    └── 功能：福利签到、药品识别、电子围栏、健康筛查
+```
+
+### 9.4 五角色权限体系
+
+| 角色 | 自营链 | 住院链 | 社区链 | 监管链 |
+|------|--------|--------|--------|--------|
+| super_admin | 全权限 | 全权限 | 全权限 | 全权限 |
+| operator | 查看+编辑 | 无权限 | 无权限 | 只读 |
+| hospital_doc | 无权限 | 查看+编辑 | 只读 | 无权限 |
+| nurse | 无权限 | 查看+执行 | 无权限 | 无权限 |
+| community_staff | 只读 | 只读 | 查看+编辑 | 无权限 |
+| regulator | 无权限 | 只读 | 只读 | 全权限 |
+
+### 9.5 健康数据统一存储
+
+所有健康数据统一存储于 `health_records` 表，通过 `business_chain` 和 `record_type` 区分来源：
+
+```sql
+CREATE TABLE health_records (
+    id TEXT PRIMARY KEY,
+    person_id TEXT NOT NULL REFERENCES persons(id),
+    business_chain TEXT NOT NULL,
+    record_type TEXT NOT NULL,
+    source TEXT NOT NULL CHECK (source IN ('device','nurse','community_staff','his','manual')),
+    device_id TEXT,
+    recorded_at DATETIME NOT NULL,
+    heart_rate INTEGER,
+    blood_pressure_sys INTEGER,
+    blood_pressure_dia INTEGER,
+    spo2 INTEGER,
+    temperature REAL,
+    blood_glucose_fasting REAL,
+    blood_glucose_postprandial REAL,
+    uric_acid REAL,
+    steps INTEGER,
+    sleep_hours REAL,
+    exercise_minutes INTEGER,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### 9.6 用药规则统一存储
+
+```sql
+CREATE TABLE medication_rules (
+    id TEXT PRIMARY KEY,
+    person_id TEXT NOT NULL REFERENCES persons(id),
+    business_chain TEXT NOT NULL,
+    source_type TEXT NOT NULL CHECK (source_type IN ('custom','doctor_order','care_plan')),
+    source_id TEXT,
+    drug_name TEXT NOT NULL,
+    generic_name TEXT,
+    drug_category TEXT CHECK (drug_category IN ('prescription','otc','supplement','tcm')),
+    dosage TEXT NOT NULL,
+    frequency TEXT NOT NULL,
+    route TEXT DEFAULT 'oral',
+    schedule_time1 TEXT,
+    schedule_time2 TEXT,
+    schedule_time3 TEXT,
+    days_of_week TEXT DEFAULT '1,2,3,4,5,6,7',
+    duration TEXT,
+    pre_meal INTEGER DEFAULT 0,
+    post_meal INTEGER DEFAULT 0,
+    special_instructions TEXT,
+    prescribed_by TEXT,
+    prescribed_at DATETIME,
+    active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
 © 2026 Eregen (颐贞). All rights reserved.

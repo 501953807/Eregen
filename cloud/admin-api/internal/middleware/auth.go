@@ -114,3 +114,47 @@ func (j *AdminJWT) RequireRole(minRole string) gin.HandlerFunc {
 func (j *AdminJWT) RequireAdminRole(minRole string) gin.HandlerFunc {
 	return j.RequireRole(minRole)
 }
+
+// ChainPermissions maps role string → allowed business chains.
+var ChainPermissions = map[string][]string{
+	"super_admin":     {"self", "hospital", "community", "regulatory"},
+	"operator":        {"self", "regulatory"},
+	"hospital_doc":    {"hospital"},
+	"nurse":           {"hospital"},
+	"community_staff": {"community"},
+	"regulator":       {"hospital", "community", "regulatory"},
+}
+
+// RequireChain returns middleware that checks the user has access to the given business chain.
+func (j *AdminJWT) RequireChain(chain string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, exists := c.Get(string(ContextRole))
+		if !exists {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthenticated"})
+			return
+		}
+		roleStr, ok := role.(string)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "invalid role"})
+			return
+		}
+		allowed, ok := ChainPermissions[roleStr]
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "unknown role"})
+			return
+		}
+		hasAccess := false
+		for _, c := range allowed {
+			if c == chain {
+				hasAccess = true
+				break
+			}
+		}
+		if !hasAccess {
+			c.JSON(http.StatusForbidden, gin.H{"error": "access denied for this business chain"})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
