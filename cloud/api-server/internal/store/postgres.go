@@ -1599,5 +1599,29 @@ func (p *Postgres) CheckElderlyAccess(ctx context.Context, elderlyID, userID str
 		elderlyID, userID).Scan(&count)
 	return count > 0, err
 }
+// ListDevicesAdmin returns all devices filtered by status (admin endpoint).
+func (p *Postgres) ListDevicesAdmin(ctx context.Context, status string) ([]model.DeviceSummary, error) {
+	where := "status = $1"
+	args := []any{status}
+	if status == "" {
+		where = "1=1"
+		args = nil
+	}
+	rows, err := p.pool.Query(ctx, `SELECT id, device_id, device_type, tier, status, last_seen FROM devices WHERE `+where+` ORDER BY last_seen DESC`, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []model.DeviceSummary
+	for rows.Next() {
+		var d model.DeviceSummary
+		if err := rows.Scan(&d.ID, &d.DeviceID, &d.Type, &d.Tier, &d.Status, &d.LastSeen); err != nil {
+			return nil, err
+		}
+		result = append(result, d)
+	}
+	return result, rows.Err()
+}
+
 
 // MedRuleElderlyID returns the elderly_id for a medication rule.
