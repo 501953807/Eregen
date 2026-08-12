@@ -2250,7 +2250,8 @@ func (s *Store) CreateReport(ctx context.Context, r *model.HealthReport) error {
 	rec := &models.HealthReport{
 		BaseModel: models.BaseModel{ID: r.ID}, PersonID: r.PersonID,
 		BusinessChain: r.BusinessChain, TemplateID: r.TemplateID,
-		ReportPeriod: r.ReportPeriod, Content: r.Content,
+		ReportPeriod: r.ReportPeriodStart.Format("2006-01-02") + " to " + r.ReportPeriodEnd.Format("2006-01-02"),
+		Content: r.ReportData,
 	}
 	return s.db.WithContext(ctx).Create(rec).Error
 }
@@ -2296,8 +2297,8 @@ func (s *Store) ListComplianceRules(ctx context.Context, chain model.BusinessCha
 	for i, r := range items {
 		result[i] = model.ComplianceRule{
 			ID: r.ID, RuleCode: r.RuleCode, Name: r.Name, Description: r.Description,
-			BusinessChain: r.BusinessChain, ConditionSQL: r.Condition,
-			Severity: r.Severity, ActionRequired: r.ActionRequired, Enabled: boolToInt(r.Enabled),
+			BusinessChain: r.BusinessChain,
+			Severity: r.Severity, ActionRequired: r.Action, Enabled: boolToInt(r.Enabled),
 			CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 		}
 	}
@@ -2425,7 +2426,7 @@ func (s *Store) CreateNotificationLog(ctx context.Context, l *model.Notification
 	rec := &models.NotificationLog{
 		BaseModel: models.BaseModel{ID: l.ID}, PersonID: l.PersonID,
 		BusinessChain: l.BusinessChain, TemplateID: l.TemplateID,
-		Channel: l.Channel, Status: l.Status, ErrorMessage: l.ErrorMessage,
+		Channel: l.Channel, Status: l.Status,
 	}
 	if rec.ID == "" {
 		rec.ID = uuid.New().String()
@@ -2459,7 +2460,7 @@ func (s *Store) ListNotificationLogs(ctx context.Context, personID string, chain
 		result[i] = model.NotificationLog{
 			ID: l.ID, PersonID: l.PersonID, BusinessChain: l.BusinessChain,
 			TemplateID: l.TemplateID, Channel: l.Channel, Status: l.Status,
-			SentAt: l.SentAt, ReadAt: l.ReadAt, ErrorMessage: l.ErrorMessage,
+			SentAt: l.SentAt, ReadAt: l.ReadAt,
 			CreatedAt: l.CreatedAt,
 		}
 	}
