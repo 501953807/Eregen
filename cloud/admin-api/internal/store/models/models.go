@@ -358,3 +358,318 @@ type PersonWelfareTag struct {
 }
 
 func (PersonWelfareTag) TableName() string { return "person_welfare_tags" }
+
+// MedicalExpense represents a hospital expense.
+type MedicalExpense struct {
+	BaseModel
+	PatientID string  `gorm:"size:255;index"`
+	ItemName  string  `gorm:"size:200"`
+	Category  string  `gorm:"size:100"`
+	Amount    float64
+	Quantity  int
+	UnitPrice float64
+	Notes     string
+}
+
+func (MedicalExpense) TableName() string { return "medical_expenses" }
+
+// MedicalMedication represents a medication record.
+type MedicalMedication struct {
+	BaseModel
+	PatientID string `gorm:"size:255;index"`
+	Name      string `gorm:"size:200"`
+	Dosage    string
+	Frequency string
+	Duration  string
+	Route     string
+	Notes     string
+}
+
+func (MedicalMedication) TableName() string { return "medical_medications" }
+
+// MedicalTestResult represents a lab test result.
+type MedicalTestResult struct {
+	BaseModel
+	PatientID      string  `gorm:"size:255;index"`
+	TestName       string  `gorm:"size:200"`
+	Result         string
+	ReferenceRange string
+	Unit           string
+	CollectedAt    *time.Time
+	ReportedAt     *time.Time
+	Notes          string
+}
+
+func (MedicalTestResult) TableName() string { return "medical_test_results" }
+
+// MedicalVerification represents a verification record.
+type MedicalVerification struct {
+	BaseModel
+	DeviceID         string  `gorm:"size:255"`
+	PatientID        *string `gorm:"size:255"`
+	VerificationType string  `gorm:"size:100"`
+	Result           string
+	Matched          bool
+	VerifiedBy       string
+	VerifiedAt       *time.Time
+	Notes            string
+}
+
+func (MedicalVerification) TableName() string { return "medical_verifications" }
+
+// MedicalAlertTagConfig represents an alert tag configuration.
+type MedicalAlertTagConfig struct {
+	BaseModel
+	TagName string `gorm:"size:100"`
+	TagColor string `gorm:"size:20"`
+	TagIcon string `gorm:"size:50"`
+	Enabled bool   `gorm:"default:true"`
+}
+
+func (MedicalAlertTagConfig) TableName() string { return "medical_alert_tag_configs" }
+
+// MedicationRuleV2 represents a medication rule (v2).
+type MedicationRuleV2 struct {
+	BaseModel
+	PersonID       string `gorm:"size:255;index"`
+	BusinessChain  string `gorm:"size:50"`
+	SourceType     string `gorm:"size:50"`
+	SourceID       string
+	DrugName       string `gorm:"size:200"`
+	GenericName    string `gorm:"size:200"`
+	DrugCategory   string `gorm:"size:100"`
+	Dosage         string
+	Frequency      string
+	Route          string
+	ScheduleTime1  string
+	ScheduleTime2  string
+	ScheduleTime3  string
+	DaysOfWeek     string
+	Duration       string
+	PreMeal        bool
+	PostMeal       bool
+	SpecialInstructions string
+	PrescribedBy   string
+	PrescribedAt   string
+	Active         bool `gorm:"default:true"`
+}
+
+func (MedicationRuleV2) TableName() string { return "medication_rules_v2" }
+
+// MedicationExecution represents a medication execution record.
+type MedicationExecution struct {
+	BaseModel
+	PersonID          string `gorm:"size:255;index"`
+	BusinessChain     string `gorm:"size:50"`
+	RuleID            string `gorm:"size:255"`
+	ScheduledTime     string
+	ActualTime        string
+	Status            string `gorm:"size:50"`
+	TakenBy           string
+	DeviceID          string
+	VerificationMethod string
+	Notes             string
+}
+
+func (MedicationExecution) TableName() string { return "medication_executions" }
+
+// UserRoleBinding represents a role binding.
+type UserRoleBinding struct {
+	BaseModel
+	UserID          string  `gorm:"size:255;index"`
+	BusinessChain   string  `gorm:"size:50"`
+	Role            string  `gorm:"size:50"`
+	InstitutionID   string  `gorm:"size:255"`
+	GrantedBy       string
+	ExpiresAt       *time.Time
+	Active          bool    `gorm:"default:true"`
+}
+
+func (UserRoleBinding) TableName() string { return "user_role_bindings" }
+
+// AlertRuleGorm represents an alert rule.
+type AlertRuleGorm struct {
+	BaseModel
+	Name                 string `gorm:"size:100"`
+	BusinessChain        string `gorm:"size:50"`
+	AlertType            string `gorm:"size:50"`
+	Severity             string `gorm:"size:20"`
+	ConditionField       string
+	ConditionOperator    string
+	ConditionThreshold   *int
+	ConditionDurationMin *int
+	NotifyRoles          string
+	NotifyChannels       string
+	EscalationTimeoutMin int
+	Enabled              bool `gorm:"default:true"`
+}
+
+func (AlertRuleGorm) TableName() string { return "alert_rules" }
+
+// HealthRecordV2 represents a health record (v2).
+type HealthRecordV2 struct {
+	BaseModel
+	PersonID        string  `gorm:"size:255;index"`
+	BusinessChain   string  `gorm:"size:50"`
+	RecordType      string  `gorm:"size:50"`
+	Source          string  `gorm:"size:50"`
+	DeviceID        string
+	RecordedAt      time.Time
+	HeartRate       *int
+	BloodPressureSys *int
+	BloodPressureDia *int
+	SpO2            *int
+	Temperature     *float64
+	RespiratoryRate *int
+	PulseRate       *int
+	GlucoseFasting  *float64
+	UricAcid        *float64
+	Steps           *int64
+	SleepHours      *float64
+	Content         string
+}
+
+func (HealthRecordV2) TableName() string { return "health_records_v2" }
+
+// PersonHealthSummary represents a health summary.
+type PersonHealthSummary struct {
+	PersonID            string  `gorm:"primaryKey;size:255"`
+	BusinessChain       string  `gorm:"size:50"`
+	LatestHR            *int
+	LatestSpO2          *int
+	LatestBPSys         *int
+	LatestBPDia         *int
+	LatestGlucoseFasting *float64
+	LatestUricAcid      *float64
+	LatestSteps         *int64
+	LatestSleepHours    *float64
+	RiskScore           *float64
+	TrendDirection      string
+	Recommendation      string
+}
+
+func (PersonHealthSummary) TableName() string { return "person_health_summaries" }
+
+// HealthGuidanceRule represents a guidance rule.
+type HealthGuidanceRule struct {
+	BaseModel
+	Name           string  `gorm:"size:200"`
+	BusinessChain  string  `gorm:"size:50"`
+	TriggerCondition string
+	ConditionField string
+	ConditionOp    string
+	ConditionThresh *float64
+	GuidanceType   string
+	Title          string
+	Content        string
+	Priority       int
+	Enabled        bool    `gorm:"default:true"`
+}
+
+func (HealthGuidanceRule) TableName() string { return "health_guidance_rules" }
+
+// HealthGuidanceDelivery represents a guidance delivery record.
+type HealthGuidanceDelivery struct {
+	BaseModel
+	PersonID      string `gorm:"size:255;index"`
+	BusinessChain string `gorm:"size:50"`
+	RuleID        string `gorm:"size:255"`
+	GuidanceType  string
+	Title         string
+	Content       string
+	Channel       string
+	DeliveredAt   time.Time
+	ReadStatus    int
+	Feedback      string
+}
+
+func (HealthGuidanceDelivery) TableName() string { return "health_guidance_deliveries" }
+
+// HealthReportTemplate represents a report template.
+type HealthReportTemplate struct {
+	BaseModel
+	Name          string `gorm:"size:200"`
+	BusinessChain string `gorm:"size:50"`
+	Frequency     string
+	TemplateType  string
+}
+
+func (HealthReportTemplate) TableName() string { return "health_report_templates" }
+
+// HealthReport represents a health report.
+type HealthReport struct {
+	BaseModel
+	PersonID     string `gorm:"size:255;index"`
+	BusinessChain string `gorm:"size:50"`
+	TemplateID   string
+	ReportPeriod string
+	Content      string
+}
+
+func (HealthReport) TableName() string { return "health_reports" }
+
+// ComplianceRule represents a compliance rule.
+type ComplianceRule struct {
+	BaseModel
+	RuleCode    string `gorm:"uniqueIndex;size:100"`
+	Name        string `gorm:"size:200"`
+	Description string
+	BusinessChain string `gorm:"size:50"`
+	Condition   string
+	Action      string
+	Enabled     bool `gorm:"default:true"`
+}
+
+func (ComplianceRule) TableName() string { return "compliance_rules" }
+
+// ComplianceCheck represents a compliance check result.
+type ComplianceCheck struct {
+	BaseModel
+	RuleID    string `gorm:"size:255"`
+	PersonID  string `gorm:"size:255;index"`
+	Violated  bool
+	Result    string
+	Notes     string
+	ReviewerID string
+	ReviewedAt *time.Time
+}
+
+func (ComplianceCheck) TableName() string { return "compliance_checks" }
+
+// DeviceBinding represents a device binding.
+type DeviceBinding struct {
+	BaseModel
+	DeviceID      string `gorm:"size:255;index"`
+	PersonID      string `gorm:"size:255;index"`
+	BusinessChain string `gorm:"size:50"`
+}
+
+func (DeviceBinding) TableName() string { return "device_bindings" }
+
+// NotificationTemplate represents a notification template.
+type NotificationTemplate struct {
+	BaseModel
+	Name          string `gorm:"size:200"`
+	BusinessChain string `gorm:"size:50"`
+	Channel       string `gorm:"size:50"`
+	Subject       string
+	Content       string
+	Enabled       bool `gorm:"default:true"`
+}
+
+func (NotificationTemplate) TableName() string { return "notification_templates" }
+
+// NotificationLog represents a notification log.
+type NotificationLog struct {
+	BaseModel
+	PersonID     string `gorm:"size:255;index"`
+	BusinessChain string `gorm:"size:50"`
+	TemplateID   string
+	Channel      string
+	Status       string `gorm:"size:50"`
+	SentAt       *time.Time
+	ReadAt       *time.Time
+	Content      string
+}
+
+func (NotificationLog) TableName() string { return "notification_logs" }
