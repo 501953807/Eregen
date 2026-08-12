@@ -1143,3 +1143,217 @@ func (s *Store) ListAuditLogsByAction(ctx context.Context, action string, limit 
 	}
 	return result, nil
 }
+
+// ====== Institution Methods ======
+
+func (s *Store) CreateInstitution(ctx context.Context, i *model.InstitutionSummary) error {
+	i.ID = uuid.New().String()
+	i.CreatedAt = time.Now()
+	i.UpdatedAt = time.Now()
+	return s.db.WithContext(ctx).Create(&models.Institution{BaseModel: models.BaseModel{ID: i.ID, CreatedAt: i.CreatedAt, UpdatedAt: i.UpdatedAt}, Name: i.Name, Type: i.Type, Code: i.Code, ContactName: i.ContactName, ContactPhone: i.ContactPhone, AccessLevel: i.AccessLevel, Status: i.Status}).Error
+}
+
+func (s *Store) GetInstitution(ctx context.Context, id string) (*model.InstitutionSummary, error) {
+	var i models.Institution
+	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&i).Error; err != nil {
+		return nil, err
+	}
+	return &model.InstitutionSummary{ID: i.ID, Name: i.Name, Type: i.Type, Code: i.Code, ContactName: i.ContactName, ContactPhone: i.ContactPhone, AccessLevel: i.AccessLevel, Status: i.Status, CreatedAt: i.CreatedAt, UpdatedAt: i.UpdatedAt, APIKeyCount: int(i.APIKeyCount)}, nil
+}
+
+func (s *Store) ListInstitutions(ctx context.Context, page, pageSize int, name, typ, status string) ([]model.InstitutionSummary, error) {
+	var institutions []models.Institution
+	query := s.db.WithContext(ctx).Model(&models.Institution{})
+	if name != "" {
+		query = query.Where("name LIKE ?", "%"+name+"%")
+	}
+	if typ != "" {
+		query = query.Where("type = ?", typ)
+	}
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	query = query.Order("created_at DESC").Offset((page - 1) * pageSize).Limit(pageSize)
+	if err := query.Find(&institutions).Error; err != nil {
+		return nil, fmt.Errorf("list institutions: %w", err)
+	}
+	result := make([]model.InstitutionSummary, len(institutions))
+	for i, inst := range institutions {
+		result[i] = model.InstitutionSummary{ID: inst.ID, Name: inst.Name, Type: inst.Type, Code: inst.Code, ContactName: inst.ContactName, ContactPhone: inst.ContactPhone, AccessLevel: inst.AccessLevel, Status: inst.Status, CreatedAt: inst.CreatedAt, UpdatedAt: inst.UpdatedAt, APIKeyCount: int(inst.APIKeyCount)}
+	}
+	return result, nil
+}
+
+func (s *Store) UpdateInstitution(ctx context.Context, id string, updates map[string]any) error {
+	return s.db.WithContext(ctx).Model(&models.Institution{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (s *Store) DeleteInstitution(ctx context.Context, id string) error {
+	return s.db.WithContext(ctx).Delete(&models.Institution{}, "id = ?", id).Error
+}
+
+func (s *Store) CreateInstitutionAPIKey(ctx context.Context, institutionID, name string) (string, error) {
+	id := uuid.New().String()
+	key := &models.InstitutionAPIKey{BaseModel: models.BaseModel{ID: id}, InstitutionID: institutionID, Name: name, KeyHash: uuid.New().String(), Active: true}
+	if err := s.db.WithContext(ctx).Create(key).Error; err != nil {
+		return "", fmt.Errorf("create api key: %w", err)
+	}
+	return id, nil
+}
+
+func (s *Store) RevokeInstitutionAPIKey(ctx context.Context, institutionID, keyID string) error {
+	return s.db.WithContext(ctx).Model(&models.InstitutionAPIKey{}).Where("id = ? AND institution_id = ?", keyID, institutionID).Update("active", false).Error
+}
+
+// ====== Person Store Methods ======
+
+func (s *Store) CreatePerson(ctx context.Context, p *model.Person) error {
+	p.ID = uuid.New().String()
+	p.CreatedAt = time.Now()
+	p.UpdatedAt = time.Now()
+	person := &models.Person{BaseModel: models.BaseModel{ID: p.ID}, IDCard: p.IDCard, Name: p.Name, Gender: p.Gender, BirthDate: p.BirthDate, Phone: p.Phone, EmergencyContact: p.EmergencyContact, Address: p.Address, AvatarURL: p.AvatarURL, Status: p.Status}
+	return s.db.WithContext(ctx).Create(person).Error
+}
+
+func (s *Store) GetPerson(ctx context.Context, id string) (*model.Person, error) {
+	var p models.Person
+	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&p).Error; err != nil {
+		return nil, err
+	}
+	return &model.Person{ID: p.ID, IDCard: p.IDCard, Name: p.Name, Gender: p.Gender, BirthDate: p.BirthDate, Phone: p.Phone, EmergencyContact: p.EmergencyContact, Address: p.Address, AvatarURL: p.AvatarURL, Status: p.Status, CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt}, nil
+}
+
+func (s *Store) GetPersonByIDCard(ctx context.Context, idCard string) (*model.Person, error) {
+	var p models.Person
+	if err := s.db.WithContext(ctx).Where("id_card = ?", idCard).First(&p).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &model.Person{ID: p.ID, IDCard: p.IDCard, Name: p.Name, Gender: p.Gender, BirthDate: p.BirthDate, Phone: p.Phone, EmergencyContact: p.EmergencyContact, Address: p.Address, AvatarURL: p.AvatarURL, Status: p.Status, CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt}, nil
+}
+
+func (s *Store) ListPersons(ctx context.Context, page, pageSize int, businessChain, status string) ([]model.Person, error) {
+	var persons []models.Person
+	query := s.db.WithContext(ctx).Model(&models.Person{})
+	if businessChain != "" {
+		query = query.Joins("JOIN person_profiles ON person_profiles.person_id = persons.id").Where("person_profiles.business_chain = ?", businessChain)
+	}
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	query = query.Order("created_at DESC").Offset((page - 1) * pageSize).Limit(pageSize)
+	if err := query.Find(&persons).Error; err != nil {
+		return nil, fmt.Errorf("list persons: %w", err)
+	}
+	result := make([]model.Person, len(persons))
+	for i, p := range persons {
+		result[i] = model.Person{ID: p.ID, IDCard: p.IDCard, Name: p.Name, Gender: p.Gender, BirthDate: p.BirthDate, Phone: p.Phone, EmergencyContact: p.EmergencyContact, Address: p.Address, AvatarURL: p.AvatarURL, Status: p.Status, CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt}
+	}
+	return result, nil
+}
+
+func (s *Store) UpdatePerson(ctx context.Context, id string, updates map[string]any) error {
+	if len(updates) == 0 {
+		return nil
+	}
+	return s.db.WithContext(ctx).Model(&models.Person{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (s *Store) DeletePerson(ctx context.Context, id string) error {
+	return s.db.WithContext(ctx).Delete(&models.Person{}, "id = ?", id).Error
+}
+
+// ====== Person Profile Methods ======
+
+func (s *Store) CreateProfile(ctx context.Context, pp *model.PersonProfile) error {
+	pp.CreatedAt = time.Now()
+	pp.UpdatedAt = time.Now()
+	profile := &models.PersonProfile{PersonID: pp.PersonID, BusinessChain: pp.BusinessChain, SubscriptionTier: pp.SubscriptionTier, SubscriptionStatus: pp.SubscriptionStatus, SubscriptionStart: pp.SubscriptionStart, SubscriptionEnd: pp.SubscriptionEnd, HealthRiskLevel: pp.HealthRiskLevel, AdmissionNo: pp.AdmissionNo, Department: pp.Department, BedNumber: pp.BedNumber, BloodType: pp.BloodType, AttendingDoctor: pp.AttendingDoctor, Diagnosis: pp.Diagnosis, AdmissionDate: pp.AdmissionDate, ExpectedDischarge: pp.ExpectedDischarge, DischargeDate: pp.DischargeDate, DischargeType: pp.DischargeType, HospitalID: pp.HospitalID, HospitalIDCommunity: pp.HospitalIDCommunity, MinzhengCertified: pp.MinzhengCertified, SubsidyType: pp.SubsidyType, CertificationDate: pp.CertificationDate, CertificationDoc: pp.CertificationDoc, NextReviewDate: pp.NextReviewDate, LinkedPersonID: pp.LinkedPersonID}
+	return s.db.WithContext(ctx).Create(profile).Error
+}
+
+func (s *Store) GetProfile(ctx context.Context, personID string, chain model.BusinessChain) (*model.PersonProfile, error) {
+	var pp models.PersonProfile
+	if err := s.db.WithContext(ctx).Where("person_id = ? AND business_chain = ?", personID, chain).First(&pp).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get profile: %w", err)
+	}
+	return &model.PersonProfile{PersonID: pp.PersonID, BusinessChain: pp.BusinessChain, SubscriptionTier: pp.SubscriptionTier, SubscriptionStatus: pp.SubscriptionStatus, SubscriptionStart: pp.SubscriptionStart, SubscriptionEnd: pp.SubscriptionEnd, HealthRiskLevel: pp.HealthRiskLevel, AdmissionNo: pp.AdmissionNo, Department: pp.Department, BedNumber: pp.BedNumber, BloodType: pp.BloodType, AttendingDoctor: pp.AttendingDoctor, Diagnosis: pp.Diagnosis, AdmissionDate: pp.AdmissionDate, ExpectedDischarge: pp.ExpectedDischarge, DischargeDate: pp.DischargeDate, DischargeType: pp.DischargeType, HospitalID: pp.HospitalID, HospitalIDCommunity: pp.HospitalIDCommunity, MinzhengCertified: pp.MinzhengCertified, SubsidyType: pp.SubsidyType, CertificationDate: pp.CertificationDate, CertificationDoc: pp.CertificationDoc, NextReviewDate: pp.NextReviewDate, LinkedPersonID: pp.LinkedPersonID}, nil
+}
+
+func (s *Store) ListProfiles(ctx context.Context, chain model.BusinessChain) ([]model.PersonProfile, error) {
+	var profiles []models.PersonProfile
+	if err := s.db.WithContext(ctx).Where("business_chain = ?", chain).Order("created_at DESC").Find(&profiles).Error; err != nil {
+		return nil, fmt.Errorf("list profiles: %w", err)
+	}
+	result := make([]model.PersonProfile, len(profiles))
+	for i, p := range profiles {
+		result[i] = model.PersonProfile{PersonID: p.PersonID, BusinessChain: p.BusinessChain, SubscriptionTier: p.SubscriptionTier, SubscriptionStatus: p.SubscriptionStatus, SubscriptionStart: p.SubscriptionStart, SubscriptionEnd: p.SubscriptionEnd, HealthRiskLevel: p.HealthRiskLevel, AdmissionNo: p.AdmissionNo, Department: p.Department, BedNumber: p.BedNumber, BloodType: p.BloodType, AttendingDoctor: p.AttendingDoctor, Diagnosis: p.Diagnosis, AdmissionDate: p.AdmissionDate, ExpectedDischarge: p.ExpectedDischarge, DischargeDate: p.DischargeDate, DischargeType: p.DischargeType, HospitalID: p.HospitalID, HospitalIDCommunity: p.HospitalIDCommunity, MinzhengCertified: p.MinzhengCertified, SubsidyType: p.SubsidyType, CertificationDate: p.CertificationDate, CertificationDoc: p.CertificationDoc, NextReviewDate: p.NextReviewDate, LinkedPersonID: p.LinkedPersonID}
+	}
+	return result, nil
+}
+
+func (s *Store) UpdateProfile(ctx context.Context, pp *model.PersonProfile) error {
+	pp.UpdatedAt = time.Now()
+	return s.db.WithContext(ctx).Model(&models.PersonProfile{}).Where("person_id = ? AND business_chain = ?", pp.PersonID, pp.BusinessChain).Updates(map[string]interface{}{"subscription_tier": pp.SubscriptionTier, "subscription_status": pp.SubscriptionStatus, "subscription_start": pp.SubscriptionStart, "subscription_end": pp.SubscriptionEnd, "health_risk_level": pp.HealthRiskLevel, "admission_no": pp.AdmissionNo, "department": pp.Department, "bed_number": pp.BedNumber, "blood_type": pp.BloodType, "attending_doctor": pp.AttendingDoctor, "diagnosis": pp.Diagnosis, "admission_date": pp.AdmissionDate, "expected_discharge": pp.ExpectedDischarge, "discharge_date": pp.DischargeDate, "discharge_type": pp.DischargeType, "hospital_id": pp.HospitalID, "hospital_id_community": pp.HospitalIDCommunity, "minzheng_certified": pp.MinzhengCertified, "subsidy_type": pp.SubsidyType, "certification_date": pp.CertificationDate, "certification_doc": pp.CertificationDoc, "next_review_date": pp.NextReviewDate, "linked_person_id": pp.LinkedPersonID, "updated_at": pp.UpdatedAt}).Error
+}
+
+// ====== Person Welfare Tag Methods ======
+
+func (s *Store) AssignPersonWelfareTag(ctx context.Context, wt *model.PersonWelfareTag) error {
+	existing := &models.PersonWelfareTag{}
+	result := s.db.WithContext(ctx).Where("person_id = ? AND tag_code = ?", wt.PersonID, wt.TagCode).First(existing)
+	if result.Error == nil {
+		existing.ValidFrom = wt.ValidFrom
+		existing.ValidTo = wt.ValidTo
+		return s.db.WithContext(ctx).Save(existing).Error
+	}
+	tag := &models.PersonWelfareTag{PersonID: wt.PersonID, TagCode: wt.TagCode, ValidFrom: wt.ValidFrom, ValidTo: wt.ValidTo}
+	return s.db.WithContext(ctx).Create(tag).Error
+}
+
+func (s *Store) RevokePersonWelfareTag(ctx context.Context, personID, tagCode string) error {
+	return s.db.WithContext(ctx).Where("person_id = ? AND tag_code = ?", personID, tagCode).Delete(&models.PersonWelfareTag{}).Error
+}
+
+func (s *Store) ListPersonWelfareTags(ctx context.Context, personID string) ([]model.PersonWelfareTag, error) {
+	var tags []models.PersonWelfareTag
+	if err := s.db.WithContext(ctx).Where("person_id = ?", personID).Find(&tags).Error; err != nil {
+		return nil, fmt.Errorf("list welfare tags: %w", err)
+	}
+	result := make([]model.PersonWelfareTag, len(tags))
+	for i, t := range tags {
+		result[i] = model.PersonWelfareTag{PersonID: t.PersonID, TagCode: t.TagCode, ValidFrom: t.ValidFrom, ValidTo: t.ValidTo}
+	}
+	return result, nil
+}
+
+// ====== Lifecycle Methods ======
+
+func (s *Store) TransitionStatus(ctx context.Context, personID string, chain model.BusinessChain, newStatus, reason string) error {
+	var pp models.PersonProfile
+	if err := s.db.WithContext(ctx).Where("person_id = ? AND business_chain = ?", personID, chain).First(&pp).Error; err != nil {
+		return fmt.Errorf("profile not found: %w", err)
+	}
+	return s.db.WithContext(ctx).Model(&pp).Update("status", newStatus).Error
+}
+
+func (s *Store) GetPersonStatus(ctx context.Context, personID string, chain model.BusinessChain) (string, error) {
+	var pp models.PersonProfile
+	err := s.db.WithContext(ctx).Where("person_id = ? AND business_chain = ?", personID, chain).Select("status").First(&pp).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", nil
+	}
+	return pp.Status, err
+}
+
+func (s *Store) LinkPersons(ctx context.Context, personID1, personID2 string, chain1, chain2 model.BusinessChain) error {
+	if err := s.db.WithContext(ctx).Model(&models.PersonProfile{}).Where("person_id = ? AND business_chain = ?", personID1, chain1).Update("linked_person_id", personID2).Error; err != nil {
+		return fmt.Errorf("link person 1: %w", err)
+	}
+	return s.db.WithContext(ctx).Model(&models.PersonProfile{}).Where("person_id = ? AND business_chain = ?", personID2, chain2).Update("linked_person_id", personID1).Error
+}

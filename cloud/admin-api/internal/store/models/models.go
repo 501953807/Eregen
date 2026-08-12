@@ -142,8 +142,8 @@ type Person struct {
 	Gender           int
 	BirthDate        *time.Time
 	Phone            *string
-	EmergencyContact string
-	Address          string
+	EmergencyContact *string
+	Address          *string
 	AvatarURL        *string
 	Status           string `gorm:"size:20;default:'active'"`
 }
@@ -339,12 +339,14 @@ type PersonProfile struct {
 	DischargeType       string  `gorm:"size:50"`
 	HospitalID          string  `gorm:"size:255"`
 	HospitalIDCommunity string  `gorm:"size:255"`
-	MinzhengCertified   string  `gorm:"size:255"`
+	MinzhengCertified   int     `gorm:"default:0"`
 	SubsidyType         string  `gorm:"size:100"`
 	CertificationDate   *time.Time
 	CertificationDoc    string
 	NextReviewDate      *time.Time
 	LinkedPersonID      string  `gorm:"size:255"`
+	Status              string  `gorm:"size:50;default:'pending'"`
+	Reason              string
 }
 
 func (PersonProfile) TableName() string { return "person_profiles" }
@@ -673,3 +675,31 @@ type NotificationLog struct {
 }
 
 func (NotificationLog) TableName() string { return "notification_logs" }
+
+// Institution represents a B2B institution.
+type Institution struct {
+	BaseModel
+	Name          string `gorm:"size:200;not null"`
+	Type          string `gorm:"size:50"`
+	Code          string `gorm:"uniqueIndex;size:50"`
+	ContactName   string `gorm:"size:100"`
+	ContactPhone  string `gorm:"size:20"`
+	AccessLevel   string `gorm:"size:50;default:'basic'"`
+	Status        string `gorm:"size:20;default:'active'"`
+	APIKeyCount   int    `gorm:"default:0"`
+}
+
+func (Institution) TableName() string { return "b2b_institutions" }
+
+// InstitutionAPIKey represents an API key for an institution.
+type InstitutionAPIKey struct {
+	BaseModel
+	InstitutionID string `gorm:"size:255;index"`
+	Name          string `gorm:"size:100"`
+	KeyHash       string `gorm:"size:255"`
+	KeyPrefix     string `gorm:"size:50"`
+	ExpiresAt     *time.Time
+	Active        bool `gorm:"default:true"`
+}
+
+func (InstitutionAPIKey) TableName() string { return "b2b_api_keys" }
