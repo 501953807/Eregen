@@ -1357,3 +1357,22 @@ func (s *Store) LinkPersons(ctx context.Context, personID1, personID2 string, ch
 	}
 	return s.db.WithContext(ctx).Model(&models.PersonProfile{}).Where("person_id = ? AND business_chain = ?", personID2, chain2).Update("linked_person_id", personID1).Error
 }
+
+func (s *Store) CreateExpense(ctx context.Context, e *model.MedicalExpense) error {
+	expense := &models.MedicalExpense{BaseModel: models.BaseModel{ID: e.ID}, PatientID: e.PatientID, ItemName: e.ItemName, Category: e.Category, Amount: e.Amount, Quantity: e.Quantity, UnitPrice: e.UnitPrice, Notes: e.Notes}
+	if expense.ID == "" {
+		expense.ID = uuid.New().String()
+	}
+	return s.db.WithContext(ctx).Create(expense).Error
+}
+
+func (s *Store) boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+func (s *Store) intBool(i int) bool {
+	return i != 0
+}

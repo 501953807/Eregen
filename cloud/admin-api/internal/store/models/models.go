@@ -703,3 +703,139 @@ type InstitutionAPIKey struct {
 }
 
 func (InstitutionAPIKey) TableName() string { return "b2b_api_keys" }
+
+// CommunityElder represents a community elderly person.
+type CommunityElder struct {
+	BaseModel
+	Name              string  `gorm:"size:100"`
+	IDCard            string  `gorm:"uniqueIndex;size:50"`
+	Gender            int
+	Age               int
+	Address           string
+	EmergencyContact  *string
+	BankAccount       string
+	HospitalID        string
+	Status            string  `gorm:"size:20;default:'active'"`
+	DeactivatedAt     *time.Time
+	DeactivatedReason string
+}
+
+func (CommunityElder) TableName() string { return "community_elders" }
+
+// CommunityWristbandDevice represents a community-mode wristband device.
+type CommunityWristbandDevice struct {
+	BaseModel
+	DeviceID        string     `gorm:"uniqueIndex;size:100"`
+	FirmwareVersion string
+	Mode            string  `gorm:"size:20"`
+	Status          string  `gorm:"size:20;default:'offline'"`
+	LastSeen        *time.Time
+}
+
+func (CommunityWristbandDevice) TableName() string { return "community_wristband_devices" }
+
+// CommunityElderBinding links an elder to a device.
+type CommunityElderBinding struct {
+	BaseModel
+	ElderID   string     `gorm:"size:255;index"`
+	DeviceID  string     `gorm:"size:255;index"`
+	BoundAt   time.Time
+	UnboundAt *time.Time
+}
+
+func (CommunityElderBinding) TableName() string { return "community_elder_bindings" }
+
+// CommunityWelfareTagConfig defines a welfare tag.
+type CommunityWelfareTagConfig struct {
+	BaseModel
+	TagCode           string  `gorm:"uniqueIndex;size:100"`
+	TagName           string  `gorm:"size:200"`
+	Issuer            string  `gorm:"size:200"`
+	RenewalPeriodDays int
+	BenefitAmount     float64
+	Enabled           bool `gorm:"default:true"`
+}
+
+func (CommunityWelfareTagConfig) TableName() string { return "community_welfare_tag_config" }
+
+// CommunityElderWelfare is a welfare tag assignment.
+type CommunityElderWelfare struct {
+	BaseModel
+	ElderID          string  `gorm:"size:255;index"`
+	TagCode          string  `gorm:"size:100"`
+	ValidFrom        string
+	ValidTo          string
+	CertifiedBy      string
+	CertificationDoc string
+	EffectiveAt      time.Time
+	RevokedAt        *time.Time
+}
+
+func (CommunityElderWelfare) TableName() string { return "community_elder_welfare" }
+
+// CommunitySigninRecord tracks sign-in events.
+type CommunitySigninRecord struct {
+	BaseModel
+	ElderID         string `gorm:"size:255;index"`
+	DeviceID        string
+	HospitalID      string
+	PharmacistID    string
+	SigninTime      time.Time
+	Period          string `gorm:"size:20"`
+	IDCard          string
+	ActivatedTags   string
+	IsMedicalSignin bool
+	IsWelfareSignin bool
+	Notes           string
+}
+
+func (CommunitySigninRecord) TableName() string { return "community_signin_records" }
+
+// CommunityPharmacyLog tracks drug dispensing.
+type CommunityPharmacyLog struct {
+	BaseModel
+	ElderID            string  `gorm:"size:255;index"`
+	DeviceID           string
+	HospitalID         string
+	PharmacistID       string
+	DispenseTime       time.Time
+	Period             string  `gorm:"size:20"`
+	Items              string
+	TotalCost          float64
+	InsuranceCovered   float64
+	SelfPay            float64
+	Notes              string
+}
+
+func (CommunityPharmacyLog) TableName() string { return "community_pharmacy_logs" }
+
+// CommunityMinzhengSync tracks government data imports.
+type CommunityMinzhengSync struct {
+	BaseModel
+	Source               string  `gorm:"size:100"`
+	Filename             string
+	ImportedCount        int
+	MatchedCount         int
+	PendingReviewCount   int
+	ErrorCount           int
+	Status               string  `gorm:"size:20"`
+	CompletedAt          *time.Time
+}
+
+func (CommunityMinzhengSync) TableName() string { return "community_minzheng_sync" }
+
+// CommunityBatchPayment tracks subsidy disbursements.
+type CommunityBatchPayment struct {
+	BaseModel
+	BatchID       string     `gorm:"size:255;index"`
+	Period        string     `gorm:"size:20"`
+	PayType       string     `gorm:"size:50"`
+	ElderID       string     `gorm:"size:255;index"`
+	Amount        float64
+	BankAccount   string
+	Status        string     `gorm:"size:20;default:'pending'"`
+	FailureReason string
+	ExecutedAt    *time.Time
+}
+
+func (CommunityBatchPayment) TableName() string { return "community_batch_payments" }
