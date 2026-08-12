@@ -671,19 +671,19 @@ func (s *Store) GetSubscription(ctx context.Context, id string) (*model.Subscrip
 func (s *Store) CreateSubscription(ctx context.Context, sub *model.SubscriptionItem) error {
 	id := uuid.New().String()
 	var startsAt, expiresAt *time.Time
-	if s.StartDate != "" {
-		if t, err := time.Parse("2006-01-02", s.StartDate); err == nil {
+	if sub.StartDate != "" {
+		if t, err := time.Parse("2006-01-02", sub.StartDate); err == nil {
 			startsAt = &t
 		}
 	}
-	if s.EndDate != "" {
-		if t, err := time.Parse("2006-01-02", s.EndDate); err == nil {
+	if sub.EndDate != "" {
+		if t, err := time.Parse("2006-01-02", sub.EndDate); err == nil {
 			expiresAt = &t
 		}
 	}
-	sub := &models.Subscription{BaseModel: models.BaseModel{ID: id}, UserID: s.UserID, PlanTier: s.PlanTier,
-		Status: s.Status, BillingCycle: s.BillingCycle, StartsAt: startsAt, ExpiresAt: expiresAt}
-	return s.db.WithContext(ctx).Create(sub).Error
+	subs := &models.Subscription{BaseModel: models.BaseModel{ID: id}, UserID: sub.UserID, PlanTier: sub.PlanTier,
+		Status: sub.Status, BillingCycle: sub.BillingCycle, StartsAt: startsAt, ExpiresAt: expiresAt}
+	return s.db.WithContext(ctx).Create(subs).Error
 }
 
 func (s *Store) UpdateSubscription(ctx context.Context, id string, updates map[string]any) error {
