@@ -149,15 +149,19 @@ func (Person) TableName() string { return "persons" }
 // HospitalAdmission represents a hospital admission record.
 type HospitalAdmission struct {
 	BaseModel
-	PersonID     string  `gorm:"size:255;index"`
-	HospitalID   string  `gorm:"size:255"`
-	AdmissionNo  string  `gorm:"size:100"`
-	Department   string  `gorm:"size:100"`
-	BedNumber    string  `gorm:"size:50"`
-	BloodType    string  `gorm:"size:10"`
-	Status       string  `gorm:"size:20;default:'admitted'"`
-	AdmittedAt   time.Time
-	DischargedAt *time.Time
+	PatientID           string  `gorm:"size:255;index"`
+	AdmissionNo         string  `gorm:"size:100"`
+	BedNo               string  `gorm:"size:50"`
+	Department          string  `gorm:"size:100"`
+	Diagnosis           string
+	EmergencyContact    string
+	Allergies           string
+	AdmittedAt          time.Time
+	ExpectedDischargeAt *time.Time
+	DischargedAt        *time.Time
+	DischargeType       string
+	TransferredTo       string
+	Notes               string
 }
 
 func (HospitalAdmission) TableName() string { return "hospital_admissions" }
@@ -226,3 +230,56 @@ type OTAJob struct {
 }
 
 func (OTAJob) TableName() string { return "ota_jobs" }
+
+// WardRoundEntry represents a nurse ward round record.
+type WardRoundEntry struct {
+	BaseModel
+	PatientID     string  `gorm:"size:255;index"`
+	NurseID       string  `gorm:"size:255"`
+	BloodPressure string
+	HeartRate     *int
+	SpO2          *int
+	Temperature   *float64
+	Weight        *float64
+	Notes         string
+	Observations  string
+	CompletedAt   time.Time
+}
+
+func (WardRoundEntry) TableName() string { return "ward_rounds" }
+
+// MedicalWristbandDevice represents a wristband device.
+type MedicalWristbandDevice struct {
+	BaseModel
+	DeviceID          string     `gorm:"uniqueIndex;size:100"`
+	FirmwareVersion   string     `gorm:"size:50;default:''"`
+	Status            string     `gorm:"size:20;default:'idle'"`
+	BoundPatientID    *string
+}
+
+func (MedicalWristbandDevice) TableName() string { return "medical_wristband_devices" }
+
+// MedicalBinding represents the association between a patient and a wristband.
+type MedicalBinding struct {
+	BaseModel
+	PatientID string     `gorm:"size:255;index"`
+	DeviceID  string     `gorm:"size:255;index"`
+	BoundAt   time.Time
+	UnboundAt *time.Time
+}
+
+func (MedicalBinding) TableName() string { return "medical_bindings" }
+
+// AuditLog represents an audit trail entry.
+type AuditLog struct {
+	BaseModel
+	UserID       string `gorm:"size:255;index"`
+	Action       string `gorm:"size:100"`
+	Resource     string `gorm:"size:100"`
+	ResourceID   string `gorm:"size:255"`
+	Details      string `gorm:"type:text"`
+	IPAddress    string `gorm:"size:50"`
+	UserAgent    string `gorm:"size:255"`
+}
+
+func (AuditLog) TableName() string { return "audit_log" }

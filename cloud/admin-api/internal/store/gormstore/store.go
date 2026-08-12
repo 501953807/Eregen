@@ -700,3 +700,426 @@ func (s *Store) RenewSubscription(ctx context.Context, id, endDate string) error
 	return s.db.WithContext(ctx).Model(&models.Subscription{}).Where("id = ?", id).
 		Updates(map[string]interface{}{"expires_at": expiresAt, "status": "active"}).Error
 }
+
+// ====== Admission Store Methods ======
+
+func (s *Store) CreateAdmission(ctx context.Context, a *model.HospitalAdmission) error {
+	admission := &models.HospitalAdmission{
+		BaseModel:           models.BaseModel{ID: a.ID},
+		PatientID:           a.PatientID,
+		AdmissionNo:         a.AdmissionNo,
+		BedNo:               a.BedNo,
+		Department:          a.Department,
+		Diagnosis:           a.Diagnosis,
+		EmergencyContact:    a.EmergencyContact,
+		Allergies:           a.Allergies,
+		AdmittedAt:          time.Now(),
+		ExpectedDischargeAt: a.ExpectedDischargeAt,
+		DischargeType:       a.DischargeType,
+		TransferredTo:       a.TransferredTo,
+		Notes:               a.Notes,
+	}
+	return s.db.WithContext(ctx).Create(admission).Error
+}
+
+func (s *Store) GetAdmission(ctx context.Context, id string) (*model.HospitalAdmission, error) {
+	var a models.HospitalAdmission
+	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&a).Error; err != nil {
+		return nil, err
+	}
+	return &model.HospitalAdmission{
+		ID:                  a.ID,
+		PatientID:           a.PatientID,
+		AdmissionNo:         a.AdmissionNo,
+		BedNo:               a.BedNo,
+		Department:          a.Department,
+		Diagnosis:           a.Diagnosis,
+		EmergencyContact:    a.EmergencyContact,
+		Allergies:           a.Allergies,
+		AdmittedAt:          a.AdmittedAt,
+		ExpectedDischargeAt: a.ExpectedDischargeAt,
+		DischargedAt:        a.DischargedAt,
+		DischargeType:       a.DischargeType,
+		TransferredTo:       a.TransferredTo,
+		Notes:               a.Notes,
+	}, nil
+}
+
+func (s *Store) ListAdmissions(ctx context.Context, page, pageSize int, department, status string) ([]model.HospitalAdmission, error) {
+	var admissions []models.HospitalAdmission
+	query := s.db.WithContext(ctx).Model(&models.HospitalAdmission{})
+	if department != "" {
+		query = query.Where("department = ?", department)
+	}
+	if status != "" {
+		query = query.Where("status != ?", status)
+	}
+	query = query.Order("admitted_at DESC").Offset((page - 1) * pageSize).Limit(pageSize)
+	if err := query.Find(&admissions).Error; err != nil {
+		return nil, fmt.Errorf("list admissions: %w", err)
+	}
+	result := make([]model.HospitalAdmission, len(admissions))
+	for i, a := range admissions {
+		result[i] = model.HospitalAdmission{
+			ID: a.ID, PatientID: a.PatientID, AdmissionNo: a.AdmissionNo, BedNo: a.BedNo,
+			Department: a.Department, Diagnosis: a.Diagnosis, EmergencyContact: a.EmergencyContact,
+			Allergies: a.Allergies, AdmittedAt: a.AdmittedAt, ExpectedDischargeAt: a.ExpectedDischargeAt,
+			DischargedAt: a.DischargedAt, DischargeType: a.DischargeType, TransferredTo: a.TransferredTo, Notes: a.Notes,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) CompleteAdmission(ctx context.Context, id, dischargeType, notes, transferredTo string) error {
+	now := time.Now()
+	if err := s.db.WithContext(ctx).Model(&models.HospitalAdmission{}).Where("id = ?", id).
+		Updates(map[string]interface{}{"discharged_at": now, "discharge_type": dischargeType, "notes": notes, "transferred_to": transferredTo}).Error; err != nil {
+		return err
+	}
+	var patientID string
+	s.db.WithContext(ctx).Model(&models.HospitalAdmission{}).Where("id = ?", id).Select("patient_id").First(&models.HospitalAdmission{}).Scan(&patientID)
+	if patientID != "" {
+		s.db.WithContext(ctx).Model(&models.MedicalPatient{}).Where("id = ?", patientID).Update("status", "discharged")
+		s.db.WithContext(ctx).Model(&models.MedicalBinding{}).Where("patient_id = ? AND unbound_at IS NULL", patientID).Update("unbound_at", now)
+	}
+	return nil
+}
+
+func (s *Store) CreateWardRound(ctx context.Context, w *model.WardRoundEntry) error {
+	entry := &models.WardRoundEntry{
+		BaseModel:     models.BaseModel{ID: w.ID},
+		PatientID:     w.PatientID,
+		NurseID:       w.NurseID,
+		BloodPressure: w.BloodPressure,
+		HeartRate:     &w.HeartRate,
+		SpO2:          &w.SpO2,
+		Temperature:   &w.Temperature,
+		Weight:        &w.Weight,
+		Notes:         w.Notes,
+		Observations:  w.Observations,
+		CompletedAt:   time.Now(),
+	}
+	return s.db.WithContext(ctx).Create(entry).Error
+}
+
+func (s *Store) ListWardRounds(ctx context.Context, patientID string) ([]model.WardRoundEntry, error) {
+	var entries []models.WardRoundEntry
+	if err := s.db.WithContext(ctx).Where("patient_id = ?", patientID).Order("completed_at DESC").Find(&entries).Error; err != nil {
+		return nil, fmt.Errorf("list ward rounds: %w", err)
+	}
+	result := make([]model.WardRoundEntry, len(entries))
+	for i, e := range entries {
+		heartRate := 0
+		spo2 := 0
+		temperature := 0.0
+		weight := 0.0
+		if e.HeartRate != nil {
+			heartRate = *e.HeartRate
+		}
+		if e.SpO2 != nil {
+			spo2 = *e.SpO2
+		}
+		if e.Temperature != nil {
+			temperature = *e.Temperature
+		}
+		if e.Weight != nil {
+			weight = *e.Weight
+		}
+		result[i] = model.WardRoundEntry{
+			ID: e.ID, PatientID: e.PatientID, NurseID: e.NurseID, BloodPressure: e.BloodPressure,
+			HeartRate: heartRate, SpO2: spo2, Temperature: temperature, Weight: weight,
+			Notes: e.Notes, Observations: e.Observations, CompletedAt: e.CompletedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) EvaluateRegulatoryRules(ctx context.Context, event string, data map[string]string) ([]*model.RegulatoryRuleResult, error) {
+	var results []*model.RegulatoryRuleResult
+	now := time.Now().UTC()
+	patientID := data["patient_id"]
+	switch event {
+	case "patient_admitted":
+		var count int64
+		s.db.WithContext(ctx).Model(&models.MedicalBinding{}).Where("patient_id = ? AND unbound_at IS NULL", patientID).Count(&count)
+		if count == 0 {
+			results = append(results, &model.RegulatoryRuleResult{RuleCode: "R01", Severity: "P1", PatientID: patientID, Message: "Patient admitted without active wristband binding", TriggeredAt: now})
+		}
+	case "verification_scan":
+		if data["scan_type"] == "medication" {
+			var count int64
+			s.db.WithContext(ctx).Table("medical_bindings mb").Joins("JOIN medical_wristband_patients p ON p.id=mb.patient_id").
+				Where("p.id=? AND p.status='admitted' AND mb.unbound_at IS NULL", patientID).Count(&count)
+			if count == 0 {
+				results = append(results, &model.RegulatoryRuleResult{RuleCode: "R05", Severity: "P2", PatientID: patientID, Message: "Medication verification without active wristband binding", TriggeredAt: now})
+			}
+		}
+	}
+	return results, nil
+}
+
+// ====== Patient Store Methods ======
+
+func (s *Store) CreatePatient(ctx context.Context, p *model.MedicalPatient) error {
+	tagsJSON, _ := json.Marshal(p.TagIDs)
+	patient := &models.MedicalPatient{
+		BaseModel:         models.BaseModel{ID: p.ID},
+		AdmissionNo:       p.AdmissionNo,
+		Name:              p.Name,
+		Gender:            p.Gender,
+		Age:               &p.Age,
+		Department:        p.Department,
+		BedNumber:         p.BedNumber,
+		BloodType:         p.BloodType,
+		Allergies:         p.Allergies,
+		SpecialConditions: p.SpecialConditions,
+		TagIDs:            string(tagsJSON),
+		Status:            p.Status,
+	}
+	return s.db.WithContext(ctx).Create(patient).Error
+}
+
+func (s *Store) GetPatient(ctx context.Context, id string) (*model.MedicalPatient, error) {
+	var p models.MedicalPatient
+	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&p).Error; err != nil {
+		return nil, err
+	}
+	var tags []string
+	json.Unmarshal([]byte(p.TagIDs), &tags)
+	age := 0
+	if p.Age != nil {
+		age = *p.Age
+	}
+	return &model.MedicalPatient{
+		ID: p.ID, AdmissionNo: p.AdmissionNo, Name: p.Name, Gender: p.Gender, Age: age,
+		Department: p.Department, BedNumber: p.BedNumber, BloodType: p.BloodType,
+		Allergies: p.Allergies, SpecialConditions: p.SpecialConditions, TagIDs: tags, Status: p.Status,
+		CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt,
+	}, nil
+}
+
+func (s *Store) ListPatients(ctx context.Context, page, pageSize int, status string) ([]model.MedicalPatient, error) {
+	var patients []models.MedicalPatient
+	query := s.db.WithContext(ctx).Model(&models.MedicalPatient{})
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	query = query.Order("created_at DESC").Offset((page - 1) * pageSize).Limit(pageSize)
+	if err := query.Find(&patients).Error; err != nil {
+		return nil, fmt.Errorf("list patients: %w", err)
+	}
+	result := make([]model.MedicalPatient, len(patients))
+	for i, p := range patients {
+		var tags []string
+		json.Unmarshal([]byte(p.TagIDs), &tags)
+		age := 0
+		if p.Age != nil {
+			age = *p.Age
+		}
+		result[i] = model.MedicalPatient{
+			ID: p.ID, AdmissionNo: p.AdmissionNo, Name: p.Name, Gender: p.Gender, Age: age,
+			Department: p.Department, BedNumber: p.BedNumber, BloodType: p.BloodType,
+			Allergies: p.Allergies, SpecialConditions: p.SpecialConditions, TagIDs: tags, Status: p.Status,
+			CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) UpdatePatient(ctx context.Context, p *model.MedicalPatient) error {
+	tagsJSON, _ := json.Marshal(p.TagIDs)
+	age := p.Age
+	return s.db.WithContext(ctx).Model(&models.MedicalPatient{}).Where("id = ?", p.ID).
+		Updates(map[string]interface{}{
+			"admission_no": p.AdmissionNo, "name": p.Name, "gender": p.Gender, "age": age,
+			"department": p.Department, "bed_number": p.BedNumber, "blood_type": p.BloodType,
+			"allergies": p.Allergies, "special_conditions": p.SpecialConditions,
+			"tag_ids": string(tagsJSON), "status": p.Status,
+		}).Error
+}
+
+func (s *Store) DeletePatient(ctx context.Context, id string) error {
+	return s.db.WithContext(ctx).Model(&models.MedicalPatient{}).Where("id = ?", id).Update("status", "discharged").Error
+}
+
+func (s *Store) GetPatientByAdmissionNo(ctx context.Context, admissionNo string) (*model.MedicalPatient, error) {
+	var p models.MedicalPatient
+	if err := s.db.WithContext(ctx).Where("admission_no = ?", admissionNo).First(&p).Error; err != nil {
+		return nil, err
+	}
+	var tags []string
+	json.Unmarshal([]byte(p.TagIDs), &tags)
+	age := 0
+	if p.Age != nil {
+		age = *p.Age
+	}
+	return &model.MedicalPatient{
+		ID: p.ID, AdmissionNo: p.AdmissionNo, Name: p.Name, Gender: p.Gender, Age: age,
+		Department: p.Department, BedNumber: p.BedNumber, BloodType: p.BloodType,
+		Allergies: p.Allergies, SpecialConditions: p.SpecialConditions, TagIDs: tags, Status: p.Status,
+		CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt,
+	}, nil
+}
+
+func (s *Store) BatchImportPatients(ctx context.Context, patients []model.MedicalPatient) error {
+	for _, p := range patients {
+		if err := s.CreatePatient(ctx, &p); err != nil {
+			return fmt.Errorf("import patient %s: %w", p.Name, err)
+		}
+	}
+	return nil
+}
+
+func (s *Store) GetPatientHistory(ctx context.Context, patientID string) (*model.MedicalPatientHistory, error) {
+	entries, err := s.ListDailyEntries(ctx, patientID, "")
+	if err != nil {
+		return nil, err
+	}
+	return &model.MedicalPatientHistory{DailyEntries: entries}, nil
+}
+
+// ====== Wristband Store Methods ======
+
+func (s *Store) BindWristband(ctx context.Context, patientID, deviceID string) error {
+	binding := &models.MedicalBinding{PatientID: patientID, DeviceID: deviceID, BoundAt: time.Now()}
+	if err := s.db.WithContext(ctx).Create(binding).Error; err != nil {
+		return err
+	}
+	return s.db.WithContext(ctx).Model(&models.MedicalWristbandDevice{}).Where("device_id = ?", deviceID).
+		Updates(map[string]interface{}{"bound_patient_id": patientID, "status": "bound"}).Error
+}
+
+func (s *Store) UnbindWristband(ctx context.Context, bindingID string) error {
+	now := time.Now()
+	if err := s.db.WithContext(ctx).Model(&models.MedicalBinding{}).Where("id = ? AND unbound_at IS NULL", bindingID).
+		Update("unbound_at", now).Error; err != nil {
+		return err
+	}
+	return s.db.WithContext(ctx).Model(&models.MedicalWristbandDevice{}).Where("id IN (SELECT device_id FROM medical_bindings WHERE id=?)", bindingID).
+		Updates(map[string]interface{}{"bound_patient_id": nil, "status": "idle"}).Error
+}
+
+func (s *Store) ClearWristband(ctx context.Context, deviceID string) error {
+	return s.db.WithContext(ctx).Model(&models.MedicalWristbandDevice{}).Where("device_id = ?", deviceID).
+		Updates(map[string]interface{}{"bound_patient_id": nil, "status": "cleared"}).Error
+}
+
+func (s *Store) ListWristbands(ctx context.Context, page, pageSize int, status string) ([]model.MedicalWristbandDevice, error) {
+	var devices []models.MedicalWristbandDevice
+	query := s.db.WithContext(ctx).Model(&models.MedicalWristbandDevice{})
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	query = query.Order("created_at DESC").Offset((page - 1) * pageSize).Limit(pageSize)
+	if err := query.Find(&devices).Error; err != nil {
+		return nil, fmt.Errorf("list wristbands: %w", err)
+	}
+	result := make([]model.MedicalWristbandDevice, len(devices))
+	for i, d := range devices {
+		boundID := ""
+		if d.BoundPatientID != nil {
+			boundID = *d.BoundPatientID
+		}
+		result[i] = model.MedicalWristbandDevice{
+			ID: d.ID, DeviceID: d.DeviceID, FirmwareVersion: d.FirmwareVersion,
+			Status: d.Status, BoundPatientID: boundID, CreatedAt: d.CreatedAt, UpdatedAt: d.UpdatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) GetWristbandFirmware(ctx context.Context, deviceID string) (string, error) {
+	var d models.MedicalWristbandDevice
+	if err := s.db.WithContext(ctx).Where("device_id = ?", deviceID).First(&d).Error; err != nil {
+		return "", err
+	}
+	return d.FirmwareVersion, nil
+}
+
+func (s *Store) WriteToWristband(ctx context.Context, deviceID, data string) error {
+	return s.db.WithContext(ctx).Model(&models.MedicalWristbandDevice{}).Where("device_id = ?", deviceID).
+		Update("firmware_version", data).Error
+}
+
+// ====== Audit Store Methods ======
+
+func (s *Store) CreateAuditLog(ctx context.Context, log *model.AuditLog) error {
+	detailsJSON, _ := json.Marshal(log.Details)
+	audit := &models.AuditLog{
+		BaseModel: models.BaseModel{ID: log.ID},
+		UserID:    log.UserID,
+		Action:    log.Action,
+		Resource:  log.Resource,
+		ResourceID: log.ResourceID,
+		Details:   string(detailsJSON),
+		IPAddress: log.IP,
+		UserAgent: log.UserAgent,
+	}
+	if audit.ID == "" {
+		audit.ID = uuid.New().String()
+	}
+	return s.db.WithContext(ctx).Create(audit).Error
+}
+
+func (s *Store) ListAuditLogs(ctx context.Context, limit int) ([]model.AuditLog, error) {
+	if limit <= 0 || limit > 500 {
+		limit = 50
+	}
+	var logs []models.AuditLog
+	if err := s.db.WithContext(ctx).Order("created_at DESC").Limit(limit).Find(&logs).Error; err != nil {
+		return nil, err
+	}
+	result := make([]model.AuditLog, len(logs))
+	for i, l := range logs {
+		var details map[string]interface{}
+		json.Unmarshal([]byte(l.Details), &details)
+		result[i] = model.AuditLog{
+			ID: l.ID, UserID: l.UserID, Action: l.Action, Resource: l.Resource,
+			ResourceID: l.ResourceID, Details: details, IP: l.IPAddress, UserAgent: l.UserAgent,
+			CreatedAt: l.CreatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) ListAuditLogsByUser(ctx context.Context, userID string, limit int) ([]model.AuditLog, error) {
+	if limit <= 0 || limit > 500 {
+		limit = 50
+	}
+	var logs []models.AuditLog
+	if err := s.db.WithContext(ctx).Where("user_id = ?", userID).Order("created_at DESC").Limit(limit).Find(&logs).Error; err != nil {
+		return nil, err
+	}
+	result := make([]model.AuditLog, len(logs))
+	for i, l := range logs {
+		var details map[string]interface{}
+		json.Unmarshal([]byte(l.Details), &details)
+		result[i] = model.AuditLog{
+			ID: l.ID, UserID: l.UserID, Action: l.Action, Resource: l.Resource,
+			ResourceID: l.ResourceID, Details: details, IP: l.IPAddress, UserAgent: l.UserAgent,
+			CreatedAt: l.CreatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) ListAuditLogsByAction(ctx context.Context, action string, limit int) ([]model.AuditLog, error) {
+	if limit <= 0 || limit > 500 {
+		limit = 50
+	}
+	var logs []models.AuditLog
+	if err := s.db.WithContext(ctx).Where("action = ?", action).Order("created_at DESC").Limit(limit).Find(&logs).Error; err != nil {
+		return nil, err
+	}
+	result := make([]model.AuditLog, len(logs))
+	for i, l := range logs {
+		var details map[string]interface{}
+		json.Unmarshal([]byte(l.Details), &details)
+		result[i] = model.AuditLog{
+			ID: l.ID, UserID: l.UserID, Action: l.Action, Resource: l.Resource,
+			ResourceID: l.ResourceID, Details: details, IP: l.IPAddress, UserAgent: l.UserAgent,
+			CreatedAt: l.CreatedAt,
+		}
+	}
+	return result, nil
+}
