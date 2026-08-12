@@ -19,6 +19,7 @@ type Subscriber struct {
 	nc     *nats.Conn
 	js     nats.JetStreamContext
 	alert  chan model.AlertPushEvent
+	reminder chan model.ReminderPushEvent
 	pgStore *store.Store
 }
 
@@ -36,18 +37,29 @@ func NewSubscriber(natsURL string, pgStore *store.Store) (*Subscriber, error) {
 	}
 
 	s := &Subscriber{
-		nc:      nc,
-		js:      js,
-		alert:   make(chan model.AlertPushEvent, 128),
-		pgStore: pgStore,
+		nc:       nc,
+		js:       js,
+		alert:    make(chan model.AlertPushEvent, 128),
+		reminder: make(chan model.ReminderPushEvent, 128),
+		pgStore:  pgStore,
 	}
 
+	// Subscribe to device events
 	_, err = js.Subscribe("eregen.event.>", s.onMessage,
 		nats.Durable("push-service"),
 	)
 	if err != nil {
 		nc.Close()
-		return nil, fmt.Errorf("subscribe: %w", err)
+		return nil, fmt.Errorf("subscribe events: %w", err)
+	}
+
+	// Subscribe to medication reminders
+	_, err = js.Subscribe("eregen.reminder.medication", s.onReminder,
+		nats.Durable("push-service-reminder"),
+	)
+	if err != nil {
+		nc.Close()
+		return nil, fmt.Errorf("subscribe reminder: %w", err)
 	}
 
 	return s, nil
@@ -120,6 +132,38 @@ func (s *Subscriber) onMessage(msg *nats.Msg) {
 	msg.Ack()
 }
 
+func (s *Subscriber) onReminder(msg *nats.Msg) {
+	var envelope struct {
+		ElderlyID string                 `json:"elderly_id"`
+		RuleID    string                 `json:"rule_id"`
+		Message   string                 `json:"message"`
+		Timestamp string                 `json:"timestamp"`
+	}
+	if err := json.Unmarshal(msg.Data, &envelope); err != nil {
+		log.Printf("[nats] unmarshal reminder: %v", err)
+		msg.Ack()
+		return
+	}
+
+	timestamp, _ := time.Parse(time.RFC3339, envelope.Timestamp)
+	if timestamp.IsZero() {
+		timestamp = time.Now()
+	}
+
+	ev := model.ReminderPushEvent{
+		ElderlyID: envelope.ElderlyID,
+		RuleID:    envelope.RuleID,
+		Message:   envelope.Message,
+		Timestamp: timestamp,
+	}
+	select {
+	case s.reminder <- ev:
+	default:
+		log.Println("[nats] reminder channel full, dropping")
+	}
+	msg.Ack()
+}
+
 func buildAlertMsg(alertType string, payload map[string]interface{}) string {
 	loc := ""
 	if lat, ok := payload["lat"]; ok {
@@ -168,6 +212,34 @@ func (s *Subscriber) Start(rtr *router.Router) {
 			}
 
 			rtr.DeliverAlert(context.Background(), ev, rMembers)
+
+		case ev := <-s.reminder:
+			log.Printf("[reminder] elderly_id=%s rule_id=%s message=%s",
+				ev.ElderlyID, ev.RuleID, ev.Message)
+
+			// Fetch family members from database
+			members, err := s.pgStore.GetFamilyMembers(context.Background(), ev.ElderlyID)
+			if err != nil {
+				log.Printf("[reminder] fetch members failed: %v", err)
+				continue
+			}
+			if len(members) == 0 {
+				log.Printf("[reminder] no family members for elderly %s", ev.ElderlyID)
+				continue
+			}
+
+			// Convert DB members to router Member type
+			rMembers := make([]router.Member, len(members))
+			for i, m := range members {
+				rMembers[i] = router.Member{
+					UserID:      m.UserID,
+					DeviceToken: m.DeviceToken,
+					OpenID:      m.OpenID,
+					Phone:       m.Phone,
+				}
+			}
+
+			rtr.DeliverReminder(context.Background(), ev.Message, rMembers)
 		}
 	}
 }

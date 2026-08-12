@@ -142,6 +142,24 @@ func main() {
 				log.Error("nats subscriber failed", zap.Error(err))
 			}
 		}()
+
+		// Set up medication reminder scheduler
+		reminderSender, err := service.NewReminderSender(natsClient.Conn(), log)
+		if err != nil {
+			log.Warn("reminder sender init failed", zap.Error(err))
+		} else {
+			reminderSvc := service.NewMedicationReminderService(pg, reminderSender, log)
+			go func() {
+				ticker := time.NewTicker(1 * time.Minute)
+				defer ticker.Stop()
+				for range ticker.C {
+					if err := reminderSvc.CheckAndSendReminders(context.Background()); err != nil {
+						log.Warn("medication reminder check failed", zap.Error(err))
+					}
+				}
+			}()
+			log.Info("medication reminder scheduler started")
+		}
 	}
 
 	sms := service.NewSMSProvider(cfg.SMSAccessKey, cfg.SMSAccessSecret, cfg.SMSSignName, cfg.SMPTemplateID, log)

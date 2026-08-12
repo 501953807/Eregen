@@ -55,6 +55,11 @@ func NewNatsClient(url string, log *zap.Logger) (*NatsClient, error) {
 	return &NatsClient{nc: nc, js: js, log: log}, nil
 }
 
+// Conn returns the underlying NATS connection for external use.
+func (n *NatsClient) Conn() *nats.Conn {
+	return n.nc
+}
+
 // Close shuts down the NATS connection.
 func (n *NatsClient) Close() {
 	if n.nc != nil {
