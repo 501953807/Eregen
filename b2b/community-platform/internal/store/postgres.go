@@ -296,3 +296,8 @@ func (s *PostgresStore) DeleteHealthCheck(ctx context.Context, id string) error 
 	_, err := s.pool.Exec(ctx, `DELETE FROM b2b_health_checks WHERE id = $1`, id)
 	return err
 }
+
+// Compile-time assertions
+var _ Store = (*PostgresStore)(nil)
+var _ Store = (*SqliteStore)(nil)
+

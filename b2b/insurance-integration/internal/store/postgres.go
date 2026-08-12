@@ -381,3 +381,8 @@ func (s *PostgresStore) GetUpcomingReminders(ctx context.Context, daysAhead int)
 }
 
 // ---------- Helper ----------
+
+// Compile-time assertions
+var _ Store = (*PostgresStore)(nil)
+var _ Store = (*SqliteStore)(nil)
+

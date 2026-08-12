@@ -366,3 +366,8 @@ func (s *PostgresStore) GetMedicationsForElderly(ctx context.Context, elderlyID 
 	}
 	return records, rows.Err()
 }
+
+// Compile-time assertions
+var _ Store = (*PostgresStore)(nil)
+var _ Store = (*SqliteStore)(nil)
+
