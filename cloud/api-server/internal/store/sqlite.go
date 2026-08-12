@@ -94,38 +94,27 @@ func (s *SqliteStore) ListElderly(ctx context.Context, page, pageSize int) ([]mo
 	return profiles, nil
 }
 
-// ListUsers returns paginated users with optional role filter.
-func (s *SqliteStore) ListUsers(ctx context.Context, page, pageSize int, role string) ([]model.UserSummary, error) {
-	where := "1=1"
-	var args []interface{}
-
-	if role != "" {
-		where += " AND role = ?"
-		args = append(args, role)
-	}
-
+// ListUsers returns paginated users (legacy interface method).
+func (s *SqliteStore) ListUsers(ctx context.Context, page, pageSize int) ([]model.User, int, error) {
 	offset := (page - 1) * pageSize
-	query := fmt.Sprintf(`SELECT id, name, role, created_at FROM users WHERE %s ORDER BY created_at DESC LIMIT ? OFFSET ?`, where)
-	args = append(args, pageSize, offset)
-
-	rows, err := s.db.QueryContext(ctx, query, args...)
+	rows, err := s.db.QueryContext(ctx, `SELECT id, email, phone, password_hash, role, name, created_at, updated_at FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?`, pageSize, offset)
 	if err != nil {
-		return nil, fmt.Errorf("list users: %w", err)
+		return nil, 0, fmt.Errorf("list users: %w", err)
 	}
 	defer rows.Close()
 
-	var users []model.UserSummary
+	var users []model.User
 	for rows.Next() {
-		var u model.UserSummary
-		if err := rows.Scan(&u.ID, &u.Name, &u.Role, &u.CreatedAt); err != nil {
-			return nil, fmt.Errorf("scan user: %w", err)
+		var u model.User
+		if err := rows.Scan(&u.ID, &u.Email, &u.Phone, &u.PasswordHash, &u.Role, &u.Name, &u.CreatedAt, &u.UpdatedAt); err != nil {
+			return nil, 0, fmt.Errorf("scan user: %w", err)
 		}
 		users = append(users, u)
 	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return users, nil
+
+	var total int
+	s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users`).Scan(&total)
+	return users, total, rows.Err()
 }
 
 // ListDevicesAdmin returns devices filtered by status (empty means all).
