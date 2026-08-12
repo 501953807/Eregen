@@ -512,14 +512,23 @@ func (s *Store) ChangeAdminPassword(ctx context.Context, userID, hash string) er
 
 func (s *Store) GetDashboardStats(ctx context.Context) (*model.DashboardStats, error) {
 	var stats model.DashboardStats
-	s.db.WithContext(ctx).Model(&models.Device{}).Where("status = 'online'").Count(&stats.OnlineDevices)
-	s.db.WithContext(ctx).Model(&models.Device{}).Count(&stats.TotalDevices)
-	s.db.WithContext(ctx).Model(&models.Alert{}).Where("status = 'pending'").Count(&stats.ActiveAlerts)
-	s.db.WithContext(ctx).Model(&models.Alert{}).Where("severity = 'P0' AND status = 'pending'").Count(&stats.P0Alerts)
-	s.db.WithContext(ctx).Model(&models.Alert{}).Where("severity = 'P1' AND status = 'pending'").Count(&stats.P1Alerts)
-	s.db.WithContext(ctx).Model(&models.Alert{}).Where("severity = 'P2' AND status = 'pending'").Count(&stats.P2Alerts)
-	s.db.WithContext(ctx).Model(&models.User{}).Count(&stats.TotalUsers)
-	s.db.WithContext(ctx).Model(&models.Subscription{}).Where("status = 'active'").Count(&stats.ActiveSubscriptions)
+	var count int64
+	s.db.WithContext(ctx).Model(&models.Device{}).Where("status = 'online'").Count(&count)
+	stats.OnlineDevices = int(count)
+	s.db.WithContext(ctx).Model(&models.Device{}).Count(&count)
+	stats.TotalDevices = int(count)
+	s.db.WithContext(ctx).Model(&models.Alert{}).Where("status = 'pending'").Count(&count)
+	stats.ActiveAlerts = int(count)
+	s.db.WithContext(ctx).Model(&models.Alert{}).Where("severity = 'P0' AND status = 'pending'").Count(&count)
+	stats.P0Alerts = int(count)
+	s.db.WithContext(ctx).Model(&models.Alert{}).Where("severity = 'P1' AND status = 'pending'").Count(&count)
+	stats.P1Alerts = int(count)
+	s.db.WithContext(ctx).Model(&models.Alert{}).Where("severity = 'P2' AND status = 'pending'").Count(&count)
+	stats.P2Alerts = int(count)
+	s.db.WithContext(ctx).Model(&models.User{}).Count(&count)
+	stats.TotalUsers = int(count)
+	s.db.WithContext(ctx).Model(&models.Subscription{}).Where("status = 'active'").Count(&count)
+	stats.ActiveSubscriptions = int(count)
 	return &stats, nil
 }
 
