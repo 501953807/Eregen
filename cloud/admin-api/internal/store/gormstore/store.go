@@ -978,6 +978,26 @@ func (s *Store) GetPatientHistory(ctx context.Context, patientID string) (*model
 	return &model.MedicalPatientHistory{DailyEntries: entries}, nil
 }
 
+func (s *Store) ListDailyEntries(ctx context.Context, patientID string, date string) ([]model.MedicalDailyEntry, error) {
+	var entries []models.MedicalDailyEntry
+	query := s.db.WithContext(ctx).Where("patient_id = ?", patientID).Order("entry_date DESC, created_at DESC")
+	if date != "" {
+		query = query.Where("entry_date = ?", date)
+	}
+	if err := query.Find(&entries).Error; err != nil {
+		return nil, fmt.Errorf("list daily entries: %w", err)
+	}
+	result := make([]model.MedicalDailyEntry, len(entries))
+	for i, e := range entries {
+		result[i] = model.MedicalDailyEntry{
+			ID: e.ID, PatientID: e.PatientID, EntryDate: e.EntryDate,
+			EntryType: e.EntryType, Content: e.Content, NurseID: e.NurseID,
+			CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt,
+		}
+	}
+	return result, nil
+}
+
 // ====== Wristband Store Methods ======
 
 func (s *Store) BindWristband(ctx context.Context, patientID, deviceID string) error {
