@@ -33,6 +33,11 @@ func (p *Postgres) Pool() *pgxpool.Pool {
 	return p.pool
 }
 
+// Health checks PostgreSQL connectivity.
+func (p *Postgres) Health(ctx context.Context) error {
+	return p.pool.Ping(ctx)
+}
+
 // Raw returns a RawDB for dynamic SQL queries.
 // Uses ? placeholders; converted to $1, $2 internally.
 func (p *Postgres) Raw() RawDB {

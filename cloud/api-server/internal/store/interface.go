@@ -116,7 +116,6 @@ type Store interface {
 	ListElderly(ctx context.Context, page, pageSize int) ([]model.ElderlyProfile, error)
 	ListUsersAdmin(ctx context.Context, page, pageSize int, role string) ([]model.UserSummary, error)
 	ListDevicesAdmin(ctx context.Context, status string) ([]model.DeviceSummary, error)
-	GetActiveAlerts(ctx context.Context) ([]model.AlertSummary, error)
 	ValidateToken(ctx context.Context, token string) (string, error)
 	ListDailyTasks(ctx context.Context, elderlyID string, taskDate string) ([]model.ChronicDailyTask, error)
 	UpdateDailyTaskComplete(ctx context.Context, taskID string) error

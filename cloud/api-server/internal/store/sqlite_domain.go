@@ -87,28 +87,6 @@ func (s *SqliteStore) DeleteUser(ctx context.Context, userID string) error {
 	return err
 }
 
-func (s *SqliteStore) ListUsers(ctx context.Context, page, pageSize int) ([]model.User, int, error) {
-	offset := (page - 1) * pageSize
-	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, email, phone, open_id, password_hash, role, name, created_at, updated_at FROM users LIMIT ? OFFSET ?`,
-		pageSize, offset)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
-	var users []model.User
-	for rows.Next() {
-		var u model.User
-		if err := rows.Scan(&u.ID, &u.Email, &u.Phone, &u.OpenID, &u.PasswordHash, &u.Role, &u.Name, &u.CreatedAt, &u.UpdatedAt); err != nil {
-			return nil, 0, err
-		}
-		users = append(users, u)
-	}
-	var total int
-	s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users`).Scan(&total)
-	return users, total, rows.Err()
-}
-
 func (s *SqliteStore) UpdateUserRole(ctx context.Context, userID, role string) error {
 	_, err := s.db.ExecContext(ctx, `UPDATE users SET role = ?, updated_at = datetime('now') WHERE id = ?`, role, userID)
 	return err
@@ -275,39 +253,6 @@ func (s *SqliteStore) CreateDevice(ctx context.Context, d *model.Device) error {
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		d.ID, d.DeviceID, d.DeviceType, d.Tier, d.OwnerUserID, d.Status, d.LastSeen, d.CreatedAt, d.UpdatedAt, settingsJSON)
 	return err
-}
-
-func (s *SqliteStore) ListDevices(ctx context.Context, ownerID string, deviceType *string, page, pageSize int) ([]model.Device, int, error) {
-	where := "owner_user_id = ?"
-	args := []any{ownerID}
-	idx := 2
-	if deviceType != nil && *deviceType != "" {
-		where += fmt.Sprintf(" AND device_type = ?")
-		args = append(args, *deviceType)
-		idx++
-	}
-	offset := (page - 1) * pageSize
-	args = append(args, pageSize, offset)
-	query := fmt.Sprintf(`SELECT id, device_id, device_type, tier, owner_user_id, status, last_seen, created_at, updated_at, settings
-		FROM devices WHERE %s ORDER BY created_at DESC LIMIT ? OFFSET ?`, where)
-	rows, err := s.db.QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
-	var devices []model.Device
-	for rows.Next() {
-		d, err := scanDeviceSQLite(rows)
-		if err != nil {
-			return nil, 0, err
-		}
-		devices = append(devices, *d)
-	}
-	countArgs := make([]any, len(args)-2)
-	copy(countArgs, args)
-	var count int
-	s.db.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM devices WHERE %s", where), countArgs...).Scan(&count)
-	return devices, count, rows.Err()
 }
 
 func (s *SqliteStore) GetDevice(ctx context.Context, deviceID string) (*model.Device, error) {
@@ -704,7 +649,7 @@ func (s *SqliteStore) GetMedicationHistory(ctx context.Context, elderlyID string
 }
 
 func (s *SqliteStore) CreateMedTakeRecord(ctx context.Context, ruleID, elderlyID string) error {
-	return s.CreateMedStatusRecord(ctx, &model.MedStatusRecord{RuleID: ruleID, ElderlyID: elderlyID, Taken: true, TakenAt: time.Now()})
+	return s.CreateMedStatusRecord(ctx, &model.MedStatusRecord{RuleID: ruleID, ElderlyID: elderlyID, Taken: true, TakenAt: func() *time.Time { t := time.Now(); return &t }()})
 }
 
 // ========== Alert methods ==========
@@ -886,7 +831,7 @@ func (s *SqliteStore) GetSubscription(ctx context.Context, userID string) (*mode
 		`SELECT id, user_id, plan_tier, status, start_date, end_date, auto_renew, payment_method, created_at, updated_at
 		 FROM subscriptions WHERE user_id = ? ORDER BY created_at DESC LIMIT 1`, userID).Scan(
 		&sub.ID, &sub.UserID, &sub.PlanTier, &sub.Status, &sub.StartDate, &sub.EndDate,
-		&sub.AutoRenew, &sub.PaymentMethod, &sub.CreatedAt, &sub.UpdatedAt)
+		&sub.AutoRenew, &sub.PaymentMethod)
 	return sub, err
 }
 
@@ -904,7 +849,7 @@ func (s *SqliteStore) ListSubscriptions(ctx context.Context, userID string, page
 	for rows.Next() {
 		var sub model.Subscription
 		if err := rows.Scan(&sub.ID, &sub.UserID, &sub.PlanTier, &sub.Status, &sub.StartDate, &sub.EndDate,
-			&sub.AutoRenew, &sub.PaymentMethod, &sub.CreatedAt, &sub.UpdatedAt); err != nil {
+			&sub.AutoRenew, &sub.PaymentMethod); err != nil {
 			return nil, 0, err
 		}
 		subs = append(subs, sub)
@@ -1003,7 +948,7 @@ func (s *SqliteStore) UpdateOTAJobProgress(ctx context.Context, jobID string, fn
 	if err != nil {
 		return err
 	}
-	fn(j.Progress)
+	fn(&j.Progress)
 	progressJSON, _ := json.Marshal(j.Progress)
 	_, err = s.db.ExecContext(ctx, `UPDATE ota_jobs SET progress = ? WHERE id = ?`, progressJSON, jobID)
 	return err
@@ -1089,14 +1034,13 @@ func (s *SqliteStore) SubscriptionTierStats(ctx context.Context) ([]struct{ Tier
 		return nil, err
 	}
 	defer rows.Close()
-	type stat struct{ Tier string; Count int }
-	var results []stat
+	var results []struct{ Tier string; Count int }
 	for rows.Next() {
-		var s stat
-		if err := rows.Scan(&s.Tier, &s.Count); err != nil {
+		var item struct{ Tier string; Count int }
+		if err := rows.Scan(&item.Tier, &item.Count); err != nil {
 			return nil, err
 		}
-		results = append(results, s)
+		results = append(results, item)
 	}
 	return results, rows.Err()
 }
