@@ -2081,14 +2081,14 @@ func (s *Store) GetAlertRule(ctx context.Context, id string) (*model.AlertRule, 
 		AlertType: rec.AlertType, Severity: rec.Severity, ConditionField: rec.ConditionField,
 		ConditionOperator: rec.ConditionOperator, NotifyRoles: rec.NotifyRoles,
 		NotifyChannels: rec.NotifyChannels, EscalationTimeoutMin: rec.EscalationTimeoutMin,
-		Active: intBool(rec.Enabled), CreatedAt: rec.CreatedAt, UpdatedAt: rec.UpdatedAt,
+		Active: boolToInt(rec.Enabled), CreatedAt: rec.CreatedAt, UpdatedAt: rec.UpdatedAt,
 	}
 	if rec.ConditionThreshold != nil {
-		v := int64(*rec.ConditionThreshold)
+		v := int(*rec.ConditionThreshold)
 		r.ConditionThreshold = &v
 	}
 	if rec.ConditionDurationMin != nil {
-		v := int64(*rec.ConditionDurationMin)
+		v := int(*rec.ConditionDurationMin)
 		r.ConditionDurationMin = &v
 	}
 	return r, nil
@@ -2106,14 +2106,14 @@ func (s *Store) ListAlertRules(ctx context.Context, chain model.BusinessChain) (
 			AlertType: r.AlertType, Severity: r.Severity, ConditionField: r.ConditionField,
 			ConditionOperator: r.ConditionOperator, NotifyRoles: r.NotifyRoles,
 			NotifyChannels: r.NotifyChannels, EscalationTimeoutMin: r.EscalationTimeoutMin,
-			Active: intBool(r.Enabled), CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
+			Active: boolToInt(r.Enabled), CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 		}
 		if r.ConditionThreshold != nil {
-			v := int64(*r.ConditionThreshold)
+			v := int(*r.ConditionThreshold)
 			item.ConditionThreshold = &v
 		}
 		if r.ConditionDurationMin != nil {
-			v := int64(*r.ConditionDurationMin)
+			v := int(*r.ConditionDurationMin)
 			item.ConditionDurationMin = &v
 		}
 		result[i] = item
@@ -2164,7 +2164,7 @@ func (s *Store) ListGuidanceRules(ctx context.Context, chain model.BusinessChain
 			TriggerCondition: r.TriggerCondition, ConditionField: r.ConditionField,
 			ConditionOp: r.ConditionOp, ConditionThresh: r.ConditionThresh,
 			GuidanceType: r.GuidanceType, Title: r.Title, Content: r.Content,
-			Priority: r.Priority, Enabled: intBool(r.Enabled), CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
+			Priority: r.Priority, Enabled: boolToInt(r.Enabled), CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 		}
 	}
 	return result, nil
@@ -2298,7 +2298,7 @@ func (s *Store) ListComplianceRules(ctx context.Context, chain model.BusinessCha
 		result[i] = model.ComplianceRule{
 			ID: r.ID, RuleCode: r.RuleCode, Name: r.Name, Description: r.Description,
 			BusinessChain: r.BusinessChain, RuleType: r.RuleType, ConditionSQL: r.Condition,
-			Severity: r.Severity, ActionRequired: r.Action, Enabled: intBool(r.Enabled),
+			Severity: r.Severity, ActionRequired: r.Action, Enabled: boolToInt(r.Enabled),
 			CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 		}
 	}
