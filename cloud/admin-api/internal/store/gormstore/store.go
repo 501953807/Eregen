@@ -2296,8 +2296,8 @@ func (s *Store) ListComplianceRules(ctx context.Context, chain model.BusinessCha
 	for i, r := range items {
 		result[i] = model.ComplianceRule{
 			ID: r.ID, RuleCode: r.RuleCode, Name: r.Name, Description: r.Description,
-			BusinessChain: r.BusinessChain,  ConditionSQL: r.Condition,
-			Condition: r.ConditionSQL, Action: r.ActionRequired, Enabled: intBool(r.Enabled), Enabled: boolToInt(r.Enabled),
+			BusinessChain: r.BusinessChain, ConditionSQL: r.Condition,
+			ActionRequired: r.Action, Enabled: intBool(r.Enabled),
 			CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 		}
 	}
@@ -2313,7 +2313,6 @@ func (s *Store) RunComplianceCheck(ctx context.Context, ruleCode string, personI
 		BaseModel: models.BaseModel{ID: check.ID}, RuleID: check.RuleID,
 		PersonID: check.PersonID, Violated: check.Violated != 0,
 		Result: check.ViolationDetails, Notes: check.ViolationDetails,
-		CreatedAt: check.CreatedAt,
 	}
 	if err := s.db.WithContext(ctx).Create(rec).Error; err != nil {
 		return nil, err
@@ -2335,9 +2334,9 @@ func (s *Store) ListComplianceChecks(ctx context.Context, personID string, limit
 	for i, c := range items {
 		result[i] = model.ComplianceCheck{
 			ID: c.ID, RuleID: c.RuleID, PersonID: c.PersonID,
-			CheckTime: c.CreatedAt, Violated: intBool(c.Violated),
+			CheckTime: c.CreatedAt, Violated: boolToInt(c.Violated),
 			ViolationDetails: c.Result, ReviewedBy: c.ReviewerID,
-			ActionTaken: c.Notes, CreatedAt: c.CreatedAt,
+			ActionTaken: c.Notes,
 		}
 	}
 	return result, nil
