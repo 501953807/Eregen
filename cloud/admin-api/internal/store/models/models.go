@@ -6,22 +6,30 @@ import (
 	"gorm.io/gorm"
 )
 
+// BaseModel is the base model with string ID and timestamps.
+type BaseModel struct {
+	ID        string         `gorm:"primaryKey;size:255" json:"id"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
 // User represents an admin or family user.
 type User struct {
-	gorm.Model
-	Name         string  `gorm:"size:100;not null;index"`
-	Email        string  `gorm:"uniqueIndex;size:200"`
-	Phone        string  `gorm:"uniqueIndex;size:20"`
-	Role         string  `gorm:"size:50;default:'family'"`
-	PasswordHash string  `gorm:"size:255;not null"`
-	OpenID       string  `gorm:"size:255;index"`
+	BaseModel
+	Name         string `gorm:"size:100;not null;index"`
+	Email        string `gorm:"uniqueIndex;size:200"`
+	Phone        string `gorm:"uniqueIndex;size:20"`
+	Role         string `gorm:"size:50;default:'family'"`
+	PasswordHash string `gorm:"size:255;not null"`
+	OpenID       string `gorm:"size:255;index"`
 }
 
 func (User) TableName() string { return "users" }
 
 // ElderlyProfile represents an elderly person's profile.
 type ElderlyProfile struct {
-	gorm.Model
+	BaseModel
 	UserID      string   `gorm:"size:255;index"`
 	Name        string   `gorm:"size:100;not null"`
 	BirthDate   *time.Time
@@ -31,9 +39,9 @@ type ElderlyProfile struct {
 
 func (ElderlyProfile) TableName() string { return "elderly_profiles" }
 
-// Device represents a wearable device (bracelet, pillbox, etc.).
+// Device represents a wearable device.
 type Device struct {
-	gorm.Model
+	BaseModel
 	DeviceID    string `gorm:"uniqueIndex;size:100;not null"`
 	DeviceType  string `gorm:"size:50;not null;index"`
 	Tier        string `gorm:"size:50;not null;index"`
@@ -50,20 +58,20 @@ func (Device) TableName() string { return "devices" }
 
 // HealthRecord represents a health data point.
 type HealthRecord struct {
-	gorm.Model
-	ElderlyID string `gorm:"size:255;index"`
-	HR        *int
-	SpO2      *int
-	Steps     *int64
+	BaseModel
+	ElderlyID  string  `gorm:"size:255;index"`
+	HR         *int
+	SpO2       *int
+	Steps      *int64
 	SleepHours *float64
-	Timestamp time.Time `gorm:"index"`
+	Timestamp  time.Time `gorm:"index"`
 }
 
 func (HealthRecord) TableName() string { return "health_records" }
 
 // MedicationRule represents a medication schedule.
 type MedicationRule struct {
-	gorm.Model
+	BaseModel
 	ElderlyID    string `gorm:"size:255;index"`
 	ScheduleTime string `gorm:"size:50"`
 	PillType     string `gorm:"size:100"`
@@ -76,7 +84,7 @@ func (MedicationRule) TableName() string { return "medication_rules" }
 
 // LocationHistory represents a GPS location point.
 type LocationHistory struct {
-	gorm.Model
+	BaseModel
 	ElderlyID string  `gorm:"size:255;index"`
 	Lat       float64
 	Lng       float64
@@ -88,7 +96,7 @@ func (LocationHistory) TableName() string { return "location_history" }
 
 // Alert represents a safety alert.
 type Alert struct {
-	gorm.Model
+	BaseModel
 	ElderlyID string `gorm:"size:255;index"`
 	AlertType string `gorm:"size:50;not null;index"`
 	Severity  string `gorm:"size:20;not null;index"`
@@ -100,7 +108,7 @@ func (Alert) TableName() string { return "alerts" }
 
 // Subscription represents a service subscription.
 type Subscription struct {
-	gorm.Model
+	BaseModel
 	UserID    string  `gorm:"size:255;index"`
 	Tier      string  `gorm:"size:50"`
 	Status    string  `gorm:"size:20;default:'active'"`
@@ -112,32 +120,32 @@ func (Subscription) TableName() string { return "subscriptions" }
 
 // FirmwareRelease represents a firmware update release.
 type FirmwareRelease struct {
-	gorm.Model
-	DeviceType  string `gorm:"size:50;index"`
-	Tier        string `gorm:"size:50;index"`
-	Version     string `gorm:"size:50;not null"`
-	URL         string `gorm:"size:500"`
-	Changelog   string
-	ReleasedAt  time.Time
+	BaseModel
+	DeviceType string `gorm:"size:50;index"`
+	Tier       string `gorm:"size:50;index"`
+	Version    string `gorm:"size:50;not null"`
+	URL        string `gorm:"size:500"`
+	Changelog  string
+	ReleasedAt time.Time
 }
 
 func (FirmwareRelease) TableName() string { return "firmware_releases" }
 
 // Person represents a unified identity record.
 type Person struct {
-	gorm.Model
-	Name    string  `gorm:"size:100;not null"`
-	IDCard  string  `gorm:"uniqueIndex;size:50"`
-	Gender  string  `gorm:"size:10"`
+	BaseModel
+	Name      string     `gorm:"size:100;not null"`
+	IDCard    string     `gorm:"uniqueIndex;size:50"`
+	Gender    string     `gorm:"size:10"`
 	BirthDate *time.Time
-	Phone   string  `gorm:"size:20"`
+	Phone     string     `gorm:"size:20"`
 }
 
 func (Person) TableName() string { return "persons" }
 
 // HospitalAdmission represents a hospital admission record.
 type HospitalAdmission struct {
-	gorm.Model
+	BaseModel
 	PersonID     string  `gorm:"size:255;index"`
 	HospitalID   string  `gorm:"size:255"`
 	AdmissionNo  string  `gorm:"size:100"`
@@ -153,17 +161,17 @@ func (HospitalAdmission) TableName() string { return "hospital_admissions" }
 
 // MedicalWristbandPatient represents a patient with medical wristband.
 type MedicalWristbandPatient struct {
-	gorm.Model
-	PersonID   string `gorm:"size:255;index"`
-	PatientID  string `gorm:"size:255"`
-	Status     string `gorm:"size:20;default:'active'"`
+	BaseModel
+	PersonID  string `gorm:"size:255;index"`
+	PatientID string `gorm:"size:255"`
+	Status    string `gorm:"size:20;default:'active'"`
 }
 
 func (MedicalWristbandPatient) TableName() string { return "medical_wristband_patients" }
 
 // RegulatoryFenceConfig represents an electronic fence configuration.
 type RegulatoryFenceConfig struct {
-	gorm.Model
+	BaseModel
 	HospitalID   string  `gorm:"size:255;index"`
 	CenterLat    float64
 	CenterLng    float64
@@ -175,7 +183,7 @@ func (RegulatoryFenceConfig) TableName() string { return "regulatory_fence_confi
 
 // AlertRule represents an alert generation rule.
 type AlertRule struct {
-	gorm.Model
+	BaseModel
 	Name       string `gorm:"size:100;not null"`
 	RuleType   string `gorm:"size:50"`
 	Conditions string `gorm:"type:json"`
