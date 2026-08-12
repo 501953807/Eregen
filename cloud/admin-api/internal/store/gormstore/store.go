@@ -1366,13 +1366,167 @@ func (s *Store) CreateExpense(ctx context.Context, e *model.MedicalExpense) erro
 	return s.db.WithContext(ctx).Create(expense).Error
 }
 
-func (s *Store) boolToInt(b bool) int {
-	if b {
-		return 1
+func (s *Store) ListExpenses(ctx context.Context, patientID string, page, pageSize int) ([]model.MedicalExpense, error) {
+	var expenses []models.MedicalExpense
+	query := s.db.WithContext(ctx).Where("patient_id = ?", patientID).Order("created_at DESC")
+	if page > 0 && pageSize > 0 {
+		query = query.Offset((page - 1) * pageSize).Limit(pageSize)
 	}
-	return 0
+	if err := query.Find(&expenses).Error; err != nil {
+		return nil, fmt.Errorf("list expenses: %w", err)
+	}
+	result := make([]model.MedicalExpense, len(expenses))
+	for i, e := range expenses {
+		result[i] = model.MedicalExpense{ID: e.ID, PatientID: e.PatientID, ItemName: e.ItemName, Category: e.Category, Amount: e.Amount, Quantity: e.Quantity, UnitPrice: e.UnitPrice, Notes: e.Notes, CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt}
+	}
+	return result, nil
 }
 
-func (s *Store) intBool(i int) bool {
-	return i != 0
+func (s *Store) CreateMedication(ctx context.Context, m *model.MedicalMedication) error {
+	rec := &models.MedicalMedication{BaseModel: models.BaseModel{ID: m.ID}, PatientID: m.PatientID, Name: m.Name, Dosage: m.Dosage, Frequency: m.Frequency, Duration: m.Duration, Route: m.Route, Notes: m.Notes}
+	if rec.ID == "" {
+		rec.ID = uuid.New().String()
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListMedications(ctx context.Context, patientID string) ([]model.MedicalMedication, error) {
+	var items []models.MedicalMedication
+	if err := s.db.WithContext(ctx).Where("patient_id = ?", patientID).Order("created_at DESC").Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list medications: %w", err)
+	}
+	result := make([]model.MedicalMedication, len(items))
+	for i, m := range items {
+		result[i] = model.MedicalMedication{ID: m.ID, PatientID: m.PatientID, Name: m.Name, Dosage: m.Dosage, Frequency: m.Frequency, Duration: m.Duration, Route: m.Route, Notes: m.Notes}
+	}
+	return result, nil
+}
+
+func (s *Store) CreateTestResult(ctx context.Context, r *model.MedicalTestResult) error {
+	rec := &models.MedicalTestResult{BaseModel: models.BaseModel{ID: r.ID}, PatientID: r.PatientID, TestName: r.TestName, Result: r.Result, ReferenceRange: r.ReferenceRange, Unit: r.Unit, Notes: r.Notes}
+	if rec.ID == "" {
+		rec.ID = uuid.New().String()
+	}
+	if r.CollectedAt != nil {
+		rec.CollectedAt = r.CollectedAt
+	}
+	if r.ReportedAt != nil {
+		rec.ReportedAt = r.ReportedAt
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListTestResults(ctx context.Context, patientID string) ([]model.MedicalTestResult, error) {
+	var items []models.MedicalTestResult
+	if err := s.db.WithContext(ctx).Where("patient_id = ?", patientID).Order("collected_at DESC").Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list test results: %w", err)
+	}
+	result := make([]model.MedicalTestResult, len(items))
+	for i, t := range items {
+		result[i] = model.MedicalTestResult{ID: t.ID, PatientID: t.PatientID, TestName: t.TestName, Result: t.Result, ReferenceRange: t.ReferenceRange, Unit: t.Unit, Notes: t.Notes, CollectedAt: t.CollectedAt, ReportedAt: t.ReportedAt}
+	}
+	return result, nil
+}
+
+func (s *Store) CreateDailyEntry(ctx context.Context, e *model.MedicalDailyEntry) error {
+	rec := &models.MedicalDailyEntry{BaseModel: models.BaseModel{ID: e.ID}, PatientID: e.PatientID, EntryDate: e.EntryDate, EntryType: e.EntryType, Content: e.Content, NurseID: e.NurseID}
+	if rec.ID == "" {
+		rec.ID = uuid.New().String()
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) CreateVerification(ctx context.Context, v *model.MedicalVerification) error {
+	rec := &models.MedicalVerification{BaseModel: models.BaseModel{ID: v.ID}, DeviceID: v.DeviceID, VerificationType: v.VerificationType, Result: v.Result, Matched: v.Matched, VerifiedBy: v.VerifiedBy, Notes: v.Notes}
+	if rec.ID == "" {
+		rec.ID = uuid.New().String()
+	}
+	if v.PatientID != nil {
+		rec.PatientID = v.PatientID
+	}
+	if v.VerifiedAt != nil {
+		rec.VerifiedAt = v.VerifiedAt
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListVerifications(ctx context.Context, page, pageSize int) ([]model.MedicalVerification, error) {
+	query := s.db.WithContext(ctx).Order("created_at DESC")
+	if page > 0 && pageSize > 0 {
+		query = query.Offset((page - 1) * pageSize).Limit(pageSize)
+	}
+	var items []models.MedicalVerification
+	if err := query.Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list verifications: %w", err)
+	}
+	result := make([]model.MedicalVerification, len(items))
+	for i, v := range items {
+		result[i] = model.MedicalVerification{ID: v.ID, DeviceID: v.DeviceID, VerificationType: v.VerificationType, Result: v.Result, Matched: v.Matched, VerifiedBy: v.VerifiedBy, VerifiedAt: v.VerifiedAt, Notes: v.Notes, CreatedAt: v.CreatedAt}
+		if v.PatientID != nil {
+			result[i].PatientID = v.PatientID
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) UpdateVerificationStatus(ctx context.Context, id, status string) error {
+	return s.db.WithContext(ctx).Model(&models.MedicalVerification{}).Where("id = ?", id).Update("status", status).Error
+}
+
+func (s *Store) GetTodayVerificationStats(ctx context.Context) (*model.MedicalVerificationStats, error) {
+	var total, matched, unmatched int64
+	now := time.Now()
+	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	s.db.WithContext(ctx).Model(&models.MedicalVerification{}).Where("verified_at >= ?", todayStart).Count(&total)
+	s.db.WithContext(ctx).Model(&models.MedicalVerification{}).Where("verified_at >= ? AND matched = ?", todayStart, true).Count(&matched)
+	s.db.WithContext(ctx).Model(&models.MedicalVerification{}).Where("verified_at >= ? AND matched = ?", todayStart, false).Count(&unmatched)
+	return &model.MedicalVerificationStats{Total: int(total), Matched: int(matched), Unmatched: int(unmatched)}, nil
+}
+
+func (s *Store) GetMedicalStatsOverview(ctx context.Context) (*model.MedicalStatsOverview, error) {
+	var overview model.MedicalStatsOverview
+	now := time.Now()
+	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	var yesterdayStart time.Time
+	if now.Hour() >= 1 {
+		yesterdayStart = todayStart.AddDate(0, 0, -1)
+	} else {
+		yesterdayStart = todayStart
+	}
+	var activePatients int64
+	s.db.WithContext(ctx).Model(&models.MedicalWristbandPatient{}).Where("status = ?", "admitted").Count(&activePatients)
+	overview.ActivePatients = int(activePatients)
+	var todayAdmitted int64
+	s.db.WithContext(ctx).Model(&models.MedicalWristbandPatient{}).Where("created_at >= ?", todayStart).Count(&todayAdmitted)
+	overview.TodayAdmitted = int(todayAdmitted)
+	var todayDischarged int64
+	s.db.WithContext(ctx).Model(&models.MedicalWristbandPatient{}).Where("updated_at >= ? AND status = ?", yesterdayStart, "discharged").Count(&todayDischarged)
+	overview.TodayDischarged = int(todayDischarged)
+	var boundDevices int64
+	s.db.WithContext(ctx).Model(&models.MedicalBinding{}).Where("unbound_at IS NULL").Count(&boundDevices)
+	overview.BoundDevices = int(boundDevices)
+	var totalDevices int64
+	s.db.WithContext(ctx).Model(&models.MedicalWristbandDevice{}).Count(&totalDevices)
+	overview.TotalDevices = int(totalDevices)
+	return &overview, nil
+}
+
+func (s *Store) CreateAlertTagConfig(ctx context.Context, c *model.MedicalAlertTagConfig) error {
+	rec := &models.MedicalAlertTagConfig{BaseModel: models.BaseModel{ID: c.ID}, TagName: c.TagName, TagColor: c.TagColor, TagIcon: c.TagIcon, Enabled: c.Enabled}
+	if rec.ID == "" {
+		rec.ID = uuid.New().String()
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListAlertTagConfigs(ctx context.Context) ([]model.MedicalAlertTagConfig, error) {
+	var items []models.MedicalAlertTagConfig
+	if err := s.db.WithContext(ctx).Order("tag_name ASC").Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list alert tag configs: %w", err)
+	}
+	result := make([]model.MedicalAlertTagConfig, len(items))
+	for i, c := range items {
+		result[i] = model.MedicalAlertTagConfig{ID: c.ID, TagName: c.TagName, TagColor: c.TagColor, TagIcon: c.TagIcon, Enabled: c.Enabled, CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt}
+	}
+	return result, nil
 }
