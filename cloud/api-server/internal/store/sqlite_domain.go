@@ -1096,6 +1096,31 @@ func scanDeviceSQLite(rows interface {
 	return &d, nil
 }
 
+// ListUsersAdmin returns paginated users with optional role filter (legacy summary version).
+func (s *SqliteStore) ListUsersAdmin(ctx context.Context, page, pageSize int, role string) ([]model.UserSummary, error) {
+	where := "1=1"
+	args := []any{}
+	if role != "" {
+		where += " AND role = ?"
+		args = append(args, role)
+	}
+	offset := (page - 1) * pageSize
+	rows, err := s.db.QueryContext(ctx, `SELECT id, name, role, created_at FROM users WHERE `+where+` ORDER BY created_at DESC LIMIT ? OFFSET ?`, append(args, pageSize, offset)...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []model.UserSummary
+	for rows.Next() {
+		var u model.UserSummary
+		if err := rows.Scan(&u.ID, &u.Name, &u.Role, &u.CreatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, u)
+	}
+	return result, rows.Err()
+}
+
 func scanRulesSQLite(rows interface {
 	Next() bool
 	Scan(dest ...any) error
