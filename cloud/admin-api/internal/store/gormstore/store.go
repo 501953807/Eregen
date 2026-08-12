@@ -2269,7 +2269,7 @@ func (s *Store) ListReports(ctx context.Context, personID string, chain model.Bu
 	for i, r := range items {
 		result[i] = model.HealthReport{
 			ID: r.ID, PersonID: r.PersonID, BusinessChain: r.BusinessChain,
-			TemplateID: r.TemplateID, ReportPeriod: r.ReportPeriod, Content: r.Content,
+			TemplateID: r.TemplateID,
 		}
 	}
 	return result, nil
@@ -2297,7 +2297,7 @@ func (s *Store) ListComplianceRules(ctx context.Context, chain model.BusinessCha
 		result[i] = model.ComplianceRule{
 			ID: r.ID, RuleCode: r.RuleCode, Name: r.Name, Description: r.Description,
 			BusinessChain: r.BusinessChain, ConditionSQL: r.Condition,
-			Severity: r.Severity, ActionRequired: r.Action, Enabled: boolToInt(r.Enabled),
+			Severity: r.Severity, ActionRequired: r.ActionRequired, Enabled: boolToInt(r.Enabled),
 			CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 		}
 	}
@@ -2459,7 +2459,7 @@ func (s *Store) ListNotificationLogs(ctx context.Context, personID string, chain
 		result[i] = model.NotificationLog{
 			ID: l.ID, PersonID: l.PersonID, BusinessChain: l.BusinessChain,
 			TemplateID: l.TemplateID, Channel: l.Channel, Status: l.Status,
-			SentAt: l.SentAt, ReadAt: l.ReadAt, ErrorMessage: l.Content,
+			SentAt: l.SentAt, ReadAt: l.ReadAt, ErrorMessage: l.ErrorMessage,
 			CreatedAt: l.CreatedAt,
 		}
 	}
@@ -2530,7 +2530,7 @@ func (s *Store) GetHealthSummaryV2(ctx context.Context, personID string, chain m
 		LatestGlucoseFasting: rec.LatestGlucoseFasting, LatestUricAcid: rec.LatestUricAcid,
 		LatestSteps: rec.LatestSteps, LatestSleepHours: rec.LatestSleepHours,
 		RiskScore: rec.RiskScore, TrendDirection: rec.TrendDirection,
-		LastUpdated: rec.CreatedAt, ARecommendation: rec.Recommendation,
+		LastUpdated: time.Now(), ARecommendation: rec.Recommendation,
 	}, nil
 }
 
