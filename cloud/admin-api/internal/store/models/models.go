@@ -137,11 +137,15 @@ func (FirmwareRelease) TableName() string { return "firmware_releases" }
 // Person represents a unified identity record.
 type Person struct {
 	BaseModel
-	Name      string     `gorm:"size:100;not null"`
-	IDCard    string     `gorm:"uniqueIndex;size:50"`
-	Gender    string     `gorm:"size:10"`
-	BirthDate *time.Time
-	Phone     string     `gorm:"size:20"`
+	IDCard           string  `gorm:"uniqueIndex;size:50"`
+	Name             string  `gorm:"size:100;not null"`
+	Gender           int
+	BirthDate        *time.Time
+	Phone            *string
+	EmergencyContact string
+	Address          string
+	AvatarURL        *string
+	Status           string `gorm:"size:20;default:'active'"`
 }
 
 func (Person) TableName() string { return "persons" }
@@ -313,3 +317,44 @@ type MedicalDailyEntry struct {
 }
 
 func (MedicalDailyEntry) TableName() string { return "medical_daily_entries" }
+
+// PersonProfile represents a business-chain-specific profile extension.
+type PersonProfile struct {
+	PersonID            string  `gorm:"primaryKey;size:255"`
+	BusinessChain       string  `gorm:"size:50"`
+	SubscriptionTier    string  `gorm:"size:50"`
+	SubscriptionStatus  string  `gorm:"size:50"`
+	SubscriptionStart   *time.Time
+	SubscriptionEnd     *time.Time
+	HealthRiskLevel     string  `gorm:"size:50"`
+	AdmissionNo         string  `gorm:"size:100"`
+	Department          string  `gorm:"size:100"`
+	BedNumber           string  `gorm:"size:50"`
+	BloodType           string  `gorm:"size:10"`
+	AttendingDoctor     string  `gorm:"size:100"`
+	Diagnosis           string
+	AdmissionDate       *time.Time
+	ExpectedDischarge   *time.Time
+	DischargeDate       *time.Time
+	DischargeType       string  `gorm:"size:50"`
+	HospitalID          string  `gorm:"size:255"`
+	HospitalIDCommunity string  `gorm:"size:255"`
+	MinzhengCertified   string  `gorm:"size:255"`
+	SubsidyType         string  `gorm:"size:100"`
+	CertificationDate   *time.Time
+	CertificationDoc    string
+	NextReviewDate      *time.Time
+	LinkedPersonID      string  `gorm:"size:255"`
+}
+
+func (PersonProfile) TableName() string { return "person_profiles" }
+
+// PersonWelfareTag represents a welfare tag assignment.
+type PersonWelfareTag struct {
+	PersonID string `gorm:"size:255"`
+	TagCode  string `gorm:"size:100"`
+	ValidFrom time.Time
+	ValidTo   time.Time
+}
+
+func (PersonWelfareTag) TableName() string { return "person_welfare_tags" }
