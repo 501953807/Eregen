@@ -265,6 +265,8 @@ func migrate(db *sql.DB) error {
 			id TEXT PRIMARY KEY,
 			name TEXT NOT NULL,
 			email TEXT UNIQUE,
+			phone TEXT,
+			open_id TEXT,
 			role TEXT DEFAULT 'user',
 			password_hash TEXT,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -277,6 +279,7 @@ func migrate(db *sql.DB) error {
 			severity TEXT NOT NULL,
 			status TEXT DEFAULT 'pending',
 			message TEXT,
+			metadata TEXT,
 			device_id TEXT,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			resolved_at DATETIME
@@ -290,6 +293,36 @@ func migrate(db *sql.DB) error {
 			avatar_url TEXT,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS health_records (
+			id TEXT PRIMARY KEY,
+			elderly_id TEXT NOT NULL,
+			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+			hr INTEGER,
+			spo2 INTEGER,
+			steps INTEGER,
+			sleep_hours REAL,
+			bp_systolic INTEGER,
+			bp_diastolic INTEGER
+		)`,
+		`CREATE TABLE IF NOT EXISTS medication_rules (
+			id TEXT PRIMARY KEY,
+			elderly_id TEXT NOT NULL,
+			schedule_time TEXT NOT NULL,
+			pill_type TEXT DEFAULT 'capsule',
+			dose_count INTEGER DEFAULT 1,
+			days_of_week TEXT DEFAULT '[]',
+			active BOOLEAN DEFAULT 1,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS location_records (
+			id TEXT PRIMARY KEY,
+			elderly_id TEXT NOT NULL,
+			lat REAL NOT NULL,
+			lon REAL NOT NULL,
+			accuracy REAL,
+			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
 		// 血糖检测记录
 		`CREATE TABLE IF NOT EXISTS chronic_glucose_records (
