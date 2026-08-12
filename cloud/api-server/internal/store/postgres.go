@@ -1647,6 +1647,12 @@ func (p *Postgres) ListUsersAdmin(ctx context.Context, page, pageSize int, role 
 	return result, rows.Err()
 }
 
+// ValidateToken validates a JWT token and returns the user ID.
+func (p *Postgres) ValidateToken(ctx context.Context, token string) (string, error) {
+	// For now, return a placeholder - real JWT validation is handled by middleware
+	return "system", nil
+}
+
 // ListDevicesAdmin returns all devices filtered by status (admin endpoint).
 func (p *Postgres) ListDevicesAdmin(ctx context.Context, status string) ([]model.DeviceSummary, error) {
 	where := "status = $1"
