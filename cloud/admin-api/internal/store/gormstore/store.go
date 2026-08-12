@@ -659,7 +659,7 @@ func (s *Store) GetSubscription(ctx context.Context, id string) (*model.Subscrip
 		Status: sub.Status, BillingCycle: sub.BillingCycle, StartDate: startDate, EndDate: endDate}, nil
 }
 
-func (s *Store) CreateSubscription(ctx context.Context, s *model.SubscriptionItem) error {
+func (s *Store) CreateSubscription(ctx context.Context, sub *model.SubscriptionItem) error {
 	id := uuid.New().String()
 	var startsAt, expiresAt *time.Time
 	if s.StartDate != "" {

@@ -195,3 +195,34 @@ type AlertRule struct {
 }
 
 func (AlertRule) TableName() string { return "alert_rules" }
+
+// APIKey represents a B2B API key.
+type APIKey struct {
+	BaseModel
+	InstitutionID string `gorm:"size:255"`
+	Name          string `gorm:"size:100;not null"`
+	KeyHash       string `gorm:"size:255;not null"`
+	KeyPrefix     string `gorm:"size:50"`
+	ExpiresAt     *time.Time
+	Active        bool `gorm:"default:true"`
+}
+
+func (APIKey) TableName() string { return "b2b_api_keys" }
+
+// SystemSetting represents a system configuration key-value.
+type SystemSetting struct {
+	Key          string `gorm:"primaryKey;size:100"`
+	SettingValue string `gorm:"type:text"`
+}
+
+func (SystemSetting) TableName() string { return "system_settings" }
+
+// OTAJob represents an OTA push job.
+type OTAJob struct {
+	BaseModel
+	FirmwareID    string `gorm:"size:255;index"`
+	TargetDevices string `gorm:"type:text"`
+	Progress      string `gorm:"type:text"`
+}
+
+func (OTAJob) TableName() string { return "ota_jobs" }
