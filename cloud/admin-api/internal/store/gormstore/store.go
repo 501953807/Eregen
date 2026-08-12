@@ -2269,7 +2269,7 @@ func (s *Store) ListReports(ctx context.Context, personID string, chain model.Bu
 	for i, r := range items {
 		result[i] = model.HealthReport{
 			ID: r.ID, PersonID: r.PersonID, BusinessChain: r.BusinessChain,
-			TemplateID: r.TemplateID,
+			TemplateID: r.TemplateID, ReportPeriod: r.ReportPeriod, Content: r.Content,
 		}
 	}
 	return result, nil
@@ -2297,7 +2297,7 @@ func (s *Store) ListComplianceRules(ctx context.Context, chain model.BusinessCha
 		result[i] = model.ComplianceRule{
 			ID: r.ID, RuleCode: r.RuleCode, Name: r.Name, Description: r.Description,
 			BusinessChain: r.BusinessChain, ConditionSQL: r.Condition,
-			ActionRequired: r.Action, Enabled: intBool(r.Enabled),
+			Severity: r.Severity, ActionRequired: r.Action, Enabled: boolToInt(r.Enabled),
 			CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 		}
 	}
@@ -2387,8 +2387,7 @@ func (s *Store) ListDevicesByPerson(ctx context.Context, personID string) ([]mod
 	for i, d := range devices {
 		result[i] = model.DeviceSummary{
 			ID: d.ID, DeviceID: d.DeviceID, Type: d.DeviceType,
-			Tier: d.Tier, Status: d.Status, LastSeen: d.LastSeen,
-			FirmwareVer: d.OTAURL, CreatedAt: d.CreatedAt, UpdatedAt: d.UpdatedAt,
+			Tier: d.Tier, Status: d.Status, FirmwareVer: d.OTAURL,
 		}
 	}
 	return result, nil
@@ -2416,7 +2415,7 @@ func (s *Store) ListNotificationTemplates(ctx context.Context, chain model.Busin
 		result[i] = model.NotificationTemplate{
 			ID: t.ID, Name: t.Name, BusinessChain: t.BusinessChain,
 			Channel: t.Channel, Subject: t.Subject, BodyTemplate: t.Content,
-			Enabled: intBool(t.Enabled), CreatedAt: t.CreatedAt,
+			Enabled: boolToInt(t.Enabled), CreatedAt: t.CreatedAt,
 		}
 	}
 	return result, nil
