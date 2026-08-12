@@ -2298,7 +2298,7 @@ func (s *Store) ListComplianceRules(ctx context.Context, chain model.BusinessCha
 		result[i] = model.ComplianceRule{
 			ID: r.ID, RuleCode: r.RuleCode, Name: r.Name, Description: r.Description,
 			BusinessChain: r.BusinessChain,
-			Severity: r.Severity, ActionRequired: r.Action, Enabled: boolToInt(r.Enabled),
+			ActionRequired: r.Action, Enabled: boolToInt(r.Enabled),
 			CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 		}
 	}
