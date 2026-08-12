@@ -2425,7 +2425,7 @@ func (s *Store) CreateNotificationLog(ctx context.Context, l *model.Notification
 	rec := &models.NotificationLog{
 		BaseModel: models.BaseModel{ID: l.ID}, PersonID: l.PersonID,
 		BusinessChain: l.BusinessChain, TemplateID: l.TemplateID,
-		Channel: l.Channel, Status: l.Status, Content: l.Content,
+		Channel: l.Channel, Status: l.Status, ErrorMessage: l.ErrorMessage,
 	}
 	if rec.ID == "" {
 		rec.ID = uuid.New().String()
