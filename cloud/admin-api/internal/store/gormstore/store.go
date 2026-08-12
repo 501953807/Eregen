@@ -2269,8 +2269,7 @@ func (s *Store) ListReports(ctx context.Context, personID string, chain model.Bu
 	for i, r := range items {
 		result[i] = model.HealthReport{
 			ID: r.ID, PersonID: r.PersonID, BusinessChain: r.BusinessChain,
-			TemplateID: r.TemplateID, ReportPeriod: r.ReportPeriod,
-			Content: r.Content, Status: r.Status, CreatedAt: r.CreatedAt,
+			TemplateID: r.TemplateID, ReportPeriod: r.ReportPeriod, Content: r.Content,
 		}
 	}
 	return result, nil
@@ -2297,8 +2296,8 @@ func (s *Store) ListComplianceRules(ctx context.Context, chain model.BusinessCha
 	for i, r := range items {
 		result[i] = model.ComplianceRule{
 			ID: r.ID, RuleCode: r.RuleCode, Name: r.Name, Description: r.Description,
-			BusinessChain: r.BusinessChain, RuleType: r.RuleType, ConditionSQL: r.Condition,
-			Severity: r.Severity, ActionRequired: r.Action, Enabled: boolToInt(r.Enabled),
+			BusinessChain: r.BusinessChain,  ConditionSQL: r.Condition,
+			Condition: r.ConditionSQL, Action: r.ActionRequired, Enabled: intBool(r.Enabled), Enabled: boolToInt(r.Enabled),
 			CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
 		}
 	}
@@ -2373,7 +2372,7 @@ func (s *Store) ListDeviceBindings(ctx context.Context, personID string, chain m
 	for i, b := range items {
 		result[i] = model.DeviceBinding{
 			ID: b.ID, DeviceID: b.DeviceID, PersonID: b.PersonID,
-			BusinessChain: b.BusinessChain, CreatedAt: b.CreatedAt,
+			BusinessChain: b.BusinessChain,
 		}
 	}
 	return result, nil
