@@ -1530,3 +1530,1012 @@ func (s *Store) ListAlertTagConfigs(ctx context.Context) ([]model.MedicalAlertTa
 	}
 	return result, nil
 }
+
+func (s *Store) CreateCommunityElder(ctx context.Context, e *model.CommunityElder) error {
+	if e.ID == "" {
+		e.ID = fmt.Sprintf("ce_%d", time.Now().UnixNano())
+	}
+	e.CreatedAt = time.Now()
+	e.UpdatedAt = time.Now()
+	rec := &models.CommunityElder{BaseModel: models.BaseModel{ID: e.ID, CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt}, Name: e.Name, IDCard: e.IDCard, Gender: e.Gender, Age: e.Age, Address: e.Address, EmergencyContact: e.EmergencyContact, BankAccount: e.BankAccount, HospitalID: e.HospitalID, Status: e.Status, DeactivatedAt: e.DeactivatedAt, DeactivatedReason: e.DeactivatedReason}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) GetCommunityElder(ctx context.Context, id string) (*model.CommunityElder, error) {
+	var rec models.CommunityElder
+	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&rec).Error; err != nil {
+		return nil, err
+	}
+	return &model.CommunityElder{ID: rec.ID, Name: rec.Name, IDCard: rec.IDCard, Gender: rec.Gender, Age: rec.Age, Address: rec.Address, EmergencyContact: rec.EmergencyContact, BankAccount: rec.BankAccount, HospitalID: rec.HospitalID, Status: rec.Status, CreatedAt: rec.CreatedAt, UpdatedAt: rec.UpdatedAt, DeactivatedAt: rec.DeactivatedAt, DeactivatedReason: rec.DeactivatedReason}, nil
+}
+
+func (s *Store) ListCommunityElders(ctx context.Context, page, pageSize int, status string) ([]model.CommunityElder, error) {
+	query := s.db.WithContext(ctx).Model(&models.CommunityElder{}).Order("created_at DESC")
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	if page > 0 && pageSize > 0 {
+		query = query.Offset((page - 1) * pageSize).Limit(pageSize)
+	}
+	var items []models.CommunityElder
+	if err := query.Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list community elders: %w", err)
+	}
+	result := make([]model.CommunityElder, len(items))
+	for i, e := range items {
+		result[i] = model.CommunityElder{ID: e.ID, Name: e.Name, IDCard: e.IDCard, Gender: e.Gender, Age: e.Age, Address: e.Address, EmergencyContact: e.EmergencyContact, BankAccount: e.BankAccount, HospitalID: e.HospitalID, Status: e.Status, CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt, DeactivatedAt: e.DeactivatedAt, DeactivatedReason: e.DeactivatedReason}
+	}
+	return result, nil
+}
+
+func (s *Store) UpdateCommunityElder(ctx context.Context, e *model.CommunityElder) error {
+	e.UpdatedAt = time.Now()
+	return s.db.WithContext(ctx).Model(&models.CommunityElder{}).Where("id = ?", e.ID).Updates(map[string]interface{}{"name": e.Name, "id_card": e.IDCard, "gender": e.Gender, "age": e.Age, "address": e.Address, "emergency_contact": e.EmergencyContact, "bank_account": e.BankAccount, "hospital_id": e.HospitalID, "status": e.Status, "updated_at": e.UpdatedAt, "deactivated_at": e.DeactivatedAt, "deactivated_reason": e.DeactivatedReason}).Error
+}
+
+func (s *Store) DeleteCommunityElder(ctx context.Context, id string) error {
+	return s.db.WithContext(ctx).Model(&models.CommunityElder{}).Where("id = ?", id).Updates(map[string]interface{}{"status": "deactivated", "deactivated_at": time.Now(), "deactivated_reason": "deleted"}).Error
+}
+
+func (s *Store) BulkUpsertCommunityElders(ctx context.Context, elders []model.CommunityElder) error {
+	for i := range elders {
+		e := &elders[i]
+		if e.ID == "" {
+			e.ID = fmt.Sprintf("ce_%d", time.Now().UnixNano())
+		}
+		e.CreatedAt = time.Now()
+		e.UpdatedAt = time.Now()
+		rec := &models.CommunityElder{BaseModel: models.BaseModel{ID: e.ID, CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt}, Name: e.Name, IDCard: e.IDCard, Gender: e.Gender, Age: e.Age, Address: e.Address, EmergencyContact: e.EmergencyContact, BankAccount: e.BankAccount, HospitalID: e.HospitalID, Status: e.Status}
+		if err := s.db.WithContext(ctx).Save(rec).Error; err != nil {
+			return fmt.Errorf("bulk upsert elder: %w", err)
+		}
+	}
+	return nil
+}
+
+func (s *Store) GetCommunityElderStats(ctx context.Context) (*model.CommunityElderStats, error) {
+	stats := &model.CommunityElderStats{}
+	var totalElders int64
+	s.db.WithContext(ctx).Model(&models.CommunityElder{}).Count(&totalElders)
+	stats.TotalElders = int(totalElders)
+	var activeElders int64
+	s.db.WithContext(ctx).Model(&models.CommunityElder{}).Where("status = ?", "active").Count(&activeElders)
+	stats.ActiveElders = int(activeElders)
+	today := time.Now().Format("2006-01-02")
+	var signinCount int64
+	s.db.WithContext(ctx).Model(&models.CommunitySigninRecord{}).Where("strftime('%Y-%m-%d', signin_time) = ?", today).Count(&signinCount)
+	stats.TodaySignins = int(signinCount)
+	var pharmacyCount int64
+	s.db.WithContext(ctx).Model(&models.CommunityPharmacyLog{}).Where("strftime('%Y-%m-%d', dispense_time) = ?", today).Count(&pharmacyCount)
+	stats.TodayDispenses = int(pharmacyCount)
+	var activeWelfareTags int64
+	s.db.WithContext(ctx).Model(&models.CommunityElderWelfare{}).Where("revoked_at IS NULL").Count(&activeWelfareTags)
+	stats.ActiveWelfareTags = int(activeWelfareTags)
+	return stats, nil
+}
+
+func (s *Store) CreateCommunityDevice(ctx context.Context, d *model.CommunityWristbandDevice) error {
+	if d.ID == "" {
+		d.ID = fmt.Sprintf("cd_%d", time.Now().UnixNano())
+	}
+	d.CreatedAt = time.Now()
+	d.UpdatedAt = time.Now()
+	rec := &models.CommunityWristbandDevice{BaseModel: models.BaseModel{ID: d.ID, CreatedAt: d.CreatedAt, UpdatedAt: d.UpdatedAt}, DeviceID: d.DeviceID, FirmwareVersion: d.FirmwareVersion, Mode: d.Mode, Status: d.Status, LastSeen: d.LastSeen}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) GetCommunityDevice(ctx context.Context, deviceID string) (*model.CommunityWristbandDevice, error) {
+	var rec models.CommunityWristbandDevice
+	if err := s.db.WithContext(ctx).Where("device_id = ?", deviceID).First(&rec).Error; err != nil {
+		return nil, err
+	}
+	return &model.CommunityWristbandDevice{ID: rec.ID, DeviceID: rec.DeviceID, FirmwareVersion: rec.FirmwareVersion, Mode: rec.Mode, Status: rec.Status, LastSeen: rec.LastSeen, CreatedAt: rec.CreatedAt, UpdatedAt: rec.UpdatedAt}, nil
+}
+
+func (s *Store) ListCommunityDevices(ctx context.Context, page, pageSize int, status string) ([]model.CommunityWristbandDevice, error) {
+	query := s.db.WithContext(ctx).Model(&models.CommunityWristbandDevice{}).Order("created_at DESC")
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	if page > 0 && pageSize > 0 {
+		query = query.Offset((page - 1) * pageSize).Limit(pageSize)
+	}
+	var items []models.CommunityWristbandDevice
+	if err := query.Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list community devices: %w", err)
+	}
+	result := make([]model.CommunityWristbandDevice, len(items))
+	for i, d := range items {
+		result[i] = model.CommunityWristbandDevice{ID: d.ID, DeviceID: d.DeviceID, FirmwareVersion: d.FirmwareVersion, Mode: d.Mode, Status: d.Status, LastSeen: d.LastSeen, CreatedAt: d.CreatedAt, UpdatedAt: d.UpdatedAt}
+	}
+	return result, nil
+}
+
+func (s *Store) UpdateCommunityDevice(ctx context.Context, d *model.CommunityWristbandDevice) error {
+	d.UpdatedAt = time.Now()
+	return s.db.WithContext(ctx).Model(&models.CommunityWristbandDevice{}).Where("id = ?", d.ID).Updates(map[string]interface{}{"firmware_version": d.FirmwareVersion, "status": d.Status, "last_seen": d.LastSeen, "updated_at": d.UpdatedAt}).Error
+}
+
+func (s *Store) BindCommunityElderDevice(ctx context.Context, elderID, deviceID string) error {
+	id := fmt.Sprintf("cb_%d", time.Now().UnixNano())
+	binding := &models.CommunityElderBinding{BaseModel: models.BaseModel{ID: id}, ElderID: elderID, DeviceID: deviceID, BoundAt: time.Now()}
+	return s.db.WithContext(ctx).Create(binding).Error
+}
+
+func (s *Store) UnbindCommunityElderDevice(ctx context.Context, bindingID string) error {
+	return s.db.WithContext(ctx).Model(&models.CommunityElderBinding{}).Where("id = ?", bindingID).Update("unbound_at", time.Now()).Error
+}
+
+func (s *Store) CreateWelfareTagConfig(ctx context.Context, c *model.CommunityWelfareTagConfig) error {
+	if c.ID == "" {
+		c.ID = fmt.Sprintf("wtc_%d", time.Now().UnixNano())
+	}
+	c.CreatedAt = time.Now()
+	c.UpdatedAt = time.Now()
+	rec := &models.CommunityWelfareTagConfig{BaseModel: models.BaseModel{ID: c.ID, CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt}, TagCode: c.TagCode, TagName: c.TagName, Issuer: c.Issuer, RenewalPeriodDays: c.RenewalPeriodDays, BenefitAmount: c.BenefitAmount, Enabled: c.Enabled}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) UpdateWelfareTagConfig(ctx context.Context, c *model.CommunityWelfareTagConfig) error {
+	c.UpdatedAt = time.Now()
+	return s.db.WithContext(ctx).Model(&models.CommunityWelfareTagConfig{}).Where("tag_code = ?", c.TagCode).Updates(map[string]interface{}{"tag_name": c.TagName, "issuer": c.Issuer, "renewal_period_days": c.RenewalPeriodDays, "benefit_amount": c.BenefitAmount, "enabled": c.Enabled, "updated_at": c.UpdatedAt}).Error
+}
+
+func (s *Store) ListWelfareTagConfigs(ctx context.Context) ([]model.CommunityWelfareTagConfig, error) {
+	var items []models.CommunityWelfareTagConfig
+	if err := s.db.WithContext(ctx).Order("tag_code ASC").Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list welfare tag configs: %w", err)
+	}
+	result := make([]model.CommunityWelfareTagConfig, len(items))
+	for i, c := range items {
+		result[i] = model.CommunityWelfareTagConfig{ID: c.ID, TagCode: c.TagCode, TagName: c.TagName, Issuer: c.Issuer, RenewalPeriodDays: c.RenewalPeriodDays, BenefitAmount: c.BenefitAmount, Enabled: c.Enabled, CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt}
+	}
+	return result, nil
+}
+
+func (s *Store) GetWelfareTagConfig(ctx context.Context, tagCode string) (*model.CommunityWelfareTagConfig, error) {
+	var rec models.CommunityWelfareTagConfig
+	if err := s.db.WithContext(ctx).Where("tag_code = ?", tagCode).First(&rec).Error; err != nil {
+		return nil, err
+	}
+	return &model.CommunityWelfareTagConfig{ID: rec.ID, TagCode: rec.TagCode, TagName: rec.TagName, Issuer: rec.Issuer, RenewalPeriodDays: rec.RenewalPeriodDays, BenefitAmount: rec.BenefitAmount, Enabled: rec.Enabled}, nil
+}
+
+func (s *Store) AssignWelfareTag(ctx context.Context, a *model.CommunityElderWelfare) error {
+	if a.ID == "" {
+		a.ID = fmt.Sprintf("ewf_%d", time.Now().UnixNano())
+	}
+	a.EffectiveAt = time.Now()
+	rec := &models.CommunityElderWelfare{BaseModel: models.BaseModel{ID: a.ID}, ElderID: a.ElderID, TagCode: a.TagCode, ValidFrom: a.ValidFrom, ValidTo: a.ValidTo, CertifiedBy: a.CertifiedBy, CertificationDoc: a.CertificationDoc, EffectiveAt: a.EffectiveAt}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) RevokeWelfareTag(ctx context.Context, elderID, tagCode string) error {
+	return s.db.WithContext(ctx).Model(&models.CommunityElderWelfare{}).Where("elder_id = ? AND tag_code = ? AND revoked_at IS NULL", elderID, tagCode).Update("revoked_at", time.Now()).Error
+}
+
+func (s *Store) ListElderWelfareTags(ctx context.Context, elderID string) ([]model.CommunityElderWelfare, error) {
+	var items []models.CommunityElderWelfare
+	if err := s.db.WithContext(ctx).Where("elder_id = ? AND revoked_at IS NULL", elderID).Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list elder welfare tags: %w", err)
+	}
+	result := make([]model.CommunityElderWelfare, len(items))
+	for i, t := range items {
+		result[i] = model.CommunityElderWelfare{ID: t.ID, ElderID: t.ElderID, TagCode: t.TagCode, ValidFrom: t.ValidFrom, ValidTo: t.ValidTo, CertifiedBy: t.CertifiedBy, CertificationDoc: t.CertificationDoc, EffectiveAt: t.EffectiveAt, RevokedAt: t.RevokedAt}
+	}
+	return result, nil
+}
+
+func (s *Store) CreateSigninRecord(ctx context.Context, r *model.CommunitySigninRecord) error {
+	if r.ID == "" {
+		r.ID = fmt.Sprintf("sr_%d", time.Now().UnixNano())
+	}
+	r.SigninTime = time.Now()
+	rec := &models.CommunitySigninRecord{BaseModel: models.BaseModel{ID: r.ID}, ElderID: r.ElderID, DeviceID: r.DeviceID, HospitalID: r.HospitalID, PharmacistID: r.PharmacistID, SigninTime: r.SigninTime, Period: r.Period, IDCard: r.IDCard, ActivatedTags: r.ActivatedTags, IsMedicalSignin: r.IsMedicalSignin, IsWelfareSignin: r.IsWelfareSignin, Notes: r.Notes}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListSigninRecords(ctx context.Context, elderID, period, hospitalID string, page, pageSize int) ([]model.CommunitySigninRecord, error) {
+	query := s.db.WithContext(ctx).Model(&models.CommunitySigninRecord{}).Order("signin_time DESC")
+	if elderID != "" {
+		query = query.Where("elder_id = ?", elderID)
+	}
+	if period != "" {
+		query = query.Where("period = ?", period)
+	}
+	if hospitalID != "" {
+		query = query.Where("hospital_id = ?", hospitalID)
+	}
+	if page > 0 && pageSize > 0 {
+		query = query.Offset((page - 1) * pageSize).Limit(pageSize)
+	}
+	var items []models.CommunitySigninRecord
+	if err := query.Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list signin records: %w", err)
+	}
+	result := make([]model.CommunitySigninRecord, len(items))
+	for i, r := range items {
+		result[i] = model.CommunitySigninRecord{ID: r.ID, ElderID: r.ElderID, DeviceID: r.DeviceID, HospitalID: r.HospitalID, PharmacistID: r.PharmacistID, SigninTime: r.SigninTime, Period: r.Period, IDCard: r.IDCard, ActivatedTags: r.ActivatedTags, IsMedicalSignin: r.IsMedicalSignin, IsWelfareSignin: r.IsWelfareSignin, Notes: r.Notes}
+	}
+	return result, nil
+}
+
+func (s *Store) GetSigninSummary(ctx context.Context, elderID, period string) (*model.CommunitySigninRecord, error) {
+	var rec models.CommunitySigninRecord
+	if err := s.db.WithContext(ctx).Where("elder_id = ? AND period = ?", elderID, period).Order("signin_time DESC").First(&rec).Error; err != nil {
+		return nil, err
+	}
+	return &model.CommunitySigninRecord{ID: rec.ID, ElderID: rec.ElderID, DeviceID: rec.DeviceID, HospitalID: rec.HospitalID, PharmacistID: rec.PharmacistID, SigninTime: rec.SigninTime, Period: rec.Period, IDCard: rec.IDCard, ActivatedTags: rec.ActivatedTags, IsMedicalSignin: rec.IsMedicalSignin, IsWelfareSignin: rec.IsWelfareSignin, Notes: rec.Notes}, nil
+}
+
+func (s *Store) CreatePharmacyLog(ctx context.Context, p *model.CommunityPharmacyLog) error {
+	if p.ID == "" {
+		p.ID = fmt.Sprintf("pl_%d", time.Now().UnixNano())
+	}
+	p.DispenseTime = time.Now()
+	rec := &models.CommunityPharmacyLog{BaseModel: models.BaseModel{ID: p.ID}, ElderID: p.ElderID, DeviceID: p.DeviceID, HospitalID: p.HospitalID, PharmacistID: p.PharmacistID, DispenseTime: p.DispenseTime, Period: p.Period, Items: p.Items, TotalCost: p.TotalCost, InsuranceCovered: p.InsuranceCovered, SelfPay: p.SelfPay, Notes: p.Notes}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListPharmacyLogs(ctx context.Context, elderID, period string, page, pageSize int) ([]model.CommunityPharmacyLog, error) {
+	query := s.db.WithContext(ctx).Model(&models.CommunityPharmacyLog{}).Order("dispense_time DESC")
+	if elderID != "" {
+		query = query.Where("elder_id = ?", elderID)
+	}
+	if period != "" {
+		query = query.Where("period = ?", period)
+	}
+	if page > 0 && pageSize > 0 {
+		query = query.Offset((page - 1) * pageSize).Limit(pageSize)
+	}
+	var items []models.CommunityPharmacyLog
+	if err := query.Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list pharmacy logs: %w", err)
+	}
+	result := make([]model.CommunityPharmacyLog, len(items))
+	for i, p := range items {
+		result[i] = model.CommunityPharmacyLog{ID: p.ID, ElderID: p.ElderID, DeviceID: p.DeviceID, HospitalID: p.HospitalID, PharmacistID: p.PharmacistID, DispenseTime: p.DispenseTime, Period: p.Period, Items: p.Items, TotalCost: p.TotalCost, InsuranceCovered: p.InsuranceCovered, SelfPay: p.SelfPay, Notes: p.Notes}
+	}
+	return result, nil
+}
+
+func (s *Store) CreateMinzhengSync(ctx context.Context, m *model.CommunityMinzhengSync) error {
+	if m.ID == "" {
+		m.ID = fmt.Sprintf("ms_%d", time.Now().UnixNano())
+	}
+	m.CreatedAt = time.Now()
+	rec := &models.CommunityMinzhengSync{BaseModel: models.BaseModel{ID: m.ID, CreatedAt: m.CreatedAt}, Source: m.Source, Filename: m.Filename, ImportedCount: m.ImportedCount, MatchedCount: m.MatchedCount, PendingReviewCount: m.PendingReviewCount, ErrorCount: m.ErrorCount, Status: m.Status, CompletedAt: m.CompletedAt}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListMinzhengSync(ctx context.Context, page, pageSize int) ([]model.CommunityMinzhengSync, error) {
+	query := s.db.WithContext(ctx).Model(&models.CommunityMinzhengSync{}).Order("created_at DESC")
+	if page > 0 && pageSize > 0 {
+		query = query.Offset((page - 1) * pageSize).Limit(pageSize)
+	}
+	var items []models.CommunityMinzhengSync
+	if err := query.Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list minzheng sync: %w", err)
+	}
+	result := make([]model.CommunityMinzhengSync, len(items))
+	for i, m := range items {
+		result[i] = model.CommunityMinzhengSync{ID: m.ID, Source: m.Source, Filename: m.Filename, ImportedCount: m.ImportedCount, MatchedCount: m.MatchedCount, PendingReviewCount: m.PendingReviewCount, ErrorCount: m.ErrorCount, Status: m.Status, CreatedAt: m.CreatedAt, CompletedAt: m.CompletedAt}
+	}
+	return result, nil
+}
+
+func (s *Store) GetLatestMinzhengSync(ctx context.Context) (*model.CommunityMinzhengSync, error) {
+	var rec models.CommunityMinzhengSync
+	if err := s.db.WithContext(ctx).Order("created_at DESC").First(&rec).Error; err != nil {
+		return nil, err
+	}
+	return &model.CommunityMinzhengSync{ID: rec.ID, Source: rec.Source, Filename: rec.Filename, ImportedCount: rec.ImportedCount, MatchedCount: rec.MatchedCount, PendingReviewCount: rec.PendingReviewCount, ErrorCount: rec.ErrorCount, Status: rec.Status, CreatedAt: rec.CreatedAt, CompletedAt: rec.CompletedAt}, nil
+}
+
+func (s *Store) CreateBatchPayment(ctx context.Context, p *model.CommunityBatchPayment) error {
+	if p.ID == "" {
+		p.ID = fmt.Sprintf("bp_%d", time.Now().UnixNano())
+	}
+	p.CreatedAt = time.Now()
+	rec := &models.CommunityBatchPayment{BaseModel: models.BaseModel{ID: p.ID, CreatedAt: p.CreatedAt}, BatchID: p.BatchID, Period: p.Period, PayType: p.PayType, ElderID: p.ElderID, Amount: p.Amount, BankAccount: p.BankAccount, Status: p.Status, FailureReason: p.FailureReason, ExecutedAt: p.ExecutedAt}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) BulkCreateBatchPayments(ctx context.Context, payments []model.CommunityBatchPayment) error {
+	now := time.Now()
+	for i := range payments {
+		p := &payments[i]
+		if p.ID == "" {
+			p.ID = fmt.Sprintf("bp_%d", now.UnixNano())
+		}
+		p.CreatedAt = now
+		rec := &models.CommunityBatchPayment{BaseModel: models.BaseModel{ID: p.ID, CreatedAt: p.CreatedAt}, BatchID: p.BatchID, Period: p.Period, PayType: p.PayType, ElderID: p.ElderID, Amount: p.Amount, BankAccount: p.BankAccount, Status: p.Status, FailureReason: p.FailureReason, ExecutedAt: p.ExecutedAt}
+		if err := s.db.WithContext(ctx).Create(rec).Error; err != nil {
+			return fmt.Errorf("bulk create batch payment: %w", err)
+		}
+	}
+	return nil
+}
+
+func (s *Store) ListBatchPayments(ctx context.Context, batchID string, page, pageSize int) ([]model.CommunityBatchPayment, error) {
+	query := s.db.WithContext(ctx).Model(&models.CommunityBatchPayment{}).Order("created_at DESC")
+	if batchID != "" {
+		query = query.Where("batch_id = ?", batchID)
+	}
+	if page > 0 && pageSize > 0 {
+		query = query.Offset((page - 1) * pageSize).Limit(pageSize)
+	}
+	var items []models.CommunityBatchPayment
+	if err := query.Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list batch payments: %w", err)
+	}
+	result := make([]model.CommunityBatchPayment, len(items))
+	for i, p := range items {
+		result[i] = model.CommunityBatchPayment{ID: p.ID, BatchID: p.BatchID, Period: p.Period, PayType: p.PayType, ElderID: p.ElderID, Amount: p.Amount, BankAccount: p.BankAccount, Status: p.Status, FailureReason: p.FailureReason, ExecutedAt: p.ExecutedAt, CreatedAt: p.CreatedAt}
+	}
+	return result, nil
+}
+
+func (s *Store) UpdateBatchPaymentStatus(ctx context.Context, id, status string, failureReason string) error {
+	return s.db.WithContext(ctx).Model(&models.CommunityBatchPayment{}).Where("id = ?", id).Updates(map[string]interface{}{"status": status, "failure_reason": failureReason, "executed_at": time.Now()}).Error
+}
+
+func (s *Store) CountPendingPayments(ctx context.Context) (int64, error) {
+	var count int64
+	err := s.db.WithContext(ctx).Model(&models.CommunityBatchPayment{}).Where("status = ?", "pending").Count(&count).Error
+	return count, err
+}
+
+func (s *Store) ListMedicationRules(ctx context.Context, personID string, chain model.BusinessChain) ([]model.MedicationRuleRow, error) {
+	query := s.db.WithContext(ctx).Model(&models.MedicationRuleV2{}).Where("person_id = ?", personID)
+	if chain != "" {
+		query = query.Where("business_chain = ?", chain)
+	}
+	var items []models.MedicationRuleV2
+	if err := query.Order("created_at DESC").Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list medication rules: %w", err)
+	}
+	result := make([]model.MedicationRuleRow, len(items))
+	for i, r := range items {
+		result[i] = model.MedicationRuleRow{
+			ID: r.ID, PersonID: r.PersonID, BusinessChain: r.BusinessChain,
+			SourceType: r.SourceType, SourceID: r.SourceID, DrugName: r.DrugName,
+			GenericName: r.GenericName, DrugCategory: r.DrugCategory, Dosage: r.Dosage,
+			Frequency: r.Frequency, Route: r.Route, ScheduleTime1: r.ScheduleTime1,
+			ScheduleTime2: r.ScheduleTime2, ScheduleTime3: r.ScheduleTime3, DaysOfWeek: r.DaysOfWeek,
+			Duration: r.Duration, PreMeal: boolToInt(r.PreMeal), PostMeal: boolToInt(r.PostMeal),
+			SpecialInstructions: r.SpecialInstructions, PrescribedBy: r.PrescribedBy,
+			PrescribedAt: r.PrescribedAt, Active: r.Active, CreatedAt: r.CreatedAt.Format("2006-01-02 15:04:05"),
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) CreateMedicationRuleV2(ctx context.Context, r *model.MedicationRuleRow) error {
+	rec := &models.MedicationRuleV2{
+		BaseModel: models.BaseModel{ID: r.ID}, PersonID: r.PersonID, BusinessChain: r.BusinessChain,
+		SourceType: r.SourceType, SourceID: r.SourceID, DrugName: r.DrugName,
+		GenericName: r.GenericName, DrugCategory: r.DrugCategory, Dosage: r.Dosage,
+		Frequency: r.Frequency, Route: r.Route, ScheduleTime1: r.ScheduleTime1,
+		ScheduleTime2: r.ScheduleTime2, ScheduleTime3: r.ScheduleTime3, DaysOfWeek: r.DaysOfWeek,
+		Duration: r.Duration, PreMeal: intBool(r.PreMeal), PostMeal: intBool(r.PostMeal),
+		SpecialInstructions: r.SpecialInstructions, PrescribedBy: r.PrescribedBy,
+		PrescribedAt: r.PrescribedAt, Active: true,
+	}
+	if rec.ID == "" {
+		rec.ID = uuid.New().String()
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) UpdateMedicationRuleV2(ctx context.Context, id string, updates map[string]any) error {
+	if len(updates) == 0 {
+		return nil
+	}
+	updates["updated_at"] = time.Now()
+	return s.db.WithContext(ctx).Model(&models.MedicationRuleV2{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (s *Store) DeleteMedicationRuleV2(ctx context.Context, id string) error {
+	return s.db.WithContext(ctx).Delete(&models.MedicationRuleV2{}, "id = ?", id).Error
+}
+
+func (s *Store) CreateMedicationExecution(ctx context.Context, e *model.MedicationExecution) error {
+	rec := &models.MedicationExecution{
+		BaseModel: models.BaseModel{ID: e.ID}, PersonID: e.PersonID, BusinessChain: e.BusinessChain,
+		RuleID: e.RuleID, ScheduledTime: e.ScheduledTime, ActualTime: e.ActualTime,
+		Status: e.Status, TakenBy: e.TakenBy, DeviceID: e.DeviceID,
+		VerificationMethod: e.VerificationMethod, Notes: e.Notes,
+	}
+	if rec.ID == "" {
+		rec.ID = uuid.New().String()
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListMedicationExecutions(ctx context.Context, personID string, chain model.BusinessChain, limit int) ([]model.MedicationExecution, error) {
+	query := s.db.WithContext(ctx).Model(&models.MedicationExecution{}).Where("person_id = ?", personID)
+	if chain != "" {
+		query = query.Where("business_chain = ?", chain)
+	}
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	query = query.Order("scheduled_time DESC")
+	var items []models.MedicationExecution
+	if err := query.Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list medication executions: %w", err)
+	}
+	result := make([]model.MedicationExecution, len(items))
+	for i, e := range items {
+		result[i] = model.MedicationExecution{
+			ID: e.ID, PersonID: e.PersonID, BusinessChain: e.BusinessChain,
+			RuleID: e.RuleID, ScheduledTime: e.ScheduledTime, ActualTime: e.ActualTime,
+			Status: e.Status, TakenBy: e.TakenBy, DeviceID: e.DeviceID,
+			VerificationMethod: e.VerificationMethod, Notes: e.Notes, CreatedAt: e.CreatedAt.Format("2006-01-02 15:04:05"),
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) AssignRole(ctx context.Context, binding *model.PersonRoleBinding) error {
+	binding.ID = uuid.New().String()
+	binding.CreatedAt = time.Now()
+	rec := &models.UserRoleBinding{
+		BaseModel: models.BaseModel{ID: binding.ID, CreatedAt: binding.CreatedAt},
+		UserID: binding.UserID, BusinessChain: binding.BusinessChain, Role: binding.Role,
+		InstitutionID: binding.InstitutionID, GrantedBy: binding.GrantedBy,
+		ExpiresAt: binding.ExpiresAt, Active: binding.Active != 0,
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListRoles(ctx context.Context, userID string) ([]model.PersonRoleBinding, error) {
+	var items []models.UserRoleBinding
+	if err := s.db.WithContext(ctx).Where("user_id = ?", userID).Order("created_at DESC").Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list roles: %w", err)
+	}
+	result := make([]model.PersonRoleBinding, len(items))
+	for i, b := range items {
+		result[i] = model.PersonRoleBinding{
+			ID: b.ID, UserID: b.UserID, BusinessChain: b.BusinessChain, Role: b.Role,
+			InstitutionID: b.InstitutionID, GrantedBy: b.GrantedBy, ExpiresAt: b.ExpiresAt,
+			Active: boolToInt(b.Active), CreatedAt: b.CreatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) ListRolesByChain(ctx context.Context, chain model.BusinessChain) ([]model.PersonRoleBinding, error) {
+	var items []models.UserRoleBinding
+	if err := s.db.WithContext(ctx).Where("business_chain = ? AND active = ?", chain, true).Order("created_at DESC").Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list roles by chain: %w", err)
+	}
+	result := make([]model.PersonRoleBinding, len(items))
+	for i, b := range items {
+		result[i] = model.PersonRoleBinding{
+			ID: b.ID, UserID: b.UserID, BusinessChain: b.BusinessChain, Role: b.Role,
+			InstitutionID: b.InstitutionID, GrantedBy: b.GrantedBy, ExpiresAt: b.ExpiresAt,
+			Active: boolToInt(b.Active), CreatedAt: b.CreatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) RevokeRole(ctx context.Context, bindingID string) error {
+	return s.db.WithContext(ctx).Model(&models.UserRoleBinding{}).Where("id = ?", bindingID).Update("active", false).Error
+}
+
+func (s *Store) GetEffectiveRole(ctx context.Context, userID string, chain model.BusinessChain) (string, bool) {
+	var role string
+	err := s.db.WithContext(ctx).Model(&models.UserRoleBinding{}).
+		Where("user_id = ? AND business_chain = ? AND active = ?", userID, chain, true).
+		Order("granted_at DESC").
+		Select("role").First(&role).Error
+	if err != nil {
+		return "", false
+	}
+	return role, true
+}
+
+func (s *Store) CreateAlertRule(ctx context.Context, r *model.AlertRule) error {
+	rec := &models.AlertRuleGorm{
+		BaseModel: models.BaseModel{ID: r.ID}, Name: r.Name, BusinessChain: r.BusinessChain,
+		AlertType: r.AlertType, Severity: r.Severity, ConditionField: r.ConditionField,
+		ConditionOperator: r.ConditionOperator, NotifyRoles: r.NotifyRoles,
+		NotifyChannels: r.NotifyChannels, EscalationTimeoutMin: r.EscalationTimeoutMin,
+		Enabled: r.Active != 0,
+	}
+	if rec.ID == "" {
+		rec.ID = uuid.New().String()
+	}
+	if r.ConditionThreshold != nil {
+		t := int(*r.ConditionThreshold)
+		rec.ConditionThreshold = &t
+	}
+	if r.ConditionDurationMin != nil {
+		d := int(*r.ConditionDurationMin)
+		rec.ConditionDurationMin = &d
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) GetAlertRule(ctx context.Context, id string) (*model.AlertRule, error) {
+	var rec models.AlertRuleGorm
+	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&rec).Error; err != nil {
+		return nil, err
+	}
+	r := &model.AlertRule{
+		ID: rec.ID, Name: rec.Name, BusinessChain: rec.BusinessChain,
+		AlertType: rec.AlertType, Severity: rec.Severity, ConditionField: rec.ConditionField,
+		ConditionOperator: rec.ConditionOperator, NotifyRoles: rec.NotifyRoles,
+		NotifyChannels: rec.NotifyChannels, EscalationTimeoutMin: rec.EscalationTimeoutMin,
+		Active: intBool(rec.Enabled), CreatedAt: rec.CreatedAt, UpdatedAt: rec.UpdatedAt,
+	}
+	if rec.ConditionThreshold != nil {
+		v := int64(*rec.ConditionThreshold)
+		r.ConditionThreshold = &v
+	}
+	if rec.ConditionDurationMin != nil {
+		v := int64(*rec.ConditionDurationMin)
+		r.ConditionDurationMin = &v
+	}
+	return r, nil
+}
+
+func (s *Store) ListAlertRules(ctx context.Context, chain model.BusinessChain) ([]model.AlertRule, error) {
+	var items []models.AlertRuleGorm
+	if err := s.db.WithContext(ctx).Where("business_chain = ?", chain).Order("created_at DESC").Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list alert rules: %w", err)
+	}
+	result := make([]model.AlertRule, len(items))
+	for i, r := range items {
+		item := model.AlertRule{
+			ID: r.ID, Name: r.Name, BusinessChain: r.BusinessChain,
+			AlertType: r.AlertType, Severity: r.Severity, ConditionField: r.ConditionField,
+			ConditionOperator: r.ConditionOperator, NotifyRoles: r.NotifyRoles,
+			NotifyChannels: r.NotifyChannels, EscalationTimeoutMin: r.EscalationTimeoutMin,
+			Active: intBool(r.Enabled), CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
+		}
+		if r.ConditionThreshold != nil {
+			v := int64(*r.ConditionThreshold)
+			item.ConditionThreshold = &v
+		}
+		if r.ConditionDurationMin != nil {
+			v := int64(*r.ConditionDurationMin)
+			item.ConditionDurationMin = &v
+		}
+		result[i] = item
+	}
+	return result, nil
+}
+
+func (s *Store) UpdateAlertRule(ctx context.Context, id string, updates map[string]any) error {
+	if len(updates) == 0 {
+		return nil
+	}
+	updates["updated_at"] = time.Now()
+	return s.db.WithContext(ctx).Model(&models.AlertRuleGorm{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (s *Store) DeleteAlertRule(ctx context.Context, id string) error {
+	return s.db.WithContext(ctx).Delete(&models.AlertRuleGorm{}, "id = ?", id).Error
+}
+
+func (s *Store) CreateGuidanceRule(ctx context.Context, r *model.HealthGuidanceRule) error {
+	rec := &models.HealthGuidanceRule{
+		BaseModel: models.BaseModel{ID: r.ID}, Name: r.Name, BusinessChain: r.BusinessChain,
+		TriggerCondition: r.TriggerCondition, ConditionField: r.ConditionField,
+		ConditionOp: r.ConditionOp, ConditionThresh: r.ConditionThresh,
+		GuidanceType: r.GuidanceType, Title: r.Title, Content: r.Content,
+		Priority: r.Priority, Enabled: r.Enabled != 0,
+	}
+	if rec.ID == "" {
+		rec.ID = uuid.New().String()
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListGuidanceRules(ctx context.Context, chain model.BusinessChain, enabledOnly bool) ([]model.HealthGuidanceRule, error) {
+	query := s.db.WithContext(ctx).Model(&models.HealthGuidanceRule{}).Where("business_chain = ?", chain)
+	if enabledOnly {
+		query = query.Where("enabled = ?", true)
+	}
+	query = query.Order("priority DESC, created_at DESC")
+	var items []models.HealthGuidanceRule
+	if err := query.Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list guidance rules: %w", err)
+	}
+	result := make([]model.HealthGuidanceRule, len(items))
+	for i, r := range items {
+		result[i] = model.HealthGuidanceRule{
+			ID: r.ID, Name: r.Name, BusinessChain: r.BusinessChain,
+			TriggerCondition: r.TriggerCondition, ConditionField: r.ConditionField,
+			ConditionOp: r.ConditionOp, ConditionThresh: r.ConditionThresh,
+			GuidanceType: r.GuidanceType, Title: r.Title, Content: r.Content,
+			Priority: r.Priority, Enabled: intBool(r.Enabled), CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) EvaluateGuidanceRules(ctx context.Context, personID string, chain model.BusinessChain, healthData map[string]any) ([]model.HealthGuidanceRule, error) {
+	rules, err := s.ListGuidanceRules(ctx, chain, true)
+	if err != nil {
+		return nil, err
+	}
+	return rules, nil
+}
+
+func (s *Store) CreateGuidanceDelivery(ctx context.Context, d *model.HealthGuidanceDelivery) error {
+	rec := &models.HealthGuidanceDelivery{
+		BaseModel: models.BaseModel{ID: d.ID}, PersonID: d.PersonID, BusinessChain: d.BusinessChain,
+		RuleID: d.RuleID, GuidanceType: d.GuidanceType, Title: d.Title,
+		Content: d.Content, Channel: d.Channel, DeliveredAt: d.DeliveredAt,
+		ReadStatus: d.ReadStatus, Feedback: d.Feedback,
+	}
+	if rec.ID == "" {
+		rec.ID = uuid.New().String()
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListGuidanceDeliveries(ctx context.Context, personID string, chain model.BusinessChain, limit int) ([]model.HealthGuidanceDelivery, error) {
+	query := s.db.WithContext(ctx).Model(&models.HealthGuidanceDelivery{}).
+		Where("person_id = ? AND business_chain = ?", personID, chain).
+		Order("delivered_at DESC")
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	var items []models.HealthGuidanceDelivery
+	if err := query.Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list guidance deliveries: %w", err)
+	}
+	result := make([]model.HealthGuidanceDelivery, len(items))
+	for i, d := range items {
+		result[i] = model.HealthGuidanceDelivery{
+			ID: d.ID, PersonID: d.PersonID, BusinessChain: d.BusinessChain,
+			RuleID: d.RuleID, GuidanceType: d.GuidanceType, Title: d.Title,
+			Content: d.Content, Channel: d.Channel, DeliveredAt: d.DeliveredAt,
+			ReadStatus: d.ReadStatus, Feedback: d.Feedback,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) CreateReportTemplate(ctx context.Context, t *model.HealthReportTemplate) error {
+	rec := &models.HealthReportTemplate{
+		BaseModel: models.BaseModel{ID: t.ID}, Name: t.Name,
+		BusinessChain: t.BusinessChain, Frequency: t.Frequency, TemplateType: t.TemplateType,
+	}
+	if rec.ID == "" {
+		rec.ID = uuid.New().String()
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListReportTemplates(ctx context.Context, chain model.BusinessChain) ([]model.HealthReportTemplate, error) {
+	var items []models.HealthReportTemplate
+	if err := s.db.WithContext(ctx).Where("business_chain = ?", chain).Order("created_at DESC").Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list report templates: %w", err)
+	}
+	result := make([]model.HealthReportTemplate, len(items))
+	for i, t := range items {
+		result[i] = model.HealthReportTemplate{
+			ID: t.ID, Name: t.Name, BusinessChain: t.BusinessChain,
+			Frequency: t.Frequency, TemplateType: t.TemplateType,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) CreateReport(ctx context.Context, r *model.HealthReport) error {
+	if r.ID == "" {
+		r.ID = uuid.New().String()
+	}
+	if r.Status == "" {
+		r.Status = "generated"
+	}
+	rec := &models.HealthReport{
+		BaseModel: models.BaseModel{ID: r.ID}, PersonID: r.PersonID,
+		BusinessChain: r.BusinessChain, TemplateID: r.TemplateID,
+		ReportPeriod: r.ReportPeriod, Content: r.Content,
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListReports(ctx context.Context, personID string, chain model.BusinessChain, limit int) ([]model.HealthReport, error) {
+	query := s.db.WithContext(ctx).Model(&models.HealthReport{}).Where("person_id = ? AND business_chain = ?", personID, chain)
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	query = query.Order("created_at DESC")
+	var items []models.HealthReport
+	if err := query.Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list reports: %w", err)
+	}
+	result := make([]model.HealthReport, len(items))
+	for i, r := range items {
+		result[i] = model.HealthReport{
+			ID: r.ID, PersonID: r.PersonID, BusinessChain: r.BusinessChain,
+			TemplateID: r.TemplateID, ReportPeriod: r.ReportPeriod,
+			Content: r.Content, Status: r.Status, CreatedAt: r.CreatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) CreateComplianceRule(ctx context.Context, r *model.ComplianceRule) error {
+	rec := &models.ComplianceRule{
+		BaseModel: models.BaseModel{ID: r.ID}, RuleCode: r.RuleCode,
+		Name: r.Name, Description: r.Description, BusinessChain: r.BusinessChain,
+		Condition: r.ConditionSQL, Action: r.ActionRequired, Enabled: r.Enabled != 0,
+	}
+	if rec.ID == "" {
+		rec.ID = uuid.New().String()
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListComplianceRules(ctx context.Context, chain model.BusinessChain) ([]model.ComplianceRule, error) {
+	var items []models.ComplianceRule
+	if err := s.db.WithContext(ctx).Where("business_chain = ?", chain).Order("created_at DESC").Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list compliance rules: %w", err)
+	}
+	result := make([]model.ComplianceRule, len(items))
+	for i, r := range items {
+		result[i] = model.ComplianceRule{
+			ID: r.ID, RuleCode: r.RuleCode, Name: r.Name, Description: r.Description,
+			BusinessChain: r.BusinessChain, RuleType: r.RuleType, ConditionSQL: r.Condition,
+			Severity: r.Severity, ActionRequired: r.Action, Enabled: intBool(r.Enabled),
+			CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) RunComplianceCheck(ctx context.Context, ruleCode string, personID string) (*model.ComplianceCheck, error) {
+	check := &model.ComplianceCheck{
+		ID: uuid.New().String(), RuleID: ruleCode, PersonID: personID,
+		CheckTime: time.Now(), CreatedAt: time.Now(),
+	}
+	rec := &models.ComplianceCheck{
+		BaseModel: models.BaseModel{ID: check.ID}, RuleID: check.RuleID,
+		PersonID: check.PersonID, Violated: check.Violated != 0,
+		Result: check.ViolationDetails, Notes: check.ViolationDetails,
+		CreatedAt: check.CreatedAt,
+	}
+	if err := s.db.WithContext(ctx).Create(rec).Error; err != nil {
+		return nil, err
+	}
+	return check, nil
+}
+
+func (s *Store) ListComplianceChecks(ctx context.Context, personID string, limit int) ([]model.ComplianceCheck, error) {
+	query := s.db.WithContext(ctx).Model(&models.ComplianceCheck{}).Where("person_id = ?", personID)
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	query = query.Order("created_at DESC")
+	var items []models.ComplianceCheck
+	if err := query.Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list compliance checks: %w", err)
+	}
+	result := make([]model.ComplianceCheck, len(items))
+	for i, c := range items {
+		result[i] = model.ComplianceCheck{
+			ID: c.ID, RuleID: c.RuleID, PersonID: c.PersonID,
+			CheckTime: c.CreatedAt, Violated: intBool(c.Violated),
+			ViolationDetails: c.Result, ReviewedBy: c.ReviewerID,
+			ActionTaken: c.Notes, CreatedAt: c.CreatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) ReviewCheck(ctx context.Context, checkID string, reviewerID string, result string, notes string) error {
+	return s.db.WithContext(ctx).Model(&models.ComplianceCheck{}).Where("id = ?", checkID).Updates(map[string]interface{}{
+		"reviewer_id": reviewerID, "result": result, "notes": notes,
+	}).Error
+}
+
+func (s *Store) BindDevice(ctx context.Context, binding *model.DeviceBinding) error {
+	binding.ID = uuid.New().String()
+	binding.BoundAt = time.Now()
+	rec := &models.DeviceBinding{
+		BaseModel: models.BaseModel{ID: binding.ID}, DeviceID: binding.DeviceID,
+		PersonID: binding.PersonID, BusinessChain: binding.BusinessChain,
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListDeviceBindings(ctx context.Context, personID string, chain model.BusinessChain) ([]model.DeviceBinding, error) {
+	query := s.db.WithContext(ctx).Model(&models.DeviceBinding{}).Where("person_id = ?", personID)
+	if chain != "" {
+		query = query.Where("business_chain = ?", chain)
+	}
+	var items []models.DeviceBinding
+	if err := query.Order("created_at DESC").Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list device bindings: %w", err)
+	}
+	result := make([]model.DeviceBinding, len(items))
+	for i, b := range items {
+		result[i] = model.DeviceBinding{
+			ID: b.ID, DeviceID: b.DeviceID, PersonID: b.PersonID,
+			BusinessChain: b.BusinessChain, CreatedAt: b.CreatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) ListDevicesByPerson(ctx context.Context, personID string) ([]model.DeviceSummary, error) {
+	var devices []models.Device
+	if err := s.db.WithContext(ctx).Joins("JOIN device_bindings db ON devices.id = db.device_id").
+		Where("db.person_id = ?", personID).Find(&devices).Error; err != nil {
+		return nil, fmt.Errorf("list devices by person: %w", err)
+	}
+	result := make([]model.DeviceSummary, len(devices))
+	for i, d := range devices {
+		result[i] = model.DeviceSummary{
+			ID: d.ID, DeviceID: d.DeviceID, Type: d.DeviceType,
+			Tier: d.Tier, Status: d.Status, LastSeen: d.LastSeen,
+			FirmwareVer: d.OTAURL, CreatedAt: d.CreatedAt, UpdatedAt: d.UpdatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) CreateNotificationTemplate(ctx context.Context, t *model.NotificationTemplate) error {
+	rec := &models.NotificationTemplate{
+		BaseModel: models.BaseModel{ID: t.ID}, Name: t.Name,
+		BusinessChain: t.BusinessChain, Channel: t.Channel,
+		Subject: t.Subject, Content: t.BodyTemplate, Enabled: t.Enabled != 0,
+	}
+	if rec.ID == "" {
+		rec.ID = uuid.New().String()
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListNotificationTemplates(ctx context.Context, chain model.BusinessChain) ([]model.NotificationTemplate, error) {
+	var items []models.NotificationTemplate
+	if err := s.db.WithContext(ctx).Where("business_chain = ?", chain).Order("created_at DESC").Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list notification templates: %w", err)
+	}
+	result := make([]model.NotificationTemplate, len(items))
+	for i, t := range items {
+		result[i] = model.NotificationTemplate{
+			ID: t.ID, Name: t.Name, BusinessChain: t.BusinessChain,
+			Channel: t.Channel, Subject: t.Subject, BodyTemplate: t.Content,
+			Enabled: intBool(t.Enabled), CreatedAt: t.CreatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) CreateNotificationLog(ctx context.Context, l *model.NotificationLog) error {
+	rec := &models.NotificationLog{
+		BaseModel: models.BaseModel{ID: l.ID}, PersonID: l.PersonID,
+		BusinessChain: l.BusinessChain, TemplateID: l.TemplateID,
+		Channel: l.Channel, Status: l.Status, Content: l.Content,
+	}
+	if rec.ID == "" {
+		rec.ID = uuid.New().String()
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) UpdateNotificationStatus(ctx context.Context, logID string, status string, sentAt, readAt *time.Time) error {
+	updates := map[string]interface{}{"status": status}
+	if sentAt != nil {
+		updates["sent_at"] = sentAt
+	}
+	if readAt != nil {
+		updates["read_at"] = readAt
+	}
+	return s.db.WithContext(ctx).Model(&models.NotificationLog{}).Where("id = ?", logID).Updates(updates).Error
+}
+
+func (s *Store) ListNotificationLogs(ctx context.Context, personID string, chain model.BusinessChain, limit int) ([]model.NotificationLog, error) {
+	query := s.db.WithContext(ctx).Model(&models.NotificationLog{}).Where("person_id = ? AND business_chain = ?", personID, chain)
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	query = query.Order("created_at DESC")
+	var items []models.NotificationLog
+	if err := query.Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list notification logs: %w", err)
+	}
+	result := make([]model.NotificationLog, len(items))
+	for i, l := range items {
+		result[i] = model.NotificationLog{
+			ID: l.ID, PersonID: l.PersonID, BusinessChain: l.BusinessChain,
+			TemplateID: l.TemplateID, Channel: l.Channel, Status: l.Status,
+			SentAt: l.SentAt, ReadAt: l.ReadAt, ErrorMessage: l.Content,
+			CreatedAt: l.CreatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) CreateHealthRecordV2(ctx context.Context, r *model.HealthRecordV2) error {
+	rec := &models.HealthRecordV2{
+		BaseModel: models.BaseModel{ID: r.ID}, PersonID: r.PersonID,
+		BusinessChain: r.BusinessChain, RecordType: r.RecordType,
+		Source: r.Source, DeviceID: r.DeviceID, RecordedAt: r.RecordedAt,
+		HeartRate: r.HeartRate, BloodPressureSys: r.BloodPressureSys,
+		BloodPressureDia: r.BloodPressureDia, SpO2: r.SpO2,
+		Temperature: r.Temperature, RespiratoryRate: r.RespiratoryRate,
+		PulseRate: r.PulseRate, GlucoseFasting: r.GlucoseFasting,
+		UricAcid: r.UricAcid, Steps: r.Steps, SleepHours: r.SleepHours,
+		Content: r.Notes,
+	}
+	if rec.ID == "" {
+		rec.ID = uuid.New().String()
+	}
+	return s.db.WithContext(ctx).Create(rec).Error
+}
+
+func (s *Store) ListHealthRecordsV2(ctx context.Context, personID string, chain model.BusinessChain, recordType string, limit int) ([]model.HealthRecordV2, error) {
+	query := s.db.WithContext(ctx).Model(&models.HealthRecordV2{}).Where("person_id = ?", personID)
+	if chain != "" {
+		query = query.Where("business_chain = ?", chain)
+	}
+	if recordType != "" {
+		query = query.Where("record_type = ?", recordType)
+	}
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	query = query.Order("recorded_at DESC")
+	var items []models.HealthRecordV2
+	if err := query.Find(&items).Error; err != nil {
+		return nil, fmt.Errorf("list health records v2: %w", err)
+	}
+	result := make([]model.HealthRecordV2, len(items))
+	for i, r := range items {
+		result[i] = model.HealthRecordV2{
+			ID: r.ID, PersonID: r.PersonID, BusinessChain: r.BusinessChain,
+			RecordType: r.RecordType, Source: r.Source, DeviceID: r.DeviceID,
+			RecordedAt: r.RecordedAt, HeartRate: r.HeartRate, BloodPressureSys: r.BloodPressureSys,
+			BloodPressureDia: r.BloodPressureDia, SpO2: r.SpO2, Temperature: r.Temperature,
+			RespiratoryRate: r.RespiratoryRate, PulseRate: r.PulseRate,
+			GlucoseFasting: r.GlucoseFasting, UricAcid: r.UricAcid,
+			Steps: r.Steps, SleepHours: r.SleepHours, Notes: r.Content, CreatedAt: r.CreatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) GetHealthSummaryV2(ctx context.Context, personID string, chain model.BusinessChain) (*model.PersonHealthSummary, error) {
+	var rec models.PersonHealthSummary
+	if err := s.db.WithContext(ctx).Where("person_id = ? AND business_chain = ?", personID, chain).First(&rec).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &model.PersonHealthSummary{
+		PersonID: rec.PersonID, BusinessChain: rec.BusinessChain,
+		LatestHR: rec.LatestHR, LatestSpO2: rec.LatestSpO2,
+		LatestBPSys: rec.LatestBPSys, LatestBPDia: rec.LatestBPDia,
+		LatestGlucoseFasting: rec.LatestGlucoseFasting, LatestUricAcid: rec.LatestUricAcid,
+		LatestSteps: rec.LatestSteps, LatestSleepHours: rec.LatestSleepHours,
+		RiskScore: rec.RiskScore, TrendDirection: rec.TrendDirection,
+		LastUpdated: rec.CreatedAt, ARecommendation: rec.Recommendation,
+	}, nil
+}
+
+func (s *Store) UpdateHealthSummaryV2(ctx context.Context, s2 *model.PersonHealthSummary) error {
+	rec := &models.PersonHealthSummary{
+		PersonID: s2.PersonID, BusinessChain: s2.BusinessChain,
+		LatestHR: s2.LatestHR, LatestSpO2: s2.LatestSpO2,
+		LatestBPSys: s2.LatestBPSys, LatestBPDia: s2.LatestBPDia,
+		LatestGlucoseFasting: s2.LatestGlucoseFasting, LatestUricAcid: s2.LatestUricAcid,
+		LatestSteps: s2.LatestSteps, LatestSleepHours: s2.LatestSleepHours,
+		RiskScore: s2.RiskScore, TrendDirection: s2.TrendDirection,
+		Recommendation: s2.ARecommendation,
+	}
+	return s.db.WithContext(ctx).Where("person_id = ? AND business_chain = ?", s2.PersonID, s2.BusinessChain).
+		Assign(rec).FirstOrCreate(rec).Error
+}
