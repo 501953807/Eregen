@@ -283,3 +283,33 @@ type AuditLog struct {
 }
 
 func (AuditLog) TableName() string { return "audit_log" }
+
+// MedicalPatient represents a hospital patient for wristband tracking.
+type MedicalPatient struct {
+	BaseModel
+	AdmissionNo       string `gorm:"uniqueIndex;size:100"`
+	Name              string `gorm:"size:100;not null"`
+	Gender            string `gorm:"size:10"`
+	Age               *int
+	Department        string `gorm:"size:100"`
+	BedNumber         string `gorm:"size:50"`
+	BloodType         string `gorm:"size:10"`
+	Allergies         string
+	SpecialConditions string
+	TagIDs            string `gorm:"type:text"`
+	Status            string `gorm:"size:20;default:'admitted'"`
+}
+
+func (MedicalPatient) TableName() string { return "medical_wristband_patients" }
+
+// MedicalDailyEntry represents a daily nursing entry.
+type MedicalDailyEntry struct {
+	BaseModel
+	PatientID string `gorm:"size:255;index"`
+	EntryDate string `gorm:"size:20"`
+	EntryType string `gorm:"size:50"`
+	Content   string
+	NurseID   string `gorm:"size:255"`
+}
+
+func (MedicalDailyEntry) TableName() string { return "medical_daily_entries" }
