@@ -210,6 +210,29 @@ func (p *Postgres) UpdateElderlyProfile(ctx context.Context, elderlyID string, r
 	return err
 }
 
+// ListElderly returns all elderly profiles (legacy interface method).
+func (p *Postgres) ListElderly(ctx context.Context, page, pageSize int) ([]model.ElderlyProfile, error) {
+	offset := (page - 1) * pageSize
+	rows, err := p.pool.Query(ctx, `SELECT id, user_id, name, birth_date, avatar_url, health_tiers, created_at, updated_at FROM elderly_profiles ORDER BY created_at DESC LIMIT $1 OFFSET $2`, pageSize, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var profiles []model.ElderlyProfile
+	for rows.Next() {
+		var ep model.ElderlyProfile
+		var data pq.ByteaArray
+		if err := rows.Scan(&ep.ID, &ep.UserID, &ep.Name, &ep.BirthDate, &ep.AvatarURL, &data, &ep.CreatedAt, &ep.UpdatedAt); err != nil {
+			return nil, err
+		}
+		if len(data) > 0 {
+			json.Unmarshal(data[0], &ep.HealthTiers)
+		}
+		profiles = append(profiles, ep)
+	}
+	return profiles, rows.Err()
+}
+
 // ListElderlyProfiles returns a paginated list of elderly profiles for a given user.
 func (p *Postgres) ListElderlyProfiles(ctx context.Context, userID string, page, pageSize int) ([]model.ElderlyProfile, int, error) {
 	offset := (page - 1) * pageSize
@@ -1599,6 +1622,31 @@ func (p *Postgres) CheckElderlyAccess(ctx context.Context, elderlyID, userID str
 		elderlyID, userID).Scan(&count)
 	return count > 0, err
 }
+// ListUsersAdmin returns paginated users with optional role filter (legacy summary version).
+func (p *Postgres) ListUsersAdmin(ctx context.Context, page, pageSize int, role string) ([]model.UserSummary, error) {
+	where := "1=1"
+	args := []any{}
+	if role != "" {
+		where += " AND role = $1"
+		args = append(args, role)
+	}
+	offset := (page - 1) * pageSize
+	rows, err := p.pool.Query(ctx, `SELECT id, name, role, created_at FROM users WHERE `+where+` ORDER BY created_at DESC LIMIT $1 OFFSET $2`, append(args, pageSize, offset)...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []model.UserSummary
+	for rows.Next() {
+		var u model.UserSummary
+		if err := rows.Scan(&u.ID, &u.Name, &u.Role, &u.CreatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, u)
+	}
+	return result, rows.Err()
+}
+
 // ListDevicesAdmin returns all devices filtered by status (admin endpoint).
 func (p *Postgres) ListDevicesAdmin(ctx context.Context, status string) ([]model.DeviceSummary, error) {
 	where := "status = $1"

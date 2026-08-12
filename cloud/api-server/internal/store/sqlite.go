@@ -128,8 +128,8 @@ func (s *SqliteStore) ListUsers(ctx context.Context, page, pageSize int, role st
 	return users, nil
 }
 
-// ListDevices returns devices filtered by status (empty means all).
-func (s *SqliteStore) ListDevices(ctx context.Context, status string) ([]model.DeviceSummary, error) {
+// ListDevicesAdmin returns devices filtered by status (empty means all).
+func (s *SqliteStore) ListDevicesAdmin(ctx context.Context, status string) ([]model.DeviceSummary, error) {
 	where := "1=1"
 	var args []interface{}
 	idx := 1

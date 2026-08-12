@@ -171,6 +171,41 @@ func (s *SqliteStore) ListElderlyProfiles(ctx context.Context, userID string, pa
 	return profiles, total, rows.Err()
 }
 
+// ListDevices returns devices for an owner (domain interface method).
+func (s *SqliteStore) ListDevices(ctx context.Context, ownerID string, deviceType *string, page, pageSize int) ([]model.Device, int, error) {
+	where := "owner_user_id = ?"
+	args := []any{ownerID}
+	idx := 2
+	if deviceType != nil && *deviceType != "" {
+		where += " AND device_type = ?"
+		args = append(args, *deviceType)
+		idx++
+	}
+	offset := (page - 1) * pageSize
+	args = append(args, pageSize, offset)
+	query := fmt.Sprintf(`SELECT id, device_id, device_type, tier, owner_user_id, status, last_seen, created_at, updated_at, settings
+		FROM devices WHERE %s ORDER BY created_at DESC LIMIT ? OFFSET ?`, where)
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+	var devices []model.Device
+	for rows.Next() {
+		d, err := scanDeviceSQLite(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		devices = append(devices, *d)
+	}
+	countArgs := make([]any, len(args)-2)
+	copy(countArgs, args)
+	var count int
+	s.db.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM devices WHERE %s", where), countArgs...).Scan(&count)
+	return devices, count, rows.Err()
+}
+
+
 func (s *SqliteStore) GetElderlyProfilesByUserID(ctx context.Context, userID string) ([]model.ElderlyProfile, error) {
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT id, user_id, name, birth_date, avatar_url, health_tiers, created_at, updated_at
