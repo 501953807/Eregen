@@ -49,13 +49,13 @@
 ## 验证清单 (Verification)
 
 ### 编译验证
-- [ ] API编译通过：`go build ./...`
-- [ ] Flutter分析通过：`flutter analyze`
-- [ ] 单元测试通过：`go test ./internal/analyzer/`
+- [x] API编译通过：`go build ./...`
+- [x] Flutter分析通过：`flutter analyze`
+- [x] 单元测试通过：`go test ./...`
 
 ### 功能验证
-- [ ] UI原型在浏览器中可访问
-- [ ] 后端API可通过curl测试
+- [x] UI原型在浏览器中可访问
+- [x] 后端API可通过curl测试
 
 ---
 
