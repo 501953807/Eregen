@@ -244,7 +244,7 @@ func (s *Store) GetDeviceByID(ctx context.Context, id string) (*model.DeviceDeta
 	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&d).Error; err != nil {
 		return nil, fmt.Errorf("get device: %w", err)
 	}
-	return &model.DeviceDetail{ID: d.ID, DeviceID: d.DeviceID, DeviceType: d.DeviceType, Tier: d.Tier, Status: d.Status, LastSeen: optionalTime(d.LastSeen), OwnerID: d.OwnerUserID, Settings: d.Settings, FirmwareVer: extractFirmwareVer(d.Settings)}, nil
+	return &model.DeviceDetail{ID: d.ID, DeviceID: d.DeviceID, Type: d.DeviceType, Tier: d.Tier, Status: d.Status, LastSeen: optionalTime(d.LastSeen), OwnerName: "", FirmwareVer: extractFirmwareVer(d.Settings)}, nil
 }
 
 func (s *Store) UpdateDeviceConfig(ctx context.Context, deviceID string, config map[string]interface{}) error {
@@ -329,7 +329,7 @@ func (s *Store) GetElderlyLocationHistory(ctx context.Context, elderlyID string,
 	}
 	result := make([]model.LocationPoint, len(locations))
 	for i, l := range locations {
-		result[i] = model.LocationPoint{ID: l.ID, ElderlyID: l.ElderlyID, Lat: l.Lat, Lon: l.Lon, Accuracy: l.Accuracy, Timestamp: l.Timestamp}
+		result[i] = model.LocationPoint{ID: l.ID, ElderlyID: l.ElderlyID, Lat: l.Lat, Lon: l.Lng, Accuracy: l.Accuracy, Timestamp: l.Timestamp}
 	}
 	return result, nil
 }
