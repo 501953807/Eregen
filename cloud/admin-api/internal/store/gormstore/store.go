@@ -2269,7 +2269,7 @@ func (s *Store) ListReports(ctx context.Context, personID string, chain model.Bu
 	for i, r := range items {
 		result[i] = model.HealthReport{
 			ID: r.ID, PersonID: r.PersonID, BusinessChain: r.BusinessChain,
-			TemplateID: r.TemplateID, ReportPeriod: r.ReportPeriod, Content: r.Content,
+			TemplateID: r.TemplateID,
 		}
 	}
 	return result, nil
