@@ -109,11 +109,14 @@ func (Alert) TableName() string { return "alerts" }
 // Subscription represents a service subscription.
 type Subscription struct {
 	BaseModel
-	UserID    string  `gorm:"size:255;index"`
-	Tier      string  `gorm:"size:50"`
-	Status    string  `gorm:"size:20;default:'active'"`
-	StartDate *time.Time
-	EndDate   *time.Time
+	UserID               string     `gorm:"size:255;index"`
+	PlanTier             string     `gorm:"size:50;not null"`
+	Status               string     `gorm:"size:20;default:'active'"`
+	BillingCycle         string     `gorm:"size:20;default:'monthly'"`
+	StartsAt             *time.Time
+	ExpiresAt            *time.Time
+	CancellationReason   string
+	TotalSpent           float64
 }
 
 func (Subscription) TableName() string { return "subscriptions" }

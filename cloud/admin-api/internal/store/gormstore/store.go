@@ -56,6 +56,7 @@ func (s *Store) AutoMigrate() error {
 		&models.Alert{}, &models.Subscription{}, &models.FirmwareRelease{},
 		&models.Person{}, &models.HospitalAdmission{}, &models.MedicalWristbandPatient{},
 		&models.RegulatoryFenceConfig{}, &models.AlertRule{},
+		&models.APIKey{}, &models.SystemSetting{}, &models.OTAJob{},
 	)
 }
 
@@ -334,6 +335,72 @@ func (s *Store) GetElderlyLocationHistory(ctx context.Context, elderlyID string,
 	return result, nil
 }
 
+func (s *Store) GetElderlyHealthStats(ctx context.Context, elderlyID string) (*model.HealthStats, error) {
+	var stats model.HealthStats
+	stats.ElderlyID = elderlyID
+	// TODO: Use Raw SQL for aggregate query (GORM has limited aggregate support)
+	return &stats, nil
+}
+
+func (s *Store) GetElderlyDevices(ctx context.Context, elderlyID string) ([]model.DeviceSummaryRow, error) {
+	var devices []models.Device
+	if err := s.db.WithContext(ctx).Table("devices").
+		Joins("JOIN elderly_devices ON devices.id = elderly_devices.device_id").
+		Where("elderly_devices.elderly_id = ?", elderlyID).
+		Order("devices.last_seen DESC").
+		Find(&devices).Error; err != nil {
+		return nil, fmt.Errorf("list elderly devices: %w", err)
+	}
+	result := make([]model.DeviceSummaryRow, len(devices))
+	for i, d := range devices {
+		result[i] = model.DeviceSummaryRow{
+			ID: d.ID, DeviceID: d.DeviceID, Type: d.DeviceType, Tier: d.Tier,
+			Status: d.Status, FirmwareVer: extractFirmwareVer(d.Settings),
+			LastSeen: optionalTime(d.LastSeen),
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) GetElderlyAlertHistory(ctx context.Context, elderlyID string, limit int) ([]model.AlertSummaryRow, error) {
+	var alerts []models.Alert
+	query := s.db.WithContext(ctx).Where("elderly_id = ?", elderlyID).Order("created_at DESC")
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	if err := query.Find(&alerts).Error; err != nil {
+		return nil, fmt.Errorf("list elderly alerts: %w", err)
+	}
+	result := make([]model.AlertSummaryRow, len(alerts))
+	for i, a := range alerts {
+		result[i] = model.AlertSummaryRow{ID: a.ID, ElderlyID: a.ElderlyID, AlertType: a.AlertType, Severity: a.Severity, Status: a.Status, CreatedAt: a.CreatedAt}
+	}
+	return result, nil
+}
+
+func (s *Store) TriggerOTA(ctx context.Context, deviceID, firmwareURL, sha256Hash string) error {
+	return s.db.WithContext(ctx).Model(&models.Device{}).Where("device_id = ?", deviceID).
+		Updates(map[string]interface{}{"ota_url": firmwareURL, "ota_hash": sha256Hash, "ota_status": "pending"}).Error
+}
+
+func (s *Store) UnbindDevice(ctx context.Context, deviceID string) error {
+	if err := s.db.WithContext(ctx).Table("elderly_devices").Where("device_id = ?", deviceID).Delete(&models.Device{}).Error; err != nil {
+		return fmt.Errorf("unbind elderly devices: %w", err)
+	}
+	return s.db.WithContext(ctx).Model(&models.Device{}).Where("device_id = ?", deviceID).Update("owner_user_id", nil).Error
+}
+
+func (s *Store) BatchTriggerOTA(ctx context.Context, deviceIDs, firmwareURL, sha256Hash []string) error {
+	for i, id := range deviceIDs {
+		url := firmwareURL[i%len(firmwareURL)]
+		hash := sha256Hash[i%len(sha256Hash)]
+		if err := s.TriggerOTA(ctx, id, url, hash); err != nil {
+			return fmt.Errorf("batch OTA device %s: %w", id, err)
+		}
+	}
+	return nil
+}
+
 func parseTime(s string) *time.Time {
 	if s == "" {
 		return nil
@@ -361,4 +428,266 @@ func extractFirmwareVer(settings string) string {
 		return ver
 	}
 	return "v0.1"
+}
+
+func (s *Store) CreateFirmwareVersion(ctx context.Context, v *model.FirmwareVersion) error {
+	fr := &models.FirmwareRelease{
+		DeviceType: v.DeviceType, Tier: v.Tier, Version: v.Version,
+		URL: v.DownloadURL, Changelog: v.Changelog, ReleasedAt: time.Now(),
+	}
+	return s.db.WithContext(ctx).Create(fr).Error
+}
+
+func (s *Store) ListFirmwareVersions(ctx context.Context) ([]model.FirmwareVersion, error) {
+	var releases []models.FirmwareRelease
+	if err := s.db.WithContext(ctx).Order("created_at DESC").Find(&releases).Error; err != nil {
+		return nil, fmt.Errorf("list firmware: %w", err)
+	}
+	result := make([]model.FirmwareVersion, len(releases))
+	for i, r := range releases {
+		result[i] = model.FirmwareVersion{ID: r.ID, DeviceType: r.DeviceType, Tier: r.Tier, Version: r.Version,
+			DownloadURL: r.URL, Changelog: r.Changelog, ReleaseDate: r.ReleasedAt}
+	}
+	return result, nil
+}
+
+func (s *Store) DeleteFirmwareVersion(ctx context.Context, id string) error {
+	return s.db.WithContext(ctx).Model(&models.FirmwareRelease{}).Where("id = ?", id).Delete(&models.FirmwareRelease{}).Error
+}
+
+func (s *Store) PushOTAJob(ctx context.Context, firmwareID string, deviceIDs []string) error {
+	devicesJSON, _ := json.Marshal(deviceIDs)
+	job := &models.OTAJob{FirmwareID: firmwareID, TargetDevices: string(devicesJSON), Progress: "{}"}
+	return s.db.WithContext(ctx).Create(job).Error
+}
+
+func (s *Store) GetNotificationSettings(ctx context.Context) (map[string]any, error) {
+	var setting models.SystemSetting
+	if err := s.db.WithContext(ctx).Where("key = 'notification'").First(&setting).Error; err != nil {
+		return map[string]any{}, nil
+	}
+	var result map[string]any
+	json.Unmarshal([]byte(setting.SettingValue), &result)
+	if result == nil {
+		result = map[string]any{}
+	}
+	return result, nil
+}
+
+func (s *Store) UpdateNotificationSettings(ctx context.Context, data map[string]any) error {
+	value, _ := json.Marshal(data)
+	return s.db.WithContext(ctx).Model(&models.SystemSetting{}).
+		Where("key = ?", "notification").
+		Updates(map[string]interface{}{"setting_value": string(value)}).Error
+}
+
+func (s *Store) ListAPIKeys(ctx context.Context) ([]model.APIKeySummary, error) {
+	var keys []models.APIKey
+	if err := s.db.WithContext(ctx).Order("created_at DESC").Find(&keys).Error; err != nil {
+		return nil, fmt.Errorf("list api keys: %w", err)
+	}
+	result := make([]model.APIKeySummary, len(keys))
+	for i, k := range keys {
+		result[i] = model.APIKeySummary{ID: k.ID, Name: k.Name, Active: k.Active, CreatedAt: k.CreatedAt}
+	}
+	return result, nil
+}
+
+func (s *Store) CreateAPIKey(ctx context.Context, name, keyHash string, expiresAt *time.Time) (string, error) {
+	id := uuid.New().String()
+	key := &models.APIKey{BaseModel: models.BaseModel{ID: id}, Name: name, KeyHash: keyHash, ExpiresAt: expiresAt, Active: true}
+	if err := s.db.WithContext(ctx).Create(key).Error; err != nil {
+		return "", fmt.Errorf("create api key: %w", err)
+	}
+	return id, nil
+}
+
+func (s *Store) RevokeAPIKey(ctx context.Context, id string) error {
+	return s.db.WithContext(ctx).Model(&models.APIKey{}).Where("id = ?", id).Update("active", false).Error
+}
+
+func (s *Store) ChangeAdminPassword(ctx context.Context, userID, hash string) error {
+	return s.db.WithContext(ctx).Model(&models.User{}).Where("id = ? AND role = 'admin'", userID).Update("password_hash", hash).Error
+}
+
+func (s *Store) GetDashboardStats(ctx context.Context) (*model.DashboardStats, error) {
+	var stats model.DashboardStats
+	s.db.WithContext(ctx).Model(&models.Device{}).Where("status = 'online'").Count(&stats.OnlineDevices)
+	s.db.WithContext(ctx).Model(&models.Device{}).Count(&stats.TotalDevices)
+	s.db.WithContext(ctx).Model(&models.Alert{}).Where("status = 'pending'").Count(&stats.ActiveAlerts)
+	s.db.WithContext(ctx).Model(&models.Alert{}).Where("severity = 'P0' AND status = 'pending'").Count(&stats.P0Alerts)
+	s.db.WithContext(ctx).Model(&models.Alert{}).Where("severity = 'P1' AND status = 'pending'").Count(&stats.P1Alerts)
+	s.db.WithContext(ctx).Model(&models.Alert{}).Where("severity = 'P2' AND status = 'pending'").Count(&stats.P2Alerts)
+	s.db.WithContext(ctx).Model(&models.User{}).Count(&stats.TotalUsers)
+	s.db.WithContext(ctx).Model(&models.Subscription{}).Where("status = 'active'").Count(&stats.ActiveSubscriptions)
+	return &stats, nil
+}
+
+func (s *Store) GetSubscriptionStats(ctx context.Context) ([]model.SubscriptionStat, error) {
+	type statRow struct {
+		Tier  string `gorm:"column:plan_tier"`
+		Count int64  `gorm:"column:count"`
+	}
+	var rows []statRow
+	if err := s.db.WithContext(ctx).Model(&models.Subscription{}).
+		Select("plan_tier, COUNT(*) as count").Group("plan_tier").Scan(&rows).Error; err != nil {
+		return nil, fmt.Errorf("subscription stats: %w", err)
+	}
+	var total int64
+	s.db.WithContext(ctx).Model(&models.Subscription{}).Count(&total)
+	result := make([]model.SubscriptionStat, len(rows))
+	for i, r := range rows {
+		pct := float64(0)
+		if total > 0 {
+			pct = float64(r.Count) * 100.0 / float64(total)
+		}
+		result[i] = model.SubscriptionStat{Tier: r.Tier, Count: int(r.Count), Pct: pct}
+	}
+	return result, nil
+}
+
+func (s *Store) GetAlertTrend(ctx context.Context, days int) ([]model.AlertTrendPoint, error) {
+	// Use Raw SQL for date aggregation (GORM has limited support for DATE() formatting)
+	type trendRow struct {
+		Date          string `gorm:"column:date"`
+		BraceletCount int    `gorm:"column:bracelet_count"`
+		PillboxCount  int    `gorm:"column:pillbox_count"`
+	}
+	var rows []trendRow
+	sql := `SELECT DATE(a.created_at) AS date,
+			   SUM(CASE WHEN d.device_type = 'bracelet' THEN 1 ELSE 0 END) AS bracelet_count,
+			   SUM(CASE WHEN d.device_type = 'pillbox' THEN 1 ELSE 0 END) AS pillbox_count
+			FROM alerts a LEFT JOIN devices d ON a.elderly_id = d.id
+			WHERE a.created_at >= ?
+			GROUP BY DATE(a.created_at) ORDER BY date`
+	if err := s.db.Raw(sql, time.Now().AddDate(0, 0, -days)).Scan(&rows).Error; err != nil {
+		return nil, fmt.Errorf("alert trend: %w", err)
+	}
+	result := make([]model.AlertTrendPoint, len(rows))
+	for i, r := range rows {
+		result[i] = model.AlertTrendPoint{Date: r.Date, BraceletCount: r.BraceletCount, PillboxCount: r.PillboxCount}
+	}
+	return result, nil
+}
+
+func (s *Store) GetAlertDistribution(ctx context.Context) ([]model.AlertDistributionItem, error) {
+	type distRow struct {
+		AlertType string `gorm:"column:alert_type"`
+		Count     int64  `gorm:"column:count"`
+	}
+	var rows []distRow
+	if err := s.db.WithContext(ctx).Model(&models.Alert{}).
+		Select("alert_type, COUNT(*) as count").Group("alert_type").Scan(&rows).Error; err != nil {
+		return nil, fmt.Errorf("alert distribution: %w", err)
+	}
+	colors := map[string]string{
+		"sos": "#ff4d4f", "fall": "#fa541c", "med_missed": "#faad14",
+		"device_offline": "#1890ff", "geofence_breach": "#722ed1",
+	}
+	result := make([]model.AlertDistributionItem, len(rows))
+	for i, r := range rows {
+		result[i] = model.AlertDistributionItem{Name: r.AlertType, Value: int(r.Count), Color: colors[r.AlertType]}
+	}
+	return result, nil
+}
+
+func (s *Store) GetUserGrowth(ctx context.Context, months int) ([]model.UserGrowthPoint, error) {
+	// Use Raw SQL for month formatting
+	type growthRow struct {
+		Month    string `gorm:"column:month"`
+		NewUsers int64  `gorm:"column:new_users"`
+	}
+	var rows []growthRow
+	sql := `SELECT strftime('%Y-%m', created_at) AS month, COUNT(*) AS new_users
+			FROM users GROUP BY strftime('%Y-%m', created_at)
+			ORDER BY month DESC LIMIT ?`
+	if err := s.db.Raw(sql, months).Scan(&rows).Error; err != nil {
+		return nil, fmt.Errorf("user growth: %w", err)
+	}
+	result := make([]model.UserGrowthPoint, len(rows))
+	for i, r := range rows {
+		result[i] = model.UserGrowthPoint{Month: r.Month, NewUsers: int(r.NewUsers)}
+	}
+	return result, nil
+}
+
+func (s *Store) ListSubscriptions(ctx context.Context, page, pageSize int, status, planTier string) ([]model.SubscriptionItem, error) {
+	var subs []models.Subscription
+	query := s.db.WithContext(ctx).Model(&models.Subscription{})
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	if planTier != "" {
+		query = query.Where("plan_tier = ?", planTier)
+	}
+	query = query.Order("created_at DESC").Offset((page - 1) * pageSize).Limit(pageSize)
+	if err := query.Find(&subs).Error; err != nil {
+		return nil, fmt.Errorf("list subscriptions: %w", err)
+	}
+	result := make([]model.SubscriptionItem, len(subs))
+	for i, s := range subs {
+		startDate := ""
+		endDate := ""
+		if s.StartsAt != nil {
+			startDate = s.StartsAt.Format("2006-01-02")
+		}
+		if s.ExpiresAt != nil {
+			endDate = s.ExpiresAt.Format("2006-01-02")
+		}
+		result[i] = model.SubscriptionItem{
+			ID: s.ID, UserID: s.UserID, PlanTier: s.PlanTier, Status: s.Status,
+			BillingCycle: s.BillingCycle, StartDate: startDate, EndDate: endDate,
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) GetSubscription(ctx context.Context, id string) (*model.SubscriptionItem, error) {
+	var sub models.Subscription
+	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&sub).Error; err != nil {
+		return nil, err
+	}
+	startDate := ""
+	endDate := ""
+	if sub.StartsAt != nil {
+		startDate = sub.StartsAt.Format("2006-01-02")
+	}
+	if sub.ExpiresAt != nil {
+		endDate = sub.ExpiresAt.Format("2006-01-02")
+	}
+	return &model.SubscriptionItem{ID: sub.ID, UserID: sub.UserID, PlanTier: sub.PlanTier,
+		Status: sub.Status, BillingCycle: sub.BillingCycle, StartDate: startDate, EndDate: endDate}, nil
+}
+
+func (s *Store) CreateSubscription(ctx context.Context, s *model.SubscriptionItem) error {
+	id := uuid.New().String()
+	var startsAt, expiresAt *time.Time
+	if s.StartDate != "" {
+		if t, err := time.Parse("2006-01-02", s.StartDate); err == nil {
+			startsAt = &t
+		}
+	}
+	if s.EndDate != "" {
+		if t, err := time.Parse("2006-01-02", s.EndDate); err == nil {
+			expiresAt = &t
+		}
+	}
+	sub := &models.Subscription{BaseModel: models.BaseModel{ID: id}, UserID: s.UserID, PlanTier: s.PlanTier,
+		Status: s.Status, BillingCycle: s.BillingCycle, StartsAt: startsAt, ExpiresAt: expiresAt}
+	return s.db.WithContext(ctx).Create(sub).Error
+}
+
+func (s *Store) UpdateSubscription(ctx context.Context, id string, updates map[string]any) error {
+	return s.db.WithContext(ctx).Model(&models.Subscription{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (s *Store) RenewSubscription(ctx context.Context, id, endDate string) error {
+	var expiresAt *time.Time
+	if endDate != "" {
+		if t, err := time.Parse("2006-01-02", endDate); err == nil {
+			expiresAt = &t
+		}
+	}
+	return s.db.WithContext(ctx).Model(&models.Subscription{}).Where("id = ?", id).
+		Updates(map[string]interface{}{"expires_at": expiresAt, "status": "active"}).Error
 }
