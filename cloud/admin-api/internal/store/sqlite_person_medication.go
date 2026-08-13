@@ -18,7 +18,7 @@ func (s *SqliteStore) ListMedicationRules(ctx context.Context, personID string, 
 				drug_category, dosage, frequency, route, schedule_time1, schedule_time2, schedule_time3,
 				days_of_week, duration, pre_meal, post_meal, special_instructions, prescribed_by,
 				prescribed_at, active, created_at
-			  FROM medication_rules_v2 WHERE person_id = ?`
+			  FROM medication_rules WHERE person_id = ?`
 	args := []any{personID}
 	if chain != "" {
 		query += ` AND business_chain = ?`
@@ -52,7 +52,7 @@ func (s *SqliteStore) CreateMedicationRuleV2(ctx context.Context, r *model.Medic
 	r.CreatedAt = time.Now().Format("2006-01-02 15:04:05")
 	r.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO medication_rules_v2 (id, person_id, business_chain, source_type, source_id,
+		`INSERT INTO medication_rules (id, person_id, business_chain, source_type, source_id,
 		 drug_name, generic_name, drug_category, dosage, frequency, route, schedule_time1,
 		 schedule_time2, schedule_time3, days_of_week, duration, pre_meal, post_meal,
 		 special_instructions, prescribed_by, prescribed_at, active)
@@ -76,13 +76,13 @@ func (s *SqliteStore) UpdateMedicationRuleV2(ctx context.Context, id string, upd
 	}
 	args = append(args, id)
 	_, err := s.db.ExecContext(ctx,
-		fmt.Sprintf("UPDATE medication_rules_v2 SET %s, updated_at = datetime('now') WHERE id = ?",
+		fmt.Sprintf("UPDATE medication_rules SET %s, updated_at = datetime('now') WHERE id = ?",
 			strings.Join(setClauses, ", ")), args...)
 	return err
 }
 
 func (s *SqliteStore) DeleteMedicationRuleV2(ctx context.Context, id string) error {
-	_, err := s.db.ExecContext(ctx, `DELETE FROM medication_rules_v2 WHERE id = ?`, id)
+	_, err := s.db.ExecContext(ctx, `DELETE FROM medication_rules WHERE id = ?`, id)
 	return err
 }
 
@@ -325,7 +325,7 @@ func (s *SqliteStore) CreateHealthRecordV2(ctx context.Context, r *model.HealthR
 	r.ID = uuid.New().String()
 	r.CreatedAt = time.Now()
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO health_records_v2 (id, person_id, business_chain, record_type, source,
+		`INSERT INTO health_records (id, person_id, business_chain, record_type, source,
 		 device_id, recorded_at, heart_rate, blood_pressure_sys, blood_pressure_dia, spo2,
 		 temperature, respiratory_rate, pulse_rate, blood_glucose_fasting, blood_glucose_postprandial,
 		 uric_acid, creatinine, hemoglobin_a1c, weight, height, bmi, steps, sleep_hours,
@@ -367,7 +367,7 @@ func (s *SqliteStore) ListHealthRecordsV2(ctx context.Context, personID string, 
 				respiratory_rate, pulse_rate, blood_glucose_fasting, blood_glucose_postprandial,
 				uric_acid, creatinine, hemoglobin_a1c, weight, height, bmi, steps, sleep_hours,
 				exercise_minutes, notes, created_at
-			  FROM health_records_v2 WHERE person_id = ?`
+			  FROM health_records WHERE person_id = ?`
 	args := []any{personID}
 	if chain != "" {
 		query += ` AND business_chain = ?`

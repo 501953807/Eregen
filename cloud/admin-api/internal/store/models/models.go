@@ -456,7 +456,7 @@ type MedicationRuleV2 struct {
 	Active         bool `gorm:"default:true"`
 }
 
-func (MedicationRuleV2) TableName() string { return "medication_rules_v2" }
+func (MedicationRuleV2) TableName() string { return "medication_rules" }
 
 // MedicationExecution represents a medication execution record.
 type MedicationExecution struct {
@@ -531,7 +531,7 @@ type HealthRecordV2 struct {
 	Content         string
 }
 
-func (HealthRecordV2) TableName() string { return "health_records_v2" }
+func (HealthRecordV2) TableName() string { return "health_records" }
 
 // PersonHealthSummary represents a health summary.
 type PersonHealthSummary struct {

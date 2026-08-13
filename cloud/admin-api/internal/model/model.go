@@ -62,13 +62,16 @@ type UserLogin struct {
 
 // AlertSummary is a lightweight row returned by the alert list endpoint.
 type AlertSummary struct {
-	ID         string    `json:"id"`
-	ElderlyID  string    `json:"elderly_id"`
-	AlertType  string    `json:"alert_type"`
-	Severity   string    `json:"severity"`
-	Status     string    `json:"status"`
-	CreatedAt  time.Time `json:"created_at"`
-	DeviceID   string    `json:"device_id"`
+	ID            string    `json:"id"`
+	ElderlyID     string    `json:"elderly_id"`
+	PersonID      string    `json:"person_id,omitempty"`
+	BusinessChain string    `json:"business_chain,omitempty"`
+	RuleID        string    `json:"rule_id,omitempty"`
+	AlertType     string    `json:"alert_type"`
+	Severity      string    `json:"severity"`
+	Status        string    `json:"status"`
+	CreatedAt     time.Time `json:"created_at"`
+	DeviceID      string    `json:"device_id"`
 }
 
 // SubscriptionStat holds a plan-tier breakdown.
