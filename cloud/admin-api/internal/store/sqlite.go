@@ -81,7 +81,11 @@ func migrate(db *sql.DB) error {
 			name TEXT NOT NULL,
 			email TEXT UNIQUE,
 			phone TEXT UNIQUE,
-			role TEXT DEFAULT 'family' CHECK (role IN ('family', 'elderly', 'institution', 'admin')),
+			role TEXT DEFAULT 'family' CHECK (role IN (
+				'super_admin','operator','hospital_doc','nurse',
+				'community_doctor','community_staff','regulator',
+				'family','elderly','institution','admin'
+			)),
 			password_hash TEXT NOT NULL,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -95,7 +99,11 @@ func migrate(db *sql.DB) error {
 			message TEXT,
 			device_id TEXT,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			resolved_at DATETIME
+			resolved_at DATETIME,
+			person_id TEXT,
+			business_chain TEXT CHECK (business_chain IN ('self','hospital','community')),
+			rule_id TEXT,
+			data_details TEXT
 		)`,
 		`CREATE TABLE IF NOT EXISTS elderly_profiles (
 			id TEXT PRIMARY KEY,
@@ -125,6 +133,27 @@ func migrate(db *sql.DB) error {
 			sleep_hours REAL,
 			FOREIGN KEY (elderly_id) REFERENCES elderly_profiles(id)
 		)`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS person_id TEXT`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS business_chain TEXT CHECK (business_chain IN ('self','hospital','community'))`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS record_type TEXT`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS source TEXT`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS device_id TEXT`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS recorded_at DATETIME`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS blood_pressure_sys INTEGER`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS blood_pressure_dia INTEGER`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS blood_glucose_fasting REAL`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS blood_glucose_postprandial REAL`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS uric_acid REAL`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS creatinine REAL`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS hemoglobin_a1c REAL`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS respiratory_rate INTEGER`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS pulse_rate INTEGER`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS weight REAL`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS height REAL`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS bmi REAL`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS exercise_minutes INTEGER`,
+		`ALTER TABLE health_records ADD COLUMN IF NOT EXISTS notes TEXT`,
+		`CREATE INDEX IF NOT EXISTS idx_health_records_person ON health_records(person_id, business_chain, recorded_at)`,
 		`CREATE TABLE IF NOT EXISTS medication_rules (
 			id TEXT PRIMARY KEY,
 			elderly_id TEXT NOT NULL,
@@ -136,6 +165,26 @@ func migrate(db *sql.DB) error {
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (elderly_id) REFERENCES elderly_profiles(id)
 		)`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS person_id TEXT`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS business_chain TEXT`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS source_type TEXT`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS source_id TEXT`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS drug_name TEXT`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS generic_name TEXT`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS drug_category TEXT`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS dosage TEXT`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS frequency TEXT`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS route TEXT DEFAULT 'oral'`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS schedule_time1 TEXT`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS schedule_time2 TEXT`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS schedule_time3 TEXT`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS duration TEXT`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS pre_meal INTEGER DEFAULT 0`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS post_meal INTEGER DEFAULT 0`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS special_instructions TEXT`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS prescribed_by TEXT`,
+		`ALTER TABLE medication_rules ADD COLUMN IF NOT EXISTS prescribed_at DATETIME`,
+		`CREATE INDEX IF NOT EXISTS idx_med_rules_person ON medication_rules(person_id, business_chain)`,
 		`CREATE TABLE IF NOT EXISTS location_history (
 			id TEXT PRIMARY KEY,
 			elderly_id TEXT NOT NULL,
@@ -145,6 +194,8 @@ func migrate(db *sql.DB) error {
 			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (elderly_id) REFERENCES elderly_profiles(id)
 		)`,
+		`ALTER TABLE location_history ADD COLUMN IF NOT EXISTS person_id TEXT`,
+		`CREATE INDEX IF NOT EXISTS idx_location_history_person ON location_history(person_id, timestamp)`,
 		`CREATE TABLE IF NOT EXISTS subscriptions (
 			id TEXT PRIMARY KEY,
 			user_id TEXT NOT NULL,
@@ -547,33 +598,7 @@ func migrate(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_persons_id_card ON persons(id_card)`,
 		`CREATE INDEX IF NOT EXISTS idx_person_profiles_chain ON person_profiles(business_chain)`,
 		`CREATE INDEX IF NOT EXISTS idx_person_profiles_linked ON person_profiles(linked_person_id)`,
-		// Medication rules extension + medication_executions
-		`CREATE TABLE IF NOT EXISTS medication_rules_v2 (
-			id TEXT PRIMARY KEY,
-			person_id TEXT NOT NULL REFERENCES persons(id),
-			business_chain TEXT NOT NULL CHECK (business_chain IN ('self','hospital','community')),
-			source_type TEXT NOT NULL CHECK (source_type IN ('custom','doctor_order','care_plan')),
-			source_id TEXT,
-			drug_name TEXT NOT NULL,
-			generic_name TEXT,
-			drug_category TEXT CHECK (drug_category IN ('prescription','otc','supplement','tcm')),
-			dosage TEXT NOT NULL,
-			frequency TEXT NOT NULL,
-			route TEXT DEFAULT 'oral' CHECK (route IN ('oral','injection','topical','inhalation','other')),
-			schedule_time1 TEXT,
-			schedule_time2 TEXT,
-			schedule_time3 TEXT,
-			days_of_week TEXT DEFAULT '1,2,3,4,5,6,7',
-			duration TEXT,
-			pre_meal INTEGER DEFAULT 0,
-			post_meal INTEGER DEFAULT 0,
-			special_instructions TEXT,
-			prescribed_by TEXT,
-			prescribed_at DATETIME,
-			active INTEGER DEFAULT 1,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
+		// Medication executions
 		`CREATE TABLE IF NOT EXISTS medication_executions (
 			id TEXT PRIMARY KEY,
 			person_id TEXT NOT NULL,
@@ -588,7 +613,7 @@ func migrate(db *sql.DB) error {
 			notes TEXT,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
-		`CREATE INDEX IF NOT EXISTS idx_med_rules_person ON medication_rules_v2(person_id, business_chain)`,
+		`CREATE INDEX IF NOT EXISTS idx_med_rules_person ON medication_rules(person_id, business_chain)`,
 		`CREATE INDEX IF NOT EXISTS idx_med_executions_person ON medication_executions(person_id, business_chain, scheduled_time)`,
 		// Role bindings
 		`CREATE TABLE IF NOT EXISTS user_role_bindings (
@@ -627,36 +652,6 @@ func migrate(db *sql.DB) error {
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
-		// Health records extension
-		`CREATE TABLE IF NOT EXISTS health_records_v2 (
-			id TEXT PRIMARY KEY,
-			person_id TEXT NOT NULL REFERENCES persons(id),
-			business_chain TEXT NOT NULL,
-			record_type TEXT NOT NULL,
-			source TEXT NOT NULL CHECK (source IN ('device','nurse','community_staff','his','manual')),
-			device_id TEXT,
-			recorded_at DATETIME NOT NULL,
-			heart_rate INTEGER,
-			blood_pressure_sys INTEGER,
-			blood_pressure_dia INTEGER,
-			spo2 INTEGER,
-			temperature REAL,
-			respiratory_rate INTEGER,
-			pulse_rate INTEGER,
-			blood_glucose_fasting REAL,
-			blood_glucose_postprandial REAL,
-			uric_acid REAL,
-			creatinine REAL,
-			hemoglobin_a1c REAL,
-			weight REAL,
-			height REAL,
-			bmi REAL,
-			steps INTEGER,
-			sleep_hours REAL,
-			exercise_minutes INTEGER,
-			notes TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
 		`CREATE TABLE IF NOT EXISTS person_health_summaries (
 			person_id TEXT PRIMARY KEY,
 			business_chain TEXT NOT NULL,
@@ -673,7 +668,7 @@ func migrate(db *sql.DB) error {
 			last_updated DATETIME,
 			ai_recommendation TEXT
 		)`,
-		`CREATE INDEX IF NOT EXISTS idx_health_v2_person ON health_records_v2(person_id, business_chain, recorded_at)`,
+		`CREATE INDEX IF NOT EXISTS idx_health_records_person ON health_records(person_id, business_chain, recorded_at)`,
 		// Health guidance
 		`CREATE TABLE IF NOT EXISTS health_guidance_rules (
 			id TEXT PRIMARY KEY,
