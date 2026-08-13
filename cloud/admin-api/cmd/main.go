@@ -103,35 +103,44 @@ func seedDatabase(db *sql.DB) error {
 		return fmt.Errorf("insert admin user: %w", err)
 	}
 
-	// Insert elderly user and profile
-	elderly1ID := "elderly-001"
-	user1ID := "user-001"
+	// Insert person (unified schema)
+	personID := "person-001"
+	userID := "user-001"
 	_, err = db.ExecContext(context.Background(),
 		`INSERT INTO users (id, name, email, role, password_hash, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
-		user1ID, "张大爷", "zhang@example.com", "user", "$2a$10$JVMdHOp3Ect5e6WY7m3wpeJMDIM/iUjXvt7OAYYM9U6dJe0qvFkHe",
+		userID, "张大爷", "zhang@example.com", "family", "$2a$10$JVMdHOp3Ect5e6WY7m3wpeJMDIM/iUjXvt7OAYYM9U6dJe0qvFkHe",
 	)
 	if err != nil && !isUniqueConstraintError(err) {
 		return fmt.Errorf("insert user 1: %w", err)
 	}
 
 	_, err = db.ExecContext(context.Background(),
-		`INSERT INTO elderly_profiles (id, name, user_id, birth_date, health_tiers, created_at, updated_at)
-		 VALUES (?, ?, ?, datetime('1950-01-01'), '["cardiovascular","diabetes"]', datetime('now'), datetime('now'))`,
-		elderly1ID, "张建国", user1ID,
+		`INSERT INTO persons (id, id_card, name, gender, birth_date, phone, status, created_at, updated_at)
+		 VALUES (?, ?, ?, 1, '1950-01-01', '13800138001', 'active', datetime('now'), datetime('now'))`,
+		personID, "310101195001010001", "张建国",
 	)
 	if err != nil && !isUniqueConstraintError(err) {
-		return fmt.Errorf("insert elderly profile 1: %w", err)
+		return fmt.Errorf("insert person: %w", err)
 	}
 
-	// Insert devices for elderly1 - using simplified version that matches CREATE TABLE
+	_, err = db.ExecContext(context.Background(),
+		`INSERT INTO person_profiles (person_id, business_chain, subscription_tier, subscription_status, health_risk_level, created_at, updated_at)
+		 VALUES (?, 'self', 'pro', 'active', 'high', datetime('now'), datetime('now'))`,
+		personID,
+	)
+	if err != nil && !isUniqueConstraintError(err) {
+		return fmt.Errorf("insert person profile: %w", err)
+	}
+
+	// Insert devices for person
 	device1ID := "device-001" // bracelet
 	device2ID := "device-002" // pillbox
 	now := time.Now().Format("2006-01-02 15:04:05")
 	_, err = db.ExecContext(context.Background(),
 		`INSERT INTO devices (id, device_id, device_type, tier, status, last_seen, owner_user_id, settings, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
-		device1ID, "BR-ZHANG001", "bracelet", "plus", "online", now, user1ID, "{\"fw_version\":\"v1.2.3\"}",
+		device1ID, "BR-ZHANG001", "bracelet", "plus", "online", now, userID, "{\"fw_version\":\"v1.2.3\"}",
 	)
 	if err != nil && !isUniqueConstraintError(err) {
 		return fmt.Errorf("insert device 1: %w", err)
@@ -140,25 +149,25 @@ func seedDatabase(db *sql.DB) error {
 	_, err = db.ExecContext(context.Background(),
 		`INSERT INTO devices (id, device_id, device_type, tier, status, last_seen, owner_user_id, settings, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
-		device2ID, "PX-ZHANG001", "pillbox", "pro", "online", now, user1ID, "{\"fw_version\":\"v2.1.0\"}",
+		device2ID, "PX-ZHANG001", "pillbox", "pro", "online", now, userID, "{\"fw_version\":\"v2.1.0\"}",
 	)
 	if err != nil && !isUniqueConstraintError(err) {
 		return fmt.Errorf("insert device 2: %w", err)
 	}
 
-	// Link elderly to devices via elderly_devices table
+	// Link person to devices via device_bindings table
 	_, err = db.ExecContext(context.Background(),
-		`INSERT INTO elderly_devices (id, elderly_id, device_id, created_at)
-		 VALUES (?, ?, ?, datetime('now'))`,
-		"eld-dev-001", elderly1ID, device1ID,
+		`INSERT INTO device_bindings (id, device_id, person_id, business_chain, bound_at)
+		 VALUES (?, ?, ?, 'self', datetime('now'))`,
+		"bind-001", device1ID, personID,
 	)
 	if err != nil && !isUniqueConstraintError(err) {
 		return fmt.Errorf("link device 1: %w", err)
 	}
 	_, err = db.ExecContext(context.Background(),
-		`INSERT INTO elderly_devices (id, elderly_id, device_id, created_at)
-		 VALUES (?, ?, ?, datetime('now'))`,
-		"eld-dev-002", elderly1ID, device2ID,
+		`INSERT INTO device_bindings (id, device_id, person_id, business_chain, bound_at)
+		 VALUES (?, ?, ?, 'self', datetime('now'))`,
+		"bind-002", device2ID, personID,
 	)
 	if err != nil && !isUniqueConstraintError(err) {
 		return fmt.Errorf("link device 2: %w", err)
@@ -167,18 +176,18 @@ func seedDatabase(db *sql.DB) error {
 	// Insert a few alerts
 	alert1ID := "alert-001"
 	_, err = db.ExecContext(context.Background(),
-		`INSERT INTO alerts (id, elderly_id, alert_type, severity, status, message, device_id, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
-		alert1ID, elderly1ID, "sos", "high", "pending", "老人按下SOS按钮", device1ID,
+		`INSERT INTO alerts (id, person_id, business_chain, alert_type, severity, status, message, device_id, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+		alert1ID, personID, "self", "sos", "p0", "pending", "老人按下SOS按钮", device1ID,
 	)
 	if err != nil && !isUniqueConstraintError(err) {
 		return fmt.Errorf("insert alert 1: %w", err)
 	}
 
 	_, err = db.ExecContext(context.Background(),
-		`INSERT INTO alerts (id, elderly_id, alert_type, severity, status, message, device_id, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
-		"alert-002", elderly1ID, "fall", "medium", "resolved", "检测到跌倒，已处理", device1ID,
+		`INSERT INTO alerts (id, person_id, business_chain, alert_type, severity, status, message, device_id, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+		"alert-002", personID, "self", "fall", "p1", "resolved", "检测到跌倒，已处理", device1ID,
 	)
 	if err != nil && !isUniqueConstraintError(err) {
 		return fmt.Errorf("insert alert 2: %w", err)
@@ -189,9 +198,10 @@ func seedDatabase(db *sql.DB) error {
 	for i := 0; i < 5; i++ {
 		ts := nowTime.Add(time.Duration(-i)*time.Hour)
 		_, err = db.ExecContext(context.Background(),
-			`INSERT INTO health_records (id, elderly_id, timestamp, hr, spo2, steps, sleep_hours)
-			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			"hr-"+fmt.Sprintf("%d", i), elderly1ID, ts.Format("2006-01-02 15:04:05"), 72+i, 98-i, randomSteps(float64(i)), nil)
+			`INSERT INTO health_records (id, person_id, business_chain, timestamp, hr, spo2, steps, sleep_hours)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+			"hr-"+fmt.Sprintf("%d", i), personID, "self", ts.Format("2006-01-02 15:04:05"), 72+i, 98-i, randomSteps(float64(i)), 7.5,
+		)
 		if err != nil && !isUniqueConstraintError(err) {
 			// Don't fail if one record fails, continue with others
 		}
