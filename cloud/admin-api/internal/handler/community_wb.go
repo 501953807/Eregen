@@ -366,3 +366,23 @@ func (h *CommunityWBHandler) ListBatchPayments(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": payments})
 }
+
+// CreateCommunityDevice creates a new community wristband device.
+func (h *CommunityWBHandler) CreateCommunityDevice(c *gin.Context) {
+	var d model.CommunityWristbandDevice
+	if err := c.ShouldBindJSON(&d); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	if d.Status == "" {
+		d.Status = "online"
+	}
+	if d.Mode == "" {
+		d.Mode = "community"
+	}
+	if err := h.store.CreateCommunityDevice(c.Request.Context(), &d); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": d})
+}

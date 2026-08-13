@@ -144,6 +144,7 @@ patient := handler.NewPatientHandler(s)
 		api.POST("/institutions/:id/api-keys", institution.CreateAPIKey)
 		api.DELETE("/institutions/:id/api-keys/:key_id", institution.RevokeAPIKey)
 		api.GET("/devices", device.List)
+		api.POST("/devices", device.Create)
 		api.GET("/users", user.List)
 		api.POST("/users", user.Create)
 		api.PUT("/users/:id", user.Update)
@@ -239,6 +240,7 @@ patient := handler.NewPatientHandler(s)
 
 			// Wristband device endpoints
 			med.GET("/wristbands", _wristband.ListWristbands)
+			med.POST("/wristbands", _wristband.CreateWristband)
 			med.POST("/wristbands/bind", _wristband.BindWristband)
 			med.POST("/wristbands/:id/unbind", _wristband.UnbindWristband)
 			med.POST("/wristbands/:id/clear", _wristband.ClearWristband)
@@ -313,6 +315,7 @@ patient := handler.NewPatientHandler(s)
 			cwb.GET("/elders/stats", communityWB.GetElderStats)
 			// Devices
 			cwb.GET("/devices", communityWB.ListDevices)
+			cwb.POST("/devices", communityWB.CreateCommunityDevice)
 			cwb.POST("/devices/bind", communityWB.BindElderDevice)
 			// Welfare tags config
 			cwb.GET("/welfare-tags", communityWB.ListWelfareTags)

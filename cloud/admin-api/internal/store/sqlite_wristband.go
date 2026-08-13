@@ -5,8 +5,23 @@ import (
 	"database/sql"
 	"eregen.dev/admin-api/internal/model"
 	"fmt"
+	"time"
+
+	"github.com/google/uuid"
 )
 
+
+// CreateWristband creates a new wristband device.
+func (s *SqliteStore) CreateWristband(ctx context.Context, d *model.MedicalWristbandDevice) error {
+	d.ID = fmt.Sprintf("mw_%s", uuid.New().String()[:8])
+	d.CreatedAt = time.Now()
+	d.UpdatedAt = time.Now()
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO medical_wristband_devices (id, device_id, firmware_version, status, bound_patient_id, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		d.ID, d.DeviceID, d.FirmwareVersion, d.Status, d.BoundPatientID, d.CreatedAt, d.UpdatedAt)
+	return err
+}
 
 // BindWristband binds a device to a patient.
 func (s *SqliteStore) BindWristband(ctx context.Context, patientID, deviceID string) error {

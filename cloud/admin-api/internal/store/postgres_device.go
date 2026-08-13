@@ -1,6 +1,7 @@
 package store
 
 import (
+	"github.com/google/uuid"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -225,4 +226,14 @@ func (s *PostgresStore) BatchTriggerOTA(ctx context.Context, deviceIDs, firmware
 
 
 
+// CreateDevice inserts a new device record.
+func (s *PostgresStore) CreateDevice(ctx context.Context, d *model.DeviceSummary) error {
+	d.ID = fmt.Sprintf("dev_%s", uuid.New().String()[:8])
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO devices (id, device_id, device_type, tier, status, last_seen, owner_user_id, settings, created_at, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())`,
+		d.ID, d.DeviceID, d.Type, d.Tier, d.Status,
+		d.LastSeen.Format("2006-01-02 15:04:05"), "", "{}")
+	return err
+}
 // CreateFirmwareVersion inserts a new firmware release record.

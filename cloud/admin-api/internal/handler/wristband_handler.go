@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"eregen.dev/admin-api/internal/model"
 	"eregen.dev/admin-api/internal/store"
 	"eregen.dev/shared/validation"
 
@@ -107,4 +108,21 @@ func (h *WristbandHandler) GetFirmware(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": fw})
+}
+
+// CreateWristband creates a new wristband device.
+func (h *WristbandHandler) CreateWristband(c *gin.Context) {
+	var d model.MedicalWristbandDevice
+	if err := c.ShouldBindJSON(&d); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	if d.Status == "" {
+		d.Status = "idle"
+	}
+	if err := h.store.CreateWristband(c.Request.Context(), &d); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": d})
 }

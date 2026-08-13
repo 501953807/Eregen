@@ -134,6 +134,27 @@ func (h *PersonHandler) CreateProfile(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
+	if pp.BloodType == "" {
+		pp.BloodType = "unknown"
+	}
+	if pp.BloodType != "A" && pp.BloodType != "B" && pp.BloodType != "AB" && pp.BloodType != "O" && pp.BloodType != "unknown" {
+		pp.BloodType = "O"
+	}
+	if pp.SubscriptionTier == "" {
+		pp.SubscriptionTier = "starter"
+	}
+	if pp.Status == "" {
+		pp.Status = "pending"
+	}
+	if pp.DischargeType == "" {
+		pp.DischargeType = "recovered"
+	}
+	if pp.DischargeType != "recovered" && pp.DischargeType != "transferred" && pp.DischargeType != "refused" && pp.DischargeType != "deceased" {
+		pp.DischargeType = "recovered"
+	}
+	if pp.Status != "pending" && pp.Status != "active" && pp.Status != "suspended" && pp.Status != "cancelled" && pp.Status != "admitted" && pp.Status != "in_treatment" && pp.Status != "discharged" && pp.Status != "archived" && pp.Status != "certified" && pp.Status != "deactivated" {
+		pp.Status = "pending"
+	}
 	if err := h.store.CreateProfile(c.Request.Context(), &pp); err != nil {
 		log.Printf("CreateProfile failed: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})

@@ -18,6 +18,7 @@ type DashboardStore interface {
 }
 
 type DeviceStore interface {
+	CreateDevice(ctx context.Context, d *model.DeviceSummary) error
 	ListDevices(ctx context.Context, page, pageSize int, status, devType, tier string) ([]model.DeviceSummary, error)
 	GetDeviceByID(ctx context.Context, id string) (*model.DeviceDetail, error)
 	UpdateDeviceConfig(ctx context.Context, deviceID string, config map[string]interface{}) error
@@ -92,6 +93,7 @@ type PatientStore interface {
 }
 
 type WristbandStore interface {
+	CreateWristband(ctx context.Context, d *model.MedicalWristbandDevice) error
 	BindWristband(ctx context.Context, patientID, deviceID string) error
 	UnbindWristband(ctx context.Context, bindingID string) error
 	ClearWristband(ctx context.Context, deviceID string) error

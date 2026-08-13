@@ -7,8 +7,21 @@ import (
 	"eregen.dev/admin-api/internal/model"
 	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 )
 
+
+// CreateDevice inserts a new device record.
+func (s *SqliteStore) CreateDevice(ctx context.Context, d *model.DeviceSummary) error {
+	d.ID = fmt.Sprintf("dev_%s", uuid.New().String()[:8])
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO devices (id, device_id, device_type, tier, status, last_seen, owner_user_id, settings, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+		d.ID, d.DeviceID, d.Type, d.Tier, d.Status,
+		d.LastSeen.Format("2006-01-02 15:04:05"), "", "{}")
+	return err
+}
 
 // ListDevices returns a paginated list of devices with optional filters.
 func (s *SqliteStore) ListDevices(ctx context.Context, page, pageSize int, status, devType, tier string) ([]model.DeviceSummary, error) {

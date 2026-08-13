@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"eregen.dev/admin-api/internal/model"
 	"eregen.dev/admin-api/internal/store"
 	"eregen.dev/shared/validation"
 
@@ -51,6 +52,37 @@ func (h *DeviceHandler) TriggerOTA(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "OTA scheduled"})
+}
+
+// CreateDevice creates a new device record.
+func (h *DeviceHandler) Create(c *gin.Context) {
+	var body struct {
+		DeviceID   string `json:"device_id" binding:"required"`
+		DeviceType string `json:"device_type" binding:"required"`
+		Tier       string `json:"tier"`
+		Status     string `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	if body.Status == "" {
+		body.Status = "offline"
+	}
+	if body.Tier == "" {
+		body.Tier = "starter"
+	}
+	summary := &model.DeviceSummary{
+		DeviceID: body.DeviceID,
+		Type:     body.DeviceType,
+		Tier:     body.Tier,
+		Status:   body.Status,
+	}
+	if err := h.store.CreateDevice(c.Request.Context(), summary); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"code": "OK"})
 }
 
 // List returns a paginated list of devices with optional filters.
