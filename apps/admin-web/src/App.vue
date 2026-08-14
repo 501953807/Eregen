@@ -83,14 +83,18 @@
             {{ currentBreadcrumb }}
           </div>
           <div class="topbar-right">
-            <div class="topbar-icon" title="搜索">
-              <el-icon :size="18"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></el-icon>
+            <div class="topbar-search">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              <input class="search-input" placeholder="搜索..." />
             </div>
-            <el-badge :value="3" :max="99">
-              <div class="topbar-icon" title="通知">
-                <el-icon :size="18"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg></el-icon>
-              </div>
-            </el-badge>
+            <div class="topbar-icon" title="通知">
+              <el-badge :value="3" :max="99">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+              </el-badge>
+            </div>
+            <div class="topbar-icon" title="消息">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            </div>
             <!-- Theme toggle -->
             <button class="theme-toggle-btn" :title="isDark ? '切换至浅色模式' : '切换至深色模式'" @click="toggleTheme">
               <el-icon :size="16">
@@ -98,7 +102,32 @@
                 <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
               </el-icon>
             </button>
-            <el-button type="danger" @click="handleLogout" plain size="small" class="logout-btn">退出</el-button>
+            <!-- User dropdown -->
+            <el-dropdown trigger="click" @command="handleUserAction">
+              <div class="topbar-user">
+                <div class="user-avatar-small">
+                  <span>{{ authStore.user?.name?.charAt(0) || '管' }}</span>
+                </div>
+                <span class="user-name-small">{{ authStore.user?.name }}</span>
+                <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="profile">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    个人资料
+                  </el-dropdown-item>
+                  <el-dropdown-item command="settings">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                    系统设置
+                  </el-dropdown-item>
+                  <el-dropdown-item divided command="logout">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    退出登录
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </el-header>
 
@@ -160,6 +189,12 @@ const currentBreadcrumb = computed(() => {
 async function handleLogout() {
   await authStore.logout()
   ElMessage.info('已安全退出')
+}
+
+function handleUserAction(command: string) {
+  if (command === 'logout') handleLogout()
+  else if (command === 'settings') router.push('/settings')
+  else ElMessage.info('功能开发中...')
 }
 
 onMounted(async () => {
@@ -452,7 +487,7 @@ onMounted(async () => {
   border-radius: 50%;
   background: var(--color-primary);
   box-shadow: 0 0 6px rgba(74,124,95,0.35);
-  animation: eregen-pulse 2.5s ease-in-out infinite;
+  animation: pulse-dot 2.5s ease-in-out infinite;
 }
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
@@ -467,6 +502,39 @@ onMounted(async () => {
   align-items: center;
   gap: 6px;
 }
+.topbar-search {
+  display: flex;
+  align-items: center;
+  background: var(--bg-surface-light, #F8FAF8);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 0 12px;
+  height: 36px;
+  width: 200px;
+  transition: all 0.2s ease;
+}
+.topbar-search:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(74,124,95,0.1);
+  width: 240px;
+}
+.search-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-left: 8px;
+  width: 100%;
+  font-family: inherit;
+}
+.search-input::placeholder { color: var(--text-muted); }
 .topbar-icon {
   cursor: pointer;
   color: var(--text-tertiary);
@@ -484,6 +552,75 @@ onMounted(async () => {
   color: var(--color-primary);
   background: var(--color-primary-lighter);
   border-color: var(--color-primary-light);
+}
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s;
+  border: 1px solid var(--border-light);
+  background: var(--bg-surface);
+}
+.topbar-user:hover {
+  background: var(--color-primary-lighter);
+  border-color: var(--color-primary-light);
+}
+.user-avatar-small {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-primary-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.user-name-small {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dropdown-arrow {
+  width: 12px;
+  height: 12px;
+  color: var(--text-muted);
+  transition: transform 0.15s;
+}
+.el-dropdown-menu {
+  border-radius: var(--hope-radius-lg) !important;
+  border: 1px solid var(--hope-border) !important;
+  box-shadow: var(--hope-shadow-lg) !important;
+  padding: 6px !important;
+  min-width: 160px !important;
+}
+.el-dropdown-menu__item {
+  border-radius: var(--hope-radius-md) !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.12s !important;
+}
+.el-dropdown-menu__item:hover {
+  background: rgba(74,124,95,0.08) !important;
+  color: var(--hope-primary) !important;
+}
+.el-dropdown-menu__item.is-divider {
+  border-top: 1px solid var(--hope-border) !important;
+  margin: 4px 0 !important;
+  padding: 0 !important;
+  height: 0 !important;
 }
 .logout-btn {
   margin-left: 8px;

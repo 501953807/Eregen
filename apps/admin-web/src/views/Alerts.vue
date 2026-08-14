@@ -445,17 +445,43 @@ onUnmounted(() => {
   align-items: center;
 }
 .btn-reset {
-  border-radius: 12px !important;
-  border: 1px solid #D4DFD5 !important;
-  color: #4A6260 !important;
-  background: white !important;
+  border-radius: var(--hope-radius-lg) !important;
+  border: 1px solid var(--hope-border) !important;
+  color: var(--hope-text-secondary) !important;
+  background: var(--hope-surface) !important;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.btn-reset:hover {
+  background: var(--hope-surface-light) !important;
+  border-color: var(--hope-primary) !important;
+  color: var(--hope-primary) !important;
 }
 .btn-primary-outline {
-  border-radius: 14px !important;
-  background: #FFFFFF !important;
-  border: 1.5px solid #5C8D73 !important;
-  color: #5C8D73 !important;
+  border-radius: var(--hope-radius-lg) !important;
+  background: transparent !important;
+  border: 1.5px solid var(--hope-primary) !important;
+  color: var(--hope-primary) !important;
   font-weight: 600;
+  transition: all 0.2s;
+}
+.btn-primary-outline:hover {
+  background: var(--hope-primary-lighter) !important;
+  border-color: var(--hope-primary-dark) !important;
+}
+.el-button--primary {
+  background: linear-gradient(135deg, #5C8D73 0%, #6FAF8F 100%) !important;
+  border-color: transparent !important;
+  border-radius: var(--hope-radius-lg) !important;
+  box-shadow: var(--hope-shadow-primary) !important;
+  font-weight: 600 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.el-button--primary:hover {
+  background: linear-gradient(135deg, #6FAF8F 0%, #7BAF8C 100%) !important;
+  box-shadow: var(--hope-shadow-primary-hover) !important;
+  transform: translateY(-1px) !important;
 }
 
 /* Status badges */

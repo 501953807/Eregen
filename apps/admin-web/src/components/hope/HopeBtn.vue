@@ -4,17 +4,23 @@
     :class="[
       `hope-btn--${variant}`,
       `hope-btn--${size}`,
-      { 'hope-btn--disabled': disabled, 'hope-btn--icon': iconOnly }
+      { 'hope-btn--disabled': disabled, 'hope-btn--icon': iconOnly, 'hope-btn--loading': loading }
     ]"
-    :disabled="disabled"
-    :style="{ width: iconOnly && size === 'sm' ? undefined : undefined }"
-    @click="!disabled && $emit('click', $event)"
+    :disabled="disabled || loading"
+    @click="!disabled && !loading && $emit('click', $event)"
   >
-    <slot name="icon" v-if="$slots.icon" />
-    <el-icon v-if="icon && !$slots.icon" :size="size === 'sm' ? 14 : size === 'lg' ? 18 : 16">
+    <span v-if="loading" class="hope-btn__spinner">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <path d="M21 12a9 9 0 11-6.219-8.56" stroke-dasharray="50" stroke-dashoffset="10">
+          <animate attributeName="stroke-dashoffset" values="50;0" dur="0.6s" repeatCount="indefinite"/>
+        </path>
+      </svg>
+    </span>
+    <slot name="icon" v-if="!loading && $slots.icon" />
+    <el-icon v-if="!loading && icon && !$slots.icon" :size="iconSize">
       <component :is="icon" />
     </el-icon>
-    <span v-if="$slots.default || label">{{ label || $slots.default?.() }}</span>
+    <span v-if="$slots.default || label" class="hope-btn__label">{{ label || $slots.default?.() }}</span>
   </button>
 </template>
 
@@ -29,12 +35,127 @@ const props = withDefaults(defineProps<{
   iconOnly?: boolean
   label?: string
   disabled?: boolean
+  loading?: boolean
 }>(), {
   variant: 'filled',
   size: 'md',
   iconOnly: false,
   disabled: false,
+  loading: false,
 })
+
+const iconSize = computed(() => props.size === 'sm' ? 14 : props.size === 'lg' ? 18 : 16)
 
 defineEmits<{ click: [e: MouseEvent] }>()
 </script>
+
+<style scoped>
+.hope-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1.5px solid transparent;
+  border-radius: var(--hope-radius-md);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.hope-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(255,255,255,0.15) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.hope-btn:hover::after { opacity: 1; }
+.hope-btn:focus-visible { box-shadow: 0 0 0 3px rgba(74,124,95,0.25); }
+.hope-btn:active { transform: scale(0.97); }
+.hope-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* Variant: filled */
+.hope-btn--filled {
+  background: var(--hope-primary-gradient);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: var(--hope-shadow-primary);
+}
+.hope-btn--filled:hover:not(:disabled) {
+  box-shadow: var(--hope-shadow-primary-hover);
+  transform: translateY(-1px);
+}
+
+/* Variant: outlined */
+.hope-btn--outlined {
+  background: transparent;
+  color: var(--hope-primary);
+  border-color: var(--hope-primary);
+}
+.hope-btn--outlined:hover:not(:disabled) {
+  background: var(--hope-primary-lighter);
+}
+
+/* Variant: text */
+.hope-btn--text {
+  background: transparent;
+  color: var(--hope-primary);
+  border-color: transparent;
+  padding: 6px 12px;
+}
+.hope-btn--text:hover:not(:disabled) { background: rgba(74,124,95,0.06); }
+
+/* Variant: ghost */
+.hope-btn--ghost {
+  background: transparent;
+  color: var(--hope-text);
+  border-color: transparent;
+}
+.hope-btn--ghost:hover:not(:disabled) { background: rgba(26,46,38,0.04); color: var(--hope-text); }
+
+/* Variant: plain */
+.hope-btn--plain {
+  background: var(--hope-bg);
+  color: var(--hope-text-secondary);
+  border-color: var(--hope-border);
+}
+.hope-btn--plain:hover:not(:disabled) { background: var(--hope-border); }
+
+/* Semantic variants */
+.hope-btn--success { background: var(--hope-success); color: #fff; border-color: transparent; box-shadow: 0 2px 8px rgba(86,202,0,0.2); }
+.hope-btn--success:hover:not(:disabled) { background: #4DB600; transform: translateY(-1px); }
+.hope-btn--warning { background: var(--hope-warning); color: #000; border-color: transparent; }
+.hope-btn--warning:hover:not(:disabled) { background: #B8860B; transform: translateY(-1px); }
+.hope-btn--error   { background: var(--hope-error); color: #fff; border-color: transparent; box-shadow: 0 2px 8px rgba(192,74,66,0.2); }
+.hope-btn--error:hover:not(:disabled) { background: #9B3A33; transform: translateY(-1px); }
+.hope-btn--info    { background: var(--hope-info); color: #fff; border-color: transparent; }
+.hope-btn--info:hover:not(:disabled) { background: #3D7A9E; transform: translateY(-1px); }
+.hope-btn--accent  { background: var(--hope-accent); color: #fff; border-color: transparent; }
+.hope-btn--accent:hover:not(:disabled) { background: var(--hope-accent-dark); transform: translateY(-1px); }
+
+/* Sizes */
+.hope-btn--sm { padding: 6px 14px; font-size: 12px; border-radius: var(--hope-radius-sm); }
+.hope-btn--md { padding: 9px 20px; font-size: 14px; }
+.hope-btn--lg { padding: 14px 28px; font-size: 16px; border-radius: var(--hope-radius-lg); }
+.hope-btn--icon { padding: 10px; border-radius: 50%; min-width: 36px; min-height: 36px; }
+.hope-btn--icon.hope-btn--sm { min-width: 32px; min-height: 32px; padding: 6px; border-radius: var(--hope-radius-md); }
+
+/* Loading */
+.hope-btn__spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.hope-btn__spinner svg {
+  animation: hope-spin 0.8s linear infinite;
+}
+@keyframes hope-spin { to { transform: rotate(360deg); } }
+</style>

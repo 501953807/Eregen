@@ -1,177 +1,102 @@
 <template>
   <div class="dashboard">
-    <!-- Welcome Header -->
-    <div class="welcome-header">
-      <div class="welcome-text">
-        <h1 class="welcome-title">
-          <span class="greeting">{{ timeGreeting }}</span>，管理员
-          <span class="wave">👋</span>
-        </h1>
-        <p class="welcome-sub">今日健康概览 · 颐贞康养中心管理平台</p>
+    <!-- Welcome Hero Banner -->
+    <div class="welcome-hero">
+      <div class="welcome-hero__left">
+        <span class="welcome-hero__wave">👋</span>
+        <h1 class="welcome-hero__title">{{ timeGreeting }}，管理员</h1>
+        <p class="welcome-hero__subtitle">今日健康概览 · 颐贞康养中心管理平台</p>
       </div>
-      <div class="welcome-meta">
+      <div class="welcome-hero__right">
         <div class="meta-date">{{ currentDate }}</div>
         <div class="meta-status">
-          <span class="status-dot green"></span>
-          系统正常运行
+          <span class="status-dot-green"></span>
+          <span>系统正常运行</span>
         </div>
       </div>
     </div>
 
-    <!-- KPI Cards -->
-    <el-row :gutter="16" style="margin-bottom: 20px;">
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-primary">
-          <div class="kpi-content">
-            <div class="kpi-icon-wrap green">
-              <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></el-icon>
-            </div>
-            <div class="kpi-info">
-              <div class="kpi-value">{{ store.stats.online_devices.toLocaleString() }}</div>
-              <div class="kpi-label">在线设备</div>
-              <div class="kpi-trend up">较昨日 +2.3%</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-success">
-          <div class="kpi-content">
-            <div class="kpi-icon-wrap blue">
-              <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></el-icon>
-            </div>
-            <div class="kpi-info">
-              <div class="kpi-value">{{ store.stats.total_users.toLocaleString() }}</div>
-              <div class="kpi-label">活跃家属</div>
-              <div class="kpi-trend up">较昨日 +5.1%</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-warning">
-          <div class="kpi-content">
-            <div class="kpi-icon-wrap orange">
-              <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></el-icon>
-            </div>
-            <div class="kpi-info">
-              <div class="kpi-value">{{ store.stats.active_alerts }}</div>
-              <div class="kpi-label">待处理告警</div>
-              <div class="kpi-trend down">较昨日 -12.5%</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-info">
-          <div class="kpi-content">
-            <div class="kpi-icon-wrap green">
-              <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 010-4h14v4M3 5v14a2 2 0 002 2h16v-5M18 14v6"/></svg></el-icon>
-            </div>
-            <div class="kpi-info">
-              <div class="kpi-value">{{ store.stats.total_devices ? Math.round((store.stats.online_devices / store.stats.total_devices) * 100) + '%' : '—' }}</div>
-              <div class="kpi-label">设备在线率</div>
-              <div class="kpi-trend up">较上周 +1.2%</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- KPI Cards — HopeStatCard -->
+    <div class="kpi-grid">
+      <div class="hope-stat-card">
+        <div class="hope-stat-card__icon hope-stat-card__icon--primary">
+          <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></el-icon>
+        </div>
+        <div class="hope-stat-card__value">{{ store.stats.online_devices.toLocaleString() }}</div>
+        <div class="hope-stat-card__label">在线设备</div>
+        <div class="hope-stat-card__trend hope-stat-card__trend-up">+2.3% 较昨日</div>
+      </div>
+      <div class="hope-stat-card">
+        <div class="hope-stat-card__icon hope-stat-card__icon--success">
+          <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></el-icon>
+        </div>
+        <div class="hope-stat-card__value">{{ store.stats.total_users.toLocaleString() }}</div>
+        <div class="hope-stat-card__label">活跃家属</div>
+        <div class="hope-stat-card__trend hope-stat-card__trend-up">+5.1% 较昨日</div>
+      </div>
+      <div class="hope-stat-card">
+        <div class="hope-stat-card__icon hope-stat-card__icon--warning">
+          <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg></el-icon>
+        </div>
+        <div class="hope-stat-card__value">{{ store.stats.active_alerts }}</div>
+        <div class="hope-stat-card__label">待处理告警</div>
+        <div class="hope-stat-card__trend hope-stat-card__trend-down">-12.5% 较昨日</div>
+      </div>
+      <div class="hope-stat-card">
+        <div class="hope-stat-card__icon hope-stat-card__icon--info">
+          <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 010-4h14v4M3 5v14a2 2 0 002 2h16v-5M18 14v6"/></svg></el-icon>
+        </div>
+        <div class="hope-stat-card__value">{{ store.stats.total_devices ? Math.round((store.stats.online_devices / store.stats.total_devices) * 100) + '%' : '—' }}</div>
+        <div class="hope-stat-card__label">设备在线率</div>
+        <div class="hope-stat-card__trend hope-stat-card__trend-up">+1.2% 较上周</div>
+      </div>
+    </div>
 
-    <!-- Charts Row -->
-    <el-row :gutter="16" style="margin-bottom: 16px;">
-      <el-col :span="8">
-        <el-card shadow="never">
-          <template #header><span class="card-title">设备类型分布</span></template>
-          <div ref="donutChartRef" style="height: 260px;"></div>
-        </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card shadow="never">
-          <template #header><span class="card-title">套餐订阅分布</span></template>
-          <div ref="planChartRef" style="height: 260px;"></div>
-        </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card shadow="never">
-          <template #header><span class="card-title">告警优先级分布</span></template>
-          <div ref="alertPriorityChartRef" style="height: 260px;"></div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- Charts Row 1 -->
+    <div class="charts-row">
+      <HopeCard title="设备类型分布">
+        <div ref="donutChartRef" class="chart-container"></div>
+      </HopeCard>
+      <HopeCard title="套餐订阅分布">
+        <div ref="planChartRef" class="chart-container"></div>
+      </HopeCard>
+      <HopeCard title="告警优先级分布">
+        <div ref="alertPriorityChartRef" class="chart-container"></div>
+      </HopeCard>
+    </div>
 
-    <!-- Main Charts Row -->
-    <el-row :gutter="16" style="margin-bottom: 16px;">
-      <el-col :span="16">
-        <el-card shadow="never">
-          <template #header>
-            <span class="card-title">设备在线趋势</span>
-          </template>
-          <div ref="lineChartRef" style="height: 300px;"></div>
-        </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card shadow="never">
-          <template #header>
-            <span class="card-title">告警分布</span>
-          </template>
-          <div ref="pieChartRef" style="height: 300px;"></div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- Charts Row 2 -->
+    <div class="charts-row">
+      <HopeCard title="设备在线趋势" class="chart-card-wide">
+        <div ref="lineChartRef" class="chart-container chart-tall"></div>
+      </HopeCard>
+      <HopeCard title="告警分布">
+        <div ref="pieChartRef" class="chart-container chart-tall"></div>
+      </HopeCard>
+    </div>
 
     <!-- Bottom Row -->
-    <el-row :gutter="16">
-      <el-col :span="12">
-        <el-card shadow="never">
-          <template #header>
-            <div class="card-header-with-action">
-              <span class="card-title">最新告警</span>
-              <el-link type="primary" :underline="'never'" style="color: var(--color-primary);">查看全部 →</el-link>
-            </div>
+    <div class="charts-row">
+      <HopeCard title="最新告警" class="alert-card">
+        <template #header>
+          <HopeBtn variant="text" size="sm">查看全部 →</HopeBtn>
+        </template>
+        <HopeTable :columns="alertColumns" :data="alertTableData" :loading="false" class="alert-table">
+          <template #col-alert_type="{ row }">
+            <HopeBadge :color="alertBadgeColor(row.alert_type)">{{ row.alert_type }}</HopeBadge>
           </template>
-          <el-table :data="alertTableData" stripe style="width: 100%">
-            <el-table-column prop="created_at" label="时间" width="160">
-              <template #default="{ row }">
-                {{ formatTime(row.created_at) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="alert_type" label="类型" width="100">
-              <template #default="{ row }">
-                <span class="status-badge" :class="alertBadgeClass(row.alert_type)">
-                  <span class="status-dot" :class="alertDotClass(row.alert_type)"></span>
-                  {{ row.alert_type }}
-                </span>
-              </template>
-            </el-table-column>
-            <el-table-column label="设备" width="120">
-              <template #default="{ row }">
-                {{ row.metadata?.device_id || '—' }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="status" label="状态" width="100">
-              <template #default="{ row }">
-                <span class="status-badge" :class="statusBadgeClass(row.status)">
-                  <span class="status-dot" :class="statusDotClass(row.status)"></span>
-                  {{ statusLabel(row.status) }}
-                </span>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
-        <el-card shadow="never">
-          <template #header>
-            <div class="card-header-with-action">
-              <span class="card-title">用户增长</span>
-              <el-link type="primary" :underline="'never'" style="color: var(--color-primary);">详情 →</el-link>
-            </div>
+          <template #col-status="{ row }">
+            <HopeBadge :color="statusBadgeColor(row.status)">{{ statusLabel(row.status) }}</HopeBadge>
           </template>
-          <div ref="barChartRef" style="height: 300px;"></div>
-        </el-card>
-      </el-col>
-    </el-row>
+        </HopeTable>
+      </HopeCard>
+      <HopeCard title="用户增长" class="chart-card">
+        <template #header>
+          <HopeBtn variant="text" size="sm">详情 →</HopeBtn>
+        </template>
+        <div ref="barChartRef" class="chart-container chart-tall"></div>
+      </HopeCard>
+    </div>
   </div>
 </template>
 
@@ -181,6 +106,7 @@ import * as echarts from 'echarts'
 import { useDashboardStore } from '@/stores/dashboard'
 import { useTheme } from '@/composables/useTheme'
 import type { Alert } from '@/types'
+import { HopeCard, HopeBtn, HopeTable, HopeBadge } from '@/components/hope'
 
 const store = useDashboardStore()
 const { isDark } = useTheme()
@@ -198,7 +124,6 @@ let donutChart: echarts.ECharts | null = null
 let planChart: echarts.ECharts | null = null
 let alertPriorityChart: echarts.ECharts | null = null
 
-// Time-based greeting
 const timeGreeting = computed(() => {
   const h = new Date().getHours()
   if (h < 6) return '夜深了'
@@ -211,8 +136,6 @@ const currentDate = computed(() => {
   return new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
 })
 
-const wellnessColors = ['#5C8D73', '#7BAF8C', '#A8C3B0', '#D9A441', '#D77B72', '#6E9FC4', '#6FAF8F']
-
 const alertTableData = ref<Array<Alert & { created_at: string }>>([])
 
 watch(
@@ -223,31 +146,34 @@ watch(
   { immediate: true },
 )
 
+const alertColumns = [
+  { prop: 'created_at', label: '时间', sortable: false },
+  { prop: 'alert_type', label: '类型', sortable: false },
+  { prop: 'device_id', label: '设备', sortable: false },
+  { prop: 'status', label: '状态', sortable: false },
+]
+
 function formatTime(dateStr?: string): string {
   if (!dateStr) return '—'
   const d = new Date(dateStr)
   return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
-function alertBadgeClass(type: string): string {
-  if (['SOS', 'heart'].includes(type)) return 'badge-danger'
-  if (['fall', 'medication'].includes(type)) return 'badge-warning'
-  return 'badge-primary'
+function alertBadgeColor(type: string): 'error' | 'warning' | 'primary' {
+  if (['SOS', 'heart'].includes(type)) return 'error'
+  if (['fall', 'medication'].includes(type)) return 'warning'
+  return 'primary'
 }
-function alertDotClass(type: string): string {
-  if (['SOS', 'heart'].includes(type)) return 'dot-danger'
-  if (['fall', 'medication'].includes(type)) return 'dot-warning'
-  return 'dot-primary'
+
+function statusBadgeColor(status: string): 'error' | 'success' | 'warning' {
+  return status === 'pending' ? 'error' : status === 'resolved' ? 'success' : 'warning'
 }
-function statusBadgeClass(status: string): string {
-  return status === 'pending' ? 'badge-danger' : status === 'resolved' ? 'badge-success' : 'badge-warning'
-}
-function statusDotClass(status: string): string {
-  return status === 'pending' ? 'dot-danger' : status === 'resolved' ? 'dot-success' : 'dot-warning'
-}
+
 function statusLabel(status: string): string {
   return status === 'pending' ? '未处理' : status === 'resolved' ? '已处理' : '处理中'
 }
+
+// (slots used via template rendering)
 
 function renderLineChart() {
   if (!lineChartRef.value) return
@@ -380,28 +306,18 @@ function renderAlertPriorityChart() {
 }
 
 watch(isDark, () => {
-  nextTick(() => {
-    initCharts()
-  })
+  nextTick(() => { initCharts() })
 })
 
 function handleResize() {
-  lineChart?.resize()
-  pieChart?.resize()
-  barChart?.resize()
-  donutChart?.resize()
-  planChart?.resize()
-  alertPriorityChart?.resize()
+  lineChart?.resize(); pieChart?.resize(); barChart?.resize()
+  donutChart?.resize(); planChart?.resize(); alertPriorityChart?.resize()
 }
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  lineChart?.dispose()
-  pieChart?.dispose()
-  barChart?.dispose()
-  donutChart?.dispose()
-  planChart?.dispose()
-  alertPriorityChart?.dispose()
+  lineChart?.dispose(); pieChart?.dispose(); barChart?.dispose()
+  donutChart?.dispose(); planChart?.dispose(); alertPriorityChart?.dispose()
 })
 
 onMounted(() => {
@@ -411,151 +327,111 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.dashboard {
-  padding: 0;
-}
+.dashboard { padding: 0; }
 
-/* Welcome Header */
-.welcome-header {
+/* Welcome Hero */
+.welcome-hero {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 24px;
+  padding: 24px 28px;
+  background: linear-gradient(135deg, #4A7C5F 0%, #6FAF8F 60%, #8FB89A 100%);
+  border-radius: var(--hope-radius-xl);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
 }
-.welcome-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #29404A;
+.welcome-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.12) 0%, transparent 60%);
+  pointer-events: none;
+}
+.welcome-hero__left { position: relative; z-index: 1; }
+.welcome-hero__wave { font-size: 28px; margin-right: 8px; }
+.welcome-hero__title {
+  font-size: 26px;
+  font-weight: 800;
   margin: 0 0 4px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  color: #fff;
 }
-.wave { font-size: 22px; }
-.welcome-sub {
+.welcome-hero__subtitle {
   font-size: 13px;
-  color: #6B8980;
+  color: rgba(255,255,255,0.75);
   margin: 0;
 }
-.welcome-meta {
+.welcome-hero__right {
+  position: relative;
+  z-index: 1;
   text-align: right;
 }
-.meta-date {
-  font-size: 14px;
-  font-weight: 600;
-  color: #4A6260;
-  margin-bottom: 4px;
-}
+.meta-date { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.9); margin-bottom: 4px; }
 .meta-status {
   font-size: 12px;
-  color: #6B8980;
+  color: rgba(255,255,255,0.7);
   display: flex;
   align-items: center;
   gap: 6px;
   justify-content: flex-end;
 }
-.status-dot.green {
-  width: 6px;
-  height: 6px;
+.status-dot-green {
+  width: 6px; height: 6px;
   border-radius: 50%;
-  background: #5C8D73;
-  box-shadow: 0 0 6px rgba(92,141,115,0.4);
+  background: #fff;
+  box-shadow: 0 0 6px rgba(255,255,255,0.5);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.15); }
 }
 
-/* KPI Cards */
-.kpi-card {
-  position: relative;
-  overflow: hidden;
-  transition: all var(--duration-normal) var(--easing);
+/* KPI Grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.kpi-grid .hope-stat-card { cursor: default; }
+
+/* Charts Row */
+.charts-row {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.charts-row:nth-of-type(1),
+.charts-row:nth-of-type(2) { grid-template-columns: repeat(3, 1fr); }
+.charts-row:nth-of-type(3) { grid-template-columns: 2fr 1fr; }
+.charts-row:nth-of-type(4) { grid-template-columns: 1fr 1fr; }
+
+.chart-card-wide { grid-column: span 2; }
+.chart-container { height: 260px; }
+.chart-container.tall { height: 300px; }
+
+/* Alert Table */
+.alert-table { margin-top: 8px; }
+.alert-table :deep(.hope-table) { font-size: 13px; }
+.alert-table :deep(.hope-table th) { font-size: 12px; }
+.alert-table :deep(.hope-table td) { font-size: 13px; }
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .charts-row:nth-of-type(1),
+  .charts-row:nth-of-type(2),
+  .charts-row:nth-of-type(4) { grid-template-columns: 1fr; }
+  .charts-row:nth-of-type(3) { grid-template-columns: 1fr; }
+  .chart-card-wide { grid-column: span 1; }
 }
 
-.kpi-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
-  pointer-events: none;
+@media (max-width: 768px) {
+  .kpi-grid { grid-template-columns: 1fr; }
+  .welcome-hero { flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px 20px; }
+  .welcome-hero__right { text-align: left; }
 }
-
-.kpi-card:hover {
-  transform: translateY(-3px);
-}
-
-.kpi-card :deep(.el-card__body) {
-  padding: 18px 20px;
-  border: 1px solid var(--border-light);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), var(--shadow-card);
-  border-radius: var(--radius-lg);
-}
-.kpi-icon-wrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.kpi-icon-wrap.blue { background: linear-gradient(135deg, #5C8D73, #7BAF8C); color: #fff; }
-.kpi-icon-wrap.green { background: linear-gradient(135deg, #6FAF8F, #8BC4A8); color: #fff; }
-.kpi-icon-wrap.orange { background: linear-gradient(135deg, #D9A441, #E8BC6A); color: #fff; }
-.kpi-icon-wrap.red { background: linear-gradient(135deg, #D77B72, #E09890); color: #fff; }
-.kpi-icon-wrap.purple { background: linear-gradient(135deg, #7C3AED, #A78BFA); color: #fff; }
-.kpi-icon { display: none; }
-.kpi-info { flex: 1; }
-.kpi-value {
-  font-size: 32px;
-  font-weight: 800;
-  color: #29404A;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  margin-bottom: 4px;
-}
-.kpi-label {
-  font-size: 13px;
-  color: #6B8980;
-  margin-top: 2px;
-}
-.kpi-trend {
-  font-size: 12px;
-  margin-top: 4px;
-}
-.kpi-trend.up { color: #4A8A6A; }
-.kpi-trend.down { color: #D77B72; }
-
-/* Card titles */
-.card-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #29404A;
-}
-.card-header-with-action {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* Status badges */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.badge-success { background: #E8F4EC; color: #4A8A6A; }
-.badge-danger { background: #FDF0EE; color: #B85C54; }
-.badge-warning { background: #FEF7E8; color: #B8860B; }
-.badge-primary { background: #DDEBE1; color: #47745C; }
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.dot-success { background: #6FAF8F; }
-.dot-danger { background: #D77B72; }
-.dot-warning { background: #D9A441; }
-.dot-primary { background: #5C8D73; }
 </style>

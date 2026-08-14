@@ -537,10 +537,32 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 5px;
-  border-radius: 12px !important;
-  border: 1px solid #D4DFD5;
-  color: #4A6260;
-  background: white;
+  border-radius: var(--hope-radius-lg) !important;
+  border: 1px solid var(--hope-border);
+  color: var(--hope-text-secondary);
+  background: var(--hope-surface);
+  transition: all 0.2s;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 14px;
+}
+.btn-icon:hover {
+  border-color: var(--hope-primary);
+  color: var(--hope-primary);
+  background: var(--hope-primary-lighter);
+}
+.el-button--primary {
+  background: linear-gradient(135deg, #5C8D73 0%, #6FAF8F 100%) !important;
+  border-color: transparent !important;
+  border-radius: var(--hope-radius-lg) !important;
+  box-shadow: var(--hope-shadow-primary) !important;
+  font-weight: 600 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.el-button--primary:hover {
+  background: linear-gradient(135deg, #6FAF8F 0%, #7BAF8C 100%) !important;
+  box-shadow: var(--hope-shadow-primary-hover) !important;
+  transform: translateY(-1px) !important;
 }
 
 /* KPI Cards */

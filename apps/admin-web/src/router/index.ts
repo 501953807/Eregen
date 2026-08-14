@@ -23,13 +23,10 @@ const router = createRouter({
     { path: '/regulatory', component: () => import('@/views/RegulatoryDashboard.vue') },
     { path: '/medication', component: () => import('@/views/Medication.vue'), name: 'Medication' },
     { path: '/medical', component: () => import('@/views/MedicalWristband.vue') },
-    { path: '/regulatory', component: () => import('@/views/RegulatoryDashboard.vue') },
     { path: '/audit/:patientId', name: 'AuditDetail', component: () => import('@/views/AuditDetail.vue') },
     { path: '/community-wb', component: () => import('@/views/CommunityWristband.vue') },
-    // Login route (add this)
+    // Login route
     { path: '/login', component: () => import('@/views/Login.vue') },
-    // Hope UI 组件展示（开发调试用，生产环境可移除）
-    { path: '/hope-demo', component: () => import('@/views/HopeDemo.vue'), meta: { requiresAuth: false } },
   ],
 })
 

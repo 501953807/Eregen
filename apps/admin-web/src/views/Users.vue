@@ -562,8 +562,22 @@ onMounted(async () => {
   box-shadow: 0 2px 8px rgba(60,90,70,0.04);
 }
 
+.el-button--primary {
+  background: linear-gradient(135deg, #5C8D73 0%, #6FAF8F 100%) !important;
+  border-color: transparent !important;
+  border-radius: var(--hope-radius-lg) !important;
+  box-shadow: var(--hope-shadow-primary) !important;
+  font-weight: 600 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.el-button--primary:hover {
+  background: linear-gradient(135deg, #6FAF8F 0%, #7BAF8C 100%) !important;
+  box-shadow: var(--hope-shadow-primary-hover) !important;
+  transform: translateY(-1px) !important;
+}
+
 .user-tabs .el-button {
-  border-radius: 10px;
+  border-radius: var(--hope-radius-pill) !important;
   font-size: 13px;
   font-weight: 600;
   padding: 9px 22px;
@@ -572,11 +586,10 @@ onMounted(async () => {
   color: #6B8980;
   transition: all 0.2s;
 }
-
 .user-tabs .el-button.active {
-  background: linear-gradient(135deg, #5C8D73, #7BAF8C);
-  color: white;
-  box-shadow: 0 4px 12px rgba(92,141,115,0.25);
+  background: linear-gradient(135deg, #5C8D73, #6FAF8F) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(92,141,115,0.25) !important;
 }
 
 .tab-count {
@@ -591,24 +604,30 @@ onMounted(async () => {
   position: relative;
   overflow: hidden;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--hope-radius-lg) !important;
 }
 .kpi-card::before {
   content: '';
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
-  pointer-events: none;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #5C8D73, #6FAF8F);
+  border-radius: var(--hope-radius-lg) var(--hope-radius-lg) 0 0;
+  opacity: 0;
+  transition: opacity 0.2s;
 }
 .kpi-card:hover {
   transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(26,46,38,0.12) !important;
 }
+.kpi-card:hover::before { opacity: 1; }
 .kpi-card :deep(.el-card__body) {
   padding: 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  border: 1px solid var(--hope-border);
 }
 
 .kpi-value {
@@ -646,15 +665,16 @@ onMounted(async () => {
 
 .user-card {
   cursor: pointer;
-  transition: all 0.2s;
-  border-radius: 16px !important;
-  border: 1px solid #E5EDE6 !important;
-  background: white;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--hope-radius-xl) !important;
+  border: 1px solid var(--hope-border) !important;
+  background: var(--hope-surface);
+  box-shadow: var(--hope-shadow-sm);
 }
 
 .user-card:hover {
-  border-color: #5C8D73;
-  box-shadow: 0 6px 20px rgba(92,141,115,0.12);
+  border-color: var(--hope-primary);
+  box-shadow: var(--hope-shadow-md);
   transform: translateY(-2px);
 }
 
