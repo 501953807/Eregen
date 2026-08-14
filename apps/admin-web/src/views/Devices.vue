@@ -887,4 +887,12 @@ onMounted(() => {
   padding-top: 16px;
   border-top: 1px solid #E5EDE6;
 }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .devices-page :deep(.el-col) { width: 100% !important; flex: 0 0 100% !important; }
+  .devices-page :deep(.el-table) { font-size: 12px; }
+  .devices-page :deep(.el-table th),
+  .devices-page :deep(.el-table td) { padding: 6px 4px; }
+}
 </style>

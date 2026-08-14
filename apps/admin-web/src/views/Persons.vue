@@ -253,4 +253,11 @@ onMounted(() => {
 .card-header { display: flex; justify-content: space-between; align-items: center; }
 .filter-form { margin-bottom: 16px; }
 .mr-1 { margin-right: 4px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .persons-page :deep(.el-table) { font-size: 12px; }
+  .persons-page :deep(.el-table th),
+  .persons-page :deep(.el-table td) { padding: 6px 4px; }
+}
 </style>

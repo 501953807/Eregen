@@ -189,4 +189,11 @@ onMounted(async () => {
 }
 .page-header { margin-bottom: 20px; }
 .page-title { font-size: 22px; font-weight: 800; color: var(--el-text-color-primary); margin: 8px 0 0; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .elderly-page :deep(.el-table) { font-size: 12px; }
+  .elderly-page :deep(.el-table th),
+  .elderly-page :deep(.el-table td) { padding: 6px 4px; }
+}
 </style>

@@ -457,4 +457,11 @@ function handleSearch() {
     font-size: 22px;
   }
 }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .medication-page :deep(.el-table) { font-size: 12px; }
+  .medication-page :deep(.el-table th),
+  .medication-page :deep(.el-table td) { padding: 6px 4px; }
+}
 </style>

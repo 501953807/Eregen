@@ -618,4 +618,12 @@ onUnmounted(() => {
   border-radius: 10px;
   overflow-x: auto;
 }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .alerts-page :deep(.el-col) { width: 100% !important; flex: 0 0 100% !important; }
+  .alerts-page :deep(.el-table) { font-size: 12px; }
+  .alerts-page :deep(.el-table th),
+  .alerts-page :deep(.el-table td) { padding: 6px 4px; }
+}
 </style>

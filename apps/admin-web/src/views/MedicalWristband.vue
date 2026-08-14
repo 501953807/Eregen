@@ -738,4 +738,11 @@ async function handleResolveAlert(row: RegulatoryAlert) {
   font-family: 'SF Mono', 'Consolas', monospace;
   font-size: 12px;
 }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .medical-page :deep(.el-table) { font-size: 12px; }
+  .medical-page :deep(.el-table th),
+  .medical-page :deep(.el-table td) { padding: 6px 4px; }
+}
 </style>

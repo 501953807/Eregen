@@ -965,6 +965,8 @@
   }
   .el-button { border-radius: var(--hope-radius-lg) !important; }
   .el-button--small { border-radius: var(--hope-radius-md) !important; }
+  .el-button:active { transform: scale(0.97); }
+  .el-button { transition: all 0.15s ease !important; }
   /* el-input */
   .el-input__wrapper, .el-textarea__inner {
     border-radius: var(--hope-radius-lg) !important;

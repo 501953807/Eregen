@@ -239,4 +239,13 @@ function onFileUpload(file: File) { ElMessage.success(`文件 ${file.name} 已�
 .kpi-warning .kpi-value { color: #F59E0B; }
 .kpi-danger .kpi-value { color: #EF4444; }
 .kpi-orange .kpi-value { color: #EA580C; }
+
+/* Responsive */
+@media (max-width: 992px) {
+  .community-page :deep(.el-row > .el-col) { width: 50% !important; flex: 0 0 50% !important; }
+}
+@media (max-width: 768px) {
+  .community-page :deep(.el-row > .el-col) { width: 100% !important; flex: 0 0 100% !important; }
+  .kpi-value { font-size: 24px; }
+}
 </style>

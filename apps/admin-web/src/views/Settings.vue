@@ -288,4 +288,10 @@ onMounted(loadNotificationSettings)
 .dot-warning { background: #D9A441; }
 .dot-primary { background: #5C8D73; }
 .dot-gray { background: #8FA8A0; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .settings-page :deep(.el-form-item__label) { width: 100% !important; }
+  .settings-page :deep(.el-form-item__content) { margin-left: 0 !important; }
+}
 </style>

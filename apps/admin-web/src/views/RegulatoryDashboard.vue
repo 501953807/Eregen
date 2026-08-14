@@ -298,4 +298,11 @@ onMounted(async () => {
 .panel-title { font-size: 15px; font-weight: 700; color: var(--el-text-color-primary); border-left: 3px solid #5C8D73; padding-left: 8px; }
 :deep(.el-tabs--border-card) { border: none; }
 :deep(.el-tabs--border-card > .el-tabs__header) { border-bottom: 1px solid var(--el-border-color-light); margin: 0; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .regulatory-page :deep(.el-table) { font-size: 12px; }
+  .regulatory-page :deep(.el-table th),
+  .regulatory-page :deep(.el-table td) { padding: 6px 4px; }
+}
 </style>

@@ -369,4 +369,9 @@ function renderUserGrowthChart() {
 .dot-warning { background: #D9A441; }
 .dot-primary { background: #5C8D73; }
 .dot-gray { background: #8FA8A0; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .analytics-page :deep(.el-row > .el-col) { width: 100% !important; flex: 0 0 100% !important; }
+}
 </style>

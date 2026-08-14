@@ -105,6 +105,7 @@ import { onMounted, ref, watch, nextTick, computed, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
 import { useDashboardStore } from '@/stores/dashboard'
 import { useTheme } from '@/composables/useTheme'
+import { eregenGreenEChartsTheme } from '@/utils/echarts-theme'
 import type { Alert } from '@/types'
 import { HopeCard, HopeBtn, HopeTable, HopeBadge } from '@/components/hope'
 
@@ -177,7 +178,7 @@ function statusLabel(status: string): string {
 
 function renderLineChart() {
   if (!lineChartRef.value) return
-  if (!lineChart) lineChart = echarts.init(lineChartRef.value)
+  if (!lineChart) lineChart = echarts.init(lineChartRef.value, eregenGreenEChartsTheme)
   const trend = store.chartData.alertTrend
   const dates = trend.map(d => d.date)
   const bracelet = trend.map(d => d.bracelet_count)
@@ -190,14 +191,14 @@ function renderLineChart() {
     yAxis: { type: 'value' },
     series: [
       { name: '手环', type: 'line', smooth: true, data: bracelet.length ? bracelet : [0], itemStyle: { color: '#5C8D73' }, areaStyle: { opacity: 0.08 } },
-      { name: '药盒', type: 'line', smooth: true, data: pillbox.length ? pillbox : [0], itemStyle: { color: '#6E9FC4' }, areaStyle: { opacity: 0.08 } },
+      { name: '药盒', type: 'line', smooth: true, data: pillbox.length ? pillbox : [0], itemStyle: { color: '#6FAF8F' }, areaStyle: { opacity: 0.08 } },
     ],
   })
 }
 
 function renderPieChart() {
   if (!pieChartRef.value) return
-  if (!pieChart) pieChart = echarts.init(pieChartRef.value)
+  if (!pieChart) pieChart = echarts.init(pieChartRef.value, eregenGreenEChartsTheme)
   const items = store.chartData.alertDistribution
   pieChart.setOption({
     tooltip: { trigger: 'item' },
@@ -207,7 +208,7 @@ function renderPieChart() {
       data: items.length
         ? items.map(i => ({ value: i.value, name: i.name, itemStyle: { color: i.color } }))
         : [
-            { value: 35, name: 'SOS', itemStyle: { color: '#D77B72' } },
+            { value: 35, name: 'SOS', itemStyle: { color: '#C04A42' } },
             { value: 28, name: '跌倒检测', itemStyle: { color: '#D9A441' } },
             { value: 22, name: '心率异常', itemStyle: { color: '#5C8D73' } },
             { value: 15, name: '漏服药物', itemStyle: { color: '#6FAF8F' } },
@@ -218,7 +219,7 @@ function renderPieChart() {
 
 function renderBarChart() {
   if (!barChartRef.value) return
-  if (!barChart) barChart = echarts.init(barChartRef.value)
+  if (!barChart) barChart = echarts.init(barChartRef.value, eregenGreenEChartsTheme)
   const growth = store.chartData.userGrowth
   barChart.setOption({
     tooltip: { trigger: 'axis' },
@@ -254,7 +255,7 @@ async function initCharts() {
 
 function renderDonutChart() {
   if (!donutChartRef.value) return
-  if (!donutChart) donutChart = echarts.init(donutChartRef.value)
+  if (!donutChart) donutChart = echarts.init(donutChartRef.value, eregenGreenEChartsTheme)
   donutChart.setOption({
     tooltip: { trigger: 'item' },
     series: [{
@@ -263,7 +264,7 @@ function renderDonutChart() {
         { value: 480, name: '手环-入门版', itemStyle: { color: '#5C8D73' } },
         { value: 312, name: '手环-中端版', itemStyle: { color: '#7BAF8C' } },
         { value: 148, name: '手环-高端版', itemStyle: { color: '#A8C3B0' } },
-        { value: 220, name: '药盒-智能版', itemStyle: { color: '#6E9FC4' } },
+        { value: 220, name: '药盒-智能版', itemStyle: { color: '#6FAF8F' } },
         { value: 85, name: '药盒-自动版', itemStyle: { color: '#D9A441' } },
       ],
       label: { fontSize: 11, formatter: '{b}\n{c}' },
@@ -273,7 +274,7 @@ function renderDonutChart() {
 
 function renderPlanChart() {
   if (!planChartRef.value) return
-  if (!planChart) planChart = echarts.init(planChartRef.value)
+  if (!planChart) planChart = echarts.init(planChartRef.value, eregenGreenEChartsTheme)
   planChart.setOption({
     tooltip: { trigger: 'item' },
     series: [{
@@ -281,7 +282,7 @@ function renderPlanChart() {
       data: [
         { value: 189, name: 'Starter ¥29/月', itemStyle: { color: '#A8C3B0' } },
         { value: 312, name: 'Plus ¥59/月', itemStyle: { color: '#5C8D73' } },
-        { value: 148, name: 'Pro ¥99/月', itemStyle: { color: '#6E9FC4' } },
+        { value: 148, name: 'Pro ¥99/月', itemStyle: { color: '#6FAF8F' } },
       ],
       label: { fontSize: 11, formatter: '{b}\n{d}%' },
     }],
@@ -290,13 +291,13 @@ function renderPlanChart() {
 
 function renderAlertPriorityChart() {
   if (!alertPriorityChartRef.value) return
-  if (!alertPriorityChart) alertPriorityChart = echarts.init(alertPriorityChartRef.value)
+  if (!alertPriorityChart) alertPriorityChart = echarts.init(alertPriorityChartRef.value, eregenGreenEChartsTheme)
   alertPriorityChart.setOption({
     tooltip: { trigger: 'item' },
     series: [{
       name: '告警优先级', type: 'pie', radius: ['40%', '70%'], center: ['50%', '55%'],
       data: [
-        { value: 12, name: 'P0 紧急', itemStyle: { color: '#D77B72' } },
+        { value: 12, name: 'P0 紧急', itemStyle: { color: '#C04A42' } },
         { value: 38, name: 'P1 重要', itemStyle: { color: '#D9A441' } },
         { value: 156, name: 'P2 一般', itemStyle: { color: '#A8C3B0' } },
       ],

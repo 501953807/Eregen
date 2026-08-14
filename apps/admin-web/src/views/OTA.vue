@@ -655,4 +655,11 @@ function formatDate(ts: string): string {
   gap: 8px;
   margin-top: 16px;
 }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ota-page :deep(.el-table) { font-size: 12px; }
+  .ota-page :deep(.el-table th),
+  .ota-page :deep(.el-table td) { padding: 6px 4px; }
+}
 </style>

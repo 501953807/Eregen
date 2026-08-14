@@ -940,4 +940,13 @@ onMounted(async () => {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* Responsive */
+@media (max-width: 992px) {
+  .subscriptions-page :deep(.el-col) { width: 50% !important; flex: 0 0 50% !important; }
+}
+@media (max-width: 768px) {
+  .subscriptions-page :deep(.el-col) { width: 100% !important; flex: 0 0 100% !important; }
+  .subscriptions-page .page-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
 </style>

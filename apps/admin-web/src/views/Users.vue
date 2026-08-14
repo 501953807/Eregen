@@ -948,4 +948,12 @@ onMounted(async () => {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .users-page :deep(.el-col) { width: 100% !important; flex: 0 0 100% !important; }
+  .users-page :deep(.el-table) { font-size: 12px; }
+  .users-page :deep(.el-table th),
+  .users-page :deep(.el-table td) { padding: 6px 4px; }
+}
 </style>
