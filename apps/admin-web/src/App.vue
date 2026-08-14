@@ -672,6 +672,13 @@ onMounted(async () => {
   }
   .sidebar-footer { justify-content: center; }
   .main-content { padding: 16px; }
-  .topbar { padding: 0 16px; }
+  .topbar { padding: 0 12px; }
+  .topbar-search { display: none; }
+  .topbar-right .topbar-icon:not(:last-of-type) { display: none; }
+}
+
+@media (max-width: 480px) {
+  .topbar-right .topbar-icon { display: none; }
+  .topbar-right .theme-toggle-btn { display: none; }
 }
 </style>
