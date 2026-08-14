@@ -310,4 +310,8 @@ onMounted(() => {
 .kpi-card :deep(.el-card__body) { padding: 18px; display: flex; flex-direction: column; align-items: center; text-align: center; border-radius: 14px; }
 .kpi-value { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 4px; }
 .kpi-label { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 6px; font-weight: 600; }
+.kpi-blue .kpi-value { color: #5C8D73; }
+.kpi-green .kpi-value { color: #6FAF8F; }
+.kpi-orange .kpi-value { color: #D9A441; }
+.kpi-purple .kpi-value { color: #7BAF8C; }
 </style>
