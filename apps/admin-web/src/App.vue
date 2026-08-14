@@ -1,5 +1,6 @@
 <template>
-  <div v-if="authStore.user" style="height: 100vh;">
+  <HopeTheme v-if="authStore.user">
+    <div style="height: 100vh;">
     <!-- Full app layout (only shown when logged in) -->
     <el-container style="height: 100%;">
       <!-- Sidebar -->
@@ -141,7 +142,8 @@
         </el-main>
       </el-container>
     </el-container>
-  </div>
+    </div>
+  </HopeTheme>
   <div v-else class="login-page-wrapper">
     <LoginView />
   </div>
@@ -154,6 +156,7 @@ import { ElMessage } from 'element-plus'
 import LoginView from '@/views/Login.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useTheme } from '@/composables/useTheme'
+import { HopeTheme } from '@/components/hope'
 
 const authStore = useAuthStore()
 const route = useRoute()

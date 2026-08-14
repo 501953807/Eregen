@@ -229,9 +229,7 @@ function onFileUpload(file: File) { ElMessage.success(`文件 ${file.name} 已�
   background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
   pointer-events: none;
 }
-.kpi-card:hover {
-  transform: translateY(-3px);
-}
+.kpi-card:hover { transform: translateY(-3px); }
 .kpi-card :deep(.el-card__body) { padding: 18px; display: flex; flex-direction: column; align-items: center; text-align: center; border-radius: 14px; }
 .kpi-value { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 4px; }
 .kpi-label { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 6px; font-weight: 600; }

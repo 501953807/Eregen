@@ -240,15 +240,17 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.persons-page { padding: 0; }
+.persons-page :deep(.el-card) {
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
+  transition: all var(--duration-normal) var(--easing-out);
 }
-.filter-form {
-  margin-bottom: 16px;
+.persons-page :deep(.el-card:hover) {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1px);
 }
-.mr-1 {
-  margin-right: 4px;
-}
+.card-header { display: flex; justify-content: space-between; align-items: center; }
+.filter-form { margin-bottom: 16px; }
+.mr-1 { margin-right: 4px; }
 </style>

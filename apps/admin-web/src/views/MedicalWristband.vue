@@ -647,9 +647,7 @@ async function handleResolveAlert(row: RegulatoryAlert) {
 </script>
 
 <style scoped>
-.medical-page {
-  padding: 0;
-}
+.medical-page { padding: 0; }
 .medical-page :deep(.el-card) {
   border-radius: 12px !important;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;

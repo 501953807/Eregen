@@ -280,14 +280,34 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.hospital-chain-page { padding: 0; }
+.hospital-chain-page :deep(.el-card) {
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
+  transition: all var(--duration-normal) var(--easing-out);
+}
+.hospital-chain-page :deep(.el-card:hover) {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1px);
+}
 .card-header { display: flex; justify-content: space-between; align-items: center; }
 .filter-form { margin-bottom: 16px; }
 .mono { font-family: 'Courier New', monospace; }
-.kpi-card { border-radius: 8px; }
-.kpi-value { font-size: 28px; font-weight: 700; line-height: 1.2; }
-.kpi-label { font-size: 13px; color: var(--el-text-color-secondary); margin-top: 4px; }
-.kpi-blue .kpi-value { color: #409EFF; }
-.kpi-green .kpi-value { color: #67C23A; }
-.kpi-orange .kpi-value { color: #E6A23C; }
-.kpi-purple .kpi-value { color: #9C27B0; }
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
+  pointer-events: none;
+}
+.kpi-card:hover { transform: translateY(-3px); }
+.kpi-card :deep(.el-card__body) { padding: 18px; display: flex; flex-direction: column; align-items: center; text-align: center; border-radius: 14px; }
+.kpi-value { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 4px; }
+.kpi-label { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 6px; font-weight: 600; }
 </style>
