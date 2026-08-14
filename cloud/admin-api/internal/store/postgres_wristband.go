@@ -162,3 +162,8 @@ func (s *PostgresStore) WriteToWristband(ctx context.Context, deviceID, data str
 
 }
 
+
+// CreateWristband creates a new wristband device.
+func (s *PostgresStore) CreateWristband(ctx context.Context, d *model.MedicalWristbandDevice) error {
+	return ErrNotImplemented
+}

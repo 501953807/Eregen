@@ -28,6 +28,8 @@ const router = createRouter({
     { path: '/community-wb', component: () => import('@/views/CommunityWristband.vue') },
     // Login route (add this)
     { path: '/login', component: () => import('@/views/Login.vue') },
+    // Hope UI 组件展示（开发调试用，生产环境可移除）
+    { path: '/hope-demo', component: () => import('@/views/HopeDemo.vue'), meta: { requiresAuth: false } },
   ],
 })
 

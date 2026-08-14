@@ -1,5 +1,8 @@
 {{ define "main" }}
-<!-- Navbar -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     NAVIGATION
+     ═══════════════════════════════════════════════════════════ -->
 <nav class="nav" id="navbar">
   <div class="nav-inner">
     <a class="nav-brand" href="/">
@@ -14,16 +17,21 @@
       <li><a href="#about">关于</a></li>
     </ul>
     <div class="nav-actions">
-      <a href="#" class="btn btn-outline">登录</a>
-      <a href="#" class="btn btn-primary btn-lg">免费下载APP</a>
+      <a href="#" class="btn btn-secondary">登录</a>
+      <a href="#" class="btn btn-primary">免费下载APP</a>
     </div>
+    <button class="nav-toggle" id="navToggle" aria-label="菜单">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
 
-<!-- Hero Section -->
+<!-- ═══════════════════════════════════════════════════════════
+     HERO SECTION
+     ═══════════════════════════════════════════════════════════ -->
 <section class="hero">
   <div class="hero-inner">
-    <div class="hero-content">
+    <div class="hero-content fade-in">
       <div class="hero-badge">
         <span class="hero-badge-dot"></span>
         {{ .Site.Params.heroBadge | default "技术驱动 · 守护每一刻" }}
@@ -34,7 +42,7 @@
       <p class="hero-subtitle">{{ .Site.Params.heroSubtitle }}</p>
       <div class="hero-cta">
         <a href="#" class="btn btn-primary btn-lg">&#128241; 下载家属APP</a>
-        <a href="#products" class="btn btn-outline btn-lg">&#8594; 了解更多</a>
+        <a href="#products" class="btn btn-secondary btn-lg">&#8594; 了解更多</a>
       </div>
       <div class="hero-trust">
         <span class="trust-item"><span class="trust-icon">&#128274;</span>医疗级精度</span>
@@ -42,23 +50,23 @@
         <span class="trust-item"><span class="trust-icon">&#128100;</span>5000+家庭信赖</span>
       </div>
     </div>
-    <div class="hero-visual">
+    <div class="hero-visual fade-in">
       <div class="hero-device">
         <div class="device-screen">
           <div class="device-heart">&#9825;</div>
           <div class="device-hr">72</div>
-          <div class="device-hr-label" style="color:var(--success);font-size:12px;font-weight:600;">bpm 正常</div>
+          <div class="device-hr-label" style="color:var(--hope-success);font-size:12px;font-weight:600;">bpm 正常</div>
           <div class="device-stats">
             <div class="device-stat" style="text-align:center;">
-              <div class="device-stat-val" style="color:var(--success);">98%</div>
+              <div class="device-stat-val" style="color:var(--hope-success);">98%</div>
               <div class="device-stat-lbl">血氧</div>
             </div>
             <div class="device-stat" style="text-align:center;">
-              <div class="device-stat-val" style="color:var(--primary);">3,456</div>
+              <div class="device-stat-val" style="color:var(--curative-blue);">3,456</div>
               <div class="device-stat-lbl">步数</div>
             </div>
             <div class="device-stat" style="text-align:center;">
-              <div class="device-stat-val" style="color:var(--info);">85%</div>
+              <div class="device-stat-val" style="color:var(--hope-warning);">85%</div>
               <div class="device-stat-lbl">电量</div>
             </div>
           </div>
@@ -67,22 +75,24 @@
       <div class="floating-card fc1">
         <div class="fc-icon">&#10003;</div>
         <div>
-          <strong style="font-size:12px;color:var(--text-primary);">用药提醒</strong><br>
-          <span style="font-size:11px;color:var(--text-tertiary);">已播报 · 08:00</span>
+          <strong style="font-size:12px;color:var(--curative-text);">用药提醒</strong><br>
+          <span style="font-size:11px;color:var(--curative-text-muted);">已播报 · 08:00</span>
         </div>
       </div>
       <div class="floating-card fc2">
         <div class="fc-icon">&#128205;</div>
         <div>
-          <strong style="font-size:12px;color:var(--text-primary);">位置正常</strong><br>
-          <span style="font-size:11px;color:var(--text-tertiary);">安全区域内</span>
+          <strong style="font-size:12px;color:var(--curative-text);">位置正常</strong><br>
+          <span style="font-size:11px;color:var(--curative-text-muted);">安全区域内</span>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Products Section -->
+<!-- ═══════════════════════════════════════════════════════════
+     PRODUCTS SECTION
+     ═══════════════════════════════════════════════════════════ -->
 <section class="section" id="products">
   <div class="container">
     <div class="section-header fade-in">
@@ -95,7 +105,7 @@
       <div class="product-card {{ if $.Site.Params.featuredProduct | eq .name }}featured{{ end }} fade-in">
         <div class="product-tier {{ lower .tierClass }}">{{ .tier | default "Starter" }}</div>
         <div class="product-name">{{ .name }}</div>
-        <div class="product-price">{{ (index .tiers 0).price }} <small>/ 起</small></div>
+        <div class="product-price">{{ .price }} <small>/ 起</small></div>
         <ul class="product-features">
           {{ range .features }}
           <li>{{ . }}</li>
@@ -110,7 +120,9 @@
   </div>
 </section>
 
-<!-- Features Section -->
+<!-- ═══════════════════════════════════════════════════════════
+     FEATURES SECTION
+     ═══════════════════════════════════════════════════════════ -->
 <section class="section section-alt" id="features">
   <div class="container">
     <div class="section-header fade-in">
@@ -130,7 +142,9 @@
   </div>
 </section>
 
-<!-- Ecosystem Section -->
+<!-- ═══════════════════════════════════════════════════════════
+     ECOSYSTEM SECTION
+     ═══════════════════════════════════════════════════════════ -->
 <section class="section" id="ecosystem">
   <div class="container">
     <div class="section-header fade-in">
@@ -167,7 +181,9 @@
   </div>
 </section>
 
-<!-- Testimonials Section -->
+<!-- ═══════════════════════════════════════════════════════════
+     TESTIMONIALS SECTION
+     ═══════════════════════════════════════════════════════════ -->
 <section class="section section-alt">
   <div class="container">
     <div class="section-header fade-in">
@@ -212,9 +228,11 @@
   </div>
 </section>
 
-<!-- CTA Section -->
+<!-- ═══════════════════════════════════════════════════════════
+     CTA SECTION
+     ═══════════════════════════════════════════════════════════ -->
 <section class="cta-section">
-  <div class="container">
+  <div class="cta-content">
     <h2 class="cta-title fade-in">开始守护家人的健康</h2>
     <p class="cta-desc fade-in">下载颐贞家属APP，或前往门店体验我们的产品</p>
     <div class="cta-buttons fade-in">
@@ -229,7 +247,9 @@
   </div>
 </section>
 
-<!-- Footer -->
+<!-- ═══════════════════════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════════════════════ -->
 <footer>
   <div class="footer-inner">
     <div class="footer-grid">
@@ -273,16 +293,48 @@
   </div>
 </footer>
 
+<!-- ═══════════════════════════════════════════════════════════
+     INTERACTIVITY SCRIPT
+     ═══════════════════════════════════════════════════════════ -->
 <script>
+// Navbar scroll effect
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  navbar.classList.toggle('scrolled', window.scrollY > 10);
+});
+
+// Mobile nav toggle
+const navToggle = document.getElementById('navToggle');
+if (navToggle) {
+  navToggle.addEventListener('click', () => {
+    const links = document.querySelector('.nav-links');
+    if (links) {
+      links.style.display = links.style.display === 'flex' ? 'none' : 'flex';
+      links.style.position = 'absolute';
+      links.style.top = '64px';
+      links.style.left = '0';
+      links.style.right = '0';
+      links.style.background = 'var(--curative-white)';
+      links.style.flexDirection = 'column';
+      links.style.padding = '16px var(--gutter)';
+      links.style.gap = '16px';
+      links.style.borderBottom = '1px solid var(--curative-border)';
+      links.style.boxShadow = 'var(--shadow-md)';
+    }
+  });
+}
+
+// Fade-in animations with IntersectionObserver
 const observer = new IntersectionObserver((entries) => {
-  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+    }
+  });
 }, { threshold: 0.08, rootMargin: '-40px 0px -40px 0px' });
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
-window.addEventListener('scroll', () => {
-  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 10);
-});
-
+// Smooth scroll for anchor links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', function (e) {
     e.preventDefault();
@@ -291,4 +343,5 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   });
 });
 </script>
+
 {{ end }}

@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"eregen.dev/b2b-hospital-api/internal/model"
 
+	"github.com/google/uuid"
 	_ "modernc.org/sqlite"
 )
 
@@ -246,7 +248,7 @@ func (s *SqliteStore) StoreVitals(ctx context.Context, v *model.VitalSignRecord)
 func (s *SqliteStore) BulkStoreVitals(ctx context.Context, vitals []*model.VitalSignRecord) error {
 	for _, v := range vitals {
 		if err := s.StoreVitals(ctx, v); err != nil {
-			fmt.Printf("store vital sign error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "store vital sign error: %v\n", err)
 		}
 	}
 	return nil
@@ -298,7 +300,7 @@ func (s *SqliteStore) FindElderlyByExternalPatient(ctx context.Context, patientI
 func (s *SqliteStore) StoreDiagnoses(ctx context.Context, records []*model.DiagnosisRecord) error {
 	for _, r := range records {
 		if err := s.storeSingleDiagnosis(ctx, r); err != nil {
-			fmt.Printf("store diagnosis error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "store diagnosis error: %v\n", err)
 		}
 	}
 	return nil
@@ -344,7 +346,7 @@ func (s *SqliteStore) GetDiagnosesForElderly(ctx context.Context, elderlyID stri
 func (s *SqliteStore) StoreMedications(ctx context.Context, records []*model.MedicationRecord) error {
 	for _, r := range records {
 		if err := s.storeSingleMedication(ctx, r); err != nil {
-			fmt.Printf("store medication error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "store medication error: %v\n", err)
 		}
 	}
 	return nil
@@ -476,12 +478,7 @@ func migrate(db *sql.DB) error {
 }
 
 func generateUUID() string {
-	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
-		uint32(time.Now().UnixNano()),
-		uint16(time.Now().Nanosecond()>>8),
-		uint16(time.Now().UnixNano()>>16)&0xFFFF,
-		uint16(time.Now().UnixNano()>>32)&0xFFFF,
-		time.Now().UnixNano())
+	return uuid.New().String()
 }
 
 func contains(s, substr string) bool {
@@ -498,6 +495,6 @@ func containsHelper(s, substr string) bool {
 }
 
 // Compile-time assertions
-var _ Store = (*PostgresStore)(nil)
-var _ Store = (*SqliteStore)(nil)
+var _ Database = (*PostgresStore)(nil)
+var _ Database = (*SqliteStore)(nil)
 

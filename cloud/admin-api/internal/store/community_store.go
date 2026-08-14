@@ -8,6 +8,58 @@ import (
 	"eregen.dev/admin-api/internal/model"
 )
 
+// nullTime scans a potentially-NULL DATETIME column into *time.Time.
+type nullTime struct {
+	Time  time.Time
+	Valid bool
+}
+
+func (n *nullTime) Scan(v interface{}) error {
+	if v == nil {
+		n.Time, n.Valid = time.Time{}, false
+		return nil
+	}
+	switch val := v.(type) {
+	case time.Time:
+		n.Time, n.Valid = val, true
+	case []byte:
+		t, err := time.Parse("2006-01-02 15:04:05", string(val))
+		n.Time, n.Valid = t, err == nil
+		return err
+	case string:
+		t, err := time.Parse("2006-01-02 15:04:05", val)
+		n.Time, n.Valid = t, err == nil
+		return err
+	default:
+		n.Time, n.Valid = time.Time{}, false
+		return fmt.Errorf("nullTime: unsupported type %T", v)
+	}
+	return nil
+}
+
+// sqlNullString scans a potentially-NULL TEXT column into *string.
+type sqlNullString struct {
+	S     string
+	Valid bool
+}
+
+func (n *sqlNullString) Scan(v interface{}) error {
+	if v == nil {
+		n.S, n.Valid = "", false
+		return nil
+	}
+	switch val := v.(type) {
+	case string:
+		n.S, n.Valid = val, true
+	case []byte:
+		n.S, n.Valid = string(val), true
+	default:
+		n.S, n.Valid = "", false
+		return fmt.Errorf("sqlNullString: unsupported type %T", v)
+	}
+	return nil
+}
+
 // ========== Community Store Methods (SqliteStore) ==========
 
 func (s *SqliteStore) CreateCommunityElder(ctx context.Context, e *model.CommunityElder) error {
@@ -26,15 +78,26 @@ func (s *SqliteStore) CreateCommunityElder(ctx context.Context, e *model.Communi
 
 func (s *SqliteStore) GetCommunityElder(ctx context.Context, id string) (*model.CommunityElder, error) {
 	var e model.CommunityElder
+	var nt nullTime
+	var bankAcct, deactReason sqlNullString
 	err := s.db.QueryRowContext(ctx,
 		`SELECT id, name, id_card, gender, age, address, emergency_contact, bank_account, hospital_id,
 			 status, created_at, updated_at, deactivated_at, deactivated_reason
 		 FROM community_elders WHERE id=?`, id).Scan(
 		&e.ID, &e.Name, &e.IDCard, &e.Gender, &e.Age, &e.Address, &e.EmergencyContact,
-		&e.BankAccount, &e.HospitalID, &e.Status, &e.CreatedAt, &e.UpdatedAt,
-		&e.DeactivatedAt, &e.DeactivatedReason)
+		&bankAcct, &e.HospitalID, &e.Status, &e.CreatedAt, &e.UpdatedAt,
+		&nt, &deactReason)
 	if err != nil {
 		return nil, err
+	}
+	if nt.Valid {
+		e.DeactivatedAt = &nt.Time
+	}
+	if bankAcct.Valid {
+		e.BankAccount = &bankAcct.S
+	}
+	if deactReason.Valid {
+		e.DeactivatedReason = &deactReason.S
 	}
 	return &e, nil
 }
@@ -60,10 +123,21 @@ func (s *SqliteStore) ListCommunityElders(ctx context.Context, page, pageSize in
 	var elders []model.CommunityElder
 	for rows.Next() {
 		var e model.CommunityElder
+		var nt nullTime
+		var bankAcct, deactReason sqlNullString
 		if err := rows.Scan(&e.ID, &e.Name, &e.IDCard, &e.Gender, &e.Age, &e.Address,
-			&e.EmergencyContact, &e.BankAccount, &e.HospitalID, &e.Status, &e.CreatedAt, &e.UpdatedAt,
-			&e.DeactivatedAt, &e.DeactivatedReason); err != nil {
+			&e.EmergencyContact, &bankAcct, &e.HospitalID, &e.Status, &e.CreatedAt, &e.UpdatedAt,
+			&nt, &deactReason); err != nil {
 			return nil, err
+		}
+		if nt.Valid {
+			e.DeactivatedAt = &nt.Time
+		}
+		if bankAcct.Valid {
+			e.BankAccount = &bankAcct.S
+		}
+		if deactReason.Valid {
+			e.DeactivatedReason = &deactReason.S
 		}
 		elders = append(elders, e)
 	}

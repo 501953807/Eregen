@@ -8,6 +8,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -233,7 +234,7 @@ func (s *Store) RegisterDeviceAuto(ctx context.Context, deviceID string) (bool, 
 			return false, fmt.Errorf("register device %s: %w", deviceID, err)
 		}
 	}
-	fmt.Printf("AUTO-REGISTERED device %s (type=%s, tier=%s)\n", deviceID, deviceType, tier)
+	fmt.Fprintf(os.Stderr, "AUTO-REGISTERED device %s (type=%s, tier=%s)\n", deviceID, deviceType, tier)
 	return true, nil
 }
 

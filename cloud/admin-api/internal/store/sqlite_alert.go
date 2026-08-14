@@ -9,7 +9,7 @@ import (
 )
 
 func (s *SqliteStore) ListAlerts(ctx context.Context, severity, status string, limit int) ([]model.AlertSummary, error) {
-	query := `SELECT a.id, a.person_id, a.alert_type, a.severity, a.status, a.created_at,
+	query := `SELECT a.id, a.elderly_id, a.alert_type, a.severity, a.status, a.created_at,
 		COALESCE(d.device_id, '')
 		FROM alerts a LEFT JOIN devices d ON a.device_id = d.id WHERE 1=1`
 	args := []interface{}{}
@@ -66,8 +66,11 @@ func (s *SqliteStore) CreateAlert(ctx context.Context, a *model.AlertSummary) er
 	if a.CreatedAt.IsZero() {
 		a.CreatedAt = time.Now()
 	}
+	if a.BusinessChain == "" {
+		a.BusinessChain = "self"
+	}
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO alerts (id, person_id, business_chain, alert_type, severity, status, message, device_id, rule_id, data_details, created_at)
+		`INSERT INTO alerts (id, elderly_id, business_chain, alert_type, severity, status, message, device_id, rule_id, data_details, created_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		a.ID, a.ElderlyID, a.BusinessChain, a.AlertType, a.Severity, a.Status, "", a.DeviceID, a.RuleID, "", a.CreatedAt)
 	return err

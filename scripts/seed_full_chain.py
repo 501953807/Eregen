@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Eregen 全业务链数据注入脚本 v3
+Eregen 全业务链数据注入脚本 v4
 ==============================
 通过真实API端点创建完整测试数据集。
+修复约束冲突问题。
 """
 import requests
 import json
@@ -85,6 +86,8 @@ ROLES = [
 person_ids: Dict[str, str] = {}  # id_card -> person_id (self chain)
 person_profiles: Dict[str, str] = {}  # (id_card, chain) -> person_id for cross-chain
 device_ids: Dict[str, str] = {}
+user_emails: set = set()
+user_phones: set = set()
 
 def uid(prefix=""):
     return f"{prefix}{uuid.uuid4().hex[:8]}"
@@ -98,8 +101,28 @@ def rand_datetime(hours_back=48):
 def check(name, ok, detail=""):
     mark = "✅" if ok else "❌"
     status = f": {detail}" if detail else ""
-    print(f"  {mark} {name}{status}")
+    print(f"  {mark} {name}{status}", flush=True)
     return ok
+
+def post_with_retry(url, headers, json_data, max_retries=5):
+    """Post with retry for rate limiting."""
+    for i in range(max_retries):
+        r = requests.post(url, headers=headers, json=json_data, timeout=10)
+        if r.status_code == 429:
+            wait = 2.5  # Wait 2.5s for rate limit (30 req/min = 1 req/2s)
+            print(f"  ⚠️ Rate limited, waiting {wait}s...", flush=True)
+            time.sleep(wait)
+            continue
+        return r
+    return requests.post(url, headers=headers, json=json_data, timeout=10)
+
+def api_request(method, url, headers, **kwargs):
+    """Make API request with rate limit awareness."""
+    r = requests.request(method, url, headers=headers, timeout=10, **kwargs)
+    if r.status_code == 429:
+        time.sleep(2.5)
+        r = requests.request(method, url, headers=headers, timeout=10, **kwargs)
+    return r
 
 # ─── Login ───────────────────────────────────────────────────────────────────
 def login_admin():
@@ -116,32 +139,48 @@ def login_admin():
 # ─── Module 1: Create Role Accounts ─────────────────────────────────────────
 def create_role_accounts():
     print("\n[1/10] Creating role accounts...")
-    # Fetch existing users to check for duplicates
+    # Fetch existing users
     r = requests.get(f"{API}/admin/users", headers=HEADERS, params={"page": 1, "page_size": 100})
     existing = {}
     if r.status_code == 200:
         for u in r.json().get("data", []):
-            existing[u.get("phone", "")] = u.get("role", "")
             existing[u.get("email", "")] = u.get("role", "")
+            existing[u.get("phone", "")] = u.get("role", "")
+            user_emails.add(u.get("email", ""))
+            user_phones.add(u.get("phone", ""))
 
     for role in ROLES:
-        # Check if user already exists by email or phone
-        already_exists = role["email"] in existing or role["email"] in existing
-        if already_exists:
-            check(f"Account {role['email']}", True, f"already exists as {role['role']}")
+        # Check if user already exists
+        if role["email"] in existing:
+            check(f"Account {role['email']}", True, f"already exists as {existing[role['email']]}")
             continue
-        r = requests.post(f"{API}/admin/users", headers=HEADERS, json={
+        if role["phone"] in existing:
+            check(f"Account {role['phone']}", True, f"already exists")
+            continue
+
+        r = post_with_retry(f"{API}/admin/users", headers=HEADERS, json={
             "name": role["name"], "email": role["email"],
-            "role": role["role"], "password": role["password"]
+            "phone": role["phone"], "role": role["role"], "password": role["password"]
         })
         ok = r.status_code in (200, 201)
+        if ok:
+            user_emails.add(role["email"])
+            user_phones.add(role["phone"])
         check(f"Create {role['role']}", ok, r.text if not ok else "")
-        time.sleep(0.3)
+        time.sleep(2.5)  # Rate limit: 30 req/min
 
 # ─── Module 2: Create Persons ───────────────────────────────────────────────
 def create_persons():
     print("\n[2/10] Creating persons...")
     for elder in ELDERS:
+        # Check if person already exists by id_card
+        pid_key = f"{elder['id_card']}:{elder['chain']}"
+        if pid_key in person_profiles:
+            pid = person_profiles[pid_key]
+            check(f"Reuse {elder['name']} [{elder['chain']}]", True, pid)
+            time.sleep(0.1)
+            continue
+
         birth_year = datetime.now().year - elder["age"]
         data = {
             "id_card": elder["id_card"],
@@ -152,20 +191,16 @@ def create_persons():
             "emergency_contact": f"139{random.randint(10000000, 99999999)}",
             "address": f"上海市浦东新区{random.randint(1,99)}号",
         }
-        # For cross-chain persons, create separate person records per chain
-        pid_key = f"{elder['id_card']}:{elder['chain']}"
-        if pid_key in person_profiles:
-            pid = person_profiles[pid_key]
-            check(f"Reuse {elder['name']} [{elder['chain']}]", True, pid)
-            time.sleep(0.1)
-            continue
-        r = requests.post(f"{API}/admin/persons", headers=HEADERS, json=data)
+        r = post_with_retry(f"{API}/admin/persons", headers=HEADERS, json=data)
         if r.status_code in (200, 201):
             pid = r.json().get("data", {}).get("id", "")
-            person_profiles[pid_key] = pid
-            if elder["chain"] == "self":
-                person_ids[elder["id_card"]] = pid
-            check(f"Create {elder['name']} [{elder['chain']}]", True, pid)
+            if pid:
+                person_profiles[pid_key] = pid
+                if elder["chain"] == "self":
+                    person_ids[elder["id_card"]] = pid
+                check(f"Create {elder['name']} [{elder['chain']}]", True, pid)
+            else:
+                check(f"Create {elder['name']}", False, "no id in response")
         else:
             check(f"Create {elder['name']}", False, r.text[:80])
         time.sleep(0.2)
@@ -192,9 +227,10 @@ def create_person_profiles():
                 "admission_no": f"H{random.randint(10000, 99999)}",
                 "department": elder.get("dept", "内科"),
                 "bed_number": f"{random.randint(1,30)}床",
-                "blood_type": "O",
+                "blood_type": elder.get("blood_type", "O"),
                 "attending_doctor": "张医生",
                 "diagnosis": elder["conditions"][0] if elder["conditions"] else "待诊断",
+                "admission_date": rand_date(30),
                 "status": "in_treatment"
             })
         elif chain == "community":
@@ -202,10 +238,11 @@ def create_person_profiles():
                 "hospital_id_community": "INST-001",
                 "minzheng_certified": 1,
                 "subsidy_type": "定期补助",
+                "certification_date": rand_date(180),
                 "status": "active"
             })
 
-        r = requests.post(f"{API}/admin/persons/profile", headers=HEADERS, json=profile_data)
+        r = post_with_retry(f"{API}/admin/persons/profile", headers=HEADERS, json=profile_data)
         ok = r.status_code in (200, 201)
         if not ok:
             print(f"  ❌ Profile {elder['name']} [{chain}]: {r.text[:100]}")
@@ -268,7 +305,8 @@ def create_devices():
     # Hospital chain: medical wristbands (create via medical endpoint)
     hospital_elders = [e for e in ELDERS if e["chain"] == "hospital"]
     for i, elder in enumerate(hospital_elders):
-        pid = person_ids.get(elder["id_card"])
+        pid_key = f"{elder['id_card']}:{elder['chain']}"
+        pid = person_profiles.get(pid_key)
         dev_id = f"MW-{i+1:04d}"
         r = requests.post(f"{API}/admin/medical/wristbands", headers=HEADERS, json={
             "device_id": dev_id, "firmware_version": "v1.2.0", "status": "active"
@@ -289,7 +327,8 @@ def create_devices():
     # Community chain: community wristbands
     community_elders = [e for e in ELDERS if e["chain"] == "community"]
     for i, elder in enumerate(community_elders):
-        pid = person_ids.get(elder["id_card"])
+        pid_key = f"{elder['id_card']}:{elder['chain']}"
+        pid = person_profiles.get(pid_key)
         dev_id = f"CW-{i+1:04d}"
         r = requests.post(f"{API}/admin/community-wb/devices", headers=HEADERS, json={
             "device_id": dev_id, "firmware_version": "v1.0.0", "mode": "community", "status": "active"
@@ -307,10 +346,12 @@ def create_devices():
             check(f"Bind community wb to {elder['name']}", r2.status_code in (200, 201))
         time.sleep(0.2)
 
-# ─── Module 5: Health Records ───────────────────────────────────────────────
-def generate_health_record(person_id, chain, hr_base=75):
+# ─── Module 5: Health Records via API ───────────────────────────────────────
+def generate_health_record(person_id, chain, hr_base=75, spo2_base=97):
     hr = max(50, min(130, hr_base + random.randint(-15, 15)))
-    spo2 = max(88, min(100, 97 + random.randint(-3, 2)))
+    spo2 = max(88, min(100, spo2_base + random.randint(-3, 2)))
+    steps = random.randint(500, 12000)
+    sleep = round(random.uniform(5.0, 9.5), 1)
     record = {
         "person_id": person_id,
         "business_chain": chain,
@@ -318,12 +359,13 @@ def generate_health_record(person_id, chain, hr_base=75):
         "source": "device",
         "hr": hr,
         "spo2": spo2,
-        "steps": random.randint(500, 12000),
-        "sleep_hours": round(random.uniform(5.0, 9.5), 1),
+        "steps": steps,
+        "sleep_hours": sleep,
         "blood_pressure_sys": random.randint(100, 180),
         "blood_pressure_dia": random.randint(60, 110),
         "recorded_at": rand_datetime(48),
     }
+    # Add chronic indicators for high-risk people
     if random.random() < 0.3:
         record["blood_glucose_fasting"] = round(random.uniform(4.0, 12.0), 1)
     if random.random() < 0.2:
@@ -349,16 +391,14 @@ def inject_health_records():
             record = generate_health_record(pid, chain, hr_base)
             r = requests.post(f"{API}/admin/health-records", headers=HEADERS, json=record)
             if r.status_code not in (200, 201):
-                err = r.text[:80] if r.text else "unknown"
-                if "duplicate" not in err.lower() and "already exists" not in err.lower():
-                    print(f"  ❌ Health record failed for {elder['name']}: {err}")
+                print(f"  ❌ Health record failed for {elder['name']}: {r.text[:80]}")
                 break
             total += 1
         check(f"{elder['name']} ({count} records)", True, f"total={total}")
         time.sleep(0.1)
     print(f"  Total health records: {total}")
 
-# ─── Module 6: Medication Rules & Executions ─────────────────────────────────
+# ─── Module 6: Medication Rules & Executions ────────────────────────────────
 MEDICATIONS = [
     {"drug_name": "氨氯地平", "generic_name": "Amlodipine", "dosage": "5mg", "frequency": "每日1次",
      "schedule_time1": "08:00", "route": "oral", "drug_category": "prescription"},
@@ -381,6 +421,7 @@ def inject_medication():
         pid = person_profiles.get(pid_key)
         if not pid:
             continue
+        # Create 2-3 medication rules per person
         num_rules = random.randint(2, 3)
         for med in random.sample(MEDICATIONS, min(num_rules, len(MEDICATIONS))):
             rule = {
@@ -405,6 +446,7 @@ def inject_medication():
                 check(f"Med rule {med['drug_name']} for {elder['name']}", False, r.text[:80])
             time.sleep(0.1)
 
+        # Generate execution records
         for _ in range(random.randint(10, 20)):
             exec_data = {
                 "person_id": pid,
@@ -420,20 +462,31 @@ def inject_medication():
             time.sleep(0.05)
     print(f"  Total medication rules: {total_rules}")
 
-# ─── Module 7: Alert Rule Engine ────────────────────────────────────────────
+# ─── Module 7: Alert Rule Engine (Real Trigger Logic) ───────────────────────
 class AlertRuleEngine:
+    """Real alert rule evaluation engine — simulates device data hitting rules."""
+
+    THRESHOLDS = {
+        "abnormal_hr": {"field": "hr", "ops": [("> ", 120), ("<", 50)]},
+        "abnormal_spo2": {"field": "spo2", "ops": [("<", 92)]},
+        "fall": {"field": None, "special": "fall"},
+        "sos": {"field": None, "special": "sos"},
+        "med_missed": {"field": None, "special": "med_missed"},
+    }
+
     def __init__(self, token, headers):
         self.token = token
         self.headers = headers
-        self.rules = {}
+        self.rules = {}  # chain -> [{id, alert_type, condition_field, ...}]
 
     def load_rules(self):
         for chain in ["self", "hospital", "community"]:
             r = requests.get(f"{API}/admin/alert-rules", headers=self.headers, params={"chain": chain})
             if r.status_code == 200:
-                self.rules[chain] = r.json().get("data", []) or []
+                self.rules[chain] = r.json().get("data", [])
 
     def evaluate_record(self, record):
+        """Evaluate a health record against rules for its chain."""
         chain = record.get("business_chain", "self")
         alerts = []
         for rule in self.rules.get(chain, []):
@@ -446,34 +499,54 @@ class AlertRuleEngine:
         alert_type = rule.get("alert_type", "")
         field = rule.get("condition_field", "")
         op = rule.get("condition_operator", "")
-        threshold = rule.get("condition_threshold")
+        threshold = rule.get("condition_threshold", 0)
 
+        # Special cases (fall, sos, med_missed don't have threshold fields)
         if alert_type in ("fall", "sos"):
+            # Simulate: 5% chance per record
             if random.random() < 0.05:
                 return {
-                    "elderly_id": record["person_id"],
+                    "person_id": record["person_id"],
+                    "business_chain": record["business_chain"],
                     "alert_type": alert_type,
                     "severity": rule.get("severity", "p0"),
-                    "device_id": record.get("device_id", ""),
+                    "rule_id": rule["id"],
+                    "data_details": json.dumps({"trigger": alert_type, "record": record})
                 }
-        if field and op and threshold is not None:
-            value = record.get(field)
-            if value is None:
-                return None
-            triggered = False
-            if op == ">" and value > threshold: triggered = True
-            elif op == "<" and value < threshold: triggered = True
-            elif op == ">=" and value >= threshold: triggered = True
-            elif op == "<=" and value <= threshold: triggered = True
-            elif op == "=" and value == threshold: triggered = True
-            elif op == "!=" and value != threshold: triggered = True
-            if triggered:
+
+        if alert_type == "med_missed":
+            if record.get("status") == "missed":
                 return {
-                    "elderly_id": record["person_id"],
-                    "alert_type": rule.get("alert_type"),
-                    "severity": rule.get("severity", "p1"),
-                    "device_id": record.get("device_id", ""),
+                    "person_id": record["person_id"],
+                    "business_chain": record["business_chain"],
+                    "alert_type": "med_missed",
+                    "severity": "p2",
+                    "rule_id": rule["id"],
+                    "data_details": json.dumps({"missed_time": record.get("recorded_at")})
                 }
+
+        # Threshold-based rules
+        value = record.get(field)
+        if value is None:
+            return None
+
+        triggered = False
+        if op == ">" and value > threshold: triggered = True
+        elif op == "<" and value < threshold: triggered = True
+        elif op == ">=" and value >= threshold: triggered = True
+        elif op == "<=" and value <= threshold: triggered = True
+        elif op == "=" and value == threshold: triggered = True
+        elif op == "!=" and value != threshold: triggered = True
+
+        if triggered:
+            return {
+                "person_id": record["person_id"],
+                "business_chain": record["business_chain"],
+                "alert_type": rule.get("alert_type"),
+                "severity": rule.get("severity", "p1"),
+                "rule_id": rule.get("id"),
+                "data_details": json.dumps({"field": field, "value": value, "threshold": threshold})
+            }
         return None
 
     def create_alert(self, alert_data):
@@ -484,8 +557,7 @@ def run_alert_engine():
     print("\n[7/10] Running alert rule engine...")
     engine = AlertRuleEngine(JWT_TOKEN, HEADERS)
     engine.load_rules()
-    rule_counts = {k: len(v) if v else 0 for k, v in engine.rules.items()}
-    print(f"  Loaded rules: {rule_counts}")
+    print(f"  Loaded rules: { {k: len(v) for k,v in engine.rules.items()} }")
 
     total_alerts = 0
     for elder in ELDERS:
@@ -494,6 +566,7 @@ def run_alert_engine():
         if not pid:
             continue
         chain = elder["chain"]
+        # Evaluate last 10 health records for this person
         r = requests.get(f"{API}/admin/health-records", headers=HEADERS,
                         params={"personId": pid, "chain": chain, "limit": 10})
         if r.status_code != 200:
@@ -520,13 +593,14 @@ def inject_hospital_data():
         if not pid:
             continue
 
-        # Ward round entries
+        # Ward round entries (3-5 per patient)
         num_rounds = random.randint(3, 5)
         for j in range(num_rounds):
             entry = {
                 "patient_id": pid,
                 "entry_type": random.choice(["vitals", "medication", "nursing"]),
-                "notes": f"查房记录 {j+1}: 生命体征稳定，血压{random.randint(110,150)}/{random.randint(70,90)}",
+                "content": f"查房记录 {j+1}: 生命体征稳定，血压{random.randint(110,150)}/{random.randint(70,90)}",
+                "entry_date": rand_date(14),
                 "created_at": rand_datetime(14)
             }
             r = requests.post(f"{API}/admin/medical/daily-entries", headers=HEADERS, json=entry)
@@ -534,7 +608,7 @@ def inject_hospital_data():
                 total_daily_entries += 1
             time.sleep(0.1)
 
-        # Verifications
+        # Verifications (nurse scans wristband)
         mw_id = device_ids.get(f"medical_{elder['id_card']}", "")
         num_verify = random.randint(5, 10)
         for j in range(num_verify):
@@ -642,14 +716,18 @@ def inject_community_data():
 def inject_compliance_data():
     print("\n[10/10] Running compliance checks...")
     total_checks = 0
+
+    # Run compliance check for each elder
     for elder in ELDERS:
         pid_key = f"{elder['id_card']}:{elder['chain']}"
         pid = person_profiles.get(pid_key)
         if not pid:
             continue
+        chain = elder["chain"]
+
+        # Trigger compliance check
         r = requests.post(f"{API}/admin/compliance-checks/run", headers=HEADERS, json={
-            "rule_code": f"R_{random.randint(1,9)}",
-            "person_id": pid
+            "person_id": pid, "business_chain": chain
         })
         if r.status_code in (200, 201):
             total_checks += 1
@@ -657,14 +735,16 @@ def inject_compliance_data():
         else:
             check(f"Compliance check for {elder['name']}", False, r.text[:80])
         time.sleep(0.2)
+
     print(f"  Total compliance checks: {total_checks}")
 
 # ─── Main ───────────────────────────────────────────────────────────────────
 def main():
     print("=" * 60)
-    print("Eregen Full Chain Data Seed v3")
+    print("Eregen Full Chain Data Seed v4")
     print("=" * 60)
 
+    # Verify API is up
     r = requests.get(f"{API}/health", timeout=5)
     if r.status_code != 200:
         print(f"❌ API not reachable: {r.text}"); sys.exit(1)

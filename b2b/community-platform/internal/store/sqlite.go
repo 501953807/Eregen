@@ -9,6 +9,7 @@ import (
 
 	"eregen.dev/b2b-community-platform/internal/model"
 
+	"github.com/google/uuid"
 	_ "modernc.org/sqlite"
 )
 
@@ -376,12 +377,7 @@ func migrate(db *sql.DB) error {
 }
 
 func generateUUID() string {
-	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
-		uint32(time.Now().UnixNano()),
-		uint16(time.Now().Nanosecond()>>8),
-		uint16(time.Now().UnixNano()>>16)&0xFFFF,
-		uint16(time.Now().UnixNano()>>32)&0xFFFF,
-		time.Now().UnixNano())
+	return uuid.New().String()
 }
 
 func contains(s, substr string) bool {

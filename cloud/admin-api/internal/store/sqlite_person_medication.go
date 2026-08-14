@@ -362,11 +362,12 @@ func nullableInt64Ptr(i *int64) interface{} {
 }
 
 func (s *SqliteStore) ListHealthRecordsV2(ctx context.Context, personID string, chain model.BusinessChain, recordType string, limit int) ([]model.HealthRecordV2, error) {
-	query := `SELECT id, person_id, business_chain, record_type, source, device_id, recorded_at,
-				heart_rate, blood_pressure_sys, blood_pressure_dia, spo2, temperature,
+	query := `SELECT id, person_id, business_chain, COALESCE(record_type, ''), COALESCE(source, ''), device_id,
+				COALESCE(recorded_at, '1970-01-01 00:00:00'),
+				COALESCE(heart_rate, hr), blood_pressure_sys, blood_pressure_dia, spo2, temperature,
 				respiratory_rate, pulse_rate, blood_glucose_fasting, blood_glucose_postprandial,
 				uric_acid, creatinine, hemoglobin_a1c, weight, height, bmi, steps, sleep_hours,
-				exercise_minutes, notes, created_at
+				exercise_minutes, COALESCE(notes, ''), COALESCE(created_at, '1970-01-01 00:00:00')
 			  FROM health_records WHERE person_id = ?`
 	args := []any{personID}
 	if chain != "" {
@@ -389,12 +390,23 @@ func (s *SqliteStore) ListHealthRecordsV2(ctx context.Context, personID string, 
 	var records []model.HealthRecordV2
 	for rows.Next() {
 		var r model.HealthRecordV2
+		var recordedAtRaw, createdAtRaw sql.NullString
 		if err := rows.Scan(&r.ID, &r.PersonID, &r.BusinessChain, &r.RecordType, &r.Source,
-			&r.DeviceID, &r.RecordedAt, &r.HeartRate, &r.BloodPressureSys, &r.BloodPressureDia,
+			&r.DeviceID, &recordedAtRaw, &r.HeartRate, &r.BloodPressureSys, &r.BloodPressureDia,
 			&r.SpO2, &r.Temperature, &r.RespiratoryRate, &r.PulseRate, &r.GlucoseFasting,
 			&r.GlucosePost, &r.UricAcid, &r.Creatinine, &r.HbA1c, &r.Weight, &r.Height,
-			&r.BMI, &r.Steps, &r.SleepHours, &r.ExerciseMinutes, &r.Notes, &r.CreatedAt); err != nil {
+			&r.BMI, &r.Steps, &r.SleepHours, &r.ExerciseMinutes, &r.Notes, &createdAtRaw); err != nil {
 			return nil, fmt.Errorf("scan health record: %w", err)
+		}
+		if recordedAtRaw.Valid {
+			if t, err := time.Parse("2006-01-02 15:04:05", recordedAtRaw.String); err == nil {
+				r.RecordedAt = t
+			}
+		}
+		if createdAtRaw.Valid {
+			if t, err := time.Parse("2006-01-02 15:04:05", createdAtRaw.String); err == nil {
+				r.CreatedAt = t
+			}
 		}
 		records = append(records, r)
 	}

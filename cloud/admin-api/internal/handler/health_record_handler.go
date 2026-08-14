@@ -36,6 +36,9 @@ func (h *HealthRecordHandler) Create(c *gin.Context) {
 // List returns health records for a person.
 func (h *HealthRecordHandler) List(c *gin.Context) {
 	personID := c.Param("personId")
+	if personID == "" {
+		personID = c.Query("personId")
+	}
 	chain := c.Query("chain")
 	recordType := c.Query("record_type")
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
@@ -53,6 +56,9 @@ func (h *HealthRecordHandler) List(c *gin.Context) {
 // GetSummary returns the health summary for a person.
 func (h *HealthRecordHandler) GetSummary(c *gin.Context) {
 	personID := c.Param("personId")
+	if personID == "" {
+		personID = c.Query("personId")
+	}
 	chain := c.Query("chain")
 	summary, err := h.store.GetHealthSummaryV2(c.Request.Context(), personID, model.BusinessChain(chain))
 	if err != nil {

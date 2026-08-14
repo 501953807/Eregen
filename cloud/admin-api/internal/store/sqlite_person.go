@@ -163,14 +163,15 @@ func (s *SqliteStore) CreateProfile(ctx context.Context, pp *model.PersonProfile
 		 subscription_start, subscription_end, health_risk_level, admission_no, department, bed_number,
 		 blood_type, attending_doctor, diagnosis, admission_date, expected_discharge_date, discharge_date,
 		 discharge_type, hospital_id, hospital_id_community, minzheng_certified, subsidy_type,
-		 certification_date, certification_doc, next_review_date, linked_person_id)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 certification_date, certification_doc, next_review_date, linked_person_id, status, reason)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		pp.PersonID, pp.BusinessChain, pp.SubscriptionTier, pp.SubscriptionStatus,
 		formatDate(pp.SubscriptionStart), formatDate(pp.SubscriptionEnd), pp.HealthRiskLevel,
 		pp.AdmissionNo, pp.Department, pp.BedNumber, pp.BloodType, pp.AttendingDoctor, pp.Diagnosis,
 		formatDate(pp.AdmissionDate), formatDate(pp.ExpectedDischarge), formatDate(pp.DischargeDate),
 		pp.DischargeType, pp.HospitalID, pp.HospitalIDCommunity, pp.MinzhengCertified, pp.SubsidyType,
-		formatDate(pp.CertificationDate), pp.CertificationDoc, formatDate(pp.NextReviewDate), pp.LinkedPersonID)
+		formatDate(pp.CertificationDate), pp.CertificationDoc, formatDate(pp.NextReviewDate), pp.LinkedPersonID,
+		pp.Status, pp.Reason)
 	return err
 }
 

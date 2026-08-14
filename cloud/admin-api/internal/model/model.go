@@ -404,13 +404,13 @@ type CommunityElder struct {
 	Age             int        `json:"age,omitempty"`
 	Address         string     `json:"address,omitempty"`
 	EmergencyContact *string    `json:"emergency_contact,omitempty"`
-	BankAccount     string     `json:"bank_account,omitempty"`
-	HospitalID      string     `json:"hospital_id,omitempty"`
-	Status          string     `json:"status"`
-	CreatedAt       time.Time  `json:"created_at"`
-	UpdatedAt       time.Time  `json:"updated_at"`
-	DeactivatedAt   *time.Time `json:"deactivated_at,omitempty"`
-	DeactivatedReason string   `json:"deactivated_reason,omitempty"`
+	BankAccount      *string    `json:"bank_account,omitempty"`
+	HospitalID       string     `json:"hospital_id,omitempty"`
+	Status           string     `json:"status"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+	DeactivatedAt    *time.Time `json:"deactivated_at,omitempty"`
+	DeactivatedReason *string   `json:"deactivated_reason,omitempty"`
 }
 
 // CommunityWristbandDevice represents a community-mode wristband device.

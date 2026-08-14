@@ -1,6 +1,10 @@
 package store
 
-import "context"
+import (
+	"context"
+
+	"eregen.dev/b2b-hospital-api/internal/model"
+)
 
 // Database is the unified interface for all database backends.
 type Database interface {
@@ -13,32 +17,32 @@ type Database interface {
 
 // InstitutionStore handles institution and API key operations.
 type InstitutionStore interface {
-	CreateInstitution(ctx context.Context, inst *Institution) error
-	GetInstitutionByID(ctx context.Context, id string) (*Institution, error)
-	GetInstitutionByCode(ctx context.Context, code string) (*Institution, error)
-	ListInstitutions(ctx context.Context, page, pageSize int) ([]Institution, int, error)
-	UpdateInstitution(ctx context.Context, id string, inst *Institution) error
-	CreateAPIKey(ctx context.Context, key *InstitutionAPIKey) error
-	GetInstitutionByAPIKey(ctx context.Context, keyHash string) (*Institution, error)
+	CreateInstitution(ctx context.Context, inst *model.Institution) error
+	GetInstitutionByID(ctx context.Context, id string) (*model.Institution, error)
+	GetInstitutionByCode(ctx context.Context, code string) (*model.Institution, error)
+	ListInstitutions(ctx context.Context, page, pageSize int) ([]model.Institution, int, error)
+	UpdateInstitution(ctx context.Context, id string, inst *model.Institution) error
+	CreateAPIKey(ctx context.Context, key *model.InstitutionAPIKey) error
+	GetInstitutionByAPIKey(ctx context.Context, keyHash string) (*model.Institution, error)
 }
 
 // VitalStore handles vital sign records.
 type VitalStore interface {
-	StoreVitals(ctx context.Context, v *VitalSignRecord) error
-	BulkStoreVitals(ctx context.Context, vitals []*VitalSignRecord) error
-	GetVitalsForElderly(ctx context.Context, elderlyID string, days int) ([]VitalSignRecord, error)
+	StoreVitals(ctx context.Context, v *model.VitalSignRecord) error
+	BulkStoreVitals(ctx context.Context, vitals []*model.VitalSignRecord) error
+	GetVitalsForElderly(ctx context.Context, elderlyID string, days int) ([]model.VitalSignRecord, error)
 }
 
 // DiagnosisStore handles diagnosis records.
 type DiagnosisStore interface {
-	StoreDiagnoses(ctx context.Context, records []*DiagnosisRecord) error
-	GetDiagnosesForElderly(ctx context.Context, elderlyID string, days int) ([]DiagnosisRecord, error)
+	StoreDiagnoses(ctx context.Context, records []*model.DiagnosisRecord) error
+	GetDiagnosesForElderly(ctx context.Context, elderlyID string, days int) ([]model.DiagnosisRecord, error)
 }
 
 // MedicationStore handles medication records.
 type MedicationStore interface {
-	StoreMedications(ctx context.Context, records []*MedicationRecord) error
-	GetMedicationsForElderly(ctx context.Context, elderlyID string) ([]MedicationRecord, error)
+	StoreMedications(ctx context.Context, records []*model.MedicationRecord) error
+	GetMedicationsForElderly(ctx context.Context, elderlyID string) ([]model.MedicationRecord, error)
 }
 
 // PatientLinkStore handles patient linking.
@@ -49,7 +53,7 @@ type PatientLinkStore interface {
 
 // ElderlyLinkStore handles elderly-institution links.
 type ElderlyLinkStore interface {
-	LinkElderlyToInstitution(ctx context.Context, link *ElderlyInstitutionLink) error
-	GetActiveLinksForInstitution(ctx context.Context, instID string) ([]ElderlyInstitutionLink, error)
-	GetActiveLinksForElderly(ctx context.Context, elderlyID string) ([]ElderlyInstitutionLink, error)
+	LinkElderlyToInstitution(ctx context.Context, link *model.ElderlyInstitutionLink) error
+	GetActiveLinksForInstitution(ctx context.Context, instID string) ([]model.ElderlyInstitutionLink, error)
+	GetActiveLinksForElderly(ctx context.Context, elderlyID string) ([]model.ElderlyInstitutionLink, error)
 }

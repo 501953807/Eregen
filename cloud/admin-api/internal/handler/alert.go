@@ -64,11 +64,11 @@ func (h *AlertHandler) Create(c *gin.Context) {
 		ElderlyID: body.ElderlyID,
 		AlertType: body.AlertType,
 		Severity:  body.Severity,
-		Status:    "pending",
+		Status:    body.Severity,
 		DeviceID:  body.DeviceID,
 	}
 	if err := h.store.CreateAlert(c.Request.Context(), alert); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": alert})
