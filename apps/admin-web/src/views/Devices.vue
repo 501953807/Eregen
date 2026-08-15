@@ -2,48 +2,68 @@
   <div class="devices-page">
     <!-- Page Header -->
     <div class="page-header">
-      <h2 class="page-title">设备管理</h2>
+      <div>
+        <h2 class="page-title">设备管理</h2>
+        <p class="page-subtitle">管理所有硬件设备 · 手环与药盒状态总览</p>
+      </div>
       <div class="header-actions">
-        <el-button type="primary" @click="handleRegister" size="default">+ 注册设备</el-button>
-        <el-button @click="handleRefresh" class="btn-icon">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>刷新
-        </el-button>
+        <HopeBtn variant="filled" @click="handleRegister" size="md">
+          + 注册设备
+        </HopeBtn>
+        <HopeBtn variant="plain" @click="handleRefresh" size="md" iconOnly>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        </HopeBtn>
       </div>
     </div>
 
-    <!-- KPI Cards -->
-    <el-row :gutter="12" style="margin-bottom: 16px;">
-      <el-col :span="5">
-        <el-card shadow="never" class="kpi-card kpi-total">
-          <div class="kpi-num">{{ deviceStore.total }}</div>
-          <div class="kpi-label">设备总数</div>
-        </el-card>
-      </el-col>
-      <el-col :span="5">
-        <el-card shadow="never" class="kpi-card kpi-online">
-          <div class="kpi-num">{{ stats.online_devices }}</div>
-          <div class="kpi-label">在线</div>
-        </el-card>
-      </el-col>
-      <el-col :span="5">
-        <el-card shadow="never" class="kpi-card kpi-offline">
-          <div class="kpi-num">{{ stats.offline_devices }}</div>
-          <div class="kpi-label">离线</div>
-        </el-card>
-      </el-col>
-      <el-col :span="5">
-        <el-card shadow="never" class="kpi-card kpi-upgrade">
-          <div class="kpi-num">{{ stats.outdated_firmware }}</div>
-          <div class="kpi-label">待升级</div>
-        </el-card>
-      </el-col>
-      <el-col :span="4">
-        <el-card shadow="never" class="kpi-card kpi-fault">
-          <div class="kpi-num">{{ stats.fault_count }}</div>
-          <div class="kpi-label">故障</div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- KPI Cards — HopeStatCard -->
+    <div class="kpi-grid">
+      <HopeStatCard
+        :value="deviceStore.total"
+        label="设备总数"
+        icon-color="primary"
+      >
+        <template #icon>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="stats.online_devices"
+        label="在线设备"
+        icon-color="success"
+      >
+        <template #icon>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="stats.offline_devices"
+        label="离线设备"
+        icon-color="info"
+      >
+        <template #icon>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="stats.outdated_firmware"
+        label="待升级固件"
+        icon-color="warning"
+      >
+        <template #icon>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 15 21 19 17 23"/><polyline points="7 10 3 10 3 14"/><path d="M21 3l-9 9-9-9"/></svg>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="stats.fault_count"
+        label="故障设备"
+        icon-color="error"
+      >
+        <template #icon>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </template>
+      </HopeStatCard>
+    </div>
 
     <!-- Filter Bar -->
     <div class="filter-bar">
@@ -68,8 +88,8 @@
       </el-select>
       <span class="filter-spacer"></span>
       <el-input v-model="filters.search" placeholder="搜索设备ID、名称、老人姓名..." clearable class="filter-search" />
-      <el-button @click="handleReset">重置</el-button>
-      <el-button type="primary" @click="handleSearch">搜索</el-button>
+      <HopeBtn variant="plain" size="sm" @click="handleReset">重置</HopeBtn>
+      <HopeBtn variant="filled" size="sm" @click="handleSearch">搜索</HopeBtn>
     </div>
 
     <!-- Bulk Selection Banner -->
@@ -77,21 +97,21 @@
       <el-checkbox :model-value="allSelected" :model-enabled="allSelected" @change="handleToggleSelectAll" />
       <span><strong class="bulk-count">{{ selectedIds.length }}</strong> 项已选中</span>
       <div class="bulk-actions">
-        <el-button size="small" @click="handleBatchOta">批量OTA</el-button>
-        <el-button size="small" @click="handleBatchConfig">批量配置</el-button>
-        <el-button size="small" type="danger" plain @click="handleBatchUnbind">批量注销</el-button>
-        <el-button size="small" @click="clearSelection">取消</el-button>
+        <HopeBtn variant="filled" size="sm" @click="handleBatchOta">批量OTA</HopeBtn>
+        <HopeBtn variant="plain" size="sm" @click="handleBatchConfig">批量配置</HopeBtn>
+        <HopeBtn variant="error" size="sm" @click="handleBatchUnbind">批量注销</HopeBtn>
+        <HopeBtn variant="ghost" size="sm" @click="clearSelection">取消</HopeBtn>
       </div>
     </div>
 
     <!-- Device Table -->
-    <el-card shadow="never" class="table-card">
+    <HopeCard subtitle="所有设备列表 · 点击行查看详情">
       <template #header>
         <div class="table-toolbar">
           <span class="table-title">设备列表</span>
           <div class="table-actions">
-            <el-button size="small" @click="exportDevices">导出CSV</el-button>
-            <el-button size="small" @click="handleRefresh">刷新</el-button>
+            <HopeBtn variant="plain" size="sm" @click="exportDevices">导出CSV</HopeBtn>
+            <HopeBtn variant="plain" size="sm" @click="handleRefresh">刷新</HopeBtn>
           </div>
         </div>
       </template>
@@ -126,10 +146,7 @@
         </el-table-column>
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
-            <span class="status-badge" :class="statusClass(row.status)">
-              <span class="status-dot" :class="statusClass(row.status)"></span>
-              {{ statusLabel(row.status) }}
-            </span>
+            <HopeBadge :color="badgeColor(row.status)">{{ statusLabel(row.status) }}</HopeBadge>
           </template>
         </el-table-column>
         <el-table-column label="固件" width="100">
@@ -172,14 +189,16 @@
           @current-change="handlePageChange"
         />
       </div>
-    </el-card>
+    </HopeCard>
 
     <!-- Side Panel -->
     <div class="side-panel-overlay" :class="{ show: panelOpen }" @click="closePanel" />
     <div class="side-panel" :class="{ open: panelOpen }">
       <div class="panel-header">
         <span class="panel-title">设备详情</span>
-        <button class="panel-close" @click="closePanel">&#10005;</button>
+        <HopeBtn variant="ghost" size="sm" iconOnly @click="closePanel">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </HopeBtn>
       </div>
       <div class="panel-body" v-if="panelDevice">
         <div class="panel-device-header">
@@ -207,10 +226,7 @@
         <div class="panel-section">
           <div class="panel-section-title">实时状态</div>
           <div class="panel-row"><span class="panel-row-label">连接状态</span><span class="panel-row-value">
-            <span class="status-badge" :class="statusClass(panelDevice.status)">
-              <span class="status-dot" :class="statusClass(panelDevice.status)"></span>
-              {{ statusLabel(panelDevice.status) }}
-            </span>
+            <HopeBadge :color="badgeColor(panelDevice.status)">{{ statusLabel(panelDevice.status) }}</HopeBadge>
           </span></div>
           <div class="panel-row"><span class="panel-row-label">信号强度</span><span class="panel-row-value">{{ signalStrength(panelDevice) }}</span></div>
           <div class="panel-row"><span class="panel-row-label">电量</span><span class="panel-row-value">{{ panelDevice.battery_pct ?? '—' }}%</span></div>
@@ -235,10 +251,10 @@
         </div>
 
         <div class="panel-actions">
-          <el-button size="default" @click="handleOTA(panelDevice)" style="flex:1;">OTA升级</el-button>
-          <el-button size="default" @click="handleConfig(panelDevice)" style="flex:1;">远程配置</el-button>
-          <el-button size="default" @click="handleReboot(panelDevice)" style="flex:1;">远程重启</el-button>
-          <el-button size="default" type="danger" plain @click="handleUnbind(panelDevice)" style="flex:1;">注销设备</el-button>
+          <HopeBtn variant="filled" @click="handleOTA(panelDevice)" style="flex:1;">OTA升级</HopeBtn>
+          <HopeBtn variant="plain" @click="handleConfig(panelDevice)" style="flex:1;">远程配置</HopeBtn>
+          <HopeBtn variant="plain" @click="handleReboot(panelDevice)" style="flex:1;">远程重启</HopeBtn>
+          <HopeBtn variant="error" @click="handleUnbind(panelDevice)" style="flex:1;">注销设备</HopeBtn>
         </div>
       </div>
     </div>
@@ -263,8 +279,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showConfigDialog = false">取消</el-button>
-        <el-button type="primary" @click="confirmConfig" :loading="false">确认下发</el-button>
+        <HopeBtn variant="plain" @click="showConfigDialog = false">取消</HopeBtn>
+        <HopeBtn variant="filled" @click="confirmConfig" :loading="false">确认下发</HopeBtn>
       </template>
     </el-dialog>
   </div>
@@ -277,6 +293,7 @@ import { useDeviceStore } from '@/stores/device'
 import { devicesApi } from '@/api/devices'
 import type { Device } from '@/types'
 import { usePagination, useFilters, useSelection } from '@/composables'
+import { HopeCard, HopeStatCard, HopeBadge, HopeBtn } from '@/components/hope'
 
 const deviceStore = useDeviceStore()
 
@@ -346,6 +363,12 @@ function statusClass(s: string): string {
 
 function statusLabel(s: string): string {
   return s === 'online' ? '在线' : s === 'offline' ? '离线' : '故障'
+}
+
+function badgeColor(s: string): 'success' | 'error' | 'info' {
+  if (s === 'online') return 'success'
+  if (s === 'offline') return 'info'
+  return 'error'
 }
 
 function modeLabel(m?: string): string {
@@ -516,120 +539,72 @@ onMounted(() => {
   padding: 0;
 }
 
-/* Page header */
+/* Page Header */
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  align-items: flex-start;
+  margin-bottom: 24px;
 }
 .page-title {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
-  color: #29404A;
+  color: var(--hope-text);
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+.page-subtitle {
+  font-size: 13px;
+  color: var(--hope-text-muted);
   margin: 0;
 }
 .header-actions {
   display: flex;
   gap: 8px;
 }
-.btn-icon {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  border-radius: var(--hope-radius-lg) !important;
-  border: 1px solid var(--hope-border);
-  color: var(--hope-text-secondary);
-  background: var(--hope-surface);
-  transition: all 0.2s;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 8px 14px;
-}
-.btn-icon:hover {
-  border-color: var(--hope-primary);
-  color: var(--hope-primary);
-  background: var(--hope-primary-lighter);
-}
-.el-button--primary {
-  background: linear-gradient(135deg, #5C8D73 0%, #6FAF8F 100%) !important;
-  border-color: transparent !important;
-  border-radius: var(--hope-radius-lg) !important;
-  box-shadow: var(--hope-shadow-primary) !important;
-  font-weight: 600 !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-.el-button--primary:hover {
-  background: linear-gradient(135deg, #6FAF8F 0%, #7BAF8C 100%) !important;
-  box-shadow: var(--hope-shadow-primary-hover) !important;
-  transform: translateY(-1px) !important;
-}
 
-/* KPI Cards */
-.kpi-card :deep(.el-card__body) {
-  padding: 18px;
-  text-align: center;
+/* KPI Grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
 }
-.kpi-num {
-  font-size: 28px;
-  font-weight: 800;
-  line-height: 1;
+.kpi-grid .hope-stat-card {
+  cursor: default;
 }
-.kpi-label {
-  font-size: 12px;
-  color: #6B8980;
-  margin-top: 4px;
-  font-weight: 600;
-}
-.kpi-total .kpi-num { color: #5C8D73; }
-.kpi-online .kpi-num { color: #6FAF8F; }
-.kpi-offline .kpi-num { color: #6E9FC4; }
-.kpi-upgrade .kpi-num { color: #D9A441; }
-.kpi-fault .kpi-num { color: #D77B72; }
 
 /* Filter Bar */
 .filter-bar {
-  background: white;
-  border-radius: 14px;
-  padding: 14px 18px;
   display: flex;
-  gap: 10px;
-  margin-bottom: 16px;
-  border: 1px solid #E5EDE6;
-  flex-wrap: wrap;
   align-items: center;
-  box-shadow: 0 2px 8px rgba(60,90,70,0.04);
-}
-.filter-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #29404A;
-  white-space: nowrap;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 .filter-select { width: 130px; }
-.filter-select :deep(.el-input__wrapper) {
-  border-radius: 10px !important;
-}
 .filter-search { width: 240px; }
-.filter-search :deep(.el-input__wrapper) { border-radius: 10px !important; }
 .filter-spacer { flex: 1; }
 
 /* Bulk Banner */
 .bulk-banner {
-  background: linear-gradient(135deg, #EEF4EF, #E8F0EA);
-  border: 1px solid #C8DFD0;
-  border-radius: 12px;
+  background: var(--hope-primary-lighter);
+  border: 1px solid var(--hope-primary-light);
+  border-radius: var(--hope-radius-lg);
   padding: 10px 16px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   display: none;
   align-items: center;
   gap: 12px;
   font-size: 13px;
 }
-.bulk-banner.show { display: flex; }
+.bulk-banner.show {
+  display: flex;
+  animation: eregen-list-enter 0.2s ease-out;
+}
 .bulk-count {
   font-weight: 700;
-  color: #47745C;
+  color: var(--hope-primary);
 }
 .bulk-actions {
   display: flex;
@@ -637,28 +612,20 @@ onMounted(() => {
   margin-left: auto;
 }
 
-/* Table Card */
-.table-card :deep(.el-card__header) {
-  padding: 0;
-}
-.table-card :deep(.el-card__body) {
-  padding: 0;
-}
+/* Table Toolbar */
 .table-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
-  border-bottom: 1px solid #F3F5F1;
 }
 .table-title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
-  color: #29404A;
+  color: var(--hope-text);
 }
 .table-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 /* Device Cell */
@@ -670,61 +637,44 @@ onMounted(() => {
 .device-thumb {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--hope-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
   flex-shrink: 0;
 }
-.thumb-bracelet { background: #EEF4EF; }
-.thumb-pillbox { background: #F8F6F1; }
+.thumb-bracelet { background: var(--hope-primary-lighter); }
+.thumb-pillbox { background: var(--hope-surface-light); }
 .device-name {
   font-weight: 600;
   font-size: 13px;
-  color: #29404A;
+  color: var(--hope-text);
 }
 .device-model {
   font-size: 11px;
-  color: #8FA8A0;
+  color: var(--hope-text-muted);
 }
-
-/* Status Badges */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-}
-.status-badge.online { background: #E8F4EC; color: #4A8A6A; }
-.status-badge.offline { background: #F3F5F1; color: #6B8980; }
-.status-badge.fault { background: #FDF0EE; color: #B85C54; }
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-.status-dot.online { background: #4A8A6A; }
-.status-dot.offline { background: #8FA8A0; }
-.status-dot.fault { background: #B85C54; }
 
 /* Version Tag */
+.mono {
+  font-family: 'SF Mono', Consolas, monospace;
+  font-size: 12px;
+  color: var(--hope-text-secondary);
+}
 .version-tag {
   font-family: 'SF Mono', Consolas, monospace;
   font-size: 11px;
   padding: 2px 8px;
-  border-radius: 6px;
-  background: #F3F5F1;
+  border-radius: var(--hope-radius-sm);
+  background: var(--hope-surface-light);
   font-weight: 500;
-  color: #4A6260;
+  color: var(--hope-text-secondary);
 }
 .version-tag.outdated {
-  background: #FEF7E8;
-  color: #B8860B;
-  border: 1px solid #FDE68A;
+  background: var(--hope-warning-light);
+  color: #926C0E;
+  border: 1px solid rgba(250,169,56,0.3);
 }
 
 /* Action Links */
@@ -733,30 +683,29 @@ onMounted(() => {
   gap: 12px;
 }
 .action-link {
-  color: #5C8D73;
+  color: var(--hope-primary);
   font-size: 12px;
   cursor: pointer;
   font-weight: 600;
   text-decoration: none;
   transition: color 0.15s;
 }
-.action-link:hover { color: #47745C; text-decoration: underline; }
-.action-link.danger { color: #B85C54; }
-.action-link.danger:hover { color: #9A4A42; }
+.action-link:hover { color: var(--hope-primary-hover); text-decoration: underline; }
+.action-link.danger { color: var(--hope-danger); }
+.action-link.danger:hover { color: #9B3A33; }
 
 /* Pagination */
 .pagination-wrapper {
   display: flex;
   justify-content: flex-end;
-  padding: 14px 20px;
-  border-top: 1px solid #F3F5F1;
+  padding: 14px 22px;
 }
 
 /* ========== Side Panel ========== */
 .side-panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(41,64,74,0.3);
+  background: rgba(26,26,46,0.3);
   z-index: 200;
   display: none;
 }
@@ -767,40 +716,30 @@ onMounted(() => {
   right: -480px;
   bottom: 0;
   width: 480px;
-  background: white;
+  background: var(--hope-surface);
   z-index: 201;
   transition: right 0.3s ease;
   overflow-y: auto;
-  box-shadow: -10px 0 40px rgba(60,90,70,0.12);
+  box-shadow: var(--hope-shadow-lg);
+  border-left: 1px solid var(--hope-border);
 }
 .side-panel.open { right: 0; }
 .panel-header {
   padding: 20px 24px;
-  border-bottom: 1px solid #E5EDE6;
+  border-bottom: 1px solid var(--hope-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky;
   top: 0;
-  background: white;
+  background: var(--hope-surface);
   z-index: 1;
 }
-.panel-title { font-size: 15px; font-weight: 700; color: #29404A; }
-.panel-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: none;
-  background: #F3F5F1;
-  cursor: pointer;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s;
-  color: #6B8980;
+.panel-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--hope-text);
 }
-.panel-close:hover { background: #E5EDE6; }
 .panel-body { padding: 20px 24px; }
 
 .panel-device-header {
@@ -812,27 +751,27 @@ onMounted(() => {
 .panel-device-icon {
   width: 56px;
   height: 56px;
-  border-radius: 14px;
+  border-radius: var(--hope-radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28px;
 }
-.icon-bracelet { background: #EEF4EF; }
-.icon-pillbox { background: #F8F6F1; }
-.panel-device-name { font-size: 18px; font-weight: 700; color: #29404A; }
-.panel-device-id { font-size: 12px; color: #8FA8A0; font-family: monospace; }
+.icon-bracelet { background: var(--hope-primary-lighter); }
+.icon-pillbox { background: var(--hope-surface-light); }
+.panel-device-name { font-size: 18px; font-weight: 700; color: var(--hope-text); }
+.panel-device-id { font-size: 12px; color: var(--hope-text-muted); font-family: monospace; }
 
 .panel-section { margin-bottom: 20px; }
 .panel-section-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  color: #6B8980;
+  color: var(--hope-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.08em;
   margin-bottom: 10px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #F3F5F1;
+  border-bottom: 1px solid var(--hope-border);
 }
 .panel-row {
   display: flex;
@@ -840,9 +779,9 @@ onMounted(() => {
   padding: 6px 0;
   font-size: 13px;
 }
-.panel-row-label { color: #6B8980; }
-.panel-row-value { font-weight: 600; color: #29404A; }
-.panel-link { color: #5C8D73; cursor: pointer; }
+.panel-row-label { color: var(--hope-text-muted); }
+.panel-row-value { font-weight: 600; color: var(--hope-text); }
+.panel-link { color: var(--hope-primary); cursor: pointer; }
 .panel-link:hover { text-decoration: underline; }
 
 /* OTA Progress */
@@ -852,11 +791,11 @@ onMounted(() => {
   justify-content: space-between;
   font-size: 12px;
   margin-bottom: 4px;
-  color: #4A6260;
+  color: var(--hope-text-muted);
 }
 .progress-bar {
   height: 8px;
-  background: #E5EDE6;
+  background: var(--hope-surface-light);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -865,9 +804,9 @@ onMounted(() => {
   border-radius: 4px;
   transition: width 0.5s;
 }
-.progress-fill.success { background: #5C8D73; }
+.progress-fill.success { background: var(--hope-primary-gradient); }
 .progress-fill.running {
-  background: #7BAF8C;
+  background: var(--hope-primary-gradient);
   animation: progressPulse 1.5s infinite;
 }
 @keyframes progressPulse {
@@ -876,7 +815,7 @@ onMounted(() => {
 }
 .progress-meta {
   font-size: 11px;
-  color: #8FA8A0;
+  color: var(--hope-text-muted);
   margin-top: 6px;
 }
 
@@ -885,14 +824,18 @@ onMounted(() => {
   gap: 8px;
   margin-top: 20px;
   padding-top: 16px;
-  border-top: 1px solid #E5EDE6;
+  border-top: 1px solid var(--hope-border);
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+}
 @media (max-width: 768px) {
-  .devices-page :deep(.el-col) { width: 100% !important; flex: 0 0 100% !important; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .devices-page :deep(.el-table) { font-size: 12px; }
   .devices-page :deep(.el-table th),
   .devices-page :deep(.el-table td) { padding: 6px 4px; }
+  .side-panel { width: 100%; right: -100%; }
 }
 </style>
