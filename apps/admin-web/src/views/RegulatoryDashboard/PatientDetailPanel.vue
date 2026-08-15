@@ -19,7 +19,7 @@
           <div class="section-title">基本信息</div>
           <div class="panel-row"><span class="panel-label">科室</span><span class="panel-value">{{ patient.department }}</span></div>
           <div class="panel-row"><span class="panel-label">床号</span><span class="panel-value">{{ patient.bed_number }}</span></div>
-          <div class="panel-row"><span class="panel-label">最后核验</span><span class="panel-value">{{ patient.last_verify || '未核验' }}</span></div>
+          <div class="panel-row"><span class="panel-label">最后核验</span><span class="panel-value">{{ patient.last_verify || '' }}</span><span v-if="!patient.last_verify" class="empty-hint">未核验</span></div>
           <div class="panel-row"><span class="panel-label">围栏状态</span>
             <span class="panel-value">
               <span class="status-badge" :class="patient.fence_status === 'inside' ? 'badge-success' : 'badge-danger'">
@@ -53,29 +53,59 @@ watch(visible, v => { if (!v) emit('update:modelValue', false) })
 </script>
 
 <style scoped>
-.side-panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: none; }
+.side-panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: none; backdrop-filter: blur(2px); }
 .side-panel-overlay.show { display: block; }
-.side-panel { position: fixed; top: 0; right: -520px; bottom: 0; width: 520px; background: white; z-index: 201; transition: right 0.3s ease; overflow-y: auto; box-shadow: -10px 0 40px rgba(0,0,0,0.1); }
+.side-panel {
+  position: fixed; top: 0; right: -520px; bottom: 0; width: 520px;
+  background: var(--hope-surface); z-index: 201;
+  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto; box-shadow: -10px 0 40px rgba(0,0,0,0.12);
+}
 .side-panel.open { right: 0; }
-.panel-header { padding: 20px 24px; border-bottom: 1px solid var(--el-border-color-light); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: white; z-index: 1; }
-.panel-title { font-size: 15px; font-weight: 700; }
-.panel-close { width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--el-fill-color-light); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
-.panel-close:hover { background: var(--el-border-color-light); }
+.panel-header {
+  padding: 20px 24px; border-bottom: 1px solid var(--hope-border);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; background: var(--hope-surface); z-index: 1;
+}
+.panel-title { font-size: 15px; font-weight: 700; color: var(--hope-text); }
+.panel-close {
+  width: 32px; height: 32px; border-radius: var(--hope-radius-md);
+  border: 1px solid var(--hope-border); background: var(--hope-bg);
+  cursor: pointer; font-size: 18px; color: var(--hope-text-muted);
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.panel-close:hover { background: var(--hope-border); color: var(--hope-text); }
 .panel-body { padding: 20px 24px; }
-.patient-detail-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--el-border-color-light); }
-.patient-avatar-large { width: 48px; height: 48px; border-radius: 50%; background: #DDEBE1; color: #47745C; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; }
-.patient-detail-name { font-size: 17px; font-weight: 700; color: var(--el-text-color-primary); }
-.patient-detail-id { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 2px; }
+.patient-detail-header {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 20px; padding-bottom: 16px;
+  border-bottom: 1px solid var(--hope-border);
+}
+.patient-avatar-large {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: rgba(7,154,162,0.12); color: #079aa2;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700; flex-shrink: 0;
+}
+.patient-detail-name { font-size: 17px; font-weight: 700; color: var(--hope-text); }
+.patient-detail-id  { font-size: 12px; color: var(--hope-text-muted); margin-top: 2px; }
 .info-section { margin-bottom: 20px; }
-.section-title { font-size: 13px; font-weight: 700; color: var(--el-text-color-regular); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--el-border-color-light); }
-.panel-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
-.panel-label { font-size: 13px; color: var(--el-text-color-secondary); font-weight: 500; }
-.panel-value { font-size: 13px; color: var(--el-text-color-primary); font-weight: 600; }
-.status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; }
-.badge-success { background: #F0FDF4; color: #16A34A; }
-.badge-danger { background: #FEF2F2; color: #DC2626; }
+.section-title {
+  font-size: 12px; font-weight: 700; color: var(--hope-text-muted);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-bottom: 10px; padding-bottom: 6px;
+  border-bottom: 1px solid var(--hope-border);
+}
+.panel-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
+.panel-label { font-size: 13px; color: var(--hope-text-muted); font-weight: 500; }
+.panel-value { font-size: 13px; color: var(--hope-text); font-weight: 600; }
+.status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: var(--hope-radius-pill); font-size: 12px; font-weight: 600; }
+.badge-success { background: rgba(26,160,83,0.10); color: #1aa053; }
+.badge-danger  { background: rgba(192,50,33,0.10); color: #c03221; }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-.dot-success { background: #16A34A; }
-.dot-danger { background: #DC2626; }
-.mono { font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px; }
+.dot-success { background: #1aa053; }
+.dot-danger  { background: #c03221; }
+.mono { font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px; color: var(--hope-text-secondary); }
+.empty-hint { color: var(--hope-text-muted); font-style: italic; }
+.alert-tags-wrap { display: flex; flex-wrap: wrap; }
 </style>

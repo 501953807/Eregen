@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { handleApiError, handleApiSuccess } from '@/utils/error'
 import { regulatoryApi, type RegulatoryAlert, type RuleConfig, type ComplianceReport } from '@/api/regulatory'
+import { HopeCard, HopeBtn, HopeTabs, HopeBadge } from '@/components/hope'
 import KpiCards from './RegulatoryDashboard/KpiCards.vue'
 import AlarmList from './RegulatoryDashboard/AlarmList.vue'
 import PatientList from './RegulatoryDashboard/PatientList.vue'
@@ -172,6 +173,12 @@ function exportReport() { ElMessage.info('导出功能开发中...') }
 
 let patientList = ref<any[]>([])
 
+const tabs = [
+  { label: '在院患者列表', value: 'patients' },
+  { label: '规则配置', value: 'rules' },
+  { label: '合规报表', value: 'compliance' },
+]
+
 onMounted(async () => {
   await Promise.all([loadOverview(), loadPatients(), loadAlerts(), loadRuleConfigs()])
 })
@@ -179,14 +186,29 @@ onMounted(async () => {
 
 <template>
   <div class="regulatory-page">
+    <!-- Page Header -->
     <div class="page-header">
-      <h2 class="page-title">监管总览看板</h2>
+      <div>
+        <h2 class="page-title">监管总览看板</h2>
+        <p class="page-subtitle">医疗监管规则引擎 · 在院患者异常追踪与合规审计</p>
+      </div>
       <div class="header-actions">
-        <el-button @click="loadOverview" size="default"><el-icon><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></el-icon> 刷新</el-button>
-        <el-button type="primary" @click="exportReport" size="default"><el-icon><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></el-icon> 导出报表</el-button>
+        <HopeBtn variant="plain" size="md" @click="loadOverview">
+          <template #icon>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+          </template>
+          刷新
+        </HopeBtn>
+        <HopeBtn variant="filled" size="md" @click="exportReport">
+          <template #icon>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </template>
+          导出报表
+        </HopeBtn>
       </div>
     </div>
 
+    <!-- KPI Cards -->
     <KpiCards
       :overview="overview"
       :today-admissions="todayAdmissions"
@@ -195,37 +217,35 @@ onMounted(async () => {
       :auto-handle-rate="autoHandleRate"
     />
 
-    <el-card shadow="never" class="filter-card">
-      <el-row :gutter="12" align="middle">
-        <el-col :span="5">
-          <el-select v-model="filters.department" placeholder="全部科室" clearable filterable style="width: 100%;">
+    <!-- Filters -->
+    <HopeCard class="filter-card" style="margin-bottom: 16px;">
+      <template #header>
+        <div class="filter-bar">
+          <el-select v-model="filters.department" placeholder="全部科室" clearable filterable style="width: 180px;">
             <el-option v-for="d in departments" :key="d" :label="d" :value="d" />
           </el-select>
-        </el-col>
-        <el-col :span="5">
-          <el-select v-model="filters.severity" placeholder="告警等级" clearable style="width: 100%;">
+          <el-select v-model="filters.severity" placeholder="告警等级" clearable style="width: 140px;">
             <el-option label="P0 - 紧急" value="high" />
             <el-option label="P1 - 重要" value="medium" />
             <el-option label="P2 - 一般" value="low" />
           </el-select>
-        </el-col>
-        <el-col :span="6">
-          <el-input v-model="filters.search" placeholder="搜索患者姓名/ID..." clearable />
-        </el-col>
-        <el-col :span="3">
-          <el-button type="primary" @click="handleSearch" size="default"><el-icon><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></el-icon> 查询</el-button>
-        </el-col>
-        <el-col :span="3" style="text-align: right;"><el-button @click="handleResetFilters">重置</el-button></el-col>
-      </el-row>
-    </el-card>
+          <el-input v-model="filters.search" placeholder="搜索患者姓名/ID..." clearable style="width: 220px;" />
+          <div class="filter-actions">
+            <HopeBtn variant="filled" size="sm" @click="handleSearch">查询</HopeBtn>
+            <HopeBtn variant="plain" size="sm" @click="handleResetFilters">重置</HopeBtn>
+          </div>
+        </div>
+      </template>
+    </HopeCard>
 
-    <el-row :gutter="20">
+    <!-- Alerts + Rules Row -->
+    <el-row :gutter="16" style="margin-bottom: 16px;">
       <el-col :span="16">
-        <el-card shadow="never" class="content-panel">
+        <HopeCard title="实时异常告警列表">
           <template #header>
             <div class="panel-header">
               <span class="panel-title">实时异常告警列表</span>
-              <el-button size="small" @click="refreshAlerts">刷新状态</el-button>
+              <HopeBtn variant="text" size="sm" @click="refreshAlerts">刷新状态</HopeBtn>
             </div>
           </template>
           <AlarmList
@@ -237,7 +257,7 @@ onMounted(async () => {
             @acknowledge="acknowledgeAlert"
             @resolve="resolveAlert"
           />
-        </el-card>
+        </HopeCard>
       </el-col>
       <el-col :span="8">
         <RuleConfigPanel
@@ -252,12 +272,22 @@ onMounted(async () => {
       </el-col>
     </el-row>
 
-    <el-card shadow="never" style="margin-top: 20px;">
-      <el-tabs v-model="activeTab" type="border-card">
-        <el-tab-pane label="在院患者列表" name="patients">
-          <PatientList :patient-list="patientList" :loading="loading.patients" @audit="viewAuditTrail" @detail="viewPatientDetail" />
-        </el-tab-pane>
-        <el-tab-pane label="规则配置" name="rules">
+    <!-- Tabs: Patients / Rules / Compliance -->
+    <HopeCard>
+      <HopeTabs
+        v-model="activeTab"
+        :tabs="tabs"
+        :animated="true"
+      />
+      <div class="tab-content">
+        <PatientList
+          v-if="activeTab === 'patients'"
+          :patient-list="patientList"
+          :loading="loading.patients"
+          @audit="viewAuditTrail"
+          @detail="viewPatientDetail"
+        />
+        <div v-else-if="activeTab === 'rules'" class="tab-pane-inner">
           <RuleConfigPanel
             :rule-status-list="[]"
             :department-stats="[]"
@@ -267,12 +297,12 @@ onMounted(async () => {
             @edit-rule="editRuleConfig"
             @save-rule="saveRuleConfig"
           />
-        </el-tab-pane>
-        <el-tab-pane label="合规报表" name="compliance">
+        </div>
+        <div v-else-if="activeTab === 'compliance'" class="tab-pane-inner">
           <CompliancePanel :report="complianceReport" @generate="loadComplianceReport" />
-        </el-tab-pane>
-      </el-tabs>
-    </el-card>
+        </div>
+      </div>
+    </HopeCard>
 
     <PatientDetailPanel v-model="showPatientDetail" :patient="selectedPatient" />
   </div>
@@ -280,29 +310,66 @@ onMounted(async () => {
 
 <style scoped>
 .regulatory-page { padding: 0; }
-.regulatory-page :deep(.el-card:not(.filter-card):not(.content-panel)) {
-  border-radius: 12px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
-  transition: all var(--duration-normal) var(--easing-out);
+
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding: 24px 28px;
+  background: var(--hope-surface);
+  border-radius: var(--hope-radius-lg);
+  border: 1px solid var(--hope-border);
+  box-shadow: var(--hope-shadow-card);
 }
-.regulatory-page :deep(.el-card:hover) {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
-  transform: translateY(-1px);
+.page-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--hope-text);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.02em;
 }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.page-title { font-size: 22px; font-weight: 800; color: var(--el-text-color-primary); margin: 0; }
-.header-actions { display: flex; gap: 12px; }
-.filter-card :deep(.el-card__body) { padding: 16px; }
-.content-panel { margin-bottom: 0; }
+.page-subtitle {
+  font-size: 13px;
+  color: var(--hope-text-muted);
+  margin: 0;
+}
+.header-actions { display: flex; gap: 10px; align-items: center; }
+
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.filter-actions { display: flex; gap: 8px; margin-left: auto; }
+
+/* Panel header */
 .panel-header { display: flex; justify-content: space-between; align-items: center; }
-.panel-title { font-size: 15px; font-weight: 700; color: var(--el-text-color-primary); border-left: 3px solid #5C8D73; padding-left: 8px; }
-:deep(.el-tabs--border-card) { border: none; }
-:deep(.el-tabs--border-card > .el-tabs__header) { border-bottom: 1px solid var(--el-border-color-light); margin: 0; }
+.panel-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--hope-text);
+  border-left: 3px solid #5C8D73;
+  padding-left: 8px;
+}
+
+/* Tabs */
+.tab-content { padding: 20px 22px 0; }
+.tab-pane-inner { padding-top: 4px; }
+
+/* HopeCard override for filter card */
+.filter-card :deep(.hope-content-card__body) { padding: 14px 22px; }
 
 /* Responsive */
 @media (max-width: 768px) {
+  .regulatory-page .page-header { flex-direction: column; gap: 12px; padding: 16px; }
   .regulatory-page :deep(.el-table) { font-size: 12px; }
   .regulatory-page :deep(.el-table th),
   .regulatory-page :deep(.el-table td) { padding: 6px 4px; }
+  .filter-bar { flex-direction: column; align-items: stretch; }
+  .filter-actions { margin-left: 0; }
 }
 </style>

@@ -1,42 +1,58 @@
 <template>
-  <el-table :data="computedAlerts" stripe class="alarm-table" v-loading="loading">
-    <el-table-column prop="triggered_at" label="时间" width="140">
-      <template #default="{ row }">{{ formatTime(row.triggered_at) }}</template>
-    </el-table-column>
-    <el-table-column label="患者" width="130">
-      <template #default="{ row }">
-        <div class="patient-cell">
-          <div class="patient-avatar" :class="row.patient_id?.endsWith('1') ? 'avatar-blue' : 'avatar-pink'">{{ (row.patient_name || '?')[0] }}</div>
-          <div>
-            <div class="patient-name">{{ row.patient_name || row.patient_id }}</div>
-            <div class="patient-id">ID: {{ row.patient_id }}</div>
-          </div>
+  <HopeTable
+    :columns="alertColumns"
+    :data="computedAlerts"
+    :loading="loading"
+    :compact="true"
+    class="alarm-table"
+  >
+    <template #toolbar>
+      <div class="alarm-toolbar">
+        <span class="alarm-count">共 {{ computedAlerts.length }} 条告警</span>
+      </div>
+    </template>
+
+    <template #col-triggered_at="{ row }">
+      <span class="time-cell">{{ formatTime(row.triggered_at) }}</span>
+    </template>
+
+    <template #col-patient_name="{ row }">
+      <div class="patient-cell">
+        <div class="patient-avatar" :class="row.patient_id?.endsWith('1') ? 'avatar-blue' : 'avatar-pink'">
+          {{ (row.patient_name || '?')[0] }}
         </div>
-      </template>
-    </el-table-column>
-    <el-table-column label="告警类型" min-width="150">
-      <template #default="{ row }">
-        <span class="alert-type-badge" :class="alertTypeClass(row.alert_type)">{{ row.alert_type || row.detail?.slice(0, 20) || '—' }}</span>
-      </template>
-    </el-table-column>
-    <el-table-column label="等级" width="80">
-      <template #default="{ row }">
-        <el-tag :type="severityTag(row.severity)" size="small" effect="light">{{ severityLabel(row.severity) }}</el-tag>
-      </template>
-    </el-table-column>
-    <el-table-column label="详情" show-overflow-tooltip><template #default="{ row }">{{ row.detail || '—' }}</template></el-table-column>
-    <el-table-column label="操作" width="180" fixed="right">
-      <template #default="{ row }">
-        <el-button link type="primary" size="small" @click="$emit('location', row)">查看定位</el-button>
-        <el-button v-if="row.status === 'pending'" link type="success" size="small" @click="$emit('acknowledge', row.id)">确认</el-button>
-        <el-button v-if="row.status !== 'resolved'" link type="warning" size="small" @click="$emit('resolve', row.id)">解决</el-button>
-      </template>
-    </el-table-column>
-  </el-table>
+        <div>
+          <div class="patient-name">{{ row.patient_name || row.patient_id }}</div>
+          <div class="patient-id">ID: {{ row.patient_id }}</div>
+        </div>
+      </div>
+    </template>
+
+    <template #col-alert_type="{ row }">
+      <HopeBadge :color="alertBadgeColor(row.alert_type)">{{ row.alert_type || row.detail?.slice(0, 20) || '—' }}</HopeBadge>
+    </template>
+
+    <template #col-severity="{ row }">
+      <span :class="['sev-badge', 'sev-' + row.severity]">{{ severityLabel(row.severity) }}</span>
+    </template>
+
+    <template #col-detail="{ row }">
+      <span class="detail-cell">{{ row.detail || '—' }}</span>
+    </template>
+
+    <template #col-actions="{ row }">
+      <div class="action-btns">
+        <HopeBtn variant="text" size="sm" @click="$emit('location', row)">定位</HopeBtn>
+        <HopeBtn v-if="row.status === 'pending'" variant="text" size="sm" color="success" @click="$emit('acknowledge', row.id)">确认</HopeBtn>
+        <HopeBtn v-if="row.status !== 'resolved'" variant="text" size="sm" color="warning" @click="$emit('resolve', row.id)">解决</HopeBtn>
+      </div>
+    </template>
+  </HopeTable>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { HopeTable, HopeBadge, HopeBtn } from '@/components/hope'
 
 const props = defineProps<{
   alerts: any[]
@@ -44,6 +60,21 @@ const props = defineProps<{
   severity: string
   search: string
 }>()
+
+const emit = defineEmits<{
+  location: [alert: any]
+  acknowledge: [id: string]
+  resolve: [id: string]
+}>()
+
+const alertColumns = [
+  { prop: 'triggered_at', label: '时间' },
+  { prop: 'patient_name', label: '患者' },
+  { prop: 'alert_type', label: '告警类型' },
+  { prop: 'severity', label: '等级' },
+  { prop: 'detail', label: '详情' },
+  { prop: 'actions', label: '操作' },
+]
 
 const computedAlerts = computed(() => {
   let result = props.alerts
@@ -66,39 +97,39 @@ function formatTime(ts?: string): string {
   return new Date(ts).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
-function severityTag(sev?: string): 'danger' | 'warning' | 'info' {
-  if (sev === 'high') return 'danger'
-  if (sev === 'medium') return 'warning'
-  return 'info'
-}
-
 function severityLabel(sev?: string): string {
   if (sev === 'high') return 'P0'
   if (sev === 'medium') return 'P1'
   return 'P2'
 }
 
-function alertTypeClass(type?: string): string {
-  if (!type) return 'badge-info'
+function alertBadgeColor(type?: string): 'error' | 'warning' | 'info' | 'primary' {
+  if (!type) return 'info'
   const t = type.toLowerCase()
-  if (t.includes('围栏') || t.includes('越界')) return 'badge-danger'
-  if (t.includes('心率') || t.includes('生命')) return 'badge-warning'
-  if (t.includes('跌倒')) return 'badge-danger'
-  if (t.includes('用药') || t.includes('漏服')) return 'badge-warning'
-  return 'badge-primary'
+  if (t.includes('围栏') || t.includes('越界') || t.includes('跌倒')) return 'error'
+  if (t.includes('心率') || t.includes('生命') || t.includes('用药') || t.includes('漏服')) return 'warning'
+  return 'primary'
 }
 </script>
 
 <style scoped>
+.alarm-toolbar { display: flex; justify-content: flex-end; margin-bottom: 4px; }
+.alarm-count { font-size: 13px; color: var(--hope-text-muted); font-weight: 500; }
+.time-cell { font-size: 12px; color: var(--hope-text-muted); font-variant-numeric: tabular-nums; }
 .patient-cell { display: flex; align-items: center; gap: 8px; }
-.patient-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
-.avatar-blue { background: #DDEBE1; color: #47745C; }
-.avatar-pink { background: #FCE7F3; color: #D48EC0; }
-.patient-name { font-weight: 600; font-size: 13px; }
-.patient-id { font-size: 11px; color: var(--el-text-color-secondary); }
-.alert-type-badge { font-size: 12px; padding: 2px 8px; border-radius: 4px; }
-.badge-primary { background: #DDEBE1; color: #47745C; }
-.badge-warning { background: #FEF7E8; color: #B8860B; }
-.badge-danger { background: #FDF0EE; color: #B85C54; }
-.badge-info { background: #EEF4F8; color: #6E9FC4; }
+.patient-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600; flex-shrink: 0;
+}
+.avatar-blue  { background: rgba(7,154,162,0.12); color: #079aa2; }
+.avatar-pink  { background: rgba(140,87,255,0.12); color: #8C57FF; }
+.patient-name { font-weight: 600; font-size: 13px; color: var(--hope-text); }
+.patient-id   { font-size: 11px; color: var(--hope-text-muted); }
+.detail-cell  { font-size: 13px; color: var(--hope-text-secondary); }
+.sev-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: var(--hope-radius-pill); font-size: 12px; font-weight: 700; letter-spacing: 0.02em; }
+.sev-high   { background: rgba(192,50,33,0.10); color: #c03221; }
+.sev-medium { background: rgba(250,169,56,0.12); color: #b8860b; }
+.sev-low    { background: rgba(26,160,83,0.10); color: #1aa053; }
+.action-btns { display: flex; gap: 4px; flex-wrap: wrap; }
 </style>
