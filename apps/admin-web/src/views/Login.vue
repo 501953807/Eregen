@@ -14,7 +14,7 @@
             <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
               <rect width="32" height="32" rx="8" fill="rgba(255,255,255,0.15)"/>
               <path d="M16 8L10 14v6l6 3 6-3v-6L16 8z" fill="rgba(255,255,255,0.9)" stroke="rgba(255,255,255,0.5)" stroke-width="0.5"/>
-              <circle cx="16" cy="17" r="2" fill="rgba(92,141,115,0.9)"/>
+              <circle cx="16" cy="17" r="2" fill="rgba(255,255,255,0.9)"/>
             </svg>
           </div>
           <div>
@@ -69,7 +69,7 @@
               <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
                 <rect width="32" height="32" rx="8" fill="rgba(255,255,255,0.2)"/>
                 <path d="M16 8L10 14v6l6 3 6-3v-6L16 8z" fill="rgba(255,255,255,0.9)"/>
-                <circle cx="16" cy="17" r="2" fill="rgba(92,141,115,0.9)"/>
+                <circle cx="16" cy="17" r="2" fill="rgba(255,255,255,0.9)"/>
               </svg>
             </div>
             <span class="login-header-brand"><span>颐贞</span> · 管理后台</span>
