@@ -3,10 +3,10 @@
     <!-- Welfare -->
     <template v-if="activePage === 'welfare'">
       <el-row :gutter="12" style="margin-bottom: 20px;">
-        <el-col :span="6"><el-card shadow="hover" class="kpi-card"><div class="kpi-value">{{ welfareKpis.valid }}</div><div class="kpi-label">有效标签</div></el-card></el-col>
-        <el-col :span="6"><el-card shadow="hover" class="kpi-card kpi-warning"><div class="kpi-value">{{ welfareKpis.expiring }}</div><div class="kpi-label">本月到期</div></el-card></el-col>
-        <el-col :span="6"><el-card shadow="hover" class="kpi-card kpi-green"><div class="kpi-value">{{ welfareKpis.newIssued }}</div><div class="kpi-label">本月新发</div></el-card></el-col>
-        <el-col :span="6"><el-card shadow="hover" class="kpi-card"><div class="kpi-value">{{ welfareKpis.revoked }}</div><div class="kpi-label">本月撤销</div></el-card></el-col>
+        <el-col :span="6"><el-card shadow="never" class="kpi-card"><div class="kpi-value">{{ welfareKpis.valid }}</div><div class="kpi-label">有效标签</div></el-card></el-col>
+        <el-col :span="6"><el-card shadow="never" class="kpi-card kpi-warning"><div class="kpi-value">{{ welfareKpis.expiring }}</div><div class="kpi-label">本月到期</div></el-card></el-col>
+        <el-col :span="6"><el-card shadow="never" class="kpi-card kpi-success"><div class="kpi-value">{{ welfareKpis.newIssued }}</div><div class="kpi-label">本月新发</div></el-card></el-col>
+        <el-col :span="6"><el-card shadow="never" class="kpi-card"><div class="kpi-value">{{ welfareKpis.revoked }}</div><div class="kpi-label">本月撤销</div></el-card></el-col>
       </el-row>
       <div class="filter-bar">
         <el-button type="primary">＋ 新增标签</el-button>
@@ -46,12 +46,12 @@
     <!-- Signin -->
     <template v-if="activePage === 'signin'">
       <el-row :gutter="12" style="margin-bottom: 20px;">
-        <el-col :span="4"><el-card shadow="hover" class="kpi-card"><div class="kpi-value">856</div><div class="kpi-label">本月签到</div></el-card></el-col>
-        <el-col :span="4"><el-card shadow="hover" class="kpi-card kpi-green"><div class="kpi-value">234</div><div class="kpi-label">本月首次</div></el-card></el-col>
-        <el-col :span="4"><el-card shadow="hover" class="kpi-card kpi-danger"><div class="kpi-value">3</div><div class="kpi-label">跨院重复</div></el-card></el-col>
-        <el-col :span="4"><el-card shadow="hover" class="kpi-card"><div class="kpi-value">189</div><div class="kpi-label">医保签到</div></el-card></el-col>
-        <el-col :span="4"><el-card shadow="hover" class="kpi-card kpi-green"><div class="kpi-value">667</div><div class="kpi-label">福利签到</div></el-card></el-col>
-        <el-col :span="4"><el-card shadow="hover" class="kpi-card kpi-warning"><div class="kpi-value">2</div><div class="kpi-label">异常</div></el-card></el-col>
+        <el-col :span="4"><el-card shadow="never" class="kpi-card"><div class="kpi-value">856</div><div class="kpi-label">本月签到</div></el-card></el-col>
+        <el-col :span="4"><el-card shadow="never" class="kpi-card kpi-success"><div class="kpi-value">234</div><div class="kpi-label">本月首次</div></el-card></el-col>
+        <el-col :span="4"><el-card shadow="never" class="kpi-card kpi-danger"><div class="kpi-value">3</div><div class="kpi-label">跨院重复</div></el-card></el-col>
+        <el-col :span="4"><el-card shadow="never" class="kpi-card"><div class="kpi-value">189</div><div class="kpi-label">医保签到</div></el-card></el-col>
+        <el-col :span="4"><el-card shadow="never" class="kpi-card kpi-success"><div class="kpi-value">667</div><div class="kpi-label">福利签到</div></el-card></el-col>
+        <el-col :span="4"><el-card shadow="never" class="kpi-card kpi-warning"><div class="kpi-value">2</div><div class="kpi-label">异常</div></el-card></el-col>
       </el-row>
       <div class="filter-bar">
         <el-date-picker v-model="signinMonth" type="month" placeholder="月份选择" value-format="YYYY-MM" />
@@ -60,9 +60,7 @@
           <el-option label="社区医院 B" value="B" />
           <el-option label="社区医院 C" value="C" />
         </el-select>
-        <el-button type="primary">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>查询
-        </el-button>
+        <el-button type="primary">查询</el-button>
       </div>
       <el-card shadow="never" class="chart-card">
         <template #header><span class="panel-title">近 7 天签到趋势</span></template>
@@ -101,10 +99,10 @@
     <!-- Pharmacy -->
     <template v-if="activePage === 'pharmacy'">
       <el-row :gutter="12" style="margin-bottom: 20px;">
-        <el-col :span="6"><el-card shadow="hover" class="kpi-card"><div class="kpi-value">34</div><div class="kpi-label">今日发药</div></el-card></el-col>
-        <el-col :span="6"><el-card shadow="hover" class="kpi-card kpi-green"><div class="kpi-value">512</div><div class="kpi-label">本月发药</div></el-card></el-col>
-        <el-col :span="6"><el-card shadow="hover" class="kpi-card"><div class="kpi-value">28</div><div class="kpi-label">药品种类</div></el-card></el-col>
-        <el-col :span="6"><el-card shadow="hover" class="kpi-card kpi-warning"><div class="kpi-value">¥12,450</div><div class="kpi-label">总金额</div></el-card></el-col>
+        <el-col :span="6"><el-card shadow="never" class="kpi-card"><div class="kpi-value">34</div><div class="kpi-label">今日发药</div></el-card></el-col>
+        <el-col :span="6"><el-card shadow="never" class="kpi-card kpi-success"><div class="kpi-value">512</div><div class="kpi-label">本月发药</div></el-card></el-col>
+        <el-col :span="6"><el-card shadow="never" class="kpi-card"><div class="kpi-value">28</div><div class="kpi-label">药品种类</div></el-card></el-col>
+        <el-col :span="6"><el-card shadow="never" class="kpi-card kpi-warning"><div class="kpi-value">¥12,450</div><div class="kpi-label">总金额</div></el-card></el-col>
       </el-row>
       <div class="filter-bar">
         <el-button type="primary">＋ 手动发药</el-button>
@@ -138,17 +136,17 @@
     <!-- Minzheng -->
     <template v-if="activePage === 'minzheng'">
       <el-row :gutter="12" style="margin-bottom: 20px;">
-        <el-col :span="6"><el-card shadow="hover" class="kpi-card"><div class="kpi-value">12</div><div class="kpi-label">导入批次</div></el-card></el-col>
-        <el-col :span="6"><el-card shadow="hover" class="kpi-card kpi-green"><div class="kpi-value">1,234</div><div class="kpi-label">总导入</div></el-card></el-col>
-        <el-col :span="6"><el-card shadow="hover" class="kpi-card"><div class="kpi-value">1,198</div><div class="kpi-label">已匹配</div></el-card></el-col>
-        <el-col :span="6"><el-card shadow="hover" class="kpi-card kpi-warning"><div class="kpi-value">36</div><div class="kpi-label">待审核</div></el-card></el-col>
+        <el-col :span="6"><el-card shadow="never" class="kpi-card"><div class="kpi-value">12</div><div class="kpi-label">导入批次</div></el-card></el-col>
+        <el-col :span="6"><el-card shadow="never" class="kpi-card kpi-success"><div class="kpi-value">1,234</div><div class="kpi-label">总导入</div></el-card></el-col>
+        <el-col :span="6"><el-card shadow="never" class="kpi-card"><div class="kpi-value">1,198</div><div class="kpi-label">已匹配</div></el-card></el-col>
+        <el-col :span="6"><el-card shadow="never" class="kpi-card kpi-warning"><div class="kpi-value">36</div><div class="kpi-label">待审核</div></el-card></el-col>
       </el-row>
       <div class="filter-bar">
         <el-upload action="#" :auto-upload="false" :show-file-list="false" class="upload-zone">
           <div class="upload-inner">
             <div class="upload-icon">📁</div>
             <p>点击或拖拽 CSV/XLSX 文件到此处上传</p>
-            <p style="font-size:11px;margin-top:4px;color:#c0c4cc;">支持民政局标准模板或自定义模板</p>
+            <p style="font-size:11px;margin-top:4px;color:var(--hope-text-muted);">支持民政局标准模板或自定义模板</p>
           </div>
         </el-upload>
         <el-button>📥 下载 CSV 模板</el-button>
@@ -176,7 +174,7 @@
           <el-table-column prop="filename" label="文件名" width="140" />
           <el-table-column label="导入数" width="80"><template #default="{ row }"><strong>{{ row.imported }}</strong></template></el-table-column>
           <el-table-column label="匹配数" width="80"><template #default="{ row }">{{ row.matched }}</template></el-table-column>
-          <el-table-column label="待审核" width="80"><template #default="{ row }"><strong :style="{ color: row.pending > 0 ? '#EF4444' : '' }">{{ row.pending }}</strong></template></el-table-column>
+          <el-table-column label="待审核" width="80"><template #default="{ row }"><strong :style="{ color: row.pending > 0 ? 'var(--hope-error)' : '' }">{{ row.pending }}</strong></template></el-table-column>
           <el-table-column label="状态" width="90">
             <template #default="{ row }">
               <span class="status-badge" :class="row.status === '完成' ? 'badge-success' : 'badge-warning'">
@@ -204,13 +202,13 @@
       </div>
       <el-row :gutter="16" style="margin-bottom: 16px;">
         <el-col :span="8">
-          <el-card shadow="hover" class="stat-box">
+          <el-card shadow="never" class="stat-box">
             <template #header><span class="panel-title">登记老人总数</span></template>
-            <div class="stat-center"><div class="stat-big-num">482</div><div style="font-size:12px;color:#909399;">在线腕带 312 · 离线 170</div></div>
+            <div class="stat-center"><div class="stat-big-num">482</div><div style="font-size:12px;color:var(--hope-text-muted);">在线腕带 312 · 离线 170</div></div>
           </el-card>
         </el-col>
         <el-col :span="8">
-          <el-card shadow="hover" class="stat-box">
+          <el-card shadow="never" class="stat-box">
             <template #header><span class="panel-title">福利标签分布</span></template>
             <div class="h-bars">
               <div v-for="w in welfareDist" :key="w.code" class="h-bar-row">
@@ -222,20 +220,20 @@
           </el-card>
         </el-col>
         <el-col :span="8">
-          <el-card shadow="hover" class="stat-box">
+          <el-card shadow="never" class="stat-box">
             <template #header><span class="panel-title">签到活跃度</span></template>
             <div class="activity-stats">
-              <div class="act-row"><span>本月签到率</span><el-progress :percentage="87" :color="'#165DFF'" :stroke-width="8" /><strong>87%</strong></div>
-              <div class="act-row"><span>连续签到≥3月</span><el-progress :percentage="68" :color="'#16A34A'" :stroke-width="8" /><strong>68%</strong></div>
-              <div class="act-row"><span>本月首次签到</span><span style="font-weight:600;color:#F59E0B;">234 人</span></div>
-              <div class="act-row"><span>跨院重复</span><span style="font-weight:600;color:#EF4444;">3 人次</span></div>
+              <div class="act-row"><span>本月签到率</span><el-progress :percentage="87" :color="'var(--hope-success)'" :stroke-width="8" /><strong>87%</strong></div>
+              <div class="act-row"><span>连续签到≥3月</span><el-progress :percentage="68" :color="'var(--hope-success)'" :stroke-width="8" /><strong>68%</strong></div>
+              <div class="act-row"><span>本月首次签到</span><span style="font-weight:600;color:var(--hope-warning);">234 人</span></div>
+              <div class="act-row"><span>跨院重复</span><span style="font-weight:600;color:var(--hope-error);">3 人次</span></div>
             </div>
           </el-card>
         </el-col>
       </el-row>
       <el-row :gutter="16">
         <el-col :span="8">
-          <el-card shadow="hover" class="stat-box">
+          <el-card shadow="never" class="stat-box">
             <template #header><span class="panel-title">医院分布</span></template>
             <div class="h-bars">
               <div v-for="h in hospitalDist" :key="h.name" class="h-bar-row">
@@ -247,21 +245,21 @@
           </el-card>
         </el-col>
         <el-col :span="8">
-          <el-card shadow="hover" class="stat-box">
+          <el-card shadow="never" class="stat-box">
             <template #header><span class="panel-title">补助发放统计</span></template>
             <div class="payment-stats">
               <div class="pay-total">¥45,200</div>
-              <div style="font-size:12px;color:#909399;margin-bottom:12px;">本月发放总额</div>
+              <div style="font-size:12px;color:var(--hope-text-muted);margin-bottom:12px;">本月发放总额</div>
               <div class="pay-metrics">
-                <div class="pay-metric"><div style="font-size:18px;font-weight:600;color:#16A34A;">92%</div><div style="font-size:11px;color:#909399;">成功率</div></div>
-                <div class="pay-metric"><div style="font-size:18px;font-weight:600;color:#EF4444;">8</div><div style="font-size:11px;color:#909399;">失败笔数</div></div>
-                <div class="pay-metric"><div style="font-size:18px;font-weight:600;color:#F59E0B;">12</div><div style="font-size:11px;color:#909399;">待发笔数</div></div>
+                <div class="pay-metric"><div style="font-size:18px;font-weight:600;color:var(--hope-success);">92%</div><div style="font-size:11px;color:var(--hope-text-muted);">成功率</div></div>
+                <div class="pay-metric"><div style="font-size:18px;font-weight:600;color:var(--hope-error);">8</div><div style="font-size:11px;color:var(--hope-text-muted);">失败笔数</div></div>
+                <div class="pay-metric"><div style="font-size:18px;font-weight:600;color:var(--hope-warning);">12</div><div style="font-size:11px;color:var(--hope-text-muted);">待发笔数</div></div>
               </div>
             </div>
           </el-card>
         </el-col>
         <el-col :span="8">
-          <el-card shadow="hover" class="stat-box">
+          <el-card shadow="never" class="stat-box">
             <template #header><span class="panel-title">规则引擎告警</span></template>
             <div class="alert-list">
               <div v-for="a in ruleAlerts" :key="a.code" class="alert-item">
@@ -346,20 +344,20 @@ const importRecords = ref([
 const statsMonth = ref('2026-07')
 const statsHospital = ref('')
 const welfareDist = [
-  { code: 'orphan', label: '孤寡', count: 12, pct: 12, color: '#c62828' },
-  { code: 'poverty_1', label: '特困一', count: 28, pct: 28, color: '#e65100' },
-  { code: 'poverty_2', label: '特困二', count: 15, pct: 15, color: '#f57c00' },
-  { code: 'disability_1', label: '残疾一', count: 22, pct: 22, color: '#1565c0' },
-  { code: 'disability_2', label: '残疾二', count: 35, pct: 35, color: '#1976d2' },
-  { code: 'disability_3', label: '残疾三', count: 42, pct: 42, color: '#42a5f5' },
-  { code: 'special_disease', label: '特病', count: 89, pct: 89, color: '#9c27b0' },
-  { code: 'bus_discount', label: '公交', count: 156, pct: 100, color: '#4caf50' },
-  { code: 'medical_assist', label: '医疗', count: 67, pct: 67, color: '#00897b' },
+  { code: 'orphan', label: '孤寡', count: 12, pct: 12, color: 'var(--hope-error)' },
+  { code: 'poverty_1', label: '特困一', count: 28, pct: 28, color: 'var(--hope-warning)' },
+  { code: 'poverty_2', label: '特困二', count: 15, pct: 15, color: '#F59E0B' },
+  { code: 'disability_1', label: '残疾一', count: 22, pct: 22, color: 'var(--hope-primary)' },
+  { code: 'disability_2', label: '残疾二', count: 35, pct: 35, color: '#5B7EE8' },
+  { code: 'disability_3', label: '残疾三', count: 42, pct: 42, color: '#8BA8F5' },
+  { code: 'special_disease', label: '特病', count: 89, pct: 89, color: 'var(--hope-accent)' },
+  { code: 'bus_discount', label: '公交', count: 156, pct: 100, color: 'var(--hope-success)' },
+  { code: 'medical_assist', label: '医疗', count: 67, pct: 67, color: 'var(--hope-info)' },
 ]
 const hospitalDist = [
-  { name: '社区医院A', count: 234, pct: 100, color: '#5C8D73' },
-  { name: '社区医院B', count: 156, pct: 67, color: '#7BAF8C' },
-  { name: '社区医院C', count: 92, pct: 39, color: '#A8C3B0' },
+  { name: '社区医院A', count: 234, pct: 100, color: 'var(--hope-primary)' },
+  { name: '社区医院B', count: 156, pct: 67, color: 'var(--hope-accent)' },
+  { name: '社区医院C', count: 92, pct: 39, color: '#A88AFF' },
 ]
 const ruleAlerts = [
   { code: 'R_C01', desc: '重复领取', count: 3, tagType: 'danger' },
@@ -371,55 +369,51 @@ const ruleAlerts = [
 </script>
 
 <style scoped>
-.mono { font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px; }
+.mono { font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px; color: var(--hope-text-muted); }
 .filter-bar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
 .table-card { margin-bottom: 20px; }
 .pagination-wrapper { display: flex; justify-content: flex-end; margin-top: 16px; }
-.panel-title { font-size: 15px; font-weight: 700; color: var(--el-text-color-primary); border-left: 3px solid #5C8D73; padding-left: 8px; }
-.upload-zone { border: 2px dashed var(--el-border-color); border-radius: 12px; padding: 32px; text-align: center; cursor: pointer; }
-.upload-inner p { font-size: 13px; color: var(--el-text-color-secondary); }
+.panel-title { font-size: 15px; font-weight: 700; color: var(--hope-text); border-left: 3px solid var(--hope-primary); padding-left: 8px; }
+.upload-zone { border: 2px dashed var(--hope-border); border-radius: var(--hope-radius-lg); padding: 32px; text-align: center; cursor: pointer; background: var(--hope-surface-light); }
+.upload-inner p { font-size: 13px; color: var(--hope-text-secondary); }
 .upload-icon { font-size: 36px; margin-bottom: 8px; }
 .bar-chart { display: flex; align-items: flex-end; gap: 16px; padding: 16px 0; height: 130px; }
 .bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
-.bar { width: 32px; background: linear-gradient(180deg, #5C8D73, #7BAF8C); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.3s; }
-.bar-label { font-size: 11px; color: var(--el-text-color-placeholder); margin-top: 6px; }
-.bar-value { font-size: 12px; font-weight: 600; color: var(--el-text-color-primary); margin-bottom: 4px; }
+.bar { width: 32px; background: linear-gradient(180deg, var(--hope-primary), var(--hope-accent)); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.3s; }
+.bar-label { font-size: 11px; color: var(--hope-text-muted); margin-top: 6px; }
+.bar-value { font-size: 12px; font-weight: 600; color: var(--hope-text); margin-bottom: 4px; }
 .h-bars { display: flex; flex-direction: column; gap: 6px; }
 .h-bar-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.h-bar-label { width: 60px; text-align: right; color: var(--el-text-color-regular); flex-shrink: 0; font-size: 12px; }
-.h-bar-track { flex: 1; height: 14px; background: var(--el-fill-color-lighter); border-radius: 3px; overflow: hidden; }
+.h-bar-label { width: 60px; text-align: right; color: var(--hope-text-secondary); flex-shrink: 0; font-size: 12px; }
+.h-bar-track { flex: 1; height: 14px; background: var(--hope-surface-light); border-radius: 3px; overflow: hidden; }
 .h-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
-.h-bar-val { width: 40px; color: var(--el-text-color-placeholder); font-size: 12px; flex-shrink: 0; text-align: right; }
+.h-bar-val { width: 40px; color: var(--hope-text-muted); font-size: 12px; flex-shrink: 0; text-align: right; }
 .stat-box :deep(.el-card__body) { padding: 16px; }
 .stat-center { text-align: center; padding: 12px 0; }
-.stat-big-num { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #5C8D73, #7BAF8C); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.stat-big-num { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, var(--hope-primary), var(--hope-accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 .activity-stats { display: flex; flex-direction: column; gap: 12px; }
 .act-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; gap: 8px; }
-.act-row span:first-child { color: var(--el-text-color-secondary); white-space: nowrap; }
+.act-row span:first-child { color: var(--hope-text-secondary); white-space: nowrap; }
 .payment-stats { text-align: center; padding: 8px 0; }
-.pay-total { font-size: 24px; font-weight: 800; color: #5C8D73; }
+.pay-total { font-size: 24px; font-weight: 800; color: var(--hope-primary); }
 .pay-metrics { display: flex; justify-content: space-around; }
 .pay-metric { text-align: center; }
 .alert-list { display: flex; flex-direction: column; gap: 8px; }
-.alert-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--el-border-color-lighter); }
+.alert-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--hope-border); }
 .alert-item:last-child { border-bottom: none; }
-.status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; }
-.badge-success { background: #F0FDF4; color: #16A34A; }
-.badge-danger { background: #FEF2F2; color: #DC2626; }
-.badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #DDEBE1; color: #47745C; }
-.badge-gray { background: #F3F4F6; color: #6B7280; }
+.status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: var(--hope-radius-pill); font-size: 12px; font-weight: 600; }
+.badge-success { background: var(--hope-success-light); color: var(--hope-success); }
+.badge-danger { background: var(--hope-error-light); color: var(--hope-error); }
+.badge-warning { background: var(--hope-warning-light); color: #926C0E; }
+.badge-primary { background: rgba(58,87,232,0.12); color: var(--hope-primary); }
+.badge-gray { background: var(--hope-surface-light); color: var(--hope-text-muted); }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-.dot-success { background: #16A34A; }
-.dot-danger { background: #DC2626; }
-.dot-warning { background: #D97706; }
-.dot-primary { background: #5C8D73; }
-.dot-gray { background: #6B7280; }
+.dot-success { background: var(--hope-success); }
+.dot-danger { background: var(--hope-error); }
+.dot-warning { background: var(--hope-warning); }
+.dot-primary { background: var(--hope-primary); }
+.dot-gray { background: var(--hope-text-muted); }
 .kpi-card :deep(.el-card__body) { padding: 18px; display: flex; flex-direction: column; align-items: center; text-align: center; border-radius: 14px; }
 .kpi-value { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 4px; }
-.kpi-label { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 6px; font-weight: 600; }
-.kpi-blue .kpi-value { color: #5C8D73; }
-.kpi-green .kpi-value { color: #16A34A; }
-.kpi-warning .kpi-value { color: #F59E0B; }
-.kpi-danger .kpi-value { color: #EF4444; }
+.kpi-label { font-size: 12px; color: var(--hope-text-muted); margin-top: 6px; font-weight: 600; }
 </style>

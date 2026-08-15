@@ -56,7 +56,7 @@ defineEmits<{ click: [e: MouseEvent] }>()
   justify-content: center;
   gap: 6px;
   border: 1.5px solid transparent;
-  border-radius: var(--hope-radius-md);
+  border-radius: var(--hope-radius-sm);
   font-family: inherit;
   font-size: 14px;
   font-weight: 600;

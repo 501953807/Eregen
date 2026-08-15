@@ -2,32 +2,44 @@
   <div class="institutions-page">
     <!-- Page Header -->
     <div class="page-header">
-      <h2 class="page-title">机构管理</h2>
-      <el-button type="primary" @click="showDialog = true" size="default">+ 新增机构</el-button>
+      <div>
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item>首页</el-breadcrumb-item>
+          <el-breadcrumb-item>B2B 对接</el-breadcrumb-item>
+          <el-breadcrumb-item>机构管理</el-breadcrumb-item>
+        </el-breadcrumb>
+        <h2 class="page-title">机构管理</h2>
+      </div>
+      <HopeBtn variant="filled" @click="showDialog = true">
+        <template #icon>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </template>
+        新增机构
+      </HopeBtn>
     </div>
 
     <!-- KPI Row -->
     <el-row :gutter="12" style="margin-bottom: 16px;">
       <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-blue">
+        <el-card shadow="never" class="kpi-card kpi-primary">
           <div class="kpi-value">{{ total }}</div>
           <div class="kpi-label">机构总数</div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-green">
+        <el-card shadow="never" class="kpi-card kpi-success">
           <div class="kpi-value">{{ activeCount }}</div>
           <div class="kpi-label">已激活</div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-warning">
+        <el-card shadow="never" class="kpi-card kpi-warning">
           <div class="kpi-value">{{ pendingCount }}</div>
           <div class="kpi-label">待审核</div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-purple">
+        <el-card shadow="never" class="kpi-card kpi-info">
           <div class="kpi-value">{{ apiKeyCount }}</div>
           <div class="kpi-label">API 密钥</div>
         </el-card>
@@ -35,28 +47,30 @@
     </el-row>
 
     <!-- Filter Bar -->
-    <el-card shadow="never" class="filter-card">
-      <div class="filter-bar">
-        <el-input v-model="searchForm.name" placeholder="搜索机构名称/编码..." clearable style="width: 240px;" />
-        <el-select v-model="searchForm.type" placeholder="机构类型" clearable style="width: 150px;">
-          <el-option label="医院" value="hospital" />
-          <el-option label="社区" value="community_center" />
-          <el-option label="养老院" value="nursing_home" />
-          <el-option label="诊所" value="clinic" />
-        </el-select>
-        <el-select v-model="searchForm.status" placeholder="状态" clearable style="width: 130px;">
-          <el-option label="已激活" value="active" />
-          <el-option label="待审核" value="pending" />
-          <el-option label="已停用" value="suspended" />
-        </el-select>
-        <span class="filter-spacer"></span>
-        <el-button @click="resetSearch">重置</el-button>
-        <el-button type="primary" @click="loadInstitutions">搜索</el-button>
-      </div>
-    </el-card>
+    <HopeCard class="filter-card">
+      <template #default>
+        <div class="filter-bar">
+          <el-input v-model="searchForm.name" placeholder="搜索机构名称/编码..." clearable style="width: 240px;" />
+          <el-select v-model="searchForm.type" placeholder="机构类型" clearable style="width: 150px;">
+            <el-option label="医院" value="hospital" />
+            <el-option label="社区" value="community_center" />
+            <el-option label="养老院" value="nursing_home" />
+            <el-option label="诊所" value="clinic" />
+          </el-select>
+          <el-select v-model="searchForm.status" placeholder="状态" clearable style="width: 130px;">
+            <el-option label="已激活" value="active" />
+            <el-option label="待审核" value="pending" />
+            <el-option label="已停用" value="suspended" />
+          </el-select>
+          <span class="filter-spacer"></span>
+          <HopeBtn variant="plain" size="sm" @click="resetSearch">重置</HopeBtn>
+          <HopeBtn variant="filled" size="sm" @click="loadInstitutions">搜索</HopeBtn>
+        </div>
+      </template>
+    </HopeCard>
 
     <!-- Institution Table -->
-    <el-card shadow="never" class="table-card">
+    <HopeCard title="机构列表" class="table-card">
       <el-table
         :data="pagedInstitutions"
         stripe
@@ -83,17 +97,14 @@
         </el-table-column>
         <el-table-column label="权限" width="100">
           <template #default="{ row }">
-            <el-tag size="small" :type="row.access_level === 'read_write' ? 'success' : (row.access_level === 'emergency_only' ? 'danger' : '')">
+            <HopeBadge :color="row.access_level === 'read_write' ? 'success' : (row.access_level === 'emergency_only' ? 'error' : 'primary')">
               {{ getAccessLevelLabel(row.access_level) }}
-            </el-tag>
+            </HopeBadge>
           </template>
         </el-table-column>
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
-            <span class="status-badge" :class="statusClass(row.status)">
-              <span class="status-dot" :class="statusClass(row.status)"></span>
-              {{ getStatusLabel(row.status) }}
-            </span>
+            <HopeBadge :color="statusBadgeColor(row.status)">{{ getStatusLabel(row.status) }}</HopeBadge>
           </template>
         </el-table-column>
         <el-table-column label="创建时间" width="120">
@@ -101,17 +112,20 @@
         </el-table-column>
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click.stop="viewDetail(row)">详情</el-button>
-            <el-button link type="primary" size="small" @click.stop="generateKey(row)">生成密钥</el-button>
-            <el-button :link="true" :type="row.status === 'active' ? 'warning' : 'success'" size="small" @click.stop="toggleStatus(row)">
-              {{ row.status === 'active' ? '停用' : '启用' }}
-            </el-button>
-            <el-button link type="danger" size="small" @click.stop="deleteInstitution(row)">删除</el-button>
+            <HopeBtn variant="text" size="sm" @click.stop="viewDetail(row)">详情</HopeBtn>
+            <HopeBtn variant="text" size="sm" @click.stop="generateKey(row)">生成密钥</HopeBtn>
+            <HopeBtn variant="warning" size="sm" :disabled="row.status !== 'active'" @click.stop="toggleStatus(row)">
+              停用
+            </HopeBtn>
+            <HopeBtn variant="success" size="sm" :disabled="row.status === 'active'" @click.stop="toggleStatus(row)">
+              启用
+            </HopeBtn>
+            <HopeBtn variant="text" size="sm" @click.stop="deleteInstitution(row)">删除</HopeBtn>
           </template>
         </el-table-column>
       </el-table>
 
-      <div class="pagination-wrapper">
+      <template #footer>
         <el-pagination
           background
           layout="total, sizes, prev, pager, next, jumper"
@@ -122,22 +136,24 @@
           @size-change="(v: number) => { pagination.pageSize = v; loadInstitutions(); }"
           @current-change="handlePageChange"
         />
-      </div>
-    </el-card>
+      </template>
+    </HopeCard>
 
     <!-- Side Panel (Detail) -->
     <div class="side-panel-overlay" :class="{ show: detailPanelOpen }" @click="detailPanelOpen = false" />
     <div class="side-panel" :class="{ open: detailPanelOpen }">
       <div class="panel-header">
         <span class="panel-title">机构详情</span>
-        <button class="panel-close" @click="detailPanelOpen = false">&#10005;</button>
+        <HopeBtn variant="ghost" size="sm" icon-only @click="detailPanelOpen = false">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </HopeBtn>
       </div>
       <div class="panel-body" v-if="detailData">
         <div class="inst-header">
           <div class="inst-icon large" :class="'type-' + detailData.type">{{ typeEmoji(detailData.type) }}</div>
           <div>
-            <div style="font-size:18px;font-weight:700;">{{ detailData.name }}</div>
-            <div style="font-size:12px;color:var(--el-text-color-secondary);">{{ detailData.code }}</div>
+            <div style="font-size:18px;font-weight:700;color:var(--hope-text);">{{ detailData.name }}</div>
+            <div style="font-size:12px;color:var(--hope-text-muted);">{{ detailData.code }}</div>
           </div>
         </div>
 
@@ -149,10 +165,7 @@
           <div class="panel-row"><span class="panel-row-label">联系电话</span><span class="panel-row-value">{{ detailData.contact_phone || '—' }}</span></div>
           <div class="panel-row"><span class="panel-row-label">访问权限</span><span class="panel-row-value">{{ getAccessLevelLabel(detailData.access_level) }}</span></div>
           <div class="panel-row"><span class="panel-row-label">状态</span><span class="panel-row-value">
-            <span class="status-badge" :class="statusClass(detailData.status)">
-              <span class="status-dot" :class="statusClass(detailData.status)"></span>
-              {{ getStatusLabel(detailData.status) }}
-            </span>
+            <HopeBadge :color="statusBadgeColor(detailData.status)">{{ getStatusLabel(detailData.status) }}</HopeBadge>
           </span></div>
         </div>
 
@@ -165,9 +178,9 @@
         <div class="panel-section">
           <div class="panel-section-title">操作</div>
           <div class="panel-actions">
-            <el-button size="small" type="primary" @click="generateKey(detailData)">生成 API 密钥</el-button>
-            <el-button size="small" @click="toggleStatus(detailData)">{{ detailData.status === 'active' ? '停用' : '启用' }}</el-button>
-            <el-button size="small" type="danger" plain @click="deleteInstitution(detailData)">删除机构</el-button>
+            <HopeBtn variant="filled" size="sm" @click="generateKey(detailData)">生成 API 密钥</HopeBtn>
+            <HopeBtn variant="outlined" size="sm" @click="toggleStatus(detailData)">{{ detailData.status === 'active' ? '停用' : '启用' }}</HopeBtn>
+            <HopeBtn variant="plain" size="sm" @click="deleteInstitution(detailData)">删除机构</HopeBtn>
           </div>
         </div>
       </div>
@@ -205,8 +218,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleAdd">确认添加</el-button>
+        <HopeBtn variant="plain" size="sm" @click="showDialog = false">取消</HopeBtn>
+        <HopeBtn variant="filled" size="sm" @click="handleAdd">确认添加</HopeBtn>
       </template>
     </el-dialog>
   </div>
@@ -216,6 +229,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { institutionsApi, type B2BInstitution } from '@/api/institutions'
+import { HopeCard, HopeBtn, HopeBadge } from '@/components/hope'
 
 const loading = ref(false)
 const showDialog = ref(false)
@@ -282,11 +296,6 @@ const pagedInstitutions = computed(() => {
   return filteredInstitutions.value.slice(start, start + pagination.value.pageSize)
 })
 
-function getTypeTagType(type: string): string {
-  const map: Record<string, string> = { hospital: '', community_center: 'success', clinic: 'warning', nursing_home: 'info' }
-  return map[type] || ''
-}
-
 function getTypeLabel(type: string): string {
   const map: Record<string, string> = { hospital: '医院', community_center: '社区', clinic: '诊所', nursing_home: '养老院' }
   return map[type] || type
@@ -302,9 +311,10 @@ function getStatusLabel(status: string): string {
   return map[status] || status
 }
 
-function statusClass(status: string): string {
-  const map: Record<string, string> = { active: 'status-active', pending: 'status-pending', suspended: 'status-suspended' }
-  return map[status] || 'status-active'
+function statusBadgeColor(status: string): 'success' | 'warning' | 'primary' {
+  if (status === 'active') return 'success'
+  if (status === 'pending') return 'warning'
+  return 'primary'
 }
 
 function typeEmoji(type: string): string {
@@ -403,37 +413,21 @@ onMounted(() => {
 .institutions-page {
   padding: 0;
 }
-.institutions-page :deep(.el-card) {
-  border-radius: 12px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
-  transition: all var(--duration-normal) var(--easing-out);
-}
-.institutions-page :deep(.el-card:hover) {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
-  transform: translateY(-1px);
-}
-.institutions-page :deep(.el-card__header) {
-  background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%);
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  padding: 16px 20px;
-  border-radius: 12px 12px 0 0 !important;
-}
-.institutions-page :deep(.el-card__body) {
-  padding: 20px;
-}
 
 /* Page header */
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 20px;
+  gap: 16px;
 }
 .page-title {
   font-size: 22px;
   font-weight: 800;
-  color: var(--el-text-color-primary);
-  margin: 0;
+  color: var(--hope-text);
+  margin: 8px 0 0;
+  letter-spacing: -0.02em;
 }
 
 /* KPI Cards */
@@ -441,6 +435,8 @@ onMounted(() => {
   position: relative;
   overflow: hidden;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--hope-border) !important;
+  box-shadow: var(--hope-shadow-sm) !important;
 }
 .kpi-card::before {
   content: '';
@@ -452,6 +448,7 @@ onMounted(() => {
 }
 .kpi-card:hover {
   transform: translateY(-3px);
+  box-shadow: var(--hope-shadow-md) !important;
 }
 .kpi-card :deep(.el-card__body) {
   padding: 18px;
@@ -470,17 +467,17 @@ onMounted(() => {
 }
 .kpi-label {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  color: var(--hope-text-muted);
   margin-top: 6px;
   font-weight: 600;
 }
-.kpi-blue .kpi-value { color: #5C8D73; }
-.kpi-green .kpi-value { color: #6FAF8F; }
-.kpi-warning .kpi-value { color: #D9A441; }
-.kpi-purple .kpi-value { color: #7BAF8C; }
+.kpi-primary .kpi-value { color: var(--hope-primary); }
+.kpi-success .kpi-value { color: var(--hope-success); }
+.kpi-warning .kpi-value { color: var(--hope-warning); }
+.kpi-info .kpi-value { color: var(--hope-info); }
 
 /* Filter card */
-.filter-card :deep(.el-card__body) {
+.filter-card :deep(.hope-content-card__body) {
   padding: 12px 16px;
 }
 .filter-bar {
@@ -493,10 +490,15 @@ onMounted(() => {
   flex: 1;
 }
 
-/* Table */
-.table-card :deep(.el-card__header) {
-  padding: 0;
+/* Table card */
+.table-card {
+  margin-bottom: 0;
 }
+.table-card :deep(.hope-card-header__title) {
+  color: var(--hope-text);
+  font-weight: 700;
+}
+
 .inst-table {
   width: 100%;
 }
@@ -504,7 +506,7 @@ onMounted(() => {
   cursor: pointer;
 }
 .inst-table :deep(.el-table__row:hover) {
-  background-color: var(--el-fill-color-light) !important;
+  background-color: rgba(58,87,232,0.04) !important;
 }
 
 /* Institution cell with icon */
@@ -516,7 +518,7 @@ onMounted(() => {
 .inst-icon {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--hope-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -530,35 +532,13 @@ onMounted(() => {
 .inst-name {
   font-size: 13px;
   font-weight: 700;
-  color: var(--el-text-color-primary);
+  color: var(--hope-text);
 }
 .inst-code {
   font-size: 11px;
-  color: var(--el-text-color-placeholder);
+  color: var(--hope-text-muted);
   font-family: monospace;
 }
-
-/* Status badges */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.status-active { background: #F0FDF4; color: #16A34A; }
-.status-pending { background: #FFFBEB; color: #D97706; }
-.status-suspended { background: #F3F4F6; color: #6B7280; }
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-.status-active .status-dot { background: #16A34A; }
-.status-pending .status-dot { background: #D97706; }
-.status-suspended .status-dot { background: #6B7280; }
 
 .mono {
   font-family: 'SF Mono', 'Consolas', monospace;
@@ -566,18 +546,19 @@ onMounted(() => {
 }
 
 /* Pagination */
-.pagination-wrapper {
+.table-card :deep(.hope-content-card__footer) {
   display: flex;
   justify-content: flex-end;
-  padding: 14px 20px;
-  border-top: 1px solid var(--el-border-color-light);
+  padding: 14px 22px;
+  border-top: 1px solid var(--hope-border);
 }
 
 /* ========== Side Panel ========== */
 .side-panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(26,26,46,0.3);
+  backdrop-filter: blur(4px);
   z-index: 200;
   display: none;
 }
@@ -590,45 +571,30 @@ onMounted(() => {
   right: -520px;
   bottom: 0;
   width: 520px;
-  background: white;
+  background: var(--hope-surface);
   z-index: 201;
   transition: right 0.3s ease;
   overflow-y: auto;
-  box-shadow: -10px 0 40px rgba(0,0,0,0.1);
+  box-shadow: -10px 0 40px rgba(58,87,232,0.10);
 }
 .side-panel.open {
   right: 0;
 }
 .panel-header {
   padding: 20px 24px;
-  border-bottom: 1px solid var(--el-border-color-light);
+  border-bottom: 1px solid var(--hope-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky;
   top: 0;
-  background: white;
+  background: var(--hope-surface);
   z-index: 1;
 }
 .panel-title {
   font-size: 15px;
   font-weight: 700;
-}
-.panel-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: none;
-  background: var(--el-fill-color-light);
-  cursor: pointer;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s;
-}
-.panel-close:hover {
-  background: var(--el-border-color-light);
+  color: var(--hope-text);
 }
 .panel-body {
   padding: 20px 24px;
@@ -644,7 +610,7 @@ onMounted(() => {
   width: 52px;
   height: 52px;
   font-size: 24px;
-  border-radius: 14px;
+  border-radius: var(--hope-radius-lg);
 }
 
 .panel-section {
@@ -653,12 +619,12 @@ onMounted(() => {
 .panel-section-title {
   font-size: 12px;
   font-weight: 700;
-  color: var(--el-text-color-secondary);
+  color: var(--hope-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 10px;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  border-bottom: 1px solid var(--hope-border);
 }
 .panel-row {
   display: flex;
@@ -667,14 +633,23 @@ onMounted(() => {
   font-size: 13px;
 }
 .panel-row-label {
-  color: var(--el-text-color-secondary);
+  color: var(--hope-text-muted);
 }
 .panel-row-value {
   font-weight: 600;
+  color: var(--hope-text);
 }
 .panel-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .institutions-page :deep(.el-col) { width: 100% !important; flex: 0 0 100% !important; }
+  .institutions-page :deep(.el-table) { font-size: 12px; }
+  .institutions-page :deep(.el-table th),
+  .institutions-page :deep(.el-table td) { padding: 6px 4px; }
 }
 </style>

@@ -128,14 +128,16 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
+  <div class="elderly-page">
     <div class="page-header">
-      <el-breadcrumb separator="/">
-        <el-breadcrumb-item>首页</el-breadcrumb-item>
-        <el-breadcrumb-item>社区老人专区</el-breadcrumb-item>
-        <el-breadcrumb-item>{{ pageTitles[activePage] }}</el-breadcrumb-item>
-      </el-breadcrumb>
-      <h2 class="page-title">{{ pageTitles[activePage] }}</h2>
+      <div>
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item>首页</el-breadcrumb-item>
+          <el-breadcrumb-item>社区专区</el-breadcrumb-item>
+          <el-breadcrumb-item>{{ pageTitles[activePage] }}</el-breadcrumb-item>
+        </el-breadcrumb>
+        <h2 class="page-title">{{ pageTitles[activePage] }}</h2>
+      </div>
     </div>
 
     <el-tabs v-model="activePage" type="border-card" @change="switchPage">
@@ -177,18 +179,19 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.elderly-page { padding: 0; }
-.elderly-page :deep(.el-card) {
-  border-radius: 12px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
-  transition: all var(--duration-normal) var(--easing-out);
+.elderly-page {
+  padding: 0;
 }
-.elderly-page :deep(.el-card:hover) {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
-  transform: translateY(-1px);
+.page-header {
+  margin-bottom: 20px;
 }
-.page-header { margin-bottom: 20px; }
-.page-title { font-size: 22px; font-weight: 800; color: var(--el-text-color-primary); margin: 8px 0 0; }
+.page-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--hope-text);
+  margin: 8px 0 0;
+  letter-spacing: -0.02em;
+}
 
 /* Responsive */
 @media (max-width: 768px) {

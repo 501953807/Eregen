@@ -212,11 +212,11 @@ const hopeUIEChartsTheme = {
     fontWeight: 400,
   },
   title: {
-    textStyle: { fontSize: 16, fontWeight: 600, color: '#1a2e26' },
-    subtextStyle: { fontSize: 13, color: '#94a9a2' },
+    textStyle: { fontSize: 16, fontWeight: 600, color: 'var(--hope-text)' },
+    subtextStyle: { fontSize: 13, color: 'var(--hope-text-muted)' },
   },
   legend: {
-    textStyle: { fontSize: 13, color: '#6b8980', fontWeight: 500 },
+    textStyle: { fontSize: 13, color: 'var(--hope-text-secondary)', fontWeight: 500 },
     icon: 'roundRect',
     itemWidth: 14,
     itemHeight: 14,
@@ -228,7 +228,7 @@ const hopeUIEChartsTheme = {
     borderWidth: 1,
     borderRadius: 10,
     padding: [10, 14],
-    textStyle: { color: '#1a2e26', fontSize: 13 },
+    textStyle: { color: 'var(--hope-text)', fontSize: 13 },
     extraCssText: 'box-shadow: 0 4px 16px rgba(26,46,38,0.14);',
   },
   axis: {

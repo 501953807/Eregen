@@ -2,12 +2,12 @@
   <div>
     <!-- KPI Row -->
     <el-row :gutter="12" style="margin-bottom: 20px;">
-      <el-col :span="4"><el-card shadow="hover" class="kpi-card kpi-blue"><div class="kpi-value">{{ kpis.total }}</div><div class="kpi-label">登记老人</div></el-card></el-col>
-      <el-col :span="4"><el-card shadow="hover" class="kpi-card kpi-green"><div class="kpi-value">{{ kpis.wearable }}</div><div class="kpi-label">在线腕带</div></el-card></el-col>
-      <el-col :span="4"><el-card shadow="hover" class="kpi-card"><div class="kpi-value">{{ kpis.welfareTags }}</div><div class="kpi-label">福利标签</div></el-card></el-col>
-      <el-col :span="4"><el-card shadow="hover" class="kpi-card kpi-warning"><div class="kpi-value">{{ kpis.todaySignin }}</div><div class="kpi-label">今日签到</div></el-card></el-col>
-      <el-col :span="4"><el-card shadow="hover" class="kpi-card kpi-danger"><div class="kpi-value">{{ kpis.pendingReview }}</div><div class="kpi-label">待审核民政</div></el-card></el-col>
-      <el-col :span="4"><el-card shadow="hover" class="kpi-card kpi-warning"><div class="kpi-value">{{ kpis.alerts }}</div><div class="kpi-label">异常告警</div></el-card></el-col>
+      <el-col :span="4"><el-card shadow="never" class="kpi-card kpi-primary"><div class="kpi-value">{{ kpis.total }}</div><div class="kpi-label">登记老人</div></el-card></el-col>
+      <el-col :span="4"><el-card shadow="never" class="kpi-card kpi-success"><div class="kpi-value">{{ kpis.wearable }}</div><div class="kpi-label">在线腕带</div></el-card></el-col>
+      <el-col :span="4"><el-card shadow="never" class="kpi-card"><div class="kpi-value">{{ kpis.welfareTags }}</div><div class="kpi-label">福利标签</div></el-card></el-col>
+      <el-col :span="4"><el-card shadow="never" class="kpi-card kpi-info"><div class="kpi-value">{{ kpis.todaySignin }}</div><div class="kpi-label">今日签到</div></el-card></el-col>
+      <el-col :span="4"><el-card shadow="never" class="kpi-card kpi-warning"><div class="kpi-value">{{ kpis.pendingReview }}</div><div class="kpi-label">待审核民政</div></el-card></el-col>
+      <el-col :span="4"><el-card shadow="never" class="kpi-card kpi-danger"><div class="kpi-value">{{ kpis.alerts }}</div><div class="kpi-label">异常告警</div></el-card></el-col>
     </el-row>
 
     <div class="filter-bar">
@@ -118,3 +118,91 @@ function welfareTagType(code: string): string {
 
 function handlePageChange(p: number) { emit('page-change', p) }
 </script>
+
+<style scoped>
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--hope-border) !important;
+  box-shadow: var(--hope-shadow-sm) !important;
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
+  pointer-events: none;
+}
+.kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--hope-shadow-md) !important;
+}
+.kpi-card :deep(.el-card__body) {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-radius: 14px;
+}
+.kpi-value {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.kpi-label {
+  font-size: 12px;
+  color: var(--hope-text-muted);
+  margin-top: 6px;
+  font-weight: 600;
+}
+.kpi-primary .kpi-value { color: var(--hope-primary); }
+.kpi-success .kpi-value { color: var(--hope-success); }
+.kpi-info .kpi-value { color: var(--hope-info); }
+.kpi-warning .kpi-value { color: var(--hope-warning); }
+.kpi-danger .kpi-value { color: var(--hope-error); }
+
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.table-card {
+  margin-bottom: 0;
+}
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+.mono {
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 12px;
+  color: var(--hope-text-muted);
+}
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--hope-radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-success { background: var(--hope-success-light); color: var(--hope-success); }
+.badge-gray { background: var(--hope-surface-light); color: var(--hope-text-muted); }
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot-success { background: var(--hope-success); }
+.dot-gray { background: var(--hope-text-muted); }
+</style>

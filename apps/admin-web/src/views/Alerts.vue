@@ -55,21 +55,16 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button @click="handleReset" class="btn-reset">重置</el-button>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
+          <HopeBtn variant="plain" size="sm" @click="handleReset">重置</HopeBtn>
+          <HopeBtn variant="filled" size="sm" @click="handleSearch">查询</HopeBtn>
         </el-form-item>
       </el-form>
     </div>
 
     <!-- Alert Table -->
-    <el-card shadow="never">
-      <template #header>
-        <div class="table-header">
-          <span style="font-weight: 600; color: #29404A;">告警列表</span>
-          <el-button type="primary" size="default" @click="handleBatchResolve" class="btn-primary-outline">
-            批量标记已处理
-          </el-button>
-        </div>
+    <HopeCard title="告警列表" class="table-card">
+      <template #header-actions>
+        <HopeBtn variant="outlined" size="sm" @click="handleBatchResolve">批量标记已处理</HopeBtn>
       </template>
       <el-table v-loading="loading" :data="filteredAlerts" stripe style="width: 100%" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="50" />
@@ -78,26 +73,17 @@
         </el-table-column>
         <el-table-column label="类型" width="120">
           <template #default="{ row }">
-            <span class="status-badge" :class="alertBadgeClass(row.alert_type)">
-              <span class="status-dot" :class="alertDotClass(row.alert_type)"></span>
-              {{ alertTypeLabel(row.alert_type) }}
-            </span>
+            <HopeBadge :color="alertBadgeColor(row.alert_type)">{{ alertTypeLabel(row.alert_type) }}</HopeBadge>
           </template>
         </el-table-column>
         <el-table-column label="严重程度" width="100">
           <template #default="{ row }">
-            <span class="status-badge" :class="severityBadgeClass(row.severity)">
-              <span class="status-dot" :class="severityDotClass(row.severity)"></span>
-              {{ row.severity }}
-            </span>
+            <HopeBadge :color="severityBadgeColor(row.severity)">{{ row.severity }}</HopeBadge>
           </template>
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <span class="status-badge" :class="row.status === 'pending' ? 'badge-warning' : 'badge-success'">
-              <span class="status-dot" :class="row.status === 'pending' ? 'dot-warning' : 'dot-success'"></span>
-              {{ statusLabel(row.status) }}
-            </span>
+            <HopeBadge :color="statusBadgeColor(row.status)">{{ statusLabel(row.status) }}</HopeBadge>
           </template>
         </el-table-column>
         <el-table-column label="老人ID" width="120">
@@ -112,27 +98,31 @@
         </el-table-column>
         <el-table-column label="操作" fixed="right" min-width="160">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="handleView(row)">查看</el-button>
-            <el-button link size="small" style="color:#D9A441;" @click="handleAcknowledge(row)" :disabled="row.status !== 'pending'">标记已读</el-button>
-            <el-button link size="small" style="color:#6FAF8F;" @click="handleResolve(row)" :disabled="row.status === 'resolved'">标记已处理</el-button>
+            <HopeBtn variant="text" size="sm" @click="handleView(row)">查看</HopeBtn>
+            <HopeBtn variant="text" size="sm" :disabled="row.status !== 'pending'" @click="handleAcknowledge(row)">标记已读</HopeBtn>
+            <HopeBtn variant="success" size="sm" :disabled="row.status === 'resolved'" @click="handleResolve(row)">标记已处理</HopeBtn>
           </template>
         </el-table-column>
       </el-table>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
-        <el-tag :type="sseConnected ? 'success' : 'danger'" size="small" effect="plain" style="border-radius:20px;">
-          <span :style="{ color: sseConnected ? '#6FAF8F' : '#D77B72', display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: sseConnected ? '#6FAF8F' : '#D77B72', marginRight: 6 }"></span>
-          {{ sseConnected ? '实时推送已连接' : '推送未连接' }}
-        </el-tag>
+      <template #footer>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <el-tag :type="sseConnected ? 'success' : 'danger'" size="small" effect="plain" style="border-radius:20px;">
+            <span :style="{ background: sseConnected ? 'var(--hope-success)' : 'var(--hope-error)', display: 'inline-block', width: 6, height: 6, borderRadius: '50%', marginRight: 6 }"></span>
+            {{ sseConnected ? '实时推送已连接' : '推送未连接' }}
+          </el-tag>
+        </div>
         <el-pagination background layout="prev, pager, next" :total="allAlerts.length" :page-size="20" />
-      </div>
-    </el-card>
+      </template>
+    </HopeCard>
 
     <!-- View Detail Side Panel -->
     <div class="side-panel-overlay" :class="{ show: showDetailDialog }" @click="showDetailDialog = false" />
     <div class="side-panel" :class="{ open: showDetailDialog }">
       <div class="panel-header">
         <span class="panel-title">告警详情</span>
-        <button class="panel-close" @click="showDetailDialog = false">&#10005;</button>
+        <HopeBtn variant="ghost" size="sm" icon-only @click="showDetailDialog = false">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </HopeBtn>
       </div>
       <div class="panel-body" v-if="detailAlert">
         <div class="info-section">
@@ -148,19 +138,13 @@
           <div class="panel-row">
             <span class="panel-label">严重程度</span>
             <span class="panel-value">
-              <span class="status-badge" :class="severityBadgeClass(detailAlert.severity)">
-                <span class="status-dot" :class="severityDotClass(detailAlert.severity)"></span>
-                {{ detailAlert.severity }}
-              </span>
+              <HopeBadge :color="severityBadgeColor(detailAlert.severity)">{{ detailAlert.severity }}</HopeBadge>
             </span>
           </div>
           <div class="panel-row">
             <span class="panel-label">状态</span>
             <span class="panel-value">
-              <span class="status-badge" :class="detailAlert.status === 'pending' ? 'badge-warning' : 'badge-success'">
-                <span class="status-dot" :class="detailAlert.status === 'pending' ? 'dot-warning' : 'dot-success'"></span>
-                {{ statusLabel(detailAlert.status) }}
-              </span>
+              <HopeBadge :color="statusBadgeColor(detailAlert.status)">{{ statusLabel(detailAlert.status) }}</HopeBadge>
             </span>
           </div>
           <div class="panel-row">
@@ -190,6 +174,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { alertsApi } from '@/api/alerts'
 import type { Alert } from '@/types'
+import { HopeCard, HopeBtn, HopeBadge } from '@/components/hope'
 
 const allAlerts = ref<Alert[]>([])
 const loading = ref(false)
@@ -223,24 +208,20 @@ const stats = computed(() => ({
   p2: allAlerts.value.filter(a => (a.severity === 'p2' || a.severity === 'low') && a.status === 'pending').length,
 }))
 
-function alertBadgeClass(type: string): string {
-  if (['SOS', 'heart'].includes(type)) return 'badge-danger'
-  if (['fall', 'medication'].includes(type)) return 'badge-warning'
-  return 'badge-primary'
-}
-function alertDotClass(type: string): string {
-  if (['SOS', 'heart'].includes(type)) return 'dot-danger'
-  if (['fall', 'medication'].includes(type)) return 'dot-warning'
-  return 'dot-primary'
+function alertBadgeColor(type: string): 'error' | 'warning' | 'primary' {
+  if (['SOS', 'heart'].includes(type)) return 'error'
+  if (['fall', 'medication'].includes(type)) return 'warning'
+  return 'primary'
 }
 
-function severityBadgeClass(sev: string): string {
-  const map: Record<string, string> = { P0: 'badge-danger', P1: 'badge-warning', P2: 'badge-info', high: 'badge-danger', medium: 'badge-warning', low: 'badge-info' }
-  return map[sev] || 'badge-info'
+function severityBadgeColor(sev: string): 'error' | 'warning' | 'primary' {
+  if (sev === 'P0' || sev === 'high') return 'error'
+  if (sev === 'P1' || sev === 'medium') return 'warning'
+  return 'primary'
 }
-function severityDotClass(sev: string): string {
-  const map: Record<string, string> = { P0: 'dot-danger', P1: 'dot-warning', P2: 'dot-info', high: 'dot-danger', medium: 'dot-warning', low: 'dot-info' }
-  return map[sev] || 'dot-info'
+
+function statusBadgeColor(status: string): 'error' | 'success' | 'warning' {
+  return status === 'pending' ? 'warning' : status === 'resolved' ? 'success' : 'warning'
 }
 
 function alertTypeLabel(type: string): string {
@@ -293,14 +274,14 @@ function connectSSE() {
       if (newAlerts.length) {
         allAlerts.value = [...newAlerts, ...allAlerts.value]
         newAlerts.forEach((a: Alert) => {
-          ElMessage.warning({ message: `🔔 新告警: ${alertTypeLabel(a.alert_type)} (${a.severity})`, duration: 5000 })
+          ElMessage.warning({ message: `新告警: ${alertTypeLabel(a.alert_type)} (${a.severity})`, duration: 5000 })
         })
       }
     } else if (data.type === 'new' && data.alert) {
       const a = data.alert as Alert
       if (!allAlerts.value.find(x => x.id === a.id)) {
         allAlerts.value.unshift(a)
-        ElMessage.warning({ message: `🔔 新告警: ${alertTypeLabel(a.alert_type)} (${a.severity})`, duration: 5000 })
+        ElMessage.warning({ message: `新告警: ${alertTypeLabel(a.alert_type)} (${a.severity})`, duration: 5000 })
       }
     }
   })
@@ -390,9 +371,9 @@ onUnmounted(() => {
 
 /* KPI stat cards */
 .stat-card {
-  border: 1px solid var(--border-light) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), var(--shadow-card) !important;
-  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--hope-border) !important;
+  box-shadow: var(--hope-shadow-sm) !important;
+  border-radius: var(--hope-radius-lg) !important;
   background: white !important;
   position: relative;
   overflow: hidden;
@@ -408,6 +389,7 @@ onUnmounted(() => {
 }
 .stat-card:hover {
   transform: translateY(-3px);
+  box-shadow: var(--hope-shadow-md) !important;
 }
 .stat-card :deep(.el-card__body) {
   padding: 18px;
@@ -420,13 +402,15 @@ onUnmounted(() => {
 .stat-value {
   font-size: 32px;
   font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
 }
-.kpi-danger .stat-value { color: #D77B72; }
-.kpi-warning .stat-value { color: #D9A441; }
-.kpi-info .stat-value { color: #6E9FC4; }
+.kpi-danger .stat-value { color: var(--hope-error); }
+.kpi-warning .stat-value { color: var(--hope-warning); }
+.kpi-info .stat-value { color: var(--hope-info); }
 .stat-label {
   font-size: 13px;
-  color: #6B8980;
+  color: var(--hope-text-muted);
   margin-top: 4px;
   font-weight: 600;
 }
@@ -438,90 +422,41 @@ onUnmounted(() => {
   width: 100%;
 }
 
-/* Table header */
-.table-header {
+.filter-bar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
 }
-.btn-reset {
-  border-radius: var(--hope-radius-lg) !important;
-  border: 1px solid var(--hope-border) !important;
-  color: var(--hope-text-secondary) !important;
-  background: var(--hope-surface) !important;
+.filter-label {
   font-size: 13px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-.btn-reset:hover {
-  background: var(--hope-surface-light) !important;
-  border-color: var(--hope-primary) !important;
-  color: var(--hope-primary) !important;
-}
-.btn-primary-outline {
-  border-radius: var(--hope-radius-lg) !important;
-  background: transparent !important;
-  border: 1.5px solid var(--hope-primary) !important;
-  color: var(--hope-primary) !important;
   font-weight: 600;
-  transition: all 0.2s;
-}
-.btn-primary-outline:hover {
-  background: var(--hope-primary-lighter) !important;
-  border-color: var(--hope-primary-dark) !important;
-}
-.el-button--primary {
-  background: linear-gradient(135deg, #5C8D73 0%, #6FAF8F 100%) !important;
-  border-color: transparent !important;
-  border-radius: var(--hope-radius-lg) !important;
-  box-shadow: var(--hope-shadow-primary) !important;
-  font-weight: 600 !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-.el-button--primary:hover {
-  background: linear-gradient(135deg, #6FAF8F 0%, #7BAF8C 100%) !important;
-  box-shadow: var(--hope-shadow-primary-hover) !important;
-  transform: translateY(-1px) !important;
+  color: var(--hope-text-secondary);
+  white-space: nowrap;
 }
 
-/* Status badges */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
+/* Table card */
+.table-card {
+  margin-bottom: 0;
 }
-.badge-success { background: #E8F4EC; color: #4A8A6A; }
-.badge-danger { background: #FDF0EE; color: #B85C54; }
-.badge-warning { background: #FEF7E8; color: #B8860B; }
-.badge-primary { background: #DDEBE1; color: #47745C; }
-.badge-info { background: #EEF4F8; color: #4A7FA0; }
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  display: inline-block;
+.table-card :deep(.hope-card-header__title) {
+  color: var(--hope-text);
+  font-weight: 700;
 }
-.dot-success { background: #6FAF8F; }
-.dot-danger { background: #D77B72; }
-.dot-warning { background: #D9A441; }
-.dot-primary { background: #5C8D73; }
-.dot-info { background: #6E9FC4; }
 
 .mono {
   font-family: 'SF Mono', 'Consolas', monospace;
   font-size: 12px;
-  color: #6B8980;
+  color: var(--hope-text-muted);
 }
 
 /* ========== Side Panel ========== */
 .side-panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(41,64,74,0.3);
+  background: rgba(26,26,46,0.3);
+  backdrop-filter: blur(4px);
   z-index: 200;
   display: none;
 }
@@ -534,47 +469,30 @@ onUnmounted(() => {
   right: -520px;
   bottom: 0;
   width: 520px;
-  background: white;
+  background: var(--hope-surface);
   z-index: 201;
   transition: right 0.3s ease;
   overflow-y: auto;
-  box-shadow: -10px 0 40px rgba(60,90,70,0.12);
+  box-shadow: -10px 0 40px rgba(58,87,232,0.10);
 }
 .side-panel.open {
   right: 0;
 }
 .panel-header {
   padding: 20px 24px;
-  border-bottom: 1px solid #E5EDE6;
+  border-bottom: 1px solid var(--hope-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky;
   top: 0;
-  background: white;
+  background: var(--hope-surface);
   z-index: 1;
 }
 .panel-title {
   font-size: 15px;
   font-weight: 700;
-  color: #29404A;
-}
-.panel-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: none;
-  background: #F3F5F1;
-  cursor: pointer;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s;
-  color: #6B8980;
-}
-.panel-close:hover {
-  background: #E5EDE6;
+  color: var(--hope-text);
 }
 .panel-body {
   padding: 20px 24px;
@@ -586,12 +504,12 @@ onUnmounted(() => {
 .section-title {
   font-size: 12px;
   font-weight: 700;
-  color: #6B8980;
+  color: var(--hope-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 10px;
   padding-bottom: 6px;
-  border-bottom: 1px solid #F3F5F1;
+  border-bottom: 1px solid var(--hope-border);
 }
 .panel-row {
   display: flex;
@@ -601,21 +519,21 @@ onUnmounted(() => {
 }
 .panel-label {
   font-size: 13px;
-  color: #6B8980;
+  color: var(--hope-text-muted);
   font-weight: 500;
 }
 .panel-value {
   font-size: 13px;
-  color: #29404A;
+  color: var(--hope-text);
   font-weight: 600;
 }
 .metadata-pre {
   margin: 0;
   font-size: 12px;
-  color: #4A6260;
-  background: #F8F6F1;
+  color: var(--hope-text-secondary);
+  background: var(--hope-surface-light);
   padding: 12px;
-  border-radius: 10px;
+  border-radius: var(--hope-radius-md);
   overflow-x: auto;
 }
 
