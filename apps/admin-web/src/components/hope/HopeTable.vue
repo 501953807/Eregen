@@ -90,7 +90,7 @@ function sort(prop: string) {
   background: var(--hope-surface);
 }
 .hope-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.hope-table thead { background: #F6F7FB; border-bottom: 1px solid var(--hope-border); }
+.hope-table thead { background: var(--hope-surface-light); border-bottom: 1px solid var(--hope-border); }
 .hope-table th {
   padding: 14px 18px; text-align: left; font-size: 13px; font-weight: 600;
   color: #616161; text-transform: uppercase; letter-spacing: 0.04em;

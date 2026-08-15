@@ -1,5 +1,5 @@
 <template>
-  <div class="hope-stat-card" :style="`--hope-primary-gradient: ${gradient || 'linear-gradient(135deg, #4A7C5F, #6FAF8F)'}`">
+  <div class="hope-stat-card" :style="`--hope-primary-gradient: ${gradient || 'linear-gradient(135deg, #3a57e8, #6f42c1)'}`">
     <div class="hope-stat-card__icon" :class="`hope-stat-card__icon--${iconColor}`">
       <slot name="icon" />
     </div>
@@ -81,7 +81,7 @@ withDefaults(defineProps<{
   padding: 3px 8px;
   border-radius: var(--hope-radius-pill);
 }
-.hope-stat-card__trend-up   { background: var(--hope-success-light); color: #2D5AA0; }
-.hope-stat-card__trend-down { background: var(--hope-error-light); color: #8B2020; }
+.hope-stat-card__trend-up   { background: var(--hope-success-light); color: var(--hope-success); }
+.hope-stat-card__trend-down { background: var(--hope-danger-light); color: var(--hope-danger); }
 .hope-stat-card__trend-neutral { background: rgba(148,169,162,0.12); color: #6b7280; }
 </style>
