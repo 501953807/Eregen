@@ -10,44 +10,43 @@
 // 1. DESIGN TOKENS (CSS Variables)
 // ═══════════════════════════════════════════════════════════
 .hope-theme {
-  --hope-primary:       #4A7C5F;
-  --hope-primary-light: #6FAF8F;
-  --hope-primary-dark:  #365C45;
-  --hope-primary-lighter: #D5E6DA;
-  --hope-primary-lightest: #EDF4EE;
+  --hope-primary:       #3a57e8;
+  --hope-primary-hover: #314ac5;
+  --hope-primary-active: #2e46ba;
+  --hope-primary-light: #eef1fb;
+  --hope-primary-lighter: #f5f7fd;
   --hope-accent:        #8C57FF;
   --hope-accent-dark:   #7E4EE6;
   --hope-accent-light:  #A88AFF;
-  --hope-success:       #56CA00;
-  --hope-success-light: #E6F5EC;
-  --hope-warning:       #C49A2C;
-  --hope-warning-light: #FEF6E4;
-  --hope-error:         #C04A42;
-  --hope-error-light:   #FDF0EE;
-  --hope-info:          #4A8FB8;
-  --hope-info-light:    #E8F2F8;
-  --hope-bg:            #F4F6F4;
-  --hope-surface:       #FFFFFF;
-  --hope-surface-light: #F8FAF8;
-  --hope-text:          #1A2E26;
-  --hope-text-secondary: #3D5A4E;
-  --hope-text-muted:    #94A9A2;
-  --hope-border:        rgba(26,46,38,0.08);
-  --hope-border-strong: rgba(26,46,38,0.15);
-  --hope-radius-sm:  4px;
-  --hope-radius-md:  6px;
-  --hope-radius-lg:  10px;
-  --hope-radius-xl:  14px;
-  --hope-radius-2xl: 20px;
+  --hope-success:       #1aa053;
+  --hope-success-light: #e6f5ec;
+  --hope-warning:       #FAA938;
+  --hope-warning-light: #fef6e4;
+  --hope-error:         #c03221;
+  --hope-error-light:   #fdf0ee;
+  --hope-info:          #079aa2;
+  --hope-info-light:    #e8f2f8;
+  --hope-bg:            #f4f6fa;
+  --hope-surface:       #ffffff;
+  --hope-surface-light: #f8f9fc;
+  --hope-text:          #1a1a2e;
+  --hope-text-secondary: #5a6275;
+  --hope-text-muted:    #949aab;
+  --hope-border:        #e2e6ef;
+  --hope-border-strong: #c8ced8;
+  --hope-radius-sm: 6px;
+  --hope-radius-md: 10px;
+  --hope-radius-lg: 14px;
+  --hope-radius-xl: 20px;
   --hope-radius-pill: 50px;
-  --hope-shadow-sm:  0 2px 4px rgba(26,46,38,0.08);
-  --hope-shadow-md:  0 4px 12px rgba(26,46,38,0.10);
-  --hope-shadow-lg:  0 8px 24px rgba(26,46,38,0.12);
-  --hope-shadow-xl:  0 16px 48px rgba(26,46,38,0.14);
-  --hope-shadow-primary: 0 2px 8px rgba(74,124,95,0.20);
-  --hope-shadow-primary-hover: 0 4px 16px rgba(74,124,95,0.25);
-  --hope-primary-gradient: linear-gradient(135deg, #4A7C5F 0%, #6FAF8F 100%);
-  --hope-transition: all 0.225s cubic-bezier(0.4, 0, 0.2, 1);
+  --hope-shadow-sm:  0 1px 3px rgba(58,87,232,0.08);
+  --hope-shadow-md:  0 4px 12px rgba(58,87,232,0.10);
+  --hope-shadow-lg:  0 8px 24px rgba(58,87,232,0.12);
+  --hope-shadow-xl:  0 16px 48px rgba(17,38,146,0.12);
+  --hope-shadow-primary: 0 1px 3px rgba(58,87,232,0.15), 0 1px 2px rgba(58,87,232,0.08);
+  --hope-shadow-primary-hover: 0 4px 12px rgba(58,87,232,0.20), 0 2px 4px rgba(58,87,232,0.10);
+  --hope-primary-gradient: linear-gradient(135deg, #3a57e8 0%, #6f42c1 100%);
+  --hope-transition: all 0.4s ease;
   --hope-transition-fast: all 0.15s ease-in-out;
 
   background: var(--hope-bg);
@@ -58,19 +57,18 @@
 }
 
 [data-theme="dark"] .hope-theme {
-  --hope-primary:       #6FAF8F;
-  --hope-primary-light: #8BC4A8;
-  --hope-primary-dark:  #4A7C5F;
-  --hope-primary-lighter: #1E3329;
-  --hope-primary-lightest: #162520;
-  --hope-bg:            #0F1A14;
-  --hope-surface:       #1A2E26;
-  --hope-surface-light: #1E3329;
-  --hope-text:          #E8F0EA;
-  --hope-text-secondary: #B8CCBE;
-  --hope-text-muted:    #6B8980;
-  --hope-border:        rgba(232,240,234,0.10);
-  --hope-border-strong: rgba(232,240,234,0.20);
+  --hope-primary:       #5a7ae8;
+  --hope-primary-hover: #4a6ad5;
+  --hope-primary-light: #1a2040;
+  --hope-primary-lighter: #151a35;
+  --hope-bg:            #0f1420;
+  --hope-surface:       #1a2035;
+  --hope-surface-light: #1e2540;
+  --hope-text:          #e8eaf0;
+  --hope-text-secondary: #b8bcc8;
+  --hope-text-muted:    #6b7280;
+  --hope-border:        #2a3045;
+  --hope-border-strong: #3a4560;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -187,11 +185,11 @@
   font-size: 24px;
   margin-bottom: 16px;
 }
-.hope-stat-card__icon--primary   { background: rgba(74,124,95,0.12); color: #4A7C5F; }
-.hope-stat-card__icon--success  { background: rgba(86,202,0,0.12); color: #56CA00; }
-.hope-stat-card__icon--warning  { background: rgba(196,154,44,0.12); color: #C49A2C; }
-.hope-stat-card__icon--error    { background: rgba(192,74,66,0.12); color: #C04A42; }
-.hope-stat-card__icon--info     { background: rgba(74,143,184,0.12); color: #4A8FB8; }
+.hope-stat-card__icon--primary   { background: rgba(58,87,232,0.12); color: #3a57e8; }
+.hope-stat-card__icon--success  { background: rgba(26,160,83,0.12); color: #1aa053; }
+.hope-stat-card__icon--warning  { background: rgba(250,169,56,0.12); color: #FAA938; }
+.hope-stat-card__icon--error    { background: rgba(192,50,33,0.12); color: #c03221; }
+.hope-stat-card__icon--info     { background: rgba(7,154,162,0.12); color: #079aa2; }
 .hope-stat-card__icon--accent   { background: rgba(140,87,255,0.12); color: #8C57FF; }
 .hope-stat-card__value {
   font-size: 30px;
@@ -216,9 +214,9 @@
   padding: 3px 8px;
   border-radius: var(--hope-radius-pill);
 }
-.hope-stat-card__trend-up   { background: var(--hope-success-light); color: #2D7A52; }
-.hope-stat-card__trend-down { background: var(--hope-error-light); color: #9B3A33; }
-.hope-stat-card__trend-neutral { background: rgba(148,169,162,0.12); color: #6B8980; }
+.hope-stat-card__trend-up   { background: var(--hope-success-light); color: #2D5AA0; }
+.hope-stat-card__trend-down { background: var(--hope-error-light); color: #8B2020; }
+.hope-stat-card__trend-neutral { background: rgba(148,169,162,0.12); color: #6b7280; }
 
 /* ═══════════════════════════════════════════════════════════
    5. BUTTON
@@ -243,7 +241,7 @@
   font-family: inherit;
   letter-spacing: -0.01em;
 }
-.hope-btn:focus-visible { box-shadow: 0 0 0 3px rgba(74,124,95,0.25); }
+.hope-btn:focus-visible { box-shadow: 0 0 0 3px rgba(58,87,232,0.25); }
 .hope-btn:active { transform: scale(0.97); }
 .hope-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
@@ -253,7 +251,7 @@
   box-shadow: var(--hope-shadow-primary);
 }
 .hope-btn--filled:hover {
-  background: var(--hope-primary-dark);
+  background: var(--hope-primary-hover);
   box-shadow: var(--hope-shadow-primary-hover);
   transform: translateY(-1px);
 }
@@ -261,10 +259,10 @@
 .hope-btn--outlined {
   background: transparent;
   color: var(--hope-primary);
-  border: 1.5px solid rgba(74,124,95,0.35);
+  border: 1.5px solid rgba(58,87,232,0.35);
 }
 .hope-btn--outlined:hover {
-  background: rgba(74,124,95,0.06);
+  background: rgba(58,87,232,0.06);
   border-color: var(--hope-primary);
 }
 
@@ -273,7 +271,7 @@
   color: var(--hope-primary);
   padding: 10px 12px;
 }
-.hope-btn--text:hover { background: rgba(74,124,95,0.06); }
+.hope-btn--text:hover { background: rgba(58,87,232,0.06); }
 
 .hope-btn--ghost {
   background: transparent;
@@ -300,7 +298,7 @@
 .hope-btn--warning { background: var(--hope-warning); color: #000; }
 .hope-btn--warning:hover { background: #B8860B; }
 .hope-btn--error   { background: var(--hope-error); color: #fff; }
-.hope-btn--error:hover   { background: #9B3A33; }
+.hope-btn--error:hover   { background: #8B2020; }
 .hope-btn--info    { background: var(--hope-info); color: #fff; }
 .hope-btn--info:hover    { background: #3D7A9E; }
 .hope-btn--accent  { background: var(--hope-accent); color: #fff; }
@@ -321,10 +319,10 @@
   line-height: 1.5;
 }
 .hope-badge--dot { padding: 0; width: 8px; height: 8px; border-radius: 50%; }
-.hope-badge--primary   { background: rgba(74,124,95,0.12); color: var(--hope-primary); }
+.hope-badge--primary   { background: rgba(58,87,232,0.12); color: var(--hope-primary); }
 .hope-badge--success   { background: rgba(86,202,0,0.12); color: #4DB600; }
 .hope-badge--warning   { background: rgba(196,154,44,0.12); color: #B8860B; }
-.hope-badge--error     { background: rgba(192,74,66,0.12); color: #9B3A33; }
+.hope-badge--error     { background: rgba(192,74,66,0.12); color: #8B2020; }
 .hope-badge--info      { background: rgba(74,143,184,0.12); color: #2D6E91; }
 .hope-badge--accent    { background: rgba(140,87,255,0.12); color: var(--hope-accent); }
 .hope-badge--soft {
@@ -349,11 +347,11 @@
   border: 1px solid var(--hope-border);
   transition: var(--hope-transition-fast);
 }
-.hope-chip:hover { background: rgba(74,124,95,0.08); color: var(--hope-primary); }
-.hope-chip--primary { background: rgba(74,124,95,0.12); color: var(--hope-primary); border-color: transparent; }
+.hope-chip:hover { background: rgba(58,87,232,0.08); color: var(--hope-primary); }
+.hope-chip--primary { background: rgba(58,87,232,0.12); color: var(--hope-primary); border-color: transparent; }
 .hope-chip--success { background: rgba(86,202,0,0.12); color: #4DB600; border-color: transparent; }
 .hope-chip--warning { background: rgba(196,154,44,0.12); color: #B8860B; border-color: transparent; }
-.hope-chip--error   { background: rgba(192,74,66,0.12); color: #9B3A33; border-color: transparent; }
+.hope-chip--error   { background: rgba(192,74,66,0.12); color: #8B2020; border-color: transparent; }
 .hope-chip--info    { background: rgba(74,143,184,0.12); color: #2D6E91; border-color: transparent; }
 .hope-chip--accent  { background: rgba(140,87,255,0.12); color: var(--hope-accent); border-color: transparent; }
 
@@ -376,10 +374,10 @@
 .hope-alert__content { flex: 1; }
 .hope-alert__title { font-weight: 600; margin-bottom: 2px; }
 .hope-alert__action { margin-left: auto; flex-shrink: 0; }
-.hope-alert--primary   { background: rgba(74,124,95,0.08); border-color: rgba(74,124,95,0.20); color: var(--hope-primary-dark); }
-.hope-alert--success   { background: var(--hope-success-light); border-color: rgba(86,202,0,0.20); color: #2D7A52; }
+.hope-alert--primary   { background: rgba(58,87,232,0.08); border-color: rgba(58,87,232,0.20); color: var(--hope-primary-dark); }
+.hope-alert--success   { background: var(--hope-success-light); border-color: rgba(86,202,0,0.20); color: #2D5AA0; }
 .hope-alert--warning   { background: var(--hope-warning-light); border-color: rgba(196,154,44,0.20); color: #926C0E; }
-.hope-alert--error     { background: var(--hope-error-light); border-color: rgba(192,74,66,0.20); color: #9B3A33; }
+.hope-alert--error     { background: var(--hope-error-light); border-color: rgba(192,74,66,0.20); color: #8B2020; }
 .hope-alert--info      { background: var(--hope-info-light);  border-color: rgba(74,143,184,0.20); color: #2D6E91; }
 .hope-alert--accent    { background: rgba(140,87,255,0.08);  border-color: rgba(140,87,255,0.20); color: #5E3BB3; }
 .hope-alert--outline { background: transparent; }
@@ -411,10 +409,10 @@
   box-sizing: border-box;
 }
 .hope-input::placeholder { color: var(--hope-text-muted); }
-.hope-input:hover { border-color: rgba(74,124,95,0.4); }
+.hope-input:hover { border-color: rgba(58,87,232,0.4); }
 .hope-input:focus {
   border-color: var(--hope-primary);
-  box-shadow: 0 0 0 3px rgba(74,124,95,0.12);
+  box-shadow: 0 0 0 3px rgba(58,87,232,0.12);
 }
 .hope-input:disabled { background: var(--hope-surface-light); color: var(--hope-text-muted); cursor: not-allowed; border-color: var(--hope-border); }
 .hope-input--error   { border-color: var(--hope-error); }
@@ -461,7 +459,7 @@
   transition: color 0.18s, background 0.18s;
   white-space: nowrap;
 }
-.hope-tab:hover { color: var(--hope-primary); background: rgba(74,124,95,0.04); }
+.hope-tab:hover { color: var(--hope-primary); background: rgba(58,87,232,0.04); }
 .hope-tab.active { color: var(--hope-primary); font-weight: 600; }
 .hope-tab.active::after {
   content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
@@ -470,7 +468,7 @@
 .hope-tab__badge {
   min-width: 20px; height: 20px;
   border-radius: 50%;
-  background: rgba(74,124,95,0.12);
+  background: rgba(58,87,232,0.12);
   color: var(--hope-primary);
   font-size: 12px; font-weight: 600;
   display: inline-flex; align-items: center; justify-content: center;
@@ -547,10 +545,10 @@
 .hope-table th.sort-desc .sort-icon { opacity: 1; color: var(--hope-primary); }
 .hope-table td { padding: 14px 18px; border-bottom: 1px solid rgba(26,46,38,0.06); color: var(--hope-text); vertical-align: middle; }
 .hope-table tbody tr { transition: background 0.12s; }
-.hope-table tbody tr:hover { background: rgba(74,124,95,0.04); }
+.hope-table tbody tr:hover { background: rgba(58,87,232,0.04); }
 .hope-table tbody tr:last-child td { border-bottom: none; }
 .hope-table--striped tbody tr:nth-child(even) { background: rgba(26,46,38,0.02); }
-.hope-table--striped tbody tr:nth-child(even):hover { background: rgba(74,124,95,0.06); }
+.hope-table--striped tbody tr:nth-child(even):hover { background: rgba(58,87,232,0.06); }
 .hope-table--compact td, .hope-table--compact th { padding: 10px 14px; }
 .hope-table-toolbar {
   display: flex; align-items: center; justify-content: space-between;
@@ -642,8 +640,8 @@
   cursor: pointer; transition: background 0.12s, color 0.12s;
   text-decoration: none; white-space: nowrap;
 }
-.hope-dropdown-item:hover { background: rgba(74,124,95,0.08); color: var(--hope-primary); }
-.hope-dropdown-item:active { background: rgba(74,124,95,0.12); }
+.hope-dropdown-item:hover { background: rgba(58,87,232,0.08); color: var(--hope-primary); }
+.hope-dropdown-item:active { background: rgba(58,87,232,0.12); }
 .hope-dropdown-item.danger { color: var(--hope-error); }
 .hope-dropdown-item.danger:hover { background: rgba(192,74,66,0.08); }
 .hope-dropdown-divider { height: 1px; background: var(--hope-border); margin: 4px 0; }
@@ -693,7 +691,7 @@
 .hope-timeline::before {
   content: ''; position: absolute; left: 11px; top: 8px; bottom: 8px;
   width: 2px;
-  background: linear-gradient(180deg, var(--hope-primary) 0%, rgba(74,124,95,0.2) 100%);
+  background: linear-gradient(180deg, var(--hope-primary) 0%, rgba(58,87,232,0.2) 100%);
   border-radius: 2px;
 }
 .hope-timeline-item { position: relative; padding-bottom: 24px; }
@@ -756,7 +754,7 @@
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid transparent;
 }
-.hope-pagination-item a:hover { background: rgba(74,124,95,0.08); color: var(--hope-primary); border-color: rgba(74,124,95,0.15); }
+.hope-pagination-item a:hover { background: rgba(58,87,232,0.08); color: var(--hope-primary); border-color: rgba(58,87,232,0.15); }
 .hope-pagination-item.active span { background: var(--hope-primary); color: #FFFFFF; font-weight: 600; box-shadow: var(--hope-shadow-primary); }
 .hope-pagination-item.disabled a { opacity: 0.4; cursor: not-allowed; }
 .hope-pagination-item.disabled a:hover { background: transparent; color: var(--hope-text-secondary); }
@@ -783,7 +781,7 @@
   font-size: 15px; font-weight: 500; color: var(--hope-text);
   text-align: left; transition: background 0.15s, color 0.15s;
 }
-.hope-accordion-header:hover { background: rgba(74,124,95,0.04); color: var(--hope-primary); }
+.hope-accordion-header:hover { background: rgba(58,87,232,0.04); color: var(--hope-primary); }
 .hope-accordion-header.active { color: var(--hope-primary); font-weight: 600; }
 .hope-accordion-icon {
   width: 20px; height: 20px;
@@ -851,7 +849,7 @@
   color: var(--hope-text-muted); cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
-.hope-icon-btn:hover { background: rgba(74,124,95,0.08); color: var(--hope-primary); }
+.hope-icon-btn:hover { background: rgba(58,87,232,0.08); color: var(--hope-primary); }
 
 /* ═══════════════════════════════════════════════════════════
    22. CHART WRAPPER
@@ -974,13 +972,13 @@
     transition: box-shadow 0.18s !important;
   }
   .el-input__wrapper.is-focus, .el-textarea__inner:focus {
-    box-shadow: 0 0 0 1.5px var(--hope-primary) inset, 0 0 0 3px rgba(74,124,95,0.10) !important;
+    box-shadow: 0 0 0 1.5px var(--hope-primary) inset, 0 0 0 3px rgba(58,87,232,0.10) !important;
   }
   /* el-table */
   .el-table { border-radius: var(--hope-radius-lg) !important; overflow: hidden !important; }
   .el-table th.el-table__cell { background: #F6F7FB !important; font-size: 13px !important; font-weight: 600 !important; color: #616161 !important; text-transform: uppercase !important; letter-spacing: 0.04em !important; }
   .el-table td.el-table__cell { border-bottom: 1px solid rgba(26,46,38,0.06) !important; }
-  .el-table .el-table__body tr:hover > td { background: rgba(74,124,95,0.04) !important; }
+  .el-table .el-table__body tr:hover > td { background: rgba(58,87,232,0.04) !important; }
   /* el-tabs */
   .el-tabs--border-card { border-radius: var(--hope-radius-lg) !important; border: 1px solid var(--hope-border) !important; }
   .el-tabs__header { border-bottom: 2px solid var(--hope-border) !important; }
@@ -1001,7 +999,7 @@
   .el-pagination .el-pager li.is-active { background: var(--hope-primary) !important; color: #fff !important; }
   /* el-dropdown */
   .el-dropdown-menu { border-radius: var(--hope-radius-lg) !important; border: 1px solid var(--hope-border) !important; box-shadow: var(--hope-shadow-lg) !important; padding: 6px !important; }
-  .el-dropdown-menu__item:hover { background: rgba(74,124,95,0.08) !important; color: var(--hope-primary) !important; }
+  .el-dropdown-menu__item:hover { background: rgba(58,87,232,0.08) !important; color: var(--hope-primary) !important; }
   /* el-select */
   .el-select__wrapper { border-radius: var(--hope-radius-lg) !important; }
   /* el-checkbox */

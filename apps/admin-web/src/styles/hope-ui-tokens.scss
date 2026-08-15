@@ -1,0 +1,105 @@
+// src/styles/hope-ui-tokens.scss
+/**
+ * Hope UI Design Tokens — Eregen Admin Adaptation
+ *
+ * 基于 Hope UI (https://templates.iqonic.design/hope-ui/)
+ * 完全套用 Hope UI 蓝紫色调，适配 Eregen 品牌
+ */
+
+// ═══════════════════════════════════════════════════════════
+// 1. PRIMARY COLORS (Hope UI 蓝紫)
+// ═══════════════════════════════════════════════════════════
+:root {
+  --hope-primary: #3a57e8;
+  --hope-primary-hover: #314ac5;
+  --hope-primary-active: #2e46ba;
+  --hope-primary-light: #eef1fb;
+  --hope-primary-lighter: #f5f7fd;
+  --hope-primary-gradient: linear-gradient(135deg, #3a57e8 0%, #6f42c1 100%);
+  --hope-primary-gradient-hover: linear-gradient(135deg, #314ac5 0%, #6f42c1 100%);
+
+  // Secondary
+  --hope-secondary: #001f4d;
+  --hope-secondary-hover: #001840;
+
+  // Status colors (Hope UI standard)
+  --hope-success: #1aa053;
+  --hope-success-light: #e6f5ec;
+  --hope-warning: #FAA938;
+  --hope-warning-light: #fef6e4;
+  --hope-danger: #c03221;
+  --hope-danger-light: #fdf0ee;
+  --hope-info: #079aa2;
+  --hope-info-light: #e8f2f8;
+
+  // Backgrounds
+  --hope-bg: #f4f6fa;
+  --hope-bg-gradient: linear-gradient(180deg, #f4f6fa 0%, #eef1f8 100%);
+  --hope-surface: #ffffff;
+  --hope-surface-light: #f8f9fc;
+  --hope-surface-raised: #ffffff;
+
+  // Text
+  --hope-text: #1a1a2e;
+  --hope-text-secondary: #5a6275;
+  --hope-text-muted: #949aab;
+  --hope-text-inverse: #ffffff;
+
+  // Borders
+  --hope-border: #e2e6ef;
+  --hope-border-strong: #c8ced8;
+
+  // Shadows (Hope UI 风格)
+  --hope-shadow-sm: 0 1px 3px rgba(58,87,232,0.08);
+  --hope-shadow-md: 0 4px 12px rgba(58,87,232,0.10);
+  --hope-shadow-lg: 0 8px 24px rgba(58,87,232,0.12);
+  --hope-shadow-card: 0 10px 30px rgba(17,38,146,0.05);
+  --hope-shadow-card-hover: 0 16px 48px rgba(17,38,146,0.12);
+  --hope-shadow-active: 0 10px 20px -10px rgba(58,87,232,0.38);
+  --hope-shadow-input-focus: 0 0 0 0.2rem rgba(58,87,232,0.25);
+
+  // Sidebar
+  --hope-sidebar-width: 16.2rem;
+  --hope-sidebar-collapsed-width: 4.8rem;
+  --hope-sidebar-bg: #ffffff;
+  --hope-sidebar-border: #e9ecef;
+  --hope-sidebar-hover: #f5f7fd;
+  --hope-sidebar-active: #3a57e8;
+
+  // Radii
+  --hope-radius-sm: 6px;
+  --hope-radius-md: 10px;
+  --hope-radius-lg: 14px;
+  --hope-radius-xl: 20px;
+  --hope-radius-pill: 50px;
+
+  // Transitions
+  --hope-transition: all 0.4s ease;
+  --hope-transition-fast: all 0.15s ease-in-out;
+  --hope-transition-sidebar: all 0.4s ease-in-out;
+}
+
+// Dark theme
+[data-theme="dark"] {
+  --hope-primary: #5a7ae8;
+  --hope-primary-hover: #4a6ad5;
+  --hope-primary-light: #1a2040;
+  --hope-primary-lighter: #151a35;
+  --hope-bg: #0f1420;
+  --hope-bg-gradient: linear-gradient(180deg, #0f1420 0%, #141a28 100%);
+  --hope-surface: #1a2035;
+  --hope-surface-light: #1e2540;
+  --hope-text: #e8eaf0;
+  --hope-text-secondary: #b8bcc8;
+  --hope-text-muted: #6b7280;
+  --hope-border: #2a3045;
+  --hope-border-strong: #3a4560;
+  --hope-shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --hope-shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --hope-shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+  --hope-shadow-card: 0 10px 30px rgba(0,0,0,0.3);
+  --hope-shadow-card-hover: 0 16px 48px rgba(0,0,0,0.4);
+  --hope-sidebar-bg: #1a2035;
+  --hope-sidebar-border: #2a3045;
+  --hope-sidebar-hover: #1e2540;
+}

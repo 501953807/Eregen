@@ -1,166 +1,10 @@
 /* ═══════════════════════════════════════════════════════════
    Eregen Admin — Hope UI-Inspired Design System
-   Forest Wellness · Refined · Clinical Precision
+   Blue-Purple · Refined · Clinical Precision
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Design Tokens (Light) ───────────────────────────────── */
-:root {
-  /* Backgrounds */
-  --bg-page: #F4F6F4;
-  --bg-page-gradient: linear-gradient(180deg, #F4F6F4 0%, #EFF3EF 100%);
-  --bg-surface: #FFFFFF;
-  --bg-surface-raised: #FFFFFF;
-  --bg-elevated: #FFFFFF;
-  --bg-sidebar: #F8FAF8;
-  --bg-sidebar-footer: #F0F4F0;
-  --bg-input: #FFFFFF;
-  --bg-hover: #F0F4F0;
-  --bg-active: #E8F0E9;
-
-  /* Text */
-  --text-primary: #1A2E26;
-  --text-secondary: #3D5A4E;
-  --text-tertiary: #6B8980;
-  --text-muted: #94A9A2;
-  --text-inverse: #FFFFFF;
-  --text-sidebar: #3D5A4E;
-  --text-sidebar-muted: #8FA8A0;
-
-  /* Brand — Forest Wellness (refined, Hope UI quality) */
-  --color-primary: #4A7C5F;
-  --color-primary-light: #D5E6DA;
-  --color-primary-lighter: #EDF4EE;
-  --color-primary-dark: #365C45;
-  --color-primary-accent: #8FB89A;
-  --color-primary-gradient: linear-gradient(135deg, #4A7C5F 0%, #6FAF8F 100%);
-  --color-primary-gradient-hover: linear-gradient(135deg, #3D6D52 0%, #5C9A78 100%);
-
-  /* Status */
-  --color-success: #52A87A;
-  --color-success-light: #E6F5EC;
-  --color-success-text: #2D7A52;
-  --color-warning: #C49A2C;
-  --color-warning-light: #FEF6E4;
-  --color-warning-text: #926C0E;
-  --color-danger: #C04A42;
-  --color-danger-light: #FDF0EE;
-  --color-danger-text: #9B3A33;
-  --color-info: #4A8FB8;
-  --color-info-light: #E8F2F8;
-  --color-info-text: #2D6E91;
-
-  /* Borders */
-  --border-base: #C8D6CC;
-  --border-light: #E0EAE2;
-  --border-subtle: #EEF4EE;
-  --border-dark: #A8C0B0;
-
-  /* Shadows — Hope UI quality, wellness tint */
-  --shadow-card: 0 1px 3px rgba(26,46,38,0.06), 0 1px 2px rgba(26,46,38,0.04);
-  --shadow-card-hover: 0 4px 16px rgba(26,46,38,0.10), 0 2px 4px rgba(26,46,38,0.06);
-  --shadow-card-soft: 0 8px 30px rgba(26,46,38,0.08);
-  --shadow-emboss-light: 0 1px 2px rgba(26,46,38,0.04);
-  --shadow-primary: 0 1px 3px rgba(74,124,95,0.15), 0 1px 2px rgba(74,124,95,0.08);
-  --shadow-primary-hover: 0 4px 12px rgba(74,124,95,0.20), 0 2px 4px rgba(74,124,95,0.10);
-  --shadow-input: inset 0 1px 2px rgba(26,46,38,0.04), 0 1px 0 rgba(255,255,255,0.95);
-  --shadow-input-focus: 0 0 0 3px rgba(74,124,95,0.08), inset 0 1px 2px rgba(26,46,38,0.04);
-  --shadow-dialog: 0 4px 24px rgba(26,46,38,0.10), 0 12px 48px rgba(26,46,38,0.08);
-  --shadow-skeleton: #E0E8E2;
-  --shadow-sidebar: 2px 0 16px rgba(26,46,38,0.06), 1px 0 6px rgba(26,46,38,0.04);
-  --shadow-topbar: 0 1px 4px rgba(26,46,38,0.04);
-
-  /* Sidebar specific */
-  --sidebar-width: 260px;
-  --sidebar-collapsed-width: 68px;
-  --sidebar-active: rgba(74,124,95,0.10);
-  --sidebar-hover: rgba(74,124,95,0.05);
-  --sidebar-border: rgba(26,46,38,0.06);
-
-  /* Radii — Hope UI inspired */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
-  --radius-capsule: 50px;
-
-  /* Transitions */
-  --duration-fast: 150ms;
-  --duration-normal: 250ms;
-  --duration-slow: 350ms;
-  --easing: cubic-bezier(0.4, 0, 0.2, 1);
-  --easing-out: ease-out;
-
-  /* Z-index */
-  --z-sidebar: 100;
-  --z-topbar: 90;
-  --z-dropdown: 80;
-  --z-dialog: 1000;
-  --z-notice: 1100;
-  --z-overlay: 200;
-}
-
-/* ── Dark Theme Tokens ───────────────────────────────────── */
-[data-theme="dark"] {
-  --bg-page: #0F1A14;
-  --bg-page-gradient: linear-gradient(180deg, #0F1A14 0%, #142018 100%);
-  --bg-surface: #1A2E26;
-  --bg-surface-raised: #1E3329;
-  --bg-elevated: #243830;
-  --bg-sidebar: #162520;
-  --bg-sidebar-footer: #121F19;
-  --bg-input: #1E3329;
-  --bg-hover: #1E3329;
-  --bg-active: #243830;
-
-  --text-primary: #E8F0EA;
-  --text-secondary: #B8CCBE;
-  --text-tertiary: #8FA8A0;
-  --text-muted: #6B8980;
-  --text-inverse: #0F1A14;
-  --text-sidebar: #B8CCBE;
-  --text-sidebar-muted: #6B8980;
-
-  --color-primary: #5A9A72;
-  --color-primary-light: #1E3830;
-  --color-primary-lighter: #162A22;
-  --color-primary-dark: #7AB894;
-  --color-primary-accent: #8FB89A;
-
-  --color-success: #6FC49A;
-  --color-success-light: #1A2E26;
-  --color-success-text: #6FC49A;
-  --color-warning: #D4A832;
-  --color-warning-light: #2A2210;
-  --color-warning-text: #D4A832;
-  --color-danger: #D46A62;
-  --color-danger-light: #2A1A18;
-  --color-danger-text: #D46A62;
-  --color-info: #5AA8CC;
-  --color-info-light: #1A2530;
-  --color-info-text: #5AA8CC;
-
-  --border-base: #2A4038;
-  --border-light: #243830;
-  --border-subtle: #1E3329;
-  --border-dark: #3D5A4E;
-
-  --shadow-card: 0 1px 3px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.15);
-  --shadow-card-hover: 0 4px 16px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
-  --shadow-card-soft: 0 8px 30px rgba(0,0,0,0.25);
-  --shadow-emboss-light: 0 1px 2px rgba(0,0,0,0.15);
-  --shadow-primary: 0 1px 3px rgba(90,154,114,0.2), 0 1px 2px rgba(90,154,114,0.1);
-  --shadow-primary-hover: 0 4px 12px rgba(90,154,114,0.25), 0 2px 4px rgba(90,154,114,0.15);
-  --shadow-input: inset 0 1px 2px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.03);
-  --shadow-input-focus: 0 0 0 3px rgba(90,154,114,0.15), inset 0 1px 2px rgba(0,0,0,0.2);
-  --shadow-dialog: 0 4px 24px rgba(0,0,0,0.4), 0 12px 48px rgba(0,0,0,0.3);
-  --shadow-skeleton: #2A4038;
-  --shadow-sidebar: 2px 0 16px rgba(0,0,0,0.3);
-  --shadow-topbar: 0 1px 4px rgba(0,0,0,0.2);
-
-  --sidebar-active: rgba(90,154,114,0.12);
-  --sidebar-hover: rgba(90,154,114,0.06);
-  --sidebar-border: rgba(255,255,255,0.04);
-}
+/* Import Hope UI Design Tokens */
+@import './hope-ui-tokens';
 
 /* ── Base Reset & Typography ─────────────────────────────── */
 html, body, #app {
@@ -170,16 +14,16 @@ html, body, #app {
   font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: var(--text-primary);
-  background: var(--bg-page);
-  transition: background var(--duration-normal) var(--easing), color var(--duration-normal) var(--easing);
+  color: var(--hope-text);
+  background: var(--hope-bg);
+  transition: background var(--hope-transition-fast), color var(--hope-transition-fast);
 }
 
 /* ── Scrollbar ───────────────────────────────────────────── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-base); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--border-dark); }
+::-webkit-scrollbar-thumb { background: var(--hope-border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--hope-text-muted); }
 
 /* ═══════════════════════════════════════════════════════════
    GLOBAL ANIMATIONS
@@ -222,28 +66,28 @@ html, body, #app {
   to { opacity: 0; transform: translateX(-8px); }
 }
 @keyframes eregen-sidebar-collapse {
-  from { width: var(--sidebar-width); }
-  to { width: var(--sidebar-collapsed-width); }
+  from { width: var(--hope-sidebar-width); }
+  to { width: var(--hope-sidebar-collapsed-width); }
 }
 
 /* ═══════════════════════════════════════════════════════════
    SIDEBAR
    ═══════════════════════════════════════════════════════════ */
 .sidebar {
-  background: var(--bg-sidebar);
+  background: var(--hope-sidebar-bg);
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: var(--shadow-sidebar);
-  z-index: var(--z-sidebar);
-  width: var(--sidebar-width);
-  transition: width var(--duration-slow) var(--easing);
+  box-shadow: var(--hope-shadow-sm);
+  z-index: 100;
+  width: var(--hope-sidebar-width);
+  transition: width var(--hope-transition-sidebar);
   flex-shrink: 0;
   overflow: hidden;
 }
 
 .sidebar.collapsed {
-  width: var(--sidebar-collapsed-width);
+  width: var(--hope-sidebar-collapsed-width);
 }
 
 .sidebar::before {
@@ -253,9 +97,9 @@ html, body, #app {
   top: 0;
   bottom: 0;
   width: 3px;
-  background: var(--color-primary-gradient);
+  background: var(--hope-primary-gradient);
   opacity: 0;
-  transition: opacity var(--duration-normal) var(--easing);
+  transition: opacity 0.25s ease;
   border-radius: 0 2px 2px 0;
 }
 
@@ -272,7 +116,7 @@ html, body, #app {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid var(--sidebar-border);
+  border-bottom: 1px solid var(--hope-sidebar-border);
   padding: 0 20px;
   flex-shrink: 0;
   overflow: hidden;
@@ -288,13 +132,13 @@ html, body, #app {
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: var(--color-primary-dark);
+  color: var(--hope-primary);
 }
 
 .logo-cn {
   font-size: 12px;
   font-weight: 500;
-  color: var(--text-muted);
+  color: var(--hope-text-muted);
   margin-left: 6px;
   letter-spacing: 0.04em;
 }
@@ -317,10 +161,10 @@ html, body, #app {
   height: 40px !important;
   line-height: 40px !important;
   margin: 2px 8px !important;
-  border-radius: var(--radius-md) !important;
+  border-radius: var(--hope-radius-md) !important;
   font-size: 13px !important;
-  color: var(--text-sidebar) !important;
-  transition: all var(--duration-normal) var(--easing) !important;
+  color: var(--hope-text-secondary) !important;
+  transition: all var(--hope-transition-fast) !important;
   position: relative;
   padding-left: 16px !important;
   white-space: nowrap;
@@ -337,13 +181,13 @@ html, body, #app {
 }
 
 .sidebar-menu :deep(.el-menu-item:hover) {
-  background: var(--sidebar-hover) !important;
-  color: var(--color-primary-dark) !important;
+  background: var(--hope-sidebar-hover) !important;
+  color: var(--hope-primary) !important;
 }
 
 .sidebar-menu :deep(.el-menu-item.is-active) {
-  background: var(--sidebar-active) !important;
-  color: var(--color-primary-dark) !important;
+  background: var(--hope-primary-light) !important;
+  color: var(--hope-primary) !important;
   font-weight: 600;
 }
 
@@ -355,7 +199,7 @@ html, body, #app {
   transform: translateY(-50%);
   width: 3px;
   height: 20px;
-  background: var(--color-primary);
+  background: var(--hope-primary);
   border-radius: 0 2px 2px 0;
 }
 
@@ -364,7 +208,7 @@ html, body, #app {
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--hope-text-muted);
   padding: 16px 20px 6px;
   margin: 0;
   overflow: hidden;
@@ -386,11 +230,11 @@ html, body, #app {
 
 .sidebar-footer {
   padding: 12px 16px;
-  border-top: 1px solid var(--sidebar-border);
+  border-top: 1px solid var(--hope-sidebar-border);
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--bg-sidebar-footer);
+  background: var(--hope-surface-light);
   flex-shrink: 0;
   overflow: hidden;
   white-space: nowrap;
@@ -404,8 +248,8 @@ html, body, #app {
 .sidebar-footer :deep(.el-avatar) {
   width: 32px !important;
   height: 32px !important;
-  border-radius: var(--radius-sm) !important;
-  background: var(--color-primary-gradient) !important;
+  border-radius: var(--hope-radius-sm) !important;
+  background: var(--hope-primary-gradient) !important;
   font-size: 13px !important;
   font-weight: 700;
   flex-shrink: 0;
@@ -418,7 +262,7 @@ html, body, #app {
 .footer-name {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--hope-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -426,7 +270,7 @@ html, body, #app {
 
 .footer-role {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--hope-text-muted);
   margin-top: 1px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -446,22 +290,22 @@ html, body, #app {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
+  background: var(--hope-surface);
+  border: 1px solid var(--hope-border);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10;
-  transition: all var(--duration-fast) var(--easing);
-  color: var(--text-muted);
+  transition: all var(--hope-transition-fast);
+  color: var(--hope-text-muted);
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
 .sidebar-collapse-btn:hover {
-  background: var(--color-primary-lighter);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  background: var(--hope-primary-lighter);
+  border-color: var(--hope-primary);
+  color: var(--hope-primary);
   transform: scale(1.1);
 }
 
@@ -477,17 +321,17 @@ html, body, #app {
 /* Tooltip for collapsed sidebar */
 .sidebar-tooltip {
   position: absolute;
-  left: calc(var(--sidebar-collapsed-width) + 8px);
-  background: var(--text-primary);
-  color: var(--bg-surface);
+  left: calc(var(--hope-sidebar-collapsed-width) + 8px);
+  background: var(--hope-text);
+  color: var(--hope-surface);
   padding: 4px 10px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--hope-radius-sm);
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
-  transition: opacity var(--duration-fast) var(--easing);
+  transition: opacity var(--hope-transition-fast);
   z-index: 200;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
@@ -499,7 +343,7 @@ html, body, #app {
   top: 50%;
   transform: translateY(-50%);
   border: 4px solid transparent;
-  border-right-color: var(--text-primary);
+  border-right-color: var(--hope-text);
   border-left: none;
 }
 
@@ -508,22 +352,22 @@ html, body, #app {
    ═══════════════════════════════════════════════════════════ */
 .topbar {
   height: 64px;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-light);
+  background: var(--hope-surface);
+  border-bottom: 1px solid var(--hope-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
   position: sticky;
   top: 0;
-  z-index: var(--z-topbar);
-  box-shadow: var(--shadow-topbar);
-  transition: background var(--duration-normal) var(--easing), border-color var(--duration-normal) var(--easing);
+  z-index: 90;
+  box-shadow: 0 1px 4px rgba(58,87,232,0.04);
+  transition: background var(--hope-transition-fast), border-color var(--hope-transition-fast);
 }
 
 .breadcrumb {
   font-size: 13px;
-  color: var(--text-tertiary);
+  color: var(--hope-text-muted);
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -535,13 +379,13 @@ html, body, #app {
   height: 6px;
   min-width: 6px;
   border-radius: 50%;
-  background: var(--color-primary);
-  box-shadow: 0 0 6px rgba(74,124,95,0.35);
+  background: var(--hope-primary);
+  box-shadow: 0 0 6px rgba(58,87,232,0.35);
   animation: eregen-pulse 2.5s ease-in-out infinite;
 }
 
 .breadcrumb span:last-child {
-  color: var(--text-primary);
+  color: var(--hope-text);
   font-weight: 600;
 }
 
@@ -553,96 +397,96 @@ html, body, #app {
 
 .topbar-icon {
   cursor: pointer;
-  color: var(--text-tertiary);
-  transition: all var(--duration-fast) var(--easing);
+  color: var(--hope-text-muted);
+  transition: all var(--hope-transition-fast);
   width: 36px;
   height: 36px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--hope-radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border-light);
-  background: var(--bg-surface);
+  border: 1px solid var(--hope-border);
+  background: var(--hope-surface);
 }
 
 .topbar-icon:hover {
-  color: var(--color-primary);
-  border-color: var(--color-primary-light);
-  background: var(--color-primary-lighter);
+  color: var(--hope-primary);
+  border-color: var(--hope-primary-light);
+  background: var(--hope-primary-lighter);
 }
 
 /* Theme toggle button */
 .theme-toggle-btn {
   cursor: pointer;
-  color: var(--text-tertiary);
-  transition: all var(--duration-fast) var(--easing);
+  color: var(--hope-text-muted);
+  transition: all var(--hope-transition-fast);
   width: 36px;
   height: 36px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--hope-radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border-light);
-  background: var(--bg-surface);
+  border: 1px solid var(--hope-border);
+  background: var(--hope-surface);
 }
 
 .theme-toggle-btn:hover {
-  color: var(--color-primary);
-  border-color: var(--color-primary-light);
-  background: var(--color-primary-lighter);
+  color: var(--hope-primary);
+  border-color: var(--hope-primary-light);
+  background: var(--hope-primary-lighter);
 }
 
 .logout-btn {
   margin-left: 8px;
-  border-radius: var(--radius-md) !important;
+  border-radius: var(--hope-radius-md) !important;
   font-size: 13px;
   padding: 6px 14px !important;
-  border: 1px solid var(--border-base) !important;
-  color: var(--text-secondary) !important;
-  background: var(--bg-surface) !important;
-  box-shadow: var(--shadow-input);
-  transition: all var(--duration-normal) var(--easing);
+  border: 1px solid var(--hope-border) !important;
+  color: var(--hope-text-secondary) !important;
+  background: var(--hope-surface) !important;
+  box-shadow: var(--hope-shadow-sm);
+  transition: all var(--hope-transition-fast);
 }
 
 .logout-btn:hover {
-  border-color: var(--color-danger) !important;
-  color: var(--color-danger) !important;
-  background: var(--color-danger-light) !important;
+  border-color: var(--hope-danger) !important;
+  color: var(--hope-danger) !important;
+  background: var(--hope-danger-light) !important;
 }
 
 .el-badge__content {
-  background: var(--color-danger) !important;
+  background: var(--hope-danger) !important;
   font-size: 10px !important;
   padding: 1px 5px !important;
   min-width: 0 !important;
   height: auto !important;
-  border-radius: 10px !important;
-  border: 2px solid var(--bg-surface);
-  box-shadow: 0 1px 3px rgba(192,74,66,0.3);
+  border-radius: var(--hope-radius-pill) !important;
+  border: 2px solid var(--hope-surface);
+  box-shadow: 0 1px 3px rgba(192,50,33,0.3);
 }
 
 /* ═══════════════════════════════════════════════════════════
    MAIN CONTENT
    ═══════════════════════════════════════════════════════════ */
 .main-content {
-  background: var(--bg-page);
-  background-image: var(--bg-page-gradient);
+  background: var(--hope-bg);
+  background-image: var(--hope-bg-gradient);
   padding: 24px 28px;
   overflow-y: auto;
   height: calc(100vh - 64px);
-  transition: background var(--duration-normal) var(--easing);
+  transition: background var(--hope-transition-fast);
 }
 
 /* ═══════════════════════════════════════════════════════════
    KPI CARDS
    ═══════════════════════════════════════════════════════════ */
 .kpi-card {
-  border: 1px solid var(--border-light) !important;
-  box-shadow: var(--shadow-card) !important;
-  background: var(--bg-surface) !important;
+  border: 1px solid var(--hope-border) !important;
+  box-shadow: var(--hope-shadow-card) !important;
+  background: var(--hope-surface) !important;
   position: relative;
   overflow: hidden;
-  transition: all var(--duration-normal) var(--easing);
+  transition: all var(--hope-transition-fast);
 }
 
 .kpi-card::before {
@@ -660,49 +504,49 @@ html, body, #app {
 
 .kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-card-hover) !important;
-  border-color: var(--border-base) !important;
+  box-shadow: var(--hope-shadow-card-hover) !important;
+  border-color: var(--hope-border-strong) !important;
 }
 
 .kpi-icon-wrap {
   width: 42px;
   height: 42px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--hope-radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
-.kpi-icon-wrap.blue { background: var(--color-primary-gradient); }
-.kpi-icon-wrap.green { background: linear-gradient(135deg, #6FC49A, #8BC4A8); }
-.kpi-icon-wrap.orange { background: linear-gradient(135deg, #D4A832, #E8C86A); }
-.kpi-icon-wrap.red { background: linear-gradient(135deg, #D46A62, #E09088); }
-.kpi-icon-wrap.purple { background: linear-gradient(135deg, #7C3AED, #A78BFA); }
+.kpi-icon-wrap.blue { background: var(--hope-primary-gradient); }
+.kpi-icon-wrap.green { background: linear-gradient(135deg, #1aa053, #22c572); }
+.kpi-icon-wrap.orange { background: linear-gradient(135deg, #FAA938, #fbbf24); }
+.kpi-icon-wrap.red { background: linear-gradient(135deg, #c03221, #ef4444); }
+.kpi-icon-wrap.purple { background: linear-gradient(135deg, #6f42c1, #a78bfa); }
 
 /* ═══════════════════════════════════════════════════════════
-   CARDS — Hope UI quality
+   CARDS
    ═══════════════════════════════════════════════════════════ */
 .el-card {
   --el-card-padding: 18px;
-  --el-card-background: var(--bg-surface-raised);
-  --el-card-border-radius: var(--radius-lg) !important;
-  border: 1px solid var(--border-light) !important;
-  box-shadow: var(--shadow-card) !important;
-  transition: all var(--duration-normal) var(--easing);
+  --el-card-background: var(--hope-surface-raised);
+  --el-card-border-radius: var(--hope-radius-lg) !important;
+  border: 1px solid var(--hope-border) !important;
+  box-shadow: var(--hope-shadow-card) !important;
+  transition: all var(--hope-transition-fast);
   position: relative;
   overflow: hidden;
-  background: var(--bg-surface) !important;
+  background: var(--hope-surface) !important;
 }
 
 .el-card:hover {
-  box-shadow: var(--shadow-card-hover) !important;
+  box-shadow: var(--hope-shadow-card-hover) !important;
   transform: translateY(-2px);
-  border-color: var(--border-base);
+  border-color: var(--hope-border-strong);
 }
 
 .el-card :deep(.el-card__header) {
   background: transparent;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--hope-border);
   padding: 14px 18px;
 }
 
@@ -715,156 +559,156 @@ html, body, #app {
    BUTTONS
    ═══════════════════════════════════════════════════════════ */
 .el-button {
-  border-radius: var(--radius-md) !important;
-  transition: all var(--duration-normal) var(--easing);
+  border-radius: var(--hope-radius-sm) !important;
+  transition: all var(--hope-transition-fast);
   font-weight: 500;
   letter-spacing: 0.01em;
 }
 
 .el-button--primary {
-  --el-button-bg-color: var(--color-primary) !important;
-  --el-button-border-color: var(--color-primary) !important;
-  --el-button-hover-bg-color: var(--color-primary-dark) !important;
-  --el-button-hover-border-color: var(--color-primary-dark) !important;
-  --el-button-active-bg-color: #2D4E3A !important;
-  --el-button-active-border-color: #2D4E3A !important;
-  background: var(--color-primary-gradient) !important;
-  border-color: var(--color-primary) !important;
-  box-shadow: var(--shadow-primary) !important;
+  --el-button-bg-color: var(--hope-primary) !important;
+  --el-button-border-color: var(--hope-primary) !important;
+  --el-button-hover-bg-color: var(--hope-primary-hover) !important;
+  --el-button-hover-border-color: var(--hope-primary-hover) !important;
+  --el-button-active-bg-color: var(--hope-primary-active) !important;
+  --el-button-active-border-color: var(--hope-primary-active) !important;
+  background: var(--hope-primary-gradient) !important;
+  border-color: var(--hope-primary) !important;
+  box-shadow: var(--hope-shadow-sm) !important;
   color: #FFFFFF !important;
 }
 
 .el-button--primary:hover {
-  box-shadow: var(--shadow-primary-hover) !important;
+  box-shadow: var(--hope-shadow-md) !important;
   transform: translateY(-1px);
 }
 
 .el-button--primary:active {
   transform: translateY(0);
-  box-shadow: var(--shadow-primary) !important;
+  box-shadow: var(--hope-shadow-sm) !important;
 }
 
 .el-button--default {
-  background: var(--bg-surface) !important;
-  color: var(--text-secondary) !important;
-  border-color: var(--border-base) !important;
-  box-shadow: var(--shadow-input) !important;
+  background: var(--hope-surface) !important;
+  color: var(--hope-text-secondary) !important;
+  border-color: var(--hope-border) !important;
+  box-shadow: var(--hope-shadow-sm) !important;
 }
 
 .el-button--default:hover {
-  border-color: var(--color-primary) !important;
-  color: var(--color-primary) !important;
-  background: var(--color-primary-light) !important;
+  border-color: var(--hope-primary) !important;
+  color: var(--hope-primary) !important;
+  background: var(--hope-primary-lighter) !important;
 }
 
 .el-button--success {
-  --el-button-bg-color: var(--color-success) !important;
-  --el-button-border-color: var(--color-success) !important;
-  background: linear-gradient(180deg, #7BC49A 0%, #52A87A 100%) !important;
-  border-color: var(--color-success) !important;
-  box-shadow: 0 1px 3px rgba(82,168,122,0.2), 0 4px 12px rgba(82,168,122,0.08) !important;
+  --el-button-bg-color: var(--hope-success) !important;
+  --el-button-border-color: var(--hope-success) !important;
+  background: linear-gradient(180deg, #22c572 0%, #1aa053 100%) !important;
+  border-color: var(--hope-success) !important;
+  box-shadow: 0 1px 3px rgba(26,160,83,0.2), 0 4px 12px rgba(26,160,83,0.08) !important;
   color: #fff !important;
 }
 
 .el-button--danger {
-  --el-button-bg-color: var(--color-danger) !important;
-  --el-button-border-color: var(--color-danger) !important;
-  box-shadow: 0 1px 3px rgba(192,74,66,0.15), 0 4px 12px rgba(192,74,66,0.08) !important;
+  --el-button-bg-color: var(--hope-danger) !important;
+  --el-button-border-color: var(--hope-danger) !important;
+  box-shadow: 0 1px 3px rgba(192,50,33,0.15), 0 4px 12px rgba(192,50,33,0.08) !important;
 }
 
 .el-button--warning {
-  --el-button-bg-color: var(--color-warning) !important;
-  --el-button-border-color: var(--color-warning) !important;
+  --el-button-bg-color: var(--hope-warning) !important;
+  --el-button-border-color: var(--hope-warning) !important;
 }
 
 .el-button--info {
-  --el-button-bg-color: var(--color-info) !important;
-  --el-button-border-color: var(--color-info) !important;
+  --el-button-bg-color: var(--hope-info) !important;
+  --el-button-border-color: var(--hope-info) !important;
 }
 
 .el-button--text {
-  color: var(--color-primary) !important;
+  color: var(--hope-primary) !important;
 }
 
 .el-button--text:hover {
-  color: var(--color-primary-dark) !important;
-  background: var(--color-primary-light) !important;
+  color: var(--hope-primary-hover) !important;
+  background: var(--hope-primary-lighter) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════
    INPUTS
    ═══════════════════════════════════════════════════════════ */
 .el-input__wrapper {
-  border-radius: var(--radius-md) !important;
-  box-shadow: var(--shadow-input) !important;
-  border: 1px solid var(--border-base) !important;
-  transition: all var(--duration-normal) var(--easing) !important;
-  background: var(--bg-input) !important;
+  border-radius: var(--hope-radius-sm) !important;
+  box-shadow: var(--hope-shadow-sm) !important;
+  border: 1px solid var(--hope-border) !important;
+  transition: all var(--hope-transition-fast) !important;
+  background: var(--hope-surface) !important;
   padding: 4px 12px !important;
 }
 
 .el-textarea__inner {
-  border-radius: var(--radius-md) !important;
-  box-shadow: var(--shadow-input) !important;
-  border: 1px solid var(--border-base) !important;
-  transition: all var(--duration-normal) var(--easing) !important;
-  background: var(--bg-input) !important;
+  border-radius: var(--hope-radius-sm) !important;
+  box-shadow: var(--hope-shadow-sm) !important;
+  border: 1px solid var(--hope-border) !important;
+  transition: all var(--hope-transition-fast) !important;
+  background: var(--hope-surface) !important;
 }
 
 .el-input__wrapper.is-focus,
 .el-input__wrapper:focus-within,
 .el-select__wrapper:focus-within,
 .el-textarea__inner:focus {
-  border-color: var(--color-primary) !important;
-  box-shadow: var(--shadow-input-focus) !important;
+  border-color: var(--hope-primary) !important;
+  box-shadow: var(--hope-shadow-input-focus) !important;
 }
 
 .el-input__wrapper:hover,
 .el-textarea__inner:hover {
-  border-color: var(--border-dark) !important;
+  border-color: var(--hope-border-strong) !important;
 }
 
 .el-select__caret {
-  color: var(--text-muted) !important;
-  transition: color var(--duration-fast) var(--easing);
+  color: var(--hope-text-muted) !important;
+  transition: color var(--hope-transition-fast);
 }
 
 .el-select:focus-within .el-select__caret {
-  color: var(--color-primary) !important;
+  color: var(--hope-primary) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════
    TABLE
    ═══════════════════════════════════════════════════════════ */
 .el-table {
-  border-radius: var(--radius-lg);
+  border-radius: var(--hope-radius-lg);
   overflow: hidden;
-  border: 1px solid var(--border-light) !important;
-  box-shadow: var(--shadow-emboss-light);
-  background: var(--bg-surface) !important;
+  border: 1px solid var(--hope-border) !important;
+  box-shadow: var(--hope-shadow-sm);
+  background: var(--hope-surface) !important;
 }
 
 .el-table th.el-table__cell {
-  background: var(--color-primary-lighter) !important;
-  color: var(--text-tertiary);
+  background: var(--hope-primary-lighter) !important;
+  color: var(--hope-text-muted);
   font-weight: 600;
   font-size: 12px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  border-bottom: 1px solid var(--border-light) !important;
+  border-bottom: 1px solid var(--hope-border) !important;
   padding: 11px 14px !important;
 }
 
 .el-table td.el-table__cell {
-  border-bottom: 1px solid var(--border-subtle) !important;
+  border-bottom: 1px solid var(--hope-border) !important;
   padding: 10px 14px !important;
-  color: var(--text-secondary);
+  color: var(--hope-text-secondary);
   font-size: 13px;
-  transition: background var(--duration-fast) var(--easing);
+  transition: background var(--hope-transition-fast);
 }
 
 .el-table__row:hover > td.el-table__cell {
-  background: var(--color-primary-lighter) !important;
+  background: var(--hope-primary-lighter) !important;
 }
 
 .el-table--striped .el-table__row--striped td.el-table__cell {
@@ -875,53 +719,53 @@ html, body, #app {
    TAGS
    ═══════════════════════════════════════════════════════════ */
 .el-tag {
-  --el-tag-bg-color: var(--color-primary-light);
-  --el-tag-text-color: var(--color-primary-dark);
-  --el-tag-border-radius: var(--radius-capsule);
+  --el-tag-bg-color: var(--hope-primary-light);
+  --el-tag-text-color: var(--hope-primary);
+  --el-tag-border-radius: var(--hope-radius-pill);
   --el-tag-padding: 3px 10px;
   --el-tag-font-size: 12px;
   font-weight: 500;
   border: none !important;
-  box-shadow: 0 1px 2px rgba(74,124,95,0.06);
+  box-shadow: 0 1px 2px rgba(58,87,232,0.06);
 }
 
 .el-tag--success {
-  --el-tag-bg-color: var(--color-success-light);
-  --el-tag-text-color: var(--color-success-text);
+  --el-tag-bg-color: var(--hope-success-light);
+  --el-tag-text-color: var(--hope-success);
 }
 
 .el-tag--danger {
-  --el-tag-bg-color: var(--color-danger-light);
-  --el-tag-text-color: var(--color-danger-text);
+  --el-tag-bg-color: var(--hope-danger-light);
+  --el-tag-text-color: var(--hope-danger);
 }
 
 .el-tag--warning {
-  --el-tag-bg-color: var(--color-warning-light);
-  --el-tag-text-color: var(--color-warning-text);
+  --el-tag-bg-color: var(--hope-warning-light);
+  --el-tag-text-color: #926C0E;
 }
 
 .el-tag--info {
-  --el-tag-bg-color: var(--color-info-light);
-  --el-tag-text-color: var(--color-info-text);
+  --el-tag-bg-color: var(--hope-info-light);
+  --el-tag-text-color: var(--hope-info);
 }
 
 /* ═══════════════════════════════════════════════════════════
    DIALOGS
    ═══════════════════════════════════════════════════════════ */
 .el-dialog {
-  --el-dialog-border-radius: var(--radius-xl) !important;
-  border: 1px solid var(--border-base) !important;
-  box-shadow: var(--shadow-dialog) !important;
-  background: var(--bg-surface) !important;
-  animation: eregen-dialog-enter var(--duration-normal) var(--easing-out) both;
+  --el-dialog-border-radius: var(--hope-radius-xl) !important;
+  border: 1px solid var(--hope-border) !important;
+  box-shadow: var(--hope-shadow-lg) !important;
+  background: var(--hope-surface) !important;
+  animation: eregen-dialog-enter var(--hope-transition-fast) ease-out both;
 }
 
 .el-dialog.is-animating {
-  animation: eregen-dialog-enter var(--duration-normal) var(--easing-out) both;
+  animation: eregen-dialog-enter var(--hope-transition-fast) ease-out both;
 }
 
 .el-dialog__header {
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--hope-border);
   padding: 16px 20px 12px;
   margin-right: 0;
 }
@@ -929,7 +773,7 @@ html, body, #app {
 .el-dialog__title {
   font-size: 15px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--hope-text);
   letter-spacing: -0.01em;
 }
 
@@ -938,64 +782,64 @@ html, body, #app {
 }
 
 .el-dialog__footer {
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--hope-border);
   padding: 12px 20px 16px;
 }
 
 .el-overlay {
-  animation: eregen-overlay-enter var(--duration-normal) var(--easing-out) both;
+  animation: eregen-overlay-enter var(--hope-transition-fast) ease-out both;
 }
 
 /* ═══════════════════════════════════════════════════════════
    TOAST / MESSAGE
    ═══════════════════════════════════════════════════════════ */
 .el-message {
-  --el-message-background: var(--bg-surface);
-  --el-message-border-radius: var(--radius-lg) !important;
+  --el-message-background: var(--hope-surface);
+  --el-message-border-radius: var(--hope-radius-lg) !important;
   --el-message-padding: 12px 16px !important;
-  --el-message-close-color: var(--text-muted) !important;
-  box-shadow: var(--shadow-card-hover) !important;
-  border: 1px solid var(--border-base) !important;
-  animation: eregen-toast-enter var(--duration-normal) var(--easing-out) both;
+  --el-message-close-color: var(--hope-text-muted) !important;
+  box-shadow: var(--hope-shadow-card-hover) !important;
+  border: 1px solid var(--hope-border) !important;
+  animation: eregen-toast-enter var(--hope-transition-fast) ease-out both;
 }
 
-.el-message--success { border-left: 3px solid var(--color-success); }
-.el-message--warning { border-left: 3px solid var(--color-warning); }
-.el-message--error { border-left: 3px solid var(--color-danger); }
-.el-message--info { border-left: 3px solid var(--color-info); }
+.el-message--success { border-left: 3px solid var(--hope-success); }
+.el-message--warning { border-left: 3px solid var(--hope-warning); }
+.el-message--error { border-left: 3px solid var(--hope-danger); }
+.el-message--info { border-left: 3px solid var(--hope-info); }
 
 /* ═══════════════════════════════════════════════════════════
    TABS
    ═══════════════════════════════════════════════════════════ */
 .tabs {
   display: inline-flex;
-  background: var(--color-primary-lighter);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-capsule);
+  background: var(--hope-primary-lighter);
+  border: 1px solid var(--hope-border);
+  border-radius: var(--hope-radius-pill);
   padding: 3px;
   gap: 2px;
 }
 
 .tab-item {
   padding: 6px 16px;
-  border-radius: var(--radius-capsule);
+  border-radius: var(--hope-radius-pill);
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--hope-text-secondary);
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: all var(--duration-fast) var(--easing);
+  transition: all var(--hope-transition-fast);
 }
 
 .tab-item:hover {
-  color: var(--color-primary-dark);
+  color: var(--hope-primary-hover);
 }
 
 .tab-item.active {
-  background: var(--color-primary-gradient);
+  background: var(--hope-primary-gradient);
   color: #FFFFFF;
-  box-shadow: var(--shadow-primary);
+  box-shadow: var(--hope-shadow-sm);
   font-weight: 600;
 }
 
@@ -1007,18 +851,18 @@ html, body, #app {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
+  background: var(--hope-surface);
+  border: 1px solid var(--hope-border);
+  border-radius: var(--hope-radius-lg);
   padding: 10px 14px;
-  box-shadow: var(--shadow-emboss-light);
-  transition: background var(--duration-normal) var(--easing), border-color var(--duration-normal) var(--easing);
+  box-shadow: var(--hope-shadow-sm);
+  transition: background var(--hope-transition-fast), border-color var(--hope-transition-fast);
 }
 
 .filter-label {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--hope-text-muted);
   letter-spacing: 0.02em;
 }
 
@@ -1034,13 +878,13 @@ html, body, #app {
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  background: var(--color-primary-lighter);
-  border: 1px solid var(--color-primary-light);
-  border-radius: var(--radius-lg);
+  background: var(--hope-primary-lighter);
+  border: 1px solid var(--hope-primary-light);
+  border-radius: var(--hope-radius-lg);
   margin-bottom: 16px;
   opacity: 0;
   transform: translateY(-4px);
-  transition: all var(--duration-normal) var(--easing);
+  transition: all var(--hope-transition-fast);
   pointer-events: none;
 }
 
@@ -1051,7 +895,7 @@ html, body, #app {
 }
 
 .bulk-count {
-  color: var(--color-primary-dark);
+  color: var(--hope-primary);
   font-weight: 700;
 }
 
@@ -1063,7 +907,7 @@ html, body, #app {
   align-items: center;
   gap: 5px;
   padding: 3px 10px;
-  border-radius: var(--radius-capsule);
+  border-radius: var(--hope-radius-pill);
   font-size: 12px;
   font-weight: 600;
 }
@@ -1075,18 +919,18 @@ html, body, #app {
   flex-shrink: 0;
 }
 
-.badge-primary { background: var(--color-primary-light); color: var(--color-primary-dark); }
-.badge-primary .badge-dot { background: var(--color-primary); }
-.badge-success { background: var(--color-success-light); color: var(--color-success-text); }
-.badge-success .badge-dot { background: var(--color-success); }
-.badge-warning { background: var(--color-warning-light); color: var(--color-warning-text); }
-.badge-warning .badge-dot { background: var(--color-warning); }
-.badge-danger { background: var(--color-danger-light); color: var(--color-danger-text); }
-.badge-danger .badge-dot { background: var(--color-danger); }
-.badge-gray { background: var(--bg-hover); color: var(--text-muted); }
-.badge-gray .badge-dot { background: var(--text-muted); }
-.badge-info { background: var(--color-info-light); color: var(--color-info-text); }
-.badge-info .badge-dot { background: var(--color-info); }
+.badge-primary { background: var(--hope-primary-light); color: var(--hope-primary); }
+.badge-primary .badge-dot { background: var(--hope-primary); }
+.badge-success { background: var(--hope-success-light); color: var(--hope-success); }
+.badge-success .badge-dot { background: var(--hope-success); }
+.badge-warning { background: var(--hope-warning-light); color: #926C0E; }
+.badge-warning .badge-dot { background: var(--hope-warning); }
+.badge-danger { background: var(--hope-danger-light); color: var(--hope-danger); }
+.badge-danger .badge-dot { background: var(--hope-danger); }
+.badge-gray { background: var(--hope-surface-light); color: var(--hope-text-muted); }
+.badge-gray .badge-dot { background: var(--hope-text-muted); }
+.badge-info { background: var(--hope-info-light); color: var(--hope-info); }
+.badge-info .badge-dot { background: var(--hope-info); }
 
 /* ═══════════════════════════════════════════════════════════
    SECTION DIVIDER
@@ -1103,7 +947,7 @@ html, body, #app {
   width: 3px;
   height: 14px;
   border-radius: 2px;
-  background: var(--color-primary);
+  background: var(--hope-primary);
   flex-shrink: 0;
 }
 
@@ -1112,8 +956,8 @@ html, body, #app {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--border-light);
+  color: var(--hope-text-muted);
+  border-bottom: 1px solid var(--hope-border);
   padding-bottom: 4px;
   flex: 1;
 }
@@ -1124,7 +968,7 @@ html, body, #app {
 .progress-bar {
   width: 100%;
   height: 6px;
-  background: var(--bg-hover);
+  background: var(--hope-surface-light);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -1135,10 +979,10 @@ html, body, #app {
   transition: width 0.6s ease;
 }
 
-.progress-fill.green { background: var(--color-primary-gradient); }
-.progress-fill.orange { background: linear-gradient(90deg, #D4A832, #E8C86A); }
-.progress-fill.red { background: linear-gradient(90deg, #D46A62, #E09088); }
-.progress-fill.blue { background: var(--color-primary-gradient); }
+.progress-fill.green { background: var(--hope-primary-gradient); }
+.progress-fill.orange { background: linear-gradient(90deg, #FAA938, #fbbf24); }
+.progress-fill.red { background: linear-gradient(90deg, #c03221, #ef4444); }
+.progress-fill.blue { background: var(--hope-primary-gradient); }
 
 /* Progress Steps */
 .progress-steps {
@@ -1164,13 +1008,13 @@ html, body, #app {
   left: 50%;
   width: 100%;
   height: 2px;
-  background: var(--border-light);
+  background: var(--hope-border);
   z-index: 0;
 }
 
 .progress-step:last-child::after { display: none; }
 
-.progress-step.done::after { background: var(--color-primary-light); }
+.progress-step.done::after { background: var(--hope-primary-light); }
 
 .step-dot {
   width: 22px;
@@ -1181,33 +1025,33 @@ html, body, #app {
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
-  background: var(--border-light);
-  color: var(--text-muted);
+  background: var(--hope-border);
+  color: var(--hope-text-muted);
   position: relative;
   z-index: 1;
-  transition: all var(--duration-normal) var(--easing);
+  transition: all var(--hope-transition-fast);
 }
 
 .progress-step.done .step-dot {
-  background: var(--color-primary);
+  background: var(--hope-primary);
   color: #FFFFFF;
 }
 
 .progress-step.active .step-dot {
-  background: var(--color-primary);
+  background: var(--hope-primary);
   color: #FFFFFF;
-  box-shadow: 0 0 0 3px rgba(74,124,95,0.15);
+  box-shadow: 0 0 0 3px rgba(58,87,232,0.15);
 }
 
 .step-label {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--hope-text-muted);
   font-weight: 500;
 }
 
 .progress-step.done .step-label,
 .progress-step.active .step-label {
-  color: var(--color-primary-dark);
+  color: var(--hope-primary);
   font-weight: 600;
 }
 
@@ -1215,127 +1059,127 @@ html, body, #app {
    PAGINATION
    ═══════════════════════════════════════════════════════════ */
 .el-pagination {
-  --el-pagination-bg-color: var(--bg-surface);
-  --el-pagination-text-color: var(--text-secondary);
-  --el-pagination-hover-color: var(--color-primary);
+  --el-pagination-bg-color: var(--hope-surface);
+  --el-pagination-text-color: var(--hope-text-secondary);
+  --el-pagination-hover-color: var(--hope-primary);
   padding: 12px 0 0;
 }
 
 .el-pagination button,
 .el-pagination span {
-  border-radius: var(--radius-sm) !important;
-  transition: all var(--duration-fast) var(--easing) !important;
+  border-radius: var(--hope-radius-sm) !important;
+  transition: all var(--hope-transition-fast) !important;
 }
 
 .el-pagination button.is-active {
-  background: var(--color-primary) !important;
-  border-color: var(--color-primary) !important;
-  box-shadow: 0 1px 3px rgba(74,124,95,0.2);
+  background: var(--hope-primary) !important;
+  border-color: var(--hope-primary) !important;
+  box-shadow: 0 1px 3px rgba(58,87,232,0.2);
   color: #FFFFFF !important;
 }
 
 .el-pagination .btn-prev,
 .el-pagination .btn-next {
-  border: 1px solid var(--border-base) !important;
-  background: var(--bg-surface) !important;
+  border: 1px solid var(--hope-border) !important;
+  background: var(--hope-surface) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════
    DROPDOWN
    ═══════════════════════════════════════════════════════════ */
 .el-dropdown-menu {
-  box-shadow: var(--shadow-card-hover) !important;
-  border-radius: var(--radius-lg) !important;
-  border: 1px solid var(--border-light) !important;
-  background: var(--bg-surface) !important;
+  box-shadow: var(--hope-shadow-card-hover) !important;
+  border-radius: var(--hope-radius-lg) !important;
+  border: 1px solid var(--hope-border) !important;
+  background: var(--hope-surface) !important;
 }
 
 .el-dropdown-menu__item:hover {
-  background: var(--color-primary-light) !important;
-  color: var(--color-primary-dark) !important;
+  background: var(--hope-primary-light) !important;
+  color: var(--hope-primary) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════
    FORM ELEMENTS
    ═══════════════════════════════════════════════════════════ */
 .el-form-item__label {
-  color: var(--text-secondary);
+  color: var(--hope-text-secondary);
   font-weight: 500;
   font-size: 13px;
 }
 
 .el-radio-button__inner {
-  border-radius: var(--radius-md) !important;
-  border-color: var(--border-base) !important;
-  background: var(--bg-surface) !important;
-  box-shadow: var(--shadow-input) !important;
-  transition: all var(--duration-fast) var(--easing) !important;
+  border-radius: var(--hope-radius-md) !important;
+  border-color: var(--hope-border) !important;
+  background: var(--hope-surface) !important;
+  box-shadow: var(--hope-shadow-sm) !important;
+  transition: all var(--hope-transition-fast) !important;
 }
 
 .el-radio-button:first-child .el-radio-button__inner {
-  border-radius: var(--radius-md) 0 0 var(--radius-md) !important;
+  border-radius: var(--hope-radius-md) 0 0 var(--hope-radius-md) !important;
 }
 
 .el-radio-button:last-child .el-radio-button__inner {
-  border-radius: 0 var(--radius-md) var(--radius-md) 0 !important;
+  border-radius: 0 var(--hope-radius-md) var(--hope-radius-md) 0 !important;
 }
 
 .el-radio-button.is-active .el-radio-button__inner {
-  background: var(--color-primary) !important;
-  border-color: var(--color-primary) !important;
+  background: var(--hope-primary) !important;
+  border-color: var(--hope-primary) !important;
   color: #FFFFFF !important;
-  box-shadow: var(--shadow-primary) !important;
+  box-shadow: var(--hope-shadow-sm) !important;
 }
 
 /* Switch */
 .el-switch__core {
   border-radius: 11px !important;
-  background: var(--border-base) !important;
+  background: var(--hope-border) !important;
   box-shadow: inset 0 1px 2px rgba(0,0,0,0.08) !important;
-  transition: all var(--duration-normal) var(--easing) !important;
+  transition: all var(--hope-transition-fast) !important;
 }
 
 .el-switch.is-checked .el-switch__core {
-  background: var(--color-primary) !important;
-  box-shadow: 0 1px 4px rgba(74,124,95,0.25) !important;
+  background: var(--hope-primary) !important;
+  box-shadow: 0 1px 4px rgba(58,87,232,0.25) !important;
 }
 
 .el-switch__core::after {
   border-radius: 50% !important;
   box-shadow: 0 1px 3px rgba(0,0,0,0.15) !important;
-  transition: all var(--duration-normal) var(--easing) !important;
+  transition: all var(--hope-transition-fast) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════
    LOADING / SKELETON
    ═══════════════════════════════════════════════════════════ */
 .el-loading-spinner {
-  --el-loading-color: var(--color-primary);
+  --el-loading-color: var(--hope-primary);
   --el-loading-spinner-size: 36px;
 }
 
 .el-loading-spinner .circular {
-  stroke: var(--color-primary);
+  stroke: var(--hope-primary);
   stroke-width: 3;
 }
 
 .skeleton {
-  background: linear-gradient(90deg, var(--shadow-skeleton) 25%, #D0DDD4 50%, var(--shadow-skeleton) 75%);
+  background: linear-gradient(90deg, var(--hope-surface-light) 25%, var(--hope-primary-light) 50%, var(--hope-surface-light) 75%);
   background-size: 200% 100%;
   animation: eregen-shimmer 1.5s infinite;
-  border-radius: var(--radius-sm);
+  border-radius: var(--hope-radius-sm);
 }
 
 /* ═══════════════════════════════════════════════════════════
    LINKS
    ═══════════════════════════════════════════════════════════ */
 .el-link {
-  --el-link-text-color: var(--color-primary);
-  --link-hover-text-color: var(--color-primary-dark);
+  --el-link-text-color: var(--hope-primary);
+  --link-hover-text-color: var(--hope-primary-hover);
 }
 
 .el-link:hover {
-  color: var(--color-primary-dark);
+  color: var(--hope-primary-hover);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1344,7 +1188,7 @@ html, body, #app {
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: var(--text-tertiary);
+  color: var(--hope-text-muted);
 }
 
 .empty-state-icon {
@@ -1357,22 +1201,22 @@ html, body, #app {
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 8px;
-  color: var(--text-primary);
+  color: var(--hope-text);
 }
 
 .empty-state-desc {
   font-size: 13px;
   margin-bottom: 24px;
   line-height: 1.6;
-  color: var(--text-tertiary);
+  color: var(--hope-text-muted);
 }
 
 .error-banner {
-  background: var(--color-danger-light);
-  border: 1px solid var(--color-danger-light);
-  color: var(--color-danger-text);
+  background: var(--hope-danger-light);
+  border: 1px solid var(--hope-danger-light);
+  color: var(--hope-danger);
   padding: 12px 16px;
-  border-radius: var(--radius-md);
+  border-radius: var(--hope-radius-md);
   margin-bottom: 16px;
   display: flex;
   align-items: center;
@@ -1381,11 +1225,11 @@ html, body, #app {
 }
 
 .success-banner {
-  background: var(--color-success-light);
-  border: 1px solid var(--color-success-light);
-  color: var(--color-success-text);
+  background: var(--hope-success-light);
+  border: 1px solid var(--hope-success-light);
+  color: var(--hope-success);
   padding: 12px 16px;
-  border-radius: var(--radius-md);
+  border-radius: var(--hope-radius-md);
   margin-bottom: 16px;
   display: flex;
   align-items: center;
@@ -1394,13 +1238,13 @@ html, body, #app {
 }
 
 .page-container {
-  background: var(--bg-page);
+  background: var(--hope-bg);
   min-height: calc(100vh - 64px);
   padding: 24px;
 }
 
 .list-item-enter-active {
-  animation: eregen-list-enter var(--duration-normal) var(--easing-out) both;
+  animation: eregen-list-enter var(--hope-transition-fast) ease-out both;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1408,8 +1252,8 @@ html, body, #app {
    ═══════════════════════════════════════════════════════════ */
 .page-fade-enter-active,
 .page-fade-leave-active {
-  transition: opacity var(--duration-slow) var(--easing-out),
-              transform var(--duration-slow) var(--easing-out);
+  transition: opacity var(--hope-transition),
+              transform var(--hope-transition);
 }
 
 .page-fade-enter-from {
