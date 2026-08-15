@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard">
-    <!-- Welcome Hero Banner -->
+    <!-- Welcome Hero Banner — Hope UI 蓝紫渐变 -->
     <div class="welcome-hero">
       <div class="welcome-hero__left">
         <span class="welcome-hero__wave">👋</span>
@@ -16,40 +16,60 @@
       </div>
     </div>
 
-    <!-- KPI Cards — HopeStatCard -->
+    <!-- KPI Cards — HopeStatCard 组件 -->
     <div class="kpi-grid">
-      <div class="hope-stat-card">
-        <div class="hope-stat-card__icon hope-stat-card__icon--primary">
+      <HopeStatCard
+        value="online_devices"
+        label="在线设备"
+        :icon-color="'primary'"
+        :gradient="'linear-gradient(135deg, #3a57e8, #6f42c1)'"
+      >
+        <template #icon>
           <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></el-icon>
-        </div>
-        <div class="hope-stat-card__value">{{ store.stats.online_devices.toLocaleString() }}</div>
-        <div class="hope-stat-card__label">在线设备</div>
-        <div class="hope-stat-card__trend hope-stat-card__trend-up">+2.3% 较昨日</div>
-      </div>
-      <div class="hope-stat-card">
-        <div class="hope-stat-card__icon hope-stat-card__icon--success">
+        </template>
+        <template #trend>
+          <span class="hope-stat-card__trend hope-stat-card__trend-up">+2.3% 较昨日</span>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        value="total_users"
+        label="活跃家属"
+        icon-color="success"
+        :gradient="'linear-gradient(135deg, #22c55e, #16a34a)'"
+      >
+        <template #icon>
           <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></el-icon>
-        </div>
-        <div class="hope-stat-card__value">{{ store.stats.total_users.toLocaleString() }}</div>
-        <div class="hope-stat-card__label">活跃家属</div>
-        <div class="hope-stat-card__trend hope-stat-card__trend-up">+5.1% 较昨日</div>
-      </div>
-      <div class="hope-stat-card">
-        <div class="hope-stat-card__icon hope-stat-card__icon--warning">
+        </template>
+        <template #trend>
+          <span class="hope-stat-card__trend hope-stat-card__trend-up">+5.1% 较昨日</span>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        value="active_alerts"
+        label="待处理告警"
+        icon-color="warning"
+        :gradient="'linear-gradient(135deg, #f59e0b, #d97706)'"
+      >
+        <template #icon>
           <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg></el-icon>
-        </div>
-        <div class="hope-stat-card__value">{{ store.stats.active_alerts }}</div>
-        <div class="hope-stat-card__label">待处理告警</div>
-        <div class="hope-stat-card__trend hope-stat-card__trend-down">-12.5% 较昨日</div>
-      </div>
-      <div class="hope-stat-card">
-        <div class="hope-stat-card__icon hope-stat-card__icon--info">
+        </template>
+        <template #trend>
+          <span class="hope-stat-card__trend hope-stat-card__trend-down">-12.5% 较昨日</span>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="deviceOnlineRate"
+        label="设备在线率"
+        icon-color="info"
+        :gradient="'linear-gradient(135deg, #079aa2, #0ea5e9)'"
+      >
+        <template #icon>
           <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 010-4h14v4M3 5v14a2 2 0 002 2h16v-5M18 14v6"/></svg></el-icon>
-        </div>
-        <div class="hope-stat-card__value">{{ store.stats.total_devices ? Math.round((store.stats.online_devices / store.stats.total_devices) * 100) + '%' : '—' }}</div>
-        <div class="hope-stat-card__label">设备在线率</div>
-        <div class="hope-stat-card__trend hope-stat-card__trend-up">+1.2% 较上周</div>
-      </div>
+        </template>
+        <template #trend>
+          <span class="hope-stat-card__trend hope-stat-card__trend-up">+1.2% 较上周</span>
+        </template>
+      </HopeStatCard>
     </div>
 
     <!-- Charts Row 1 -->
@@ -105,9 +125,8 @@ import { onMounted, ref, watch, nextTick, computed, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
 import { useDashboardStore } from '@/stores/dashboard'
 import { useTheme } from '@/composables/useTheme'
-import { eregenGreenEChartsTheme } from '@/utils/echarts-theme'
 import type { Alert } from '@/types'
-import { HopeCard, HopeBtn, HopeTable, HopeBadge } from '@/components/hope'
+import { HopeCard, HopeBtn, HopeTable, HopeBadge, HopeStatCard } from '@/components/hope'
 
 const store = useDashboardStore()
 const { isDark } = useTheme()
@@ -150,7 +169,7 @@ watch(
 const alertColumns = [
   { prop: 'created_at', label: '时间', sortable: false },
   { prop: 'alert_type', label: '类型', sortable: false },
-  { prop: 'device_id', label: '设备', sortable: false },
+  { prop: 'dev_id', label: '设备', sortable: false },
   { prop: 'status', label: '状态', sortable: false },
 ]
 
@@ -174,11 +193,91 @@ function statusLabel(status: string): string {
   return status === 'pending' ? '未处理' : status === 'resolved' ? '已处理' : '处理中'
 }
 
-// (slots used via template rendering)
+/** Hope UI 蓝紫色 ECharts 主题 */
+const hopeUIEChartsTheme = {
+  color: [
+    '#3a57e8', // primary 蓝紫
+    '#8C57FF', // accent 紫
+    '#22c55e', // success 绿
+    '#f59e0b', // warning 橙
+    '#079aa2', // info 青
+    '#c04a42', // error 红
+    '#6366f1', // indigo
+    '#14b8a6', // teal
+  ],
+  backgroundColor: 'transparent',
+  textStyle: {
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", Roboto, sans-serif',
+    fontSize: 13,
+    fontWeight: 400,
+  },
+  title: {
+    textStyle: { fontSize: 16, fontWeight: 600, color: '#1a2e26' },
+    subtextStyle: { fontSize: 13, color: '#94a9a2' },
+  },
+  legend: {
+    textStyle: { fontSize: 13, color: '#6b8980', fontWeight: 500 },
+    icon: 'roundRect',
+    itemWidth: 14,
+    itemHeight: 14,
+    itemGap: 16,
+  },
+  tooltip: {
+    backgroundColor: '#FFFFFF',
+    borderColor: 'rgba(26,46,38,0.12)',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: [10, 14],
+    textStyle: { color: '#1a2e26', fontSize: 13 },
+    extraCssText: 'box-shadow: 0 4px 16px rgba(26,46,38,0.14);',
+  },
+  axis: {
+    axisLine: { lineStyle: { color: 'rgba(26,46,38,0.10)', width: 1 } },
+    axisLabel: { textStyle: { color: '#8a8d93', fontSize: 12 } },
+    splitLine: { lineStyle: { color: 'rgba(26,46,38,0.06)', type: 'solid' } },
+    splitArea: { areaStyle: { color: ['rgba(244,246,250,0.5)', 'transparent'] } },
+  },
+  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+  line: {
+    symbol: 'circle',
+    symbolSize: 6,
+    lineStyle: { width: 2.5, type: 'solid' },
+    itemStyle: { borderWidth: 2 },
+    areaStyle: {},
+    emphasis: { focus: 'series' },
+  },
+  bar: {
+    categoryAxis: {
+      axisLine: { lineStyle: { color: 'rgba(26,46,38,0.10)' } },
+      splitLine: { show: false },
+    },
+    valueAxis: {
+      axisLine: { show: false },
+      splitLine: { lineStyle: { color: 'rgba(26,46,38,0.06)' } },
+    },
+    emphasis: { focus: 'series' },
+  },
+  pie: {
+    roseType: false,
+    avoidLabelOverlap: true,
+    itemStyle: { borderRadius: 6, borderColor: '#FFFFFF', borderWidth: 2 },
+    label: { formatter: '{b}: {c}\n({d}%)', fontSize: 12, color: '#616161' },
+    emphasis: {
+      label: { fontSize: 13, fontWeight: 600 },
+      itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.2)' },
+    },
+  },
+}
+
+// computed: device online rate
+const deviceOnlineRate = computed(() => {
+  if (!store.stats.total_devices) return '—'
+  return Math.round((store.stats.online_devices / store.stats.total_devices) * 100) + '%'
+})
 
 function renderLineChart() {
   if (!lineChartRef.value) return
-  if (!lineChart) lineChart = echarts.init(lineChartRef.value, eregenGreenEChartsTheme)
+  if (!lineChart) lineChart = echarts.init(lineChartRef.value, hopeUIEChartsTheme)
   const trend = store.chartData.alertTrend
   const dates = trend.map(d => d.date)
   const bracelet = trend.map(d => d.bracelet_count)
@@ -190,15 +289,15 @@ function renderLineChart() {
     xAxis: { type: 'category', boundaryGap: false, data: dates.length ? dates : ['暂无数据'] },
     yAxis: { type: 'value' },
     series: [
-      { name: '手环', type: 'line', smooth: true, data: bracelet.length ? bracelet : [0], itemStyle: { color: '#5C8D73' }, areaStyle: { opacity: 0.08 } },
-      { name: '药盒', type: 'line', smooth: true, data: pillbox.length ? pillbox : [0], itemStyle: { color: '#6FAF8F' }, areaStyle: { opacity: 0.08 } },
+      { name: '手环', type: 'line', smooth: true, data: bracelet.length ? bracelet : [0], itemStyle: { color: '#3a57e8' }, areaStyle: { opacity: 0.08 } },
+      { name: '药盒', type: 'line', smooth: true, data: pillbox.length ? pillbox : [0], itemStyle: { color: '#8C57FF' }, areaStyle: { opacity: 0.08 } },
     ],
   })
 }
 
 function renderPieChart() {
   if (!pieChartRef.value) return
-  if (!pieChart) pieChart = echarts.init(pieChartRef.value, eregenGreenEChartsTheme)
+  if (!pieChart) pieChart = echarts.init(pieChartRef.value, hopeUIEChartsTheme)
   const items = store.chartData.alertDistribution
   pieChart.setOption({
     tooltip: { trigger: 'item' },
@@ -208,10 +307,10 @@ function renderPieChart() {
       data: items.length
         ? items.map(i => ({ value: i.value, name: i.name, itemStyle: { color: i.color } }))
         : [
-            { value: 35, name: 'SOS', itemStyle: { color: '#C04A42' } },
-            { value: 28, name: '跌倒检测', itemStyle: { color: '#D9A441' } },
-            { value: 22, name: '心率异常', itemStyle: { color: '#5C8D73' } },
-            { value: 15, name: '漏服药物', itemStyle: { color: '#6FAF8F' } },
+            { value: 35, name: 'SOS', itemStyle: { color: '#c04a42' } },
+            { value: 28, name: '跌倒检测', itemStyle: { color: '#f59e0b' } },
+            { value: 22, name: '心率异常', itemStyle: { color: '#3a57e8' } },
+            { value: 15, name: '漏服药物', itemStyle: { color: '#8C57FF' } },
           ],
     }],
   })
@@ -219,7 +318,7 @@ function renderPieChart() {
 
 function renderBarChart() {
   if (!barChartRef.value) return
-  if (!barChart) barChart = echarts.init(barChartRef.value, eregenGreenEChartsTheme)
+  if (!barChart) barChart = echarts.init(barChartRef.value, hopeUIEChartsTheme)
   const growth = store.chartData.userGrowth
   barChart.setOption({
     tooltip: { trigger: 'axis' },
@@ -234,8 +333,8 @@ function renderBarChart() {
       data: growth.length ? growth.map(g => g.new_users) : [120, 180, 250, 320, 410, 520],
       itemStyle: {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: '#5C8D73' },
-          { offset: 1, color: '#A8C3B0' },
+          { offset: 0, color: '#3a57e8' },
+          { offset: 1, color: '#8C57FF' },
         ]),
       },
     }],
@@ -255,17 +354,17 @@ async function initCharts() {
 
 function renderDonutChart() {
   if (!donutChartRef.value) return
-  if (!donutChart) donutChart = echarts.init(donutChartRef.value, eregenGreenEChartsTheme)
+  if (!donutChart) donutChart = echarts.init(donutChartRef.value, hopeUIEChartsTheme)
   donutChart.setOption({
     tooltip: { trigger: 'item' },
     series: [{
       name: '设备类型', type: 'pie', radius: ['40%', '70%'], center: ['50%', '55%'],
       data: [
-        { value: 480, name: '手环-入门版', itemStyle: { color: '#5C8D73' } },
-        { value: 312, name: '手环-中端版', itemStyle: { color: '#7BAF8C' } },
-        { value: 148, name: '手环-高端版', itemStyle: { color: '#A8C3B0' } },
-        { value: 220, name: '药盒-智能版', itemStyle: { color: '#6FAF8F' } },
-        { value: 85, name: '药盒-自动版', itemStyle: { color: '#D9A441' } },
+        { value: 480, name: '手环-入门版', itemStyle: { color: '#3a57e8' } },
+        { value: 312, name: '手环-中端版', itemStyle: { color: '#8C57FF' } },
+        { value: 148, name: '手环-高端版', itemStyle: { color: '#6366f1' } },
+        { value: 220, name: '药盒-智能版', itemStyle: { color: '#22c55e' } },
+        { value: 85, name: '药盒-自动版', itemStyle: { color: '#f59e0b' } },
       ],
       label: { fontSize: 11, formatter: '{b}\n{c}' },
     }],
@@ -274,15 +373,15 @@ function renderDonutChart() {
 
 function renderPlanChart() {
   if (!planChartRef.value) return
-  if (!planChart) planChart = echarts.init(planChartRef.value, eregenGreenEChartsTheme)
+  if (!planChart) planChart = echarts.init(planChartRef.value, hopeUIEChartsTheme)
   planChart.setOption({
     tooltip: { trigger: 'item' },
     series: [{
       name: '套餐', type: 'pie', radius: ['40%', '70%'], center: ['50%', '55%'],
       data: [
-        { value: 189, name: 'Starter ¥29/月', itemStyle: { color: '#A8C3B0' } },
-        { value: 312, name: 'Plus ¥59/月', itemStyle: { color: '#5C8D73' } },
-        { value: 148, name: 'Pro ¥99/月', itemStyle: { color: '#6FAF8F' } },
+        { value: 189, name: 'Starter ¥29/月', itemStyle: { color: '#6366f1' } },
+        { value: 312, name: 'Plus ¥59/月', itemStyle: { color: '#3a57e8' } },
+        { value: 148, name: 'Pro ¥99/月', itemStyle: { color: '#8C57FF' } },
       ],
       label: { fontSize: 11, formatter: '{b}\n{d}%' },
     }],
@@ -291,15 +390,15 @@ function renderPlanChart() {
 
 function renderAlertPriorityChart() {
   if (!alertPriorityChartRef.value) return
-  if (!alertPriorityChart) alertPriorityChart = echarts.init(alertPriorityChartRef.value, eregenGreenEChartsTheme)
+  if (!alertPriorityChart) alertPriorityChart = echarts.init(alertPriorityChartRef.value, hopeUIEChartsTheme)
   alertPriorityChart.setOption({
     tooltip: { trigger: 'item' },
     series: [{
       name: '告警优先级', type: 'pie', radius: ['40%', '70%'], center: ['50%', '55%'],
       data: [
-        { value: 12, name: 'P0 紧急', itemStyle: { color: '#C04A42' } },
-        { value: 38, name: 'P1 重要', itemStyle: { color: '#D9A441' } },
-        { value: 156, name: 'P2 一般', itemStyle: { color: '#A8C3B0' } },
+        { value: 12, name: 'P0 紧急', itemStyle: { color: '#c04a42' } },
+        { value: 38, name: 'P1 重要', itemStyle: { color: '#f59e0b' } },
+        { value: 156, name: 'P2 一般', itemStyle: { color: '#8a8d93' } },
       ],
       label: { fontSize: 11, formatter: '{b}\n{c}条' },
     }],
@@ -330,14 +429,14 @@ onMounted(() => {
 <style scoped>
 .dashboard { padding: 0; }
 
-/* Welcome Hero */
+/* Welcome Hero — Hope UI 蓝紫渐变 */
 .welcome-hero {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 24px;
   padding: 24px 28px;
-  background: linear-gradient(135deg, #4A7C5F 0%, #6FAF8F 60%, #8FB89A 100%);
+  background: linear-gradient(135deg, #3a57e8 0%, #6f42c1 60%, #8C57FF 100%);
   border-radius: var(--hope-radius-xl);
   color: #fff;
   position: relative;
@@ -397,7 +496,7 @@ onMounted(() => {
   gap: 16px;
   margin-bottom: 16px;
 }
-.kpi-grid .hope-stat-card { cursor: default; }
+.kpi-grid :deep(.hope-stat-card) { cursor: default; }
 
 /* Charts Row */
 .charts-row {
@@ -408,9 +507,7 @@ onMounted(() => {
 .charts-row:nth-of-type(1),
 .charts-row:nth-of-type(2) { grid-template-columns: repeat(3, 1fr); }
 .charts-row:nth-of-type(3) { grid-template-columns: 2fr 1fr; }
-.charts-row:nth-of-type(4) { grid-template-columns: 1fr 1fr; }
 
-.chart-card-wide { grid-column: span 2; }
 .chart-container { height: 260px; }
 .chart-container.tall { height: 300px; }
 
@@ -424,10 +521,8 @@ onMounted(() => {
 @media (max-width: 1200px) {
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .charts-row:nth-of-type(1),
-  .charts-row:nth-of-type(2),
-  .charts-row:nth-of-type(4) { grid-template-columns: 1fr; }
+  .charts-row:nth-of-type(2) { grid-template-columns: 1fr; }
   .charts-row:nth-of-type(3) { grid-template-columns: 1fr; }
-  .chart-card-wide { grid-column: span 1; }
 }
 
 @media (max-width: 768px) {
