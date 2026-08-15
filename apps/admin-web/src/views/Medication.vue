@@ -1,167 +1,221 @@
 <template>
   <div class="medication-page">
-    <!-- Header -->
-    <el-card shadow="hover" class="card-header">
-      <div class="header-content">
-        <h1>{{ currentElder ? `用药管理 — ${currentElder.name}` : '用药管理' }}</h1>
-        <el-button type="primary" @click="openCreateDialog">+ 添加用药规则</el-button>
+    <!-- Page Header -->
+    <div class="hope-page-header">
+      <div>
+        <h1 class="hope-page-header__title">
+          用药管理{{ currentElder?.name ? ` — ${currentElder.name}` : '' }}
+        </h1>
+        <p class="hope-page-header__subtitle">管理老人用药规则、服药提醒与依从性统计</p>
       </div>
-    </el-card>
+      <div class="hope-page-header__actions">
+        <HopeBtn variant="filled" @click="openCreateDialog">
+          <template #icon>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </template>
+          添加用药规则
+        </HopeBtn>
+      </div>
+    </div>
 
     <!-- KPI Cards -->
-    <el-row :gutter="12" style="margin-bottom: 16px;">
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-green">
-          <div class="kpi-content">
-            <div class="kpi-icon-wrap green">
-              <el-icon :size="28"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 6V4M16 6V4M3 10h18"/><circle cx="8" cy="14" r="1.5"/><circle cx="16" cy="14" r="1.5"/></svg></el-icon>
-            </div>
-            <div class="kpi-info">
-              <div class="kpi-value">{{ stats.activeRules }}</div>
-              <div class="kpi-label">今日规则数</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-warning">
-          <div class="kpi-content">
-            <div class="kpi-icon-wrap orange">
-              <el-icon :size="28"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></el-icon>
-            </div>
-            <div class="kpi-info">
-              <div class="kpi-value">{{ stats.missedCount }}</div>
-              <div class="kpi-label">今日漏服</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-blue">
-          <div class="kpi-content">
-            <div class="kpi-icon-wrap blue">
-              <el-icon :size="28"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></el-icon>
-            </div>
-            <div class="kpi-info">
-              <div class="kpi-value">{{ stats.adherenceRate }}%</div>
-              <div class="kpi-label">按时服药率</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-danger">
-          <div class="kpi-content">
-            <div class="kpi-icon-wrap red">
-              <el-icon :size="28"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 105 2H4a2 2 0 00-2 2v5a6 6 0 006 6 6 6 0 006-6V4a2 2 0 00-2-2h-1a.2.2 0 00.3.3"/><path d="M8 15v4M12 15v4M6 23h8"/></svg></el-icon>
-            </div>
-            <div class="kpi-info">
-              <div class="kpi-value">{{ stats.pendingActions }}</div>
-              <div class="kpi-label">待处理提醒</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <div class="hope-grid-4" style="margin-bottom: 24px;">
+      <HopeStatCard
+        value="stats.activeRules"
+        label="今日规则数"
+        icon-color="success"
+        gradient="linear-gradient(135deg, #1aa053, #22c55e)"
+      >
+        <template #icon>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 6V4M16 6V4M3 10h18"/><circle cx="8" cy="14" r="1.5"/><circle cx="16" cy="14" r="1.5"/>
+          </svg>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="stats.missedCount"
+        label="今日漏服"
+        icon-color="warning"
+        gradient="linear-gradient(135deg, #FAA938, #f59e0b)"
+      >
+        <template #icon>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+          </svg>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="`${stats.adherenceRate}%`"
+        label="按时服药率"
+        icon-color="primary"
+        gradient="linear-gradient(135deg, #3a57e8, #6f42c1)"
+      >
+        <template #icon>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>
+          </svg>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="stats.pendingActions"
+        label="待处理提醒"
+        icon-color="error"
+        gradient="linear-gradient(135deg, #c03221, #ef4444)"
+      >
+        <template #icon>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4.8 2.3A.3.3 0 105 2H4a2 2 0 00-2 2v5a6 6 0 006 6 6 6 0 006-6V4a2 2 0 00-2-2h-1a.2.2 0 00.3.3"/><path d="M8 15v4M12 15v4M6 23h8"/>
+          </svg>
+        </template>
+      </HopeStatCard>
+    </div>
 
     <!-- Medication Rules Table -->
-    <el-card shadow="hover">
+    <HopeCard title="用药规则列表">
       <template #header>
-        <div class="table-header">
-          <span style="font-weight: 600;">用药规则列表</span>
-          <el-input
-            v-model="searchQuery"
-            placeholder="搜索药品名称..."
-            clearable
-            style="width: 200px;"
-            @input="handleSearch"
-          >
-            <template #prefix><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></template>
-          </el-input>
+        <HopeInput
+          v-model="searchQuery"
+          placeholder="搜索药品名称..."
+          size="sm"
+          style="width: 220px;"
+          @update:modelValue="handleSearch"
+        >
+          <template #prefix>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+          </template>
+        </HopeInput>
+      </template>
+      <HopeTable
+        :columns="tableColumns"
+        :data="filteredRules"
+        :loading="loading.rules"
+        striped
+      >
+        <template #col-pillType="{ row }">
+          <span style="font-weight: 600; color: var(--hope-text);">{{ row.pillType }}</span>
+        </template>
+        <template #col-scheduleTime="{ row }">
+          <span style="color: var(--hope-text-secondary);">{{ row.scheduleTime }}</span>
+        </template>
+        <template #col-doseCount="{ row }">
+          <span style="font-weight: 600;">{{ row.doseCount }}</span>
+          <span style="color: var(--hope-text-muted); font-size: 12px;">粒</span>
+        </template>
+        <template #col-daysOfWeek="{ row }">
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            <span v-for="day in (row.daysOfWeek || [])" :key="day" class="hope-chip hope-chip--primary" style="font-size: 11px; padding: 2px 8px;">
+              {{ { mon: '一', tue: '二', wed: '三', thu: '四', fri: '五', sat: '六', sun: '日' }[day] }}
+            </span>
+            <span v-if="!row.daysOfWeek?.length" style="color: var(--hope-text-muted); font-size: 13px;">—</span>
+          </div>
+        </template>
+        <template #col-active="{ row }">
+          <HopeBadge :color="row.active ? 'success' : 'error'">
+            {{ row.active ? '启用' : '停用' }}
+          </HopeBadge>
+        </template>
+        <template #col-__actions="{ row }">
+          <div style="display: flex; gap: 6px;">
+            <HopeBtn variant="text" size="sm" @click="handleEdit(row)">编辑</HopeBtn>
+            <HopeBtn variant="text" size="sm" :class="'hope-btn--error'" style="color: var(--hope-error);" @click="handleDelete(row.id!)">删除</HopeBtn>
+          </div>
+        </template>
+      </HopeTable>
+      <template #footer>
+        <div v-if="filteredRules.length === 0" style="text-align: center; padding: 40px 20px; color: var(--hope-text-muted);">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="opacity: 0.4; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto;">
+            <circle cx="12" cy="12" r="10"/><path d="M8 15s1.5-2 4-2 4 2 4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+          </svg>
+          <div>暂无用药规则，点击"添加用药规则"创建第一条规则</div>
         </div>
       </template>
+    </HopeCard>
 
-      <el-table :data="filteredRules" stripe v-loading="loading.rules">
-        <el-table-column prop="pillType" label="药品名称" width="180"></el-table-column>
-        <el-table-column prop="scheduleTime" label="服用时间" width="120"></el-table-column>
-        <el-table-column prop="doseCount" label="剂量" width="80">
-          <template #default="{ row }">
-            {{ row.doseCount }} 粒
-          </template>
-        </el-table-column>
-        <el-table-column prop="daysOfWeek" label="执行周期" width="140">
-          <template #default="{ row }">
-            {{ periodLabels(row.daysOfWeek) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.active ? 'success' : 'danger'">
-              {{ row.active ? '启用' : '停用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="180">
-          <template #default="{ row }">
-            <div class="action-buttons">
-              <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
-              <el-button size="danger" @click="handleDelete(row.id)">删除</el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div v-if="filteredRules.length === 0" class="empty-state">
-        <el-icon :size="48" style="color: #9CA3AF; margin-bottom: 12px;">Empty</el-icon>
-        <div>暂无用药规则，点击"添加用药规则"创建第一条规则</div>
-      </div>
-    </el-card>
-
-    <!-- Create/Edit Dialog -->
-    <el-dialog v-model="showDialog" title="用药规则" width="500px">
-      <el-form :model="form" label-width="100px" label-position="right">
-        <el-form-item label="药品名称">
-          <el-input v-model="form.pillType" placeholder="如：降压药" />
-        </el-form-item>
-        <el-form-item label="剂量">
-          <el-input-number v-model="form.doseCount" min="1" max="99" style="width: 100%;" placeholder="如：1" />
-        </el-form-item>
-        <el-form-item label="服用时间">
+    <!-- Create/Edit Modal -->
+    <HopeModal
+      :model-value="showDialog"
+      :title="form.id ? '编辑用药规则' : '添加用药规则'"
+      @update:model-value="showDialog = $event"
+    >
+      <div style="display: flex; flex-direction: column; gap: 18px;">
+        <div class="hope-field" :class="{ 'focused': formFocused === 'pillType', 'has-value': form.pillType }">
+          <label class="hope-label">药品名称</label>
+          <HopeInput
+            v-model="form.pillType"
+            placeholder="如：降压药"
+            size="lg"
+          />
+        </div>
+        <div class="hope-field" :class="{ 'focused': formFocused === 'doseCount', 'has-value': form.doseCount && form.doseCount > 0 }">
+          <label class="hope-label">剂量</label>
+          <HopeInput
+            :model-value="String(form.doseCount ?? 1)"
+            type="number"
+            placeholder="如：1"
+            size="lg"
+            @update:model-value="form.doseCount = parseInt($event) || 1"
+          >
+            <template #suffix><span style="color: var(--hope-text-muted); font-size: 13px;">粒</span></template>
+          </HopeInput>
+        </div>
+        <div class="hope-field" :class="{ 'focused': formFocused === 'scheduleTime', 'has-value': form.scheduleTime }">
+          <label class="hope-label">服用时间</label>
           <el-time-picker
             v-model="form.scheduleTime"
             format="HH:mm"
             placeholder="选择时间"
             value-format="HH:mm"
             style="width: 100%;"
-          ></el-time-picker>
-        </el-form-item>
-        <el-form-item label="执行周期">
-          <el-select v-model="form.daysOfWeek" multiple placeholder="请选择">
+            @focus="formFocused = 'scheduleTime'"
+            @blur="formFocused = ''"
+          />
+        </div>
+        <div class="hope-field" :class="{ 'has-value': form.daysOfWeek?.length }">
+          <label class="hope-label">执行周期</label>
+          <el-select
+            v-model="form.daysOfWeek"
+            multiple
+            placeholder="请选择执行周期"
+            style="width: 100%;"
+          >
             <el-option v-for="day in dayOptions" :key="day.value" :label="day.label" :value="day.value" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="启用状态">
-          <el-switch v-model="form.active" active-text="启用" inactive-text="停用"></el-switch>
-        </el-form-item>
-      </el-form>
+        </div>
+        <div class="hope-field">
+          <label class="hope-label">启用状态</label>
+          <el-switch v-model="form.active" active-text="启用" inactive-text="停用" />
+        </div>
+      </div>
       <template #footer>
-        <el-button @click="showDialog = false">取消</el-button>
-        <el-button type="primary" @click="saveRule">保存</el-button>
+        <HopeBtn variant="plain" @click="showDialog = false">取消</HopeBtn>
+        <HopeBtn variant="filled" @click="saveRule">保存</HopeBtn>
       </template>
-    </el-dialog>
+    </HopeModal>
   </div>
 </template>
 
 <script setup lang='ts'>
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, ElNotification, ElLoading } from 'element-plus'
+import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import type { MedicationRule } from '@/types'
 import { medicationApi } from '@/api/medication'
+import {
+  HopeCard,
+  HopeBtn,
+  HopeInput,
+  HopeTable,
+  HopeBadge,
+  HopeStatCard,
+  HopeModal,
+} from '@/components/hope'
 
 // State
 const loading = ref({ rules: true })
 const showDialog = ref(false)
 const searchQuery = ref('')
+const formFocused = ref('')
 
 // Form state for create/edit (using camelCase for local state)
 const form = ref<Omit<MedicationRule, 'id' | 'elderly_id' | 'created_at'> & { id?: string; active?: boolean }>({
@@ -212,6 +266,16 @@ function periodLabels(days: string[]): string {
   return days.map(d => ({ mon: '一', tue: '二', wed: '三', thu: '四', fri: '五', sat: '六', sun: '日' })[d]).join('、')
 }
 
+// Table columns definition for HopeTable
+const tableColumns = [
+  { prop: 'pillType', label: '药品名称', sortable: false },
+  { prop: 'scheduleTime', label: '服用时间', sortable: false },
+  { prop: 'doseCount', label: '剂量', sortable: false },
+  { prop: 'daysOfWeek', label: '执行周期', sortable: false },
+  { prop: 'active', label: '状态', sortable: false },
+  { prop: '__actions', label: '操作', sortable: false },
+]
+
 // Filtered rules based on search
 const filteredRules = computed(() => {
   if (!searchQuery.value) return rules.value
@@ -239,7 +303,6 @@ onMounted(async () => {
 
 // Open create dialog
 function openCreateDialog() {
-  // Reset form
   form.value = {
     pill_type: '',
     dose_count: 1,
@@ -294,16 +357,13 @@ async function saveRule() {
 
   loading.value.rules = true
   try {
-    if (showDialog.value && form.value.id) {
-      // Update mode
+    if (form.value.id) {
       await medicationApi.updateRule(currentElder.value.id as string, form.value.id!, form.value)
       ElMessage.success('更新成功')
     } else {
-      // Create mode
       await medicationApi.createRule(currentElder.value.id as string, form.value)
       ElMessage.success('创建成功')
     }
-    // Reload data
     const res = await medicationApi.listRules(currentElder.value.id as string)
     if (res.data && Array.isArray(res.data.data)) {
       rules.value = res.data.data.map((r: any) => ({
@@ -327,141 +387,27 @@ function handleSearch() {
 </script>
 
 <style scoped>
-.medication-page { padding: 0; }
-.medication-page :deep(.el-card) {
-  border-radius: 12px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
-  transition: all var(--duration-normal) var(--easing-out);
-}
-.medication-page :deep(.el-card:hover) {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
-  transform: translateY(-1px);
+.medication-page {
+  padding: 0;
 }
 
-.card-header {
-  padding: 20px;
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-content h1 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.kpi-card {
-  position: relative;
-  overflow: hidden;
-  transition: all var(--duration-normal) var(--easing);
-}
-.kpi-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
-  pointer-events: none;
-}
-.kpi-card:hover {
-  transform: translateY(-3px);
-}
-
-.kpi-card :deep(.el-card__body) {
-  padding: 16px 20px;
-  border: 1px solid var(--border-light);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), var(--shadow-card);
-  border-radius: var(--radius-lg);
-}
-
-.kpi-content {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.kpi-icon-wrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.kpi-icon-wrap.blue { background: linear-gradient(135deg, #5C8D73, #7BAF8C); color: #fff; }
-.kpi-icon-wrap.green { background: linear-gradient(135deg, #6FAF8F, #8BC4A8); color: #fff; }
-.kpi-icon-wrap.orange { background: linear-gradient(135deg, #D9A441, #E8BC6A); color: #fff; }
-.kpi-icon-wrap.red { background: linear-gradient(135deg, #D77B72, #E09890); color: #fff; }
-.kpi-icon { display: none; }
-.kpi-info { flex: 1; }
-
-.kpi-value {
-  font-size: 32px;
+/* Stat card value override for computed display */
+.hope-stat-card__value {
+  font-size: 30px;
   font-weight: 800;
-  color: var(--el-text-color-primary);
-  letter-spacing: -0.03em;
-  line-height: 1;
+  color: var(--hope-text);
+  line-height: 1.1;
   margin-bottom: 4px;
-}
-
-.kpi-label {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-  margin-top: 2px;
-}
-
-.table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: #9CA3AF;
-}
-
-:deep(.el-table__header th) {
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-:deep(.el-table__row td) {
-  color: var(--el-text-color-secondary);
-}
-
-.el-form-item__label {
-  font-weight: 500;
-  color: var(--el-text-color-primary);
-}
-
-@media (max-width: 768px) {
-  .header-content {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-  }
-
-  .kpi-card :deep(.el-card__body) {
-    padding: 12px 16px;
-  }
-
-  .kpi-value {
-    font-size: 22px;
-  }
+  letter-spacing: -0.03em;
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+  .hope-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
 @media (max-width: 768px) {
-  .medication-page :deep(.el-table) { font-size: 12px; }
-  .medication-page :deep(.el-table th),
-  .medication-page :deep(.el-table td) { padding: 6px 4px; }
+  .hope-grid-4 { grid-template-columns: 1fr !important; }
+  .hope-page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
 }
 </style>
