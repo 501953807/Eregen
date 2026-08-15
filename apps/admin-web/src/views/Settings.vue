@@ -1,112 +1,147 @@
 <template>
   <div class="settings-page">
-    <el-tabs v-model="activeTab" type="border-card">
-      <!-- Notification Settings -->
-      <el-tab-pane label="通知设置" name="notification">
-        <el-form :model="notifSettings" label-width="160px" style="max-width: 600px;">
-          <el-form-item label="SOS推送">
-            <el-switch v-model="notifSettings.sos_push" />
-            <span style="margin-left: 12px; color: var(--el-text-color-secondary); font-size: 13px;">开启后家属APP将实时收到SOS告警推送</span>
-          </el-form-item>
-          <el-form-item label="跌倒检测告警">
-            <el-switch v-model="notifSettings.fall_alerts" />
-            <span style="margin-left: 12px; color: var(--el-text-color-secondary); font-size: 13px;">检测到跌倒时自动发送告警通知</span>
-          </el-form-item>
-          <el-form-item label="用药提醒推送">
-            <el-switch v-model="notifSettings.medication_reminders" />
-            <span style="margin-left: 12px; color: var(--el-text-color-secondary); font-size: 13px;">用药时间到达时向老人设备发送语音播报</span>
-          </el-form-item>
-          <el-form-item label="电子围栏告警">
-            <el-switch v-model="notifSettings.geofence_alerts" />
-            <span style="margin-left: 12px; color: var(--el-text-color-secondary); font-size: 13px;">老人离开设定区域时发送告警</span>
-          </el-form-item>
-          <el-form-item label="健康异常告警">
-            <el-switch v-model="notifSettings.health_alerts" />
-            <span style="margin-left: 12px; color: var(--el-text-color-secondary); font-size: 13px;">心率/血氧等指标异常时触发告警</span>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="saveNotificationSettings">保存设置</el-button>
-            <el-button @click="loadNotificationSettings">重置</el-button>
-          </el-form-item>
-        </el-form>
-      </el-tab-pane>
+    <!-- Tabs — Hope UI pill style -->
+    <HopeTabs
+      v-model="activeTab"
+      :tabs="tabItems"
+      :pill-style="true"
+    />
 
-      <!-- API Key Management -->
-      <el-tab-pane label="API Key管理" name="apikey">
-        <div style="margin-bottom: 16px;">
-          <el-button type="primary" @click="showCreateKeyDialog = true">创建新密钥</el-button>
+    <!-- Notification Settings -->
+    <div v-show="activeTab === 'notification'" class="settings-section">
+      <HopeCard title="通知设置" subtitle="配置家属 APP 及老人设备的推送规则">
+        <div class="notif-list">
+          <div v-for="item in notifFields" :key="item.prop" class="notif-row">
+            <div class="notif-row__info">
+              <div class="notif-row__label">{{ item.label }}</div>
+              <div class="notif-row__desc">{{ item.desc }}</div>
+            </div>
+            <el-switch v-model="(notifSettings as Record<string, boolean>)[item.prop]" />
+          </div>
         </div>
-        <el-table :data="apiKeys" stripe style="width: 100%; max-width: 800px;">
-          <el-table-column prop="name" label="名称" width="150" />
-          <el-table-column prop="key_prefix" label="密钥前缀" width="180">
-            <template #default="{ row }">
-              <span class="mono">{{ row.key_prefix }}{{ '•'.repeat(24) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="created_at" label="创建时间" width="180">
-            <template #default="{ row }">
-              {{ row.created_at ? new Date(row.created_at).toLocaleDateString() : '—' }}
-            </template>
-          </el-table-column>
-          <el-table-column label="状态" width="100">
-            <template #default="{ row }">
-              <span class="status-badge" :class="row.active ? 'badge-success' : 'badge-gray'">
-                <span class="status-dot" :class="row.active ? 'dot-success' : 'dot-gray'"></span>
-                {{ row.active ? '启用' : '禁用' }}
-              </span>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="160">
-            <template #default="{ row }">
-              <el-button link type="danger" size="small" @click="handleRevokeApiKey(row)">吊销</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-tab-pane>
+        <template #footer>
+          <div class="form-actions">
+            <HopeBtn variant="filled" @click="saveNotificationSettings">保存设置</HopeBtn>
+            <HopeBtn variant="plain" @click="loadNotificationSettings">重置</HopeBtn>
+          </div>
+        </template>
+      </HopeCard>
+    </div>
 
-      <!-- Security Settings -->
-      <el-tab-pane label="安全设置" name="security">
-        <el-form :model="passwordForm" label-width="120px" style="max-width: 500px;">
-          <el-form-item label="当前密码">
-            <el-input v-model="passwordForm.old_password" type="password" show-password placeholder="请输入当前密码" />
-          </el-form-item>
-          <el-form-item label="新密码">
-            <el-input v-model="passwordForm.new_password" type="password" show-password placeholder="请输入新密码（至少8位）" />
-          </el-form-item>
-          <el-form-item label="确认新密码">
-            <el-input v-model="passwordForm.confirm_password" type="password" show-password placeholder="请再次输入新密码" />
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="handleChangePassword">修改密码</el-button>
-          </el-form-item>
-        </el-form>
-      </el-tab-pane>
-    </el-tabs>
+    <!-- API Key Management -->
+    <div v-show="activeTab === 'apikey'" class="settings-section">
+      <HopeCard title="API Key 管理" subtitle="管理 B2B 对接密钥，用于医院和社区平台接入">
+        <template #header>
+          <HopeBtn variant="filled" size="sm" @click="showCreateKeyDialog = true">
+            + 创建新密钥
+          </HopeBtn>
+        </template>
+        <HopeTable :columns="apiKeyColumns" :data="apiKeys" :loading="false" striped>
+          <template #col-key_prefix="{ row }">
+            <span class="mono">{{ row.key_prefix }}{{ '•'.repeat(24) }}</span>
+          </template>
+          <template #col-created_at="{ row }">
+            {{ row.created_at ? new Date(row.created_at).toLocaleDateString() : '—' }}
+          </template>
+          <template #col-active="{ row }">
+            <HopeBadge :color="row.active ? 'success' : 'info'">
+              <span :class="['status-dot', row.active ? 'dot-success' : 'dot-gray']" />
+              {{ row.active ? '启用' : '禁用' }}
+            </HopeBadge>
+          </template>
+          <template #col-action="{ row }">
+            <HopeBtn variant="text" size="sm" @click="handleRevokeApiKey(row)" class="btn-revoke">吊销</HopeBtn>
+          </template>
+        </HopeTable>
+      </HopeCard>
+    </div>
 
-    <!-- Create API Key Dialog -->
-    <el-dialog v-model="showCreateKeyDialog" title="创建API密钥" width="480px">
-      <el-form :model="newKeyForm" label-width="100px">
-        <el-form-item label="密钥名称">
-          <el-input v-model="newKeyForm.name" placeholder="如：第三方对接密钥" />
-        </el-form-item>
-        <el-form-item label="过期时间">
-          <el-date-picker v-model="newKeyForm.expires_at" type="date" placeholder="选择过期日期" value-format="YYYY-MM-DD" style="width: 100%;" />
-        </el-form-item>
-      </el-form>
+    <!-- Security Settings -->
+    <div v-show="activeTab === 'security'" class="settings-section">
+      <HopeCard title="安全设置" subtitle="修改登录密码以保障账号安全">
+        <div class="pw-form">
+          <div class="form-row">
+            <label class="form-label">当前密码</label>
+            <HopeInput
+              v-model="passwordForm.old_password"
+              type="password"
+              show-password
+              placeholder="请输入当前密码"
+            />
+          </div>
+          <div class="form-row">
+            <label class="form-label">新密码</label>
+            <HopeInput
+              v-model="passwordForm.new_password"
+              type="password"
+              show-password
+              placeholder="请输入新密码（至少8位）"
+              :error="passwordForm.new_password.length > 0 && passwordForm.new_password.length < 8 ? '密码长度不足8位' : ''"
+            />
+          </div>
+          <div class="form-row">
+            <label class="form-label">确认新密码</label>
+            <HopeInput
+              v-model="passwordForm.confirm_password"
+              type="password"
+              show-password
+              placeholder="请再次输入新密码"
+              :error="passwordForm.new_password && passwordForm.confirm_password && passwordForm.new_password !== passwordForm.confirm_password ? '两次密码不一致' : ''"
+            />
+          </div>
+        </div>
+        <template #footer>
+          <HopeBtn variant="filled" @click="handleChangePassword">修改密码</HopeBtn>
+        </template>
+      </HopeCard>
+    </div>
+
+    <!-- Create API Key Dialog — Hope Modal -->
+    <HopeModal
+      v-model="showCreateKeyDialog"
+      title="创建 API 密钥"
+      size="md"
+    >
+      <div class="pw-form">
+        <div class="form-row">
+          <label class="form-label">密钥名称</label>
+          <HopeInput
+            v-model="newKeyForm.name"
+            placeholder="如：第三方对接密钥"
+          />
+        </div>
+        <div class="form-row">
+          <label class="form-label">过期时间</label>
+          <HopeInput
+            v-model="newKeyForm.expires_at"
+            type="text"
+            placeholder="选择过期日期（YYYY-MM-DD）"
+          />
+        </div>
+      </div>
       <template #footer>
-        <el-button @click="showCreateKeyDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleCreateApiKey">创建</el-button>
+        <div class="form-actions">
+          <HopeBtn variant="plain" @click="showCreateKeyDialog = false">取消</HopeBtn>
+          <HopeBtn variant="filled" @click="handleCreateApiKey">创建</HopeBtn>
+        </div>
       </template>
-    </el-dialog>
+    </HopeModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { settingsApi } from '@/api/settings'
+import { HopeTabs, HopeCard, HopeBtn, HopeInput, HopeBadge, HopeTable, HopeModal } from '@/components/hope'
 
 const activeTab = ref('notification')
+
+const tabItems = [
+  { label: '通知设置', value: 'notification' },
+  { label: 'API Key 管理', value: 'apikey' },
+  { label: '安全设置', value: 'security' },
+]
 
 // Notification settings
 const notifSettings = ref({
@@ -118,6 +153,14 @@ const notifSettings = ref({
 })
 
 const originalNotifSettings = ref<typeof notifSettings.value>({ ...notifSettings.value })
+
+const notifFields = [
+  { prop: 'sos_push', label: 'SOS 推送', desc: '开启后家属 APP 将实时收到 SOS 告警推送' },
+  { prop: 'fall_alerts', label: '跌倒检测告警', desc: '检测到跌倒时自动发送告警通知' },
+  { prop: 'medication_reminders', label: '用药提醒推送', desc: '用药时间到达时向老人设备发送语音播报' },
+  { prop: 'geofence_alerts', label: '电子围栏告警', desc: '老人离开设定区域时发送告警' },
+  { prop: 'health_alerts', label: '健康异常告警', desc: '心率/血氧等指标异常时触发告警' },
+]
 
 async function loadNotificationSettings() {
   try {
@@ -148,6 +191,14 @@ async function saveNotificationSettings() {
 const apiKeys = ref<Array<any>>([])
 const showCreateKeyDialog = ref(false)
 const newKeyForm = ref({ name: '', expires_at: '' })
+
+const apiKeyColumns = [
+  { prop: 'name', label: '名称', width: 150 },
+  { prop: 'key_prefix', label: '密钥前缀', width: 180 },
+  { prop: 'created_at', label: '创建时间', width: 160 },
+  { prop: 'active', label: '状态', width: 100 },
+  { prop: 'action', label: '操作', width: 100 },
+]
 
 async function handleRevokeApiKey(row: any) {
   try {
@@ -216,82 +267,100 @@ onMounted(loadNotificationSettings)
 </script>
 
 <style scoped>
-.settings-page { padding: 0; }
-.settings-page :deep(.el-card) {
-  border-radius: 12px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
-  transition: all var(--duration-normal) var(--easing-out);
-}
-.settings-page :deep(.el-card:hover) {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
-  transform: translateY(-1px);
-}
-.settings-page :deep(.el-card__header) {
-  background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%);
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  padding: 16px 20px;
-  border-radius: 12px 12px 0 0 !important;
-}
-.settings-page :deep(.el-card__body) {
-  padding: 20px;
-}
-.settings-page :deep(.el-form-item__content) {
-  position: relative;
-}
-.settings-page :deep(.el-input__wrapper) {
-  border-radius: 8px !important;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(255,255,255,0.9) !important;
-  border: 1px solid var(--el-border-color) !important;
-  padding: 4px 12px !important;
-  background: white !important;
-}
-.settings-page :deep(.el-input__wrapper.is-focus) {
-  border-color: #5C8D73 !important;
-  box-shadow: 0 0 0 3px rgba(92,141,115,0.08), inset 0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(255,255,255,0.9) !important;
-}
-.settings-page :deep(.el-select__wrapper) {
-  border-radius: 8px !important;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(255,255,255,0.9) !important;
-  border: 1px solid var(--el-border-color) !important;
-  padding: 4px 12px !important;
-  background: white !important;
+.settings-page {
+  padding: 0;
+  max-width: 800px;
 }
 
+/* Tabs spacing */
+.settings-page :deep(.hope-tabs) {
+  margin-bottom: 20px;
+}
+
+.settings-section {
+  animation: fadeSlideIn 0.25s ease;
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Notification row list */
+.notif-list {
+  display: flex;
+  flex-direction: column;
+}
+.notif-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--hope-border);
+}
+.notif-row:last-of-type { border-bottom: none; }
+.notif-row__info { flex: 1; margin-right: 20px; }
+.notif-row__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hope-text);
+  margin-bottom: 2px;
+}
+.notif-row__desc {
+  font-size: 12px;
+  color: var(--hope-text-muted);
+  line-height: 1.4;
+}
+
+/* Password form */
+.pw-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hope-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+/* Form actions */
+.form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Mono key display */
 .mono {
   font-family: 'SF Mono', 'Consolas', monospace;
   font-size: 12px;
+  color: var(--hope-text-secondary);
+  letter-spacing: 0.04em;
 }
 
-/* Status badges with dots */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
+/* Revoke button — red tint */
+.btn-revoke {
+  color: var(--hope-error) !important;
 }
-.badge-success { background: #F0FDF4; color: #16A34A; }
-.badge-danger { background: #FEF2F2; color: #DC2626; }
-.badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #DDEBE1; color: #47745C; }
-.badge-gray { background: #F3F4F6; color: #6B7280; }
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  display: inline-block;
+.btn-revoke:hover {
+  background: rgba(192, 74, 66, 0.08) !important;
 }
-.dot-success { background: #6FAF8F; }
-.dot-danger { background: #D77B72; }
-.dot-warning { background: #D9A441; }
-.dot-primary { background: #5C8D73; }
-.dot-gray { background: #8FA8A0; }
+
+/* HopeModal footer padding */
+.settings-page :deep(.hope-modal__footer) {
+  padding: 14px 22px;
+  border-top: 1px solid var(--hope-border);
+}
 
 /* Responsive */
-@media (max-width: 768px) {
-  .settings-page :deep(.el-form-item__label) { width: 100% !important; }
-  .settings-page :deep(.el-form-item__content) { margin-left: 0 !important; }
+@media (max-width: 640px) {
+  .settings-page { padding: 0 12px; }
+  .notif-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .notif-row__info { margin-right: 0; }
 }
 </style>
