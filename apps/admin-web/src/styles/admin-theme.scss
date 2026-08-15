@@ -712,7 +712,7 @@ html, body, #app {
 }
 
 .el-table--striped .el-table__row--striped td.el-table__cell {
-  background: rgba(237, 244, 238, 0.4) !important;
+  background: var(--hope-primary-lighter) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════
