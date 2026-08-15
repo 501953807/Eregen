@@ -1,57 +1,113 @@
 <template>
   <div class="medical-page">
-    <!-- KPI Cards -->
-    <el-row :gutter="12" style="margin-bottom: 16px;">
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-blue">
-          <div class="kpi-value">{{ stats.active_patients }}</div>
-          <div class="kpi-label">在院患者</div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-green">
-          <div class="kpi-value">{{ stats.today_admitted }}</div>
-          <div class="kpi-label">今日入院</div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-purple">
-          <div class="kpi-value">{{ stats.bound_devices }}</div>
-          <div class="kpi-label">已绑定腕带</div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-warning">
-          <div class="kpi-value">{{ todayStats.matched }}/{{ todayStats.total }}</div>
-          <div class="kpi-label">今日核验匹配</div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header__left">
+        <h1 class="page-title">医疗腕带管理</h1>
+        <p class="page-subtitle">护士终端交互 · NFC身份核验 · 入院登记与监管闭环</p>
+      </div>
+      <div class="page-header__actions">
+        <HopeBtn variant="plain" size="md" @click="loadOverview">
+          <template #icon>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+          </template>
+          刷新数据
+        </HopeBtn>
+      </div>
+    </div>
+
+    <!-- KPI Cards — HopeStatCard -->
+    <div class="kpi-grid">
+      <HopeStatCard
+        :value="stats.active_patients"
+        label="在院患者"
+        icon-color="primary"
+        gradient="linear-gradient(135deg, #3a57e8 0%, #6f42c1 100%)"
+      >
+        <template #icon>
+          <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></el-icon>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="stats.today_admitted"
+        label="今日入院"
+        icon-color="success"
+        gradient="linear-gradient(135deg, #22c55e 0%, #1aa053 100%)"
+      >
+        <template #icon>
+          <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg></el-icon>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="stats.bound_devices"
+        label="已绑定腕带"
+        icon-color="accent"
+        gradient="linear-gradient(135deg, #8C57FF 0%, #6f42c1 100%)"
+      >
+        <template #icon>
+          <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2M8 10l4-4 4 4"/><path d="M8 14h8"/></svg></el-icon>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="`${todayStats.matched}/${todayStats.total}`"
+        label="今日核验匹配"
+        icon-color="warning"
+        gradient="linear-gradient(135deg, #FAA938 0%, #f59e0b 100%)"
+      >
+        <template #icon>
+          <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></el-icon>
+        </template>
+      </HopeStatCard>
+    </div>
 
     <!-- Tabs -->
-    <el-tabs v-model="activeTab" type="border-card">
-      <!-- Patient Registration -->
-      <el-tab-pane label="入院登记" name="patients">
-        <el-row :gutter="16" style="margin-bottom: 16px;">
-          <el-col :span="12">
-            <el-input v-model="patientForm.admission_no" placeholder="住院号" clearable />
-          </el-col>
-          <el-col :span="8">
-            <el-input v-model="patientForm.name" placeholder="姓名" clearable />
-          </el-col>
-          <el-col :span="4">
-            <el-button type="primary" @click="searchByAdmission">查询</el-button>
-          </el-col>
-        </el-row>
+    <HopeTabs
+      :model-value="activeTab"
+      :tabs="tabItems"
+      :animated="true"
+      @update:model-value="(v: string | number) => { activeTab = typeof v === 'string' ? v : String(v); }"
+    />
 
-        <el-table :data="patients" v-loading="loading.patients" stripe>
+    <!-- TAB: Patients -->
+    <div v-show="activeTab === 'patients'">
+      <!-- Filter Bar — HopeCard -->
+      <HopeCard style="margin-bottom: 16px;">
+        <template #header>
+          <span class="filter-title">患者查询</span>
+        </template>
+        <div class="filter-row">
+          <div class="filter-item">
+            <label class="filter-label">住院号</label>
+            <el-input v-model="patientForm.admission_no" placeholder="输入住院号" clearable class="hope-input" />
+          </div>
+          <div class="filter-item">
+            <label class="filter-label">姓名</label>
+            <el-input v-model="patientForm.name" placeholder="输入姓名" clearable class="hope-input" />
+          </div>
+          <div class="filter-item--actions">
+            <HopeBtn variant="filled" size="sm" @click="searchByAdmission">
+              <template #icon>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </template>
+              查询
+            </HopeBtn>
+          </div>
+        </div>
+      </HopeCard>
+
+      <!-- Patients Table — HopeCard wrapping el-table -->
+      <HopeCard subtitle="患者列表 · 点击行查看详情">
+        <template #header>
+          <span class="filter-title">入院登记</span>
+        </template>
+        <el-table :data="patients" v-loading="loading.patients" stripe style="width: 100%;">
           <el-table-column prop="admission_no" label="住院号" width="140">
             <template #default="{ row }"><span class="mono">{{ row.admission_no }}</span></template>
           </el-table-column>
           <el-table-column prop="name" label="姓名" width="100">
             <template #default="{ row }">
               <div class="patient-cell">
-                <div class="patient-avatar" :class="row.gender === '男' ? 'avatar-blue' : 'avatar-pink'">{{ row.name?.[0] || '?' }}</div>
+                <HopeAvatar size="sm" :text="row.name?.[0] || '?'" :color="row.gender === '男' ? 'primary' : 'accent'" />
                 <strong>{{ row.name }}</strong>
               </div>
             </template>
@@ -64,85 +120,103 @@
           <el-table-column prop="allergies" label="过敏史" show-overflow-tooltip />
           <el-table-column prop="status" label="状态" width="90">
             <template #default="{ row }">
-              <span class="status-badge" :class="row.status === 'admitted' ? 'badge-success' : 'badge-gray'">
+              <HopeBadge :color="row.status === 'admitted' ? 'success' : 'info'">
                 <span class="status-dot" :class="row.status === 'admitted' ? 'dot-success' : 'dot-gray'"></span>
                 {{ row.status === 'admitted' ? '在院' : '已出院' }}
-              </span>
+              </HopeBadge>
             </template>
           </el-table-column>
           <el-table-column label="操作" width="200">
             <template #default="{ row }">
-              <el-button size="small" link @click="editPatient(row)">编辑</el-button>
-              <el-button size="small" type="warning" link @click="bindDialogVisible = true; bindTarget = row">绑定腕带</el-button>
+              <HopeBtn variant="text" size="sm" @click="editPatient(row)">编辑</HopeBtn>
+              <HopeBtn variant="warning" size="sm" @click="bindDialogVisible = true; bindTarget = row">绑定腕带</HopeBtn>
             </template>
           </el-table-column>
         </el-table>
+      </HopeCard>
 
-        <el-dialog v-model="showPatientForm" title="编辑/新增患者" width="600px">
-          <el-form :model="patientForm" label-width="80px">
-            <el-form-item label="住院号"><el-input v-model="patientForm.admission_no" /></el-form-item>
-            <el-form-item label="姓名"><el-input v-model="patientForm.name" /></el-form-item>
-            <el-form-item label="性别">
-              <el-radio-group v-model="patientForm.gender">
-                <el-radio value="男">男</el-radio>
-                <el-radio value="女">女</el-radio>
-              </el-radio-group>
-            </el-form-item>
-            <el-form-item label="年龄"><el-input-number v-model="patientForm.age" :min="0" :max="150" /></el-form-item>
-            <el-form-item label="科室"><el-input v-model="patientForm.department" /></el-form-item>
-            <el-form-item label="床号"><el-input v-model="patientForm.bed_number" /></el-form-item>
-            <el-form-item label="血型"><el-input v-model="patientForm.blood_type" /></el-form-item>
-            <el-form-item label="过敏史"><el-input v-model="patientForm.allergies" type="textarea" /></el-form-item>
-            <el-form-item label="特殊状况"><el-input v-model="patientForm.special_conditions" type="textarea" /></el-form-item>
-          </el-form>
-          <template #footer>
-            <el-button @click="showPatientForm = false">取消</el-button>
-            <el-button type="primary" @click="savePatient">保存</el-button>
-          </template>
-        </el-dialog>
-      </el-tab-pane>
+      <!-- Edit/Patient Dialog -->
+      <el-dialog v-model="showPatientForm" title="编辑/新增患者" width="600px">
+        <el-form :model="patientForm" label-width="80px">
+          <el-form-item label="住院号"><el-input v-model="patientForm.admission_no" /></el-form-item>
+          <el-form-item label="姓名"><el-input v-model="patientForm.name" /></el-form-item>
+          <el-form-item label="性别">
+            <el-radio-group v-model="patientForm.gender">
+              <el-radio value="男">男</el-radio>
+              <el-radio value="女">女</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item label="年龄"><el-input-number v-model="patientForm.age" :min="0" :max="150" /></el-form-item>
+          <el-form-item label="科室"><el-input v-model="patientForm.department" /></el-form-item>
+          <el-form-item label="床号"><el-input v-model="patientForm.bed_number" /></el-form-item>
+          <el-form-item label="血型"><el-input v-model="patientForm.blood_type" /></el-form-item>
+          <el-form-item label="过敏史"><el-input v-model="patientForm.allergies" type="textarea" /></el-form-item>
+          <el-form-item label="特殊状况"><el-input v-model="patientForm.special_conditions" type="textarea" /></el-form-item>
+        </el-form>
+        <template #footer>
+          <HopeBtn variant="plain" @click="showPatientForm = false">取消</HopeBtn>
+          <HopeBtn variant="filled" @click="savePatient">保存</HopeBtn>
+        </template>
+      </el-dialog>
+    </div>
 
-      <!-- Wristband Binding -->
-      <el-tab-pane label="腕带管理" name="wristbands">
-        <el-row :gutter="16" style="margin-bottom: 16px;">
-          <el-col :span="6">
-            <el-select v-model="wristbandFilter.status" placeholder="状态筛选" clearable @change="loadWristbands" style="width: 100%;">
+    <!-- TAB: Wristbands -->
+    <div v-show="activeTab === 'wristbands'">
+      <!-- Filter Bar — HopeCard -->
+      <HopeCard style="margin-bottom: 16px;">
+        <template #header>
+          <span class="filter-title">腕带筛选</span>
+        </template>
+        <div class="filter-row">
+          <div class="filter-item">
+            <label class="filter-label">状态</label>
+            <el-select v-model="wristbandFilter.status" placeholder="全部状态" clearable @change="loadWristbands" style="width: 100%;">
               <el-option label="空闲" value="idle" />
               <el-option label="已绑定" value="bound" />
               <el-option label="已清空" value="cleared" />
             </el-select>
-          </el-col>
-          <el-col :span="4">
-            <el-button type="primary" @click="loadWristbands">刷新</el-button>
-          </el-col>
-        </el-row>
+          </div>
+          <div class="filter-item--actions">
+            <HopeBtn variant="filled" size="sm" @click="loadWristbands">
+              <template #icon>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+              </template>
+              刷新
+            </HopeBtn>
+          </div>
+        </div>
+      </HopeCard>
 
-        <el-table :data="wristbands" v-loading="loading.wristbands" stripe>
+      <!-- Wristbands Table -->
+      <HopeCard subtitle="腕带设备列表">
+        <el-table :data="wristbands" v-loading="loading.wristbands" stripe style="width: 100%;">
           <el-table-column prop="device_id" label="设备ID" width="160">
             <template #default="{ row }"><span class="mono">{{ row.device_id }}</span></template>
           </el-table-column>
           <el-table-column prop="firmware_version" label="固件版本" width="120" />
           <el-table-column prop="status" label="状态" width="90">
             <template #default="{ row }">
-              <span class="status-badge" :class="wristbandStatusClass(row.status)">
+              <HopeBadge :color="wristbandHopeColor(row.status)">
                 <span class="status-dot" :class="wristbandDotClass(row.status)"></span>
                 {{ row.status }}
-              </span>
+              </HopeBadge>
             </template>
           </el-table-column>
           <el-table-column prop="bound_patient_id" label="绑定患者" show-overflow-tooltip />
           <el-table-column label="操作" width="240">
             <template #default="{ row }">
-              <el-button size="small" link @click="clearWristband(row.device_id)">清空数据</el-button>
-              <el-button size="small" link type="info" @click="writeToFirmware(row.device_id)">写入配置</el-button>
+              <HopeBtn variant="text" size="sm" @click="clearWristband(row.device_id)">清空数据</HopeBtn>
+              <HopeBtn variant="info" size="sm" @click="writeToFirmware(row.device_id)">写入配置</HopeBtn>
             </template>
           </el-table-column>
         </el-table>
-      </el-tab-pane>
+      </HopeCard>
+    </div>
 
-      <!-- Verification Records -->
-      <el-tab-pane label="核验记录" name="verifications">
-        <el-table :data="verifications" v-loading="loading.verifications" stripe>
+    <!-- TAB: Verifications -->
+    <div v-show="activeTab === 'verifications'">
+      <HopeCard subtitle="NFC扫描核验历史记录">
+        <el-table :data="verifications" v-loading="loading.verifications" stripe style="width: 100%;">
           <el-table-column prop="timestamp" label="时间" width="180" />
           <el-table-column prop="patient_id" label="患者ID" width="140">
             <template #default="{ row }"><span class="mono">{{ row.patient_id }}</span></template>
@@ -152,29 +226,36 @@
           </el-table-column>
           <el-table-column prop="scan_type" label="类型" width="100">
             <template #default="{ row }">
-              <span class="status-badge badge-primary">
+              <HopeBadge color="primary">
                 <span class="status-dot dot-primary"></span>
                 {{ scanTypeLabel(row.scan_type) }}
-              </span>
+              </HopeBadge>
             </template>
           </el-table-column>
           <el-table-column prop="result" label="结果" width="100">
             <template #default="{ row }">
-              <span class="status-badge" :class="resultBadgeClass(row.result)">
+              <HopeBadge :color="resultHopeColor(row.result)">
                 <span class="status-dot" :class="resultDotClass(row.result)"></span>
                 {{ resultLabel(row.result) }}
-              </span>
+              </HopeBadge>
             </template>
           </el-table-column>
           <el-table-column prop="verified_by" label="操作人" width="100" />
           <el-table-column prop="notes" label="备注" show-overflow-tooltip />
         </el-table>
-      </el-tab-pane>
+      </HopeCard>
+    </div>
 
-      <!-- Daily Entries -->
-      <el-tab-pane label="每日录入" name="daily">
-        <el-date-picker v-model="dailyDate" type="date" placeholder="选择日期" style="margin-bottom: 16px; width: 100%;" />
-        <el-table :data="dailyEntries" v-loading="loading.daily" stripe>
+    <!-- TAB: Daily -->
+    <div v-show="activeTab === 'daily'">
+      <HopeCard subtitle="每日录入记录">
+        <template #header>
+          <div class="filter-title-row">
+            <span class="filter-title">每日录入</span>
+            <el-date-picker v-model="dailyDate" type="date" placeholder="选择日期" style="width: 180px;" />
+          </div>
+        </template>
+        <el-table :data="dailyEntries" v-loading="loading.daily" stripe style="width: 100%;">
           <el-table-column prop="timestamp" label="时间" width="180" />
           <el-table-column prop="patient_id" label="患者ID" width="140">
             <template #default="{ row }"><span class="mono">{{ row.patient_id }}</span></template>
@@ -183,15 +264,27 @@
           <el-table-column prop="content" label="内容" show-overflow-tooltip />
           <el-table-column prop="created_by" label="录入人" width="100" />
         </el-table>
-      </el-tab-pane>
+      </HopeCard>
+    </div>
 
-      <!-- Admissions -->
-      <el-tab-pane label="入院登记" name="admissions">
-        <div style="margin-bottom: 16px;">
-          <el-button type="primary" @click="showAdmitDialog = true; admitForm = { bed_no: '', department: '', patient_id: '', expected_stay_days: 7 }">办理入院</el-button>
-          <el-button @click="loadAdmissions">刷新</el-button>
-        </div>
-        <el-table :data="admissions" v-loading="loading.admissions" stripe>
+    <!-- TAB: Admissions -->
+    <div v-show="activeTab === 'admissions'">
+      <HopeCard subtitle="入院与出院管理">
+        <template #header>
+          <div class="filter-title-row">
+            <span class="filter-title">入院登记</span>
+            <div class="filter-title-actions">
+              <HopeBtn variant="filled" size="sm" @click="showAdmitDialog = true; admitForm = { bed_no: '', department: '', patient_id: '', expected_stay_days: 7 }">
+                <template #icon>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </template>
+                办理入院
+              </HopeBtn>
+              <HopeBtn variant="plain" size="sm" @click="loadAdmissions">刷新</HopeBtn>
+            </div>
+          </div>
+        </template>
+        <el-table :data="admissions" v-loading="loading.admissions" stripe style="width: 100%;">
           <el-table-column prop="admission_no" label="住院号" width="140">
             <template #default="{ row }"><span class="mono">{{ row.admission_no }}</span></template>
           </el-table-column>
@@ -204,36 +297,45 @@
           <el-table-column prop="expected_discharge_at" label="预计出院" width="180" />
           <el-table-column label="状态" width="90">
             <template #default="{ row }">
-              <span class="status-badge" :class="row.discharged_at ? 'badge-gray' : 'badge-success'">
+              <HopeBadge :color="row.discharged_at ? 'info' : 'success'">
                 <span class="status-dot" :class="row.discharged_at ? 'dot-gray' : 'dot-success'"></span>
                 {{ row.discharged_at ? '已出院' : '在院' }}
-              </span>
+              </HopeBadge>
             </template>
           </el-table-column>
           <el-table-column label="操作" width="120">
             <template #default="{ row }">
-              <el-button size="small" type="warning" link @click="showDischargeDialog = true; dischargeTarget = row">出院结算</el-button>
+              <HopeBtn variant="warning" size="sm" @click="showDischargeDialog = true; dischargeTarget = row">出院结算</HopeBtn>
             </template>
           </el-table-column>
         </el-table>
-      </el-tab-pane>
+      </HopeCard>
+    </div>
 
-      <!-- Ward Rounds -->
-      <el-tab-pane label="巡房记录" name="ward-rounds">
-        <el-row :gutter="16" style="margin-bottom: 16px;">
-          <el-col :span="12">
+    <!-- TAB: Ward Rounds -->
+    <div v-show="activeTab === 'ward-rounds'">
+      <!-- Filter Bar — HopeCard -->
+      <HopeCard style="margin-bottom: 16px;">
+        <template #header>
+          <span class="filter-title">巡房查询</span>
+        </template>
+        <div class="filter-row">
+          <div class="filter-item">
+            <label class="filter-label">选择患者</label>
             <el-select v-model="wardRoundPatientId" placeholder="选择患者" clearable filterable style="width: 100%;">
               <el-option v-for="p in patients" :key="p.id" :label="`${p.name} (${p.admission_no})`" :value="p.id" />
             </el-select>
-          </el-col>
-          <el-col :span="4">
-            <el-button type="primary" @click="loadWardRounds" :disabled="!wardRoundPatientId">查询</el-button>
-          </el-col>
-          <el-col :span="4">
-            <el-button type="success" @click="showWardRoundForm = true" :disabled="!wardRoundPatientId">开始巡房</el-button>
-          </el-col>
-        </el-row>
-        <el-table :data="wardRounds" v-loading="loading.wardRounds" stripe>
+          </div>
+          <div class="filter-item--actions">
+            <HopeBtn variant="filled" size="sm" @click="loadWardRounds" :disabled="!wardRoundPatientId">查询</HopeBtn>
+            <HopeBtn variant="success" size="sm" @click="showWardRoundForm = true" :disabled="!wardRoundPatientId">开始巡房</HopeBtn>
+          </div>
+        </div>
+      </HopeCard>
+
+      <!-- Ward Rounds Table -->
+      <HopeCard subtitle="巡房记录">
+        <el-table :data="wardRounds" v-loading="loading.wardRounds" stripe style="width: 100%;">
           <el-table-column prop="nurse_id" label="护士ID" width="140">
             <template #default="{ row }"><span class="mono">{{ row.nurse_id }}</span></template>
           </el-table-column>
@@ -252,44 +354,51 @@
           <el-table-column prop="notes" label="备注" show-overflow-tooltip />
           <el-table-column prop="completed_at" label="完成时间" width="180" />
         </el-table>
-      </el-tab-pane>
+      </HopeCard>
+    </div>
 
-      <!-- Regulatory Alerts -->
-      <el-tab-pane label="规则告警" name="regulatory-alerts">
-        <div style="margin-bottom: 16px;">
-          <el-button @click="loadRegulatoryAlerts">刷新</el-button>
-        </div>
-        <el-table :data="regulatoryAlerts" v-loading="loading.regulatoryAlerts" stripe>
+    <!-- TAB: Regulatory Alerts -->
+    <div v-show="activeTab === 'regulatory-alerts'">
+      <HopeCard subtitle="监管规则引擎告警">
+        <template #header>
+          <div class="filter-title-row">
+            <span class="filter-title">规则告警</span>
+            <HopeBtn variant="plain" size="sm" @click="loadRegulatoryAlerts">刷新</HopeBtn>
+          </div>
+        </template>
+        <el-table :data="regulatoryAlerts" v-loading="loading.regulatoryAlerts" stripe style="width: 100%;">
           <el-table-column prop="rule_code" label="规则" width="80">
-            <template #default="{ row }"><el-tag size="small">{{ row.rule_code }}</el-tag></template>
+            <template #default="{ row }">
+              <span class="mono el-tag el-tag--small el-tag--info">{{ row.rule_code }}</span>
+            </template>
           </el-table-column>
           <el-table-column label="严重程度" width="100">
             <template #default="{ row }">
-              <span class="status-badge" :class="row.severity === 'high' || row.severity === 'P0' ? 'badge-danger' : row.severity === 'medium' || row.severity === 'P1' ? 'badge-warning' : 'badge-primary'">
-                <span class="status-dot" :class="row.severity === 'high' || row.severity === 'P0' ? 'dot-danger' : row.severity === 'medium' || row.severity === 'P1' ? 'dot-warning' : 'dot-primary'"></span>
+              <HopeBadge :color="alertSeverityColor(row.severity)">
+                <span class="status-dot" :class="alertSeverityDotClass(row.severity)"></span>
                 {{ row.severity }}
-              </span>
+              </HopeBadge>
             </template>
           </el-table-column>
           <el-table-column prop="message" label="告警信息" show-overflow-tooltip />
           <el-table-column prop="triggered_at" label="触发时间" width="180" />
           <el-table-column label="状态" width="80">
             <template #default="{ row }">
-              <span class="status-badge" :class="row.resolved ? 'badge-success' : 'badge-warning'">
+              <HopeBadge :color="row.resolved ? 'success' : 'warning'">
                 <span class="status-dot" :class="row.resolved ? 'dot-success' : 'dot-warning'"></span>
                 {{ row.resolved ? '已解决' : '未解决' }}
-              </span>
+              </HopeBadge>
             </template>
           </el-table-column>
           <el-table-column label="操作" width="100">
             <template #default="{ row }">
-              <el-button v-if="!row.resolved" size="small" type="primary" link @click="handleResolveAlert(row)">处理</el-button>
-              <span v-else class="mono">✓</span>
+              <HopeBtn v-if="!row.resolved" variant="filled" size="sm" @click="handleResolveAlert(row)">处理</HopeBtn>
+              <span v-else class="mono" style="font-size: 16px; color: var(--hope-success);">✓</span>
             </template>
           </el-table-column>
         </el-table>
-      </el-tab-pane>
-    </el-tabs>
+      </HopeCard>
+    </div>
   </div>
 
   <!-- Admission Dialog -->
@@ -304,8 +413,8 @@
       <el-form-item label="预计住院天数"><el-input-number v-model="admitForm.expected_stay_days" :min="1" :max="365" /></el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="showAdmitDialog = false">取消</el-button>
-      <el-button type="primary" @click="handleAdmit">确认入院</el-button>
+      <HopeBtn variant="plain" @click="showAdmitDialog = false">取消</HopeBtn>
+      <HopeBtn variant="filled" @click="handleAdmit">确认入院</HopeBtn>
     </template>
   </el-dialog>
 
@@ -325,8 +434,8 @@
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="showDischargeDialog = false">取消</el-button>
-      <el-button type="primary" @click="handleDischarge">确认出院</el-button>
+      <HopeBtn variant="plain" @click="showDischargeDialog = false">取消</HopeBtn>
+      <HopeBtn variant="filled" @click="handleDischarge">确认出院</HopeBtn>
     </template>
   </el-dialog>
 
@@ -349,8 +458,8 @@
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="showWardRoundForm = false">取消</el-button>
-      <el-button type="primary" @click="handleWardRound">提交巡房</el-button>
+      <HopeBtn variant="plain" @click="showWardRoundForm = false">取消</HopeBtn>
+      <HopeBtn variant="filled" @click="handleWardRound">提交巡房</HopeBtn>
     </template>
   </el-dialog>
 </template>
@@ -359,8 +468,19 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { medicalApi, type Patient, type WristbandDevice, type VerificationRecord, type HospitalAdmission, type WardRoundEntry, type RegulatoryAlert } from '@/api/medical'
+import { HopeStatCard, HopeCard, HopeBadge, HopeBtn, HopeTabs, HopeAvatar } from '@/components/hope'
 
 const activeTab = ref('patients')
+
+const tabItems = [
+  { label: '入院登记', value: 'patients' },
+  { label: '腕带管理', value: 'wristbands' },
+  { label: '核验记录', value: 'verifications' },
+  { label: '每日录入', value: 'daily' },
+  { label: '入院登记', value: 'admissions' },
+  { label: '巡房记录', value: 'ward-rounds' },
+  { label: '规则告警', value: 'regulatory-alerts' },
+]
 
 // Stats
 const stats = ref({ active_patients: 0, today_admitted: 0, bound_devices: 0, total_devices: 0 })
@@ -533,11 +653,33 @@ function wristbandDotClass(status: string): string {
   return 'dot-gray'
 }
 
+function wristbandHopeColor(status: string): 'success' | 'info' | 'info' {
+  if (status === 'bound') return 'success'
+  if (status === 'idle') return 'info'
+  return 'info'
+}
+
 function resultBadgeClass(result: string): string {
   return result === 'matched' ? 'badge-success' : 'badge-danger'
 }
 function resultDotClass(result: string): string {
   return result === 'matched' ? 'dot-success' : 'dot-danger'
+}
+
+function resultHopeColor(result: string): 'success' | 'error' {
+  return result === 'matched' ? 'success' : 'error'
+}
+
+function alertSeverityColor(severity: string): 'error' | 'warning' | 'primary' {
+  if (severity === 'high' || severity === 'P0') return 'error'
+  if (severity === 'medium' || severity === 'P1') return 'warning'
+  return 'primary'
+}
+
+function alertSeverityDotClass(severity: string): string {
+  if (severity === 'high' || severity === 'P0') return 'dot-danger'
+  if (severity === 'medium' || severity === 'P1') return 'dot-warning'
+  return 'dot-primary'
 }
 
 // --- Admissions ---
@@ -647,102 +789,122 @@ async function handleResolveAlert(row: RegulatoryAlert) {
 </script>
 
 <style scoped>
-.medical-page { padding: 0; }
-.medical-page :deep(.el-card) {
-  border-radius: 12px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
-  transition: all var(--duration-normal) var(--easing-out);
+/* ── Page Header ── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
 }
-.medical-page :deep(.el-card:hover) {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
-  transform: translateY(-1px);
+.page-header__left {}
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--hope-text);
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.2;
+}
+.page-subtitle {
+  font-size: 14px;
+  color: var(--hope-text-muted);
+  margin-top: 4px;
+}
+.page-header__actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-/* KPI Cards */
-.kpi-card :deep(.el-card__body) {
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  border-radius: 14px;
+/* ── KPI Grid ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
 }
-.kpi-value {
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  margin-bottom: 4px;
-}
-.kpi-label {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  margin-top: 6px;
-  font-weight: 600;
-}
-.kpi-blue .kpi-value { color: #5C8D73; }
-.kpi-green .kpi-value { color: #6FAF8F; }
-.kpi-purple .kpi-value { color: #7BAF8C; }
-.kpi-warning .kpi-value { color: #D9A441; }
+@media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .kpi-grid { grid-template-columns: 1fr; } }
 
-/* Patient cell */
-.patient-cell {
+/* ── Filter Row (inside HopeCard) ── */
+.filter-row {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.filter-item {
+  flex: 1;
+  min-width: 160px;
+}
+.filter-item--actions {
+  display: flex;
   gap: 8px;
-}
-.patient-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 600;
+  align-items: flex-end;
   flex-shrink: 0;
 }
-.avatar-blue { background: #DDEBE1; color: #47745C; }
-.avatar-pink { background: #FCE7F3; color: #D48EC0; }
-
-/* Status badges with dots */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: 8px;
+.filter-label {
+  display: block;
   font-size: 12px;
   font-weight: 600;
+  color: var(--hope-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
 }
-.badge-success { background: #F0FDF4; color: #16A34A; }
-.badge-danger { background: #FEF2F2; color: #DC2626; }
-.badge-warning { background: #FFFBEB; color: #D97706; }
-.badge-primary { background: #DDEBE1; color: #47745C; }
-.badge-gray { background: #F3F4F6; color: #8FA8A0; }
-.badge-info { background: #EEF4F8; color: #6E9FC4; }
+.filter-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--hope-text);
+}
+.filter-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+.filter-title-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Status dots ── */
 .status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   display: inline-block;
+  flex-shrink: 0;
 }
-.dot-success { background: #6FAF8F; }
-.dot-danger { background: #D77B72; }
-.dot-warning { background: #D9A441; }
-.dot-primary { background: #5C8D73; }
-.dot-gray { background: #8FA8A0; }
-.dot-info { background: #6E9FC4; }
+.dot-success { background: var(--hope-success); }
+.dot-danger  { background: var(--hope-error); }
+.dot-warning { background: var(--hope-warning); }
+.dot-primary { background: var(--hope-primary); }
+.dot-gray    { background: var(--hope-text-muted); }
+.dot-info    { background: #079aa2; }
 
+/* ── Patient cell ── */
+.patient-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Mono IDs ── */
 .mono {
   font-family: 'SF Mono', 'Consolas', monospace;
   font-size: 12px;
+  color: var(--hope-text-secondary);
 }
 
-/* Responsive */
+/* ── Responsive tables ── */
 @media (max-width: 768px) {
   .medical-page :deep(.el-table) { font-size: 12px; }
   .medical-page :deep(.el-table th),
-  .medical-page :deep(.el-table td) { padding: 6px 4px; }
+  .medical-page :deep(.el-table td) { padding: 8px 6px; }
 }
 </style>
