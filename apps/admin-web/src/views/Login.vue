@@ -1,6 +1,6 @@
 <template>
   <div class="login-page">
-    <!-- Left decorative panel -->
+    <!-- Left decorative panel — Hope UI blue-purple gradient -->
     <div class="login-brand">
       <div class="brand-bg-shapes">
         <div class="shape shape-1"></div>
@@ -58,7 +58,7 @@
       </div>
     </div>
 
-    <!-- Right login form panel — fixed width, aligned center -->
+    <!-- Right login form panel — white, Hope UI style -->
     <div class="login-form-panel">
       <div class="login-form-wrapper" :class="{ animating: visible }">
 
@@ -78,7 +78,7 @@
           <p class="login-subtitle">请输入您的账号信息以继续</p>
         </div>
 
-        <!-- Tabs — pill container -->
+        <!-- Tabs — pill container, Hope UI style -->
         <div class="login-tabs">
           <button
             class="login-tab"
@@ -344,7 +344,7 @@ onBeforeUnmount(() => {
 .login-page {
   display: flex;
   min-height: 100vh;
-  background: #F8F6F1;
+  background: var(--hope-bg);
   overflow: hidden;
 }
 
@@ -352,7 +352,7 @@ onBeforeUnmount(() => {
 .login-brand {
   flex: 1;
   min-height: 100vh;
-  background: linear-gradient(160deg, #29404A 0%, #47745C 50%, #5C8D73 100%);
+  background: linear-gradient(135deg, #3a57e8 0%, #6f42c1 100%);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -366,14 +366,14 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 20% 20%, rgba(92,141,115,0.2) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(41,64,74,0.3) 0%, transparent 50%);
+    radial-gradient(ellipse at 20% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(111,66,193,0.2) 0%, transparent 50%);
 }
 .login-brand::after {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0);
+  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0);
   background-size: 24px 24px;
 }
 
@@ -386,13 +386,13 @@ onBeforeUnmount(() => {
 .shape {
   position: absolute;
   border-radius: 50%;
-  opacity: 0.08;
+  opacity: 0.1;
   background: #FFFFFF;
 }
 .shape-1 { width: 300px; height: 300px; top: -60px; right: -60px; animation: float 8s ease-in-out infinite; }
 .shape-2 { width: 180px; height: 180px; bottom: 120px; left: -40px; animation: float 10s ease-in-out infinite reverse; }
 .shape-3 { width: 100px; height: 100px; top: 45%; right: 30px; animation: float 6s ease-in-out infinite; }
-.shape-4 { width: 60px; height: 60px; bottom: 200px; right: 80px; opacity: 0.12; animation: float 7s ease-in-out infinite reverse; }
+.shape-4 { width: 60px; height: 60px; bottom: 200px; right: 80px; opacity: 0.15; animation: float 7s ease-in-out infinite reverse; }
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-12px); }
@@ -434,20 +434,6 @@ onBeforeUnmount(() => {
   margin-top: 2px;
 }
 
-.brand-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: rgba(255,255,255,0.9);
-  margin-bottom: 12px;
-  letter-spacing: -0.01em;
-}
-.brand-desc {
-  font-size: 14px;
-  color: rgba(255,255,255,0.5);
-  line-height: 1.7;
-  margin-bottom: 48px;
-}
-
 /* Feature list */
 .brand-features {
   display: flex;
@@ -460,16 +446,20 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--hope-radius-md);
   backdrop-filter: blur(8px);
+  transition: background 0.2s ease;
+}
+.feature-item:hover {
+  background: rgba(255,255,255,0.12);
 }
 .feature-dot {
   width: 32px;
   height: 32px;
   min-width: 32px;
-  background: linear-gradient(135deg, rgba(92,141,115,0.4), rgba(92,141,115,0.15));
+  background: rgba(255,255,255,0.2);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -480,38 +470,38 @@ onBeforeUnmount(() => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.85);
 }
 .feature-title {
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255,255,255,0.85);
+  color: rgba(255,255,255,0.92);
   margin-bottom: 2px;
 }
 .feature-desc {
   font-size: 12px;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.55);
   line-height: 1.5;
 }
 
 .brand-footer {
   margin-top: 48px;
   font-size: 11px;
-  color: rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.4);
   letter-spacing: 0.02em;
 }
 
 /* ==================== RIGHT FORM PANEL ==================== */
 .login-form-panel {
   flex: 0 0 520px;
-  background: #FFFFFF;
+  background: var(--hope-surface);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   padding: 60px 48px;
   position: relative;
-  box-shadow: -8px 0 32px rgba(0,0,0,0.06);
+  box-shadow: -8px 0 32px rgba(17,38,146,0.06);
 }
 .login-form-panel::before {
   content: '';
@@ -520,7 +510,7 @@ onBeforeUnmount(() => {
   left: 0;
   width: 3px;
   height: 100%;
-  background: linear-gradient(180deg, #5C8D73, #7BAF8C, #A8C3B0, #7BAF8C, #5C8D73);
+  background: var(--hope-primary-gradient);
   background-size: 100% 200%;
   animation: gradientShift 4s ease infinite;
 }
@@ -550,52 +540,55 @@ onBeforeUnmount(() => {
 .login-header-logo {
   width: 36px;
   height: 36px;
-  background: linear-gradient(135deg, #5C8D73, #7BAF8C);
-  border-radius: 10px;
+  background: var(--hope-primary-gradient);
+  border-radius: var(--hope-radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(92,141,115,0.25);
+  box-shadow: 0 4px 12px rgba(58,87,232,0.25);
 }
 .login-header-brand {
   font-size: 17px;
   font-weight: 700;
-  color: #29404A;
+  color: var(--hope-text);
   letter-spacing: -0.01em;
 }
 .login-header-brand span {
-  color: #5C8D73;
+  background: var(--hope-primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 .login-title {
   font-size: 24px;
   font-weight: 800;
-  color: #29404A;
+  color: var(--hope-text);
   letter-spacing: -0.025em;
   margin-bottom: 6px;
 }
 .login-subtitle {
   font-size: 13px;
-  color: #8FA8A0;
+  color: var(--hope-text-muted);
 }
 
 /* ==================== TABS ==================== */
 .login-tabs {
   display: flex;
   gap: 4px;
-  background: #F8F6F1;
-  border-radius: 8px;
+  background: var(--hope-primary-lighter);
+  border-radius: var(--hope-radius-pill);
   padding: 4px;
-  border: 1px solid #E5EDE6;
+  border: 1px solid var(--hope-border);
   margin-bottom: 28px;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(255,255,255,0.9);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
 }
 .login-tab {
   flex: 1;
   padding: 9px 16px;
-  border-radius: 6px;
+  border-radius: var(--hope-radius-pill);
   font-size: 13px;
   font-weight: 600;
-  color: #8FA8A0;
+  color: var(--hope-text-secondary);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
@@ -604,13 +597,13 @@ onBeforeUnmount(() => {
   text-align: center;
 }
 .login-tab:hover {
-  color: #4A6260;
-  background: #FFFFFF;
+  color: var(--hope-primary-hover);
+  background: var(--hope-surface);
 }
 .login-tab.active {
-  background: linear-gradient(135deg, #5C8D73, #7BAF8C);
+  background: var(--hope-primary-gradient);
   color: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(92,141,115,0.25);
+  box-shadow: var(--hope-shadow-active);
 }
 
 /* ==================== FORM ==================== */
@@ -627,7 +620,7 @@ onBeforeUnmount(() => {
 .form-label {
   font-size: 12.5px;
   font-weight: 600;
-  color: #4A6260;
+  color: var(--hope-text-secondary);
   letter-spacing: 0.01em;
 }
 .input-wrapper {
@@ -640,36 +633,37 @@ onBeforeUnmount(() => {
   left: 12px;
   width: 18px;
   height: 18px;
-  color: #8FA8A0;
+  color: var(--hope-text-muted);
   transition: color 0.2s ease;
   pointer-events: none;
 }
 .input-wrapper:focus-within .input-icon {
-  color: #5C8D73;
+  color: var(--hope-primary);
 }
 .input {
   height: 42px;
-  padding: 0 40px 0 40px;
-  border: 1px solid #E2E8F0;
-  border-radius: 8px;
+  padding: 0 40px;
+  border: 1px solid var(--hope-border);
+  border-radius: var(--hope-radius-sm);
   font-size: 14px;
   font-family: inherit;
-  color: #29404A;
-  background: #FFFFFF;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(255,255,255,0.9);
+  color: var(--hope-text);
+  background: var(--hope-surface);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
   width: 100%;
+  box-sizing: border-box;
 }
-.input:hover { border-color: #A8C3B0; }
+.input:hover { border-color: var(--hope-border-strong); }
 .input:focus {
-  border-color: #5C8D73;
-  box-shadow: 0 0 0 3px rgba(92,141,115,0.1), inset 0 1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(255,255,255,0.9);
+  border-color: var(--hope-primary);
+  box-shadow: var(--hope-shadow-input-focus);
 }
-.input::placeholder { color: #A8C3B0; }
+.input::placeholder { color: var(--hope-text-muted); }
 .input-error {
-  border-color: #D77B72 !important;
-  box-shadow: 0 0 0 3px rgba(215,123,114,0.1) !important;
+  border-color: var(--hope-danger) !important;
+  box-shadow: 0 0 0 3px rgba(192,50,33,0.1) !important;
 }
 .pw-toggle {
   position: absolute;
@@ -678,12 +672,12 @@ onBeforeUnmount(() => {
   border: none;
   cursor: pointer;
   padding: 4px;
-  color: #8FA8A0;
+  color: var(--hope-text-muted);
   display: flex;
   align-items: center;
   transition: color 0.2s;
 }
-.pw-toggle:hover { color: #5C8D73; }
+.pw-toggle:hover { color: var(--hope-primary); }
 
 /* OTP row */
 .otp-row {
@@ -694,10 +688,10 @@ onBeforeUnmount(() => {
 .btn-send-otp {
   height: 42px;
   padding: 0 16px;
-  border-radius: 8px;
-  border: 1px solid #E2E8F0;
-  background: #FFFFFF;
-  color: #5C8D73;
+  border-radius: var(--hope-radius-sm);
+  border: 1px solid var(--hope-border);
+  background: var(--hope-surface);
+  color: var(--hope-primary);
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
@@ -707,20 +701,20 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 .btn-send-otp:hover {
-  background: #EEF4EF;
-  border-color: #5C8D73;
+  background: var(--hope-primary-lighter);
+  border-color: var(--hope-primary);
 }
 .btn-send-otp:disabled {
-  color: #8FA8A0;
+  color: var(--hope-text-muted);
   cursor: not-allowed;
-  background: #F8F6F1;
-  border-color: #E5EDE6;
+  background: var(--hope-surface-light);
+  border-color: var(--hope-border);
 }
 
 /* Field error */
 .field-error {
   font-size: 12px;
-  color: #B85C54;
+  color: var(--hope-danger);
   margin-top: 2px;
 }
 
@@ -737,37 +731,37 @@ onBeforeUnmount(() => {
   gap: 8px;
   cursor: pointer;
   font-size: 13px;
-  color: #4A6260;
+  color: var(--hope-text-secondary);
 }
 .checkbox-wrapper input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: #5C8D73;
+  accent-color: var(--hope-primary);
   cursor: pointer;
 }
 .forgot-link {
   font-size: 13px;
-  color: #5C8D73;
+  color: var(--hope-primary);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s;
 }
-.forgot-link:hover { color: #47745C; text-decoration: underline; }
+.forgot-link:hover { color: var(--hope-primary-hover); text-decoration: underline; }
 
 /* ==================== LOGIN BUTTON ==================== */
 .btn-login {
   width: 100%;
   height: 44px;
-  border-radius: 8px;
+  border-radius: var(--hope-radius-sm);
   border: none;
-  background: linear-gradient(180deg, #6FAF8F 0%, #5C8D73 100%);
+  background: var(--hope-primary-gradient);
   color: #FFFFFF;
   font-size: 15px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 3px rgba(92,141,115,0.2), 0 4px 12px rgba(92,141,115,0.1);
+  box-shadow: var(--hope-shadow-primary);
   margin-top: 4px;
   display: flex;
   align-items: center;
@@ -775,8 +769,8 @@ onBeforeUnmount(() => {
   gap: 8px;
 }
 .btn-login:hover:not(:disabled) {
-  background: linear-gradient(180deg, #7BAF8C 0%, #6FAF8F 100%);
-  box-shadow: 0 2px 6px rgba(92,141,115,0.25), 0 8px 20px rgba(92,141,115,0.12);
+  background: var(--hope-primary-gradient-hover);
+  box-shadow: var(--hope-shadow-active);
   transform: translateY(-1px);
 }
 .btn-login:active:not(:disabled) { transform: translateY(0); }
@@ -792,10 +786,10 @@ onBeforeUnmount(() => {
 /* ==================== ERROR MESSAGE ==================== */
 .error-message {
   padding: 10px 14px;
-  border-radius: 8px;
-  background: #FDF0EE;
-  border: 1px solid #F5D5D0;
-  color: #B85C54;
+  border-radius: var(--hope-radius-md);
+  background: var(--hope-danger-light);
+  border: 1px solid var(--hope-danger-light);
+  color: var(--hope-danger);
   font-size: 13px;
   text-align: center;
   display: flex;
@@ -814,7 +808,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 12px;
   margin: 24px 0;
-  color: #8FA8A0;
+  color: var(--hope-text-muted);
   font-size: 12px;
 }
 .login-divider::before,
@@ -822,32 +816,32 @@ onBeforeUnmount(() => {
   content: '';
   flex: 1;
   height: 1px;
-  background: #E5EDE6;
+  background: var(--hope-border);
 }
 
 /* ==================== HINT ==================== */
 .login-hint {
   text-align: center;
   font-size: 12px;
-  color: #8FA8A0;
+  color: var(--hope-text-muted);
   line-height: 1.8;
   padding: 16px;
-  background: #F8F6F1;
-  border-radius: 8px;
-  border: 1px solid #E5EDE6;
+  background: var(--hope-surface-light);
+  border-radius: var(--hope-radius-md);
+  border: 1px solid var(--hope-border);
 }
 .login-hint strong {
-  color: #4A6260;
+  color: var(--hope-text-secondary);
   font-weight: 600;
 }
 .login-hint code {
-  background: #FFFFFF;
+  background: var(--hope-surface);
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: var(--hope-radius-sm);
   font-family: 'SF Mono', 'Consolas', monospace;
   font-size: 11px;
-  color: #5C8D73;
-  border: 1px solid #E5EDE6;
+  color: var(--hope-primary);
+  border: 1px solid var(--hope-border);
 }
 
 /* ==================== FOOTER ==================== */
@@ -855,7 +849,7 @@ onBeforeUnmount(() => {
   margin-top: 32px;
   text-align: center;
   font-size: 12px;
-  color: #8FA8A0;
+  color: var(--hope-text-muted);
 }
 
 @keyframes gradientShift {
