@@ -2,141 +2,185 @@
   <div class="users-page">
     <!-- Page Header -->
     <div class="page-header">
-      <h2 class="page-title">用户管理</h2>
-      <el-button type="primary" @click="handleAddUser">+ 手动创建用户</el-button>
+      <div class="page-header__left">
+        <h2 class="page-title">用户管理</h2>
+        <p class="page-subtitle">管理所有家属、老人和机构用户</p>
+      </div>
+      <HopeBtn variant="filled" size="md" @click="handleAddUser">
+        <template #icon>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </template>
+        手动创建用户
+      </HopeBtn>
     </div>
 
     <!-- User Type Tabs -->
-    <div class="user-tabs">
-      <el-button
-        v-for="tab in userTabs" :key="tab.name"
-        :class="{ active: activeTab === tab.name }"
-        @click="activeTab = tab.name"
+    <HopeTabs
+      :model-value="activeTab as string"
+      :tabs="tabItems"
+      pill-style
+      @update:model-value="(v: string | number) => { activeTab = typeof v === 'string' ? v : String(v); }"
+    />
+
+    <!-- KPI Cards — HopeStatCard -->
+    <div class="kpi-grid">
+      <HopeStatCard
+        :value="stats.totalUsers"
+        label="总用户数"
+        icon-color="primary"
+        gradient="linear-gradient(135deg, #3a57e8 0%, #6f42c1 100%)"
       >
-        {{ tab.label }}
-        <span class="tab-count">{{ tab.count }}</span>
-      </el-button>
+        <template #icon>
+          <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></el-icon>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="stats.monthlyActive"
+        label="月活跃用户"
+        icon-color="success"
+        gradient="linear-gradient(135deg, #1aa053 0%, #22c55e 100%)"
+      >
+        <template #icon>
+          <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></el-icon>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="stats.paidSubscriptions"
+        label="付费订阅"
+        icon-color="accent"
+        gradient="linear-gradient(135deg, #8C57FF 0%, #6f42c1 100%)"
+      >
+        <template #icon>
+          <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></el-icon>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="stats.todayNew"
+        label="今日新增"
+        icon-color="warning"
+        gradient="linear-gradient(135deg, #FAA938 0%, #f59e0b 100%)"
+      >
+        <template #icon>
+          <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></el-icon>
+        </template>
+      </HopeStatCard>
     </div>
 
-    <!-- KPI Row (4 columns) -->
-    <el-row :gutter="12" style="margin-bottom: 16px;">
-      <el-col :span="6">
-        <el-card shadow="never" class="kpi-card kpi-primary">
-          <div class="kpi-value">{{ stats.totalUsers }}</div>
-          <div class="kpi-label">总用户数</div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="never" class="kpi-card kpi-success">
-          <div class="kpi-value">{{ stats.monthlyActive }}</div>
-          <div class="kpi-label">月活跃</div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="never" class="kpi-card kpi-info">
-          <div class="kpi-value">{{ stats.paidSubscriptions }}</div>
-          <div class="kpi-label">付费订阅</div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="never" class="kpi-card kpi-warning">
-          <div class="kpi-value">{{ stats.todayNew }}</div>
-          <div class="kpi-label">今日新增</div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- Filter Bar -->
-    <el-card shadow="never" class="filter-card">
-      <el-row :gutter="12" align="middle">
-        <el-col :span="4">
-          <el-select v-model="filters.role" placeholder="全部角色" clearable>
+    <!-- Filter Bar — HopeCard -->
+    <HopeCard>
+      <template #header>
+        <span class="filter-title">筛选条件</span>
+      </template>
+      <div class="filter-row">
+        <div class="filter-item">
+          <label class="filter-label">角色</label>
+          <el-select v-model="filters.role" placeholder="全部角色" clearable class="hope-select">
             <el-option label="家属" value="family" />
             <el-option label="老人" value="elderly" />
             <el-option label="机构管理员" value="institution" />
           </el-select>
-        </el-col>
-        <el-col :span="4">
-          <el-select v-model="filters.tier" placeholder="全部等级" clearable>
+        </div>
+        <div class="filter-item">
+          <label class="filter-label">套餐等级</label>
+          <el-select v-model="filters.tier" placeholder="全部等级" clearable class="hope-select">
             <el-option label="Pro" value="pro" />
             <el-option label="Plus" value="plus" />
             <el-option label="Starter" value="starter" />
           </el-select>
-        </el-col>
-        <el-col :span="4">
-          <el-select v-model="filters.registerTime" placeholder="注册时间" clearable>
+        </div>
+        <div class="filter-item">
+          <label class="filter-label">注册时间</label>
+          <el-select v-model="filters.registerTime" placeholder="全部时间" clearable class="hope-select">
             <el-option label="今天" value="today" />
             <el-option label="本周" value="week" />
             <el-option label="本月" value="month" />
           </el-select>
-        </el-col>
-        <el-col :span="4">
-          <el-select v-model="filters.subscription" placeholder="订阅状态" clearable>
+        </div>
+        <div class="filter-item">
+          <label class="filter-label">订阅状态</label>
+          <el-select v-model="filters.subscription" placeholder="全部状态" clearable class="hope-select">
             <el-option label="已付费" value="paid" />
             <el-option label="免费" value="free" />
             <el-option label="已过期" value="expired" />
           </el-select>
-        </el-col>
-        <el-col :span="5">
-          <el-input v-model="filters.search" placeholder="搜索用户名、手机号..." clearable />
-        </el-col>
-        <el-col :span="3" style="text-align: right;">
-          <el-button @click="handleResetFilters">重置</el-button>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-        </el-col>
-      </el-row>
-    </el-card>
+        </div>
+        <div class="filter-item filter-item--search">
+          <label class="filter-label">搜索</label>
+          <el-input v-model="filters.search" placeholder="用户名、手机号..." clearable class="hope-input" />
+        </div>
+        <div class="filter-actions">
+          <HopeBtn variant="plain" size="sm" @click="handleResetFilters">重置</HopeBtn>
+          <HopeBtn variant="filled" size="sm" @click="handleSearch">搜索</HopeBtn>
+        </div>
+      </div>
+    </HopeCard>
 
     <!-- User Cards Grid -->
     <div class="user-grid">
-      <el-card
+      <div
         v-for="user in paginatedUsers" :key="user.id"
-        shadow="never" class="user-card"
+        class="user-card"
         @click="openSidePanel(user)"
       >
-        <div class="user-card-header">
-          <div class="user-avatar" :class="user.gender">
-            {{ user.name.charAt(0) }}
-          </div>
-          <div class="user-name-info">
-            <div class="user-name">{{ user.name }}</div>
-            <div class="user-phone">{{ maskPhone(user.phone) }}</div>
-          </div>
-          <el-tag v-if="user.tier" size="small" :class="'tier-' + user.tier" effect="plain">
-            {{ tierLabel(user.tier) }}
-          </el-tag>
-        </div>
-
-        <div class="user-stats">
-          <div class="user-stat">
-            <div class="user-stat-val">{{ user.elderlyCount }}</div>
-            <div class="user-stat-lbl">关联老人</div>
-          </div>
-          <div class="user-stat">
-            <div class="user-stat-val">{{ user.subscriptionDays }}</div>
-            <div class="user-stat-lbl">订阅剩余</div>
-          </div>
-          <div class="user-stat">
-            <div class="user-stat-val" :style="{ color: userStatColor(user.statusText) }">
-              {{ user.statusText }}
+        <div class="user-card__top">
+          <div class="user-card__avatar-row">
+            <HopeAvatar
+              :name="user.name"
+              :size="user.gender === 'male' ? 'lg' : 'lg'"
+              :style="{ '--hope-avatar-bg': user.gender === 'male' ? '#DBEAFE' : '#FCE7F3', '--hope-avatar-text-color': user.gender === 'male' ? '#6E9FC4' : '#D48EC0' }"
+            />
+            <div class="user-card__info">
+              <div class="user-card__name">{{ user.name }}</div>
+              <div class="user-card__phone">{{ maskPhone(user.phone) }}</div>
             </div>
-            <div class="user-stat-lbl">状态</div>
+          </div>
+          <HopeBadge v-if="user.tier" :color="tierBadgeColor(user.tier)">
+            {{ tierLabel(user.tier) }}
+          </HopeBadge>
+        </div>
+
+        <div class="user-card__stats">
+          <div class="stat-cell">
+            <span class="stat-val">{{ user.elderlyCount }}</span>
+            <span class="stat-lbl">关联老人</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-val">{{ user.subscriptionDays }}</span>
+            <span class="stat-lbl">订阅剩余</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-val" :class="statStatusClass(user.statusText)">{{ user.statusText }}</span>
+            <span class="stat-lbl">状态</span>
           </div>
         </div>
 
-        <div class="user-tags">
-          <el-tag v-if="user.verified" size="small" type="success" effect="plain" round>已实名认证</el-tag>
-          <el-tag v-if="user.paid" size="small" type="primary" effect="plain" round>付费用户</el-tag>
-          <el-tag v-if="(user as any).alerts && (user as any).alerts > 0" size="small" type="danger" effect="plain" round>{{ (user as any).alerts }}条未读告警</el-tag>
+        <div class="user-card__tags">
+          <HopeBadge v-if="user.verified" color="success" type="text">已实名认证</HopeBadge>
+          <HopeBadge v-if="user.paid" color="primary" type="text">付费用户</HopeBadge>
+          <HopeBadge
+            v-if="(user as any).alerts && (user as any).alerts > 0"
+            color="error"
+            type="text"
+          >
+            {{ (user as any).alerts }}条未读告警
+          </HopeBadge>
         </div>
 
-        <div class="user-card-actions">
-          <el-button link type="primary" size="small" @click.stop="openSidePanel(user)">详情</el-button>
-          <el-button link type="primary" size="small" @click.stop="handleEditUser(user)">编辑</el-button>
-          <el-button link type="primary" size="small" @click.stop="handleSendMessage(user)">消息</el-button>
-          <el-button link type="danger" size="small" @click.stop="handleDisableUser(user)">禁用</el-button>
+        <div class="user-card__actions">
+          <HopeBtn variant="text" size="sm" @click.stop="openSidePanel(user)">详情</HopeBtn>
+          <HopeBtn variant="text" size="sm" @click.stop="handleEditUser(user)">编辑</HopeBtn>
+          <HopeBtn variant="text" size="sm" @click.stop="handleSendMessage(user)">消息</HopeBtn>
+          <HopeBtn variant="error" size="sm" @click.stop="handleDisableUser(user)">禁用</HopeBtn>
         </div>
-      </el-card>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-if="filteredUsers.length === 0" class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--hope-text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      <p>暂无用户数据</p>
     </div>
 
     <!-- Pagination -->
@@ -156,51 +200,80 @@
     <!-- Side Panel Overlay -->
     <div v-if="showSidePanel" class="side-panel-overlay" @click.self="showSidePanel = false">
       <div class="side-panel">
+        <!-- Panel Header -->
         <div class="panel-header">
-          <span style="font-size:15px;font-weight:700;color:#29404A;">用户详情</span>
-          <button class="panel-close" @click="showSidePanel = false">&#10005;</button>
+          <span class="panel-header__title">用户详情</span>
+          <button class="panel-close" @click="showSidePanel = false" aria-label="关闭">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
 
         <div class="panel-body">
           <!-- Profile -->
           <div class="panel-profile">
-            <div class="panel-avatar" :style="{ background: getPanelAvatarBg(selectedUser) }">
-              {{ selectedUser?.name.charAt(0) }}
+            <HopeAvatar
+              :name="selectedUser?.name || ''"
+              size="xl"
+              :style="{ '--hope-avatar-bg': getPanelAvatarBg(selectedUser), '--hope-avatar-text-color': '#fff' }"
+            />
+            <div class="panel-profile__info">
+              <div class="panel-profile__name">{{ selectedUser?.name }}</div>
+              <div class="panel-profile__role">{{ roleLabel(selectedUser?.role || '') }} · {{ tierLabel(selectedUser?.tier || '') }}订阅</div>
             </div>
-            <div>
-              <div class="panel-name">{{ selectedUser?.name }}</div>
-              <div class="panel-role">{{ roleLabel(selectedUser?.role || '') }} · {{ tierLabel(selectedUser?.tier || '') }}订阅</div>
+            <div class="panel-profile__badge">
+              <HopeBadge v-if="selectedUser?.verified" color="success" type="text">已认证</HopeBadge>
+              <HopeBadge v-else color="warning" type="text">未认证</HopeBadge>
             </div>
           </div>
 
           <!-- Personal Info -->
           <div class="panel-section">
             <div class="panel-section-title">个人信息</div>
-            <div class="panel-row"><span class="panel-row-label">姓名</span><span class="panel-row-value">{{ selectedUser?.name }}</span></div>
-            <div class="panel-row"><span class="panel-row-label">手机号</span><span class="panel-row-value">{{ selectedUser?.phone || '—' }}</span></div>
-            <div class="panel-row"><span class="panel-row-label">邮箱</span><span class="panel-row-value">{{ selectedUser?.email || '—' }}</span></div>
-            <div class="panel-row"><span class="panel-row-label">注册时间</span><span class="panel-row-value">{{ formatDate(selectedUser?.created_at) }}</span></div>
-            <div class="panel-row"><span class="panel-row-label">最后登录</span><span class="panel-row-value">{{ selectedUser?.last_login || '—' }}</span></div>
-            <div class="panel-row">
-              <span class="panel-row-label">实名状态</span>
-              <span class="panel-row-value" :style="{ color: selectedUser?.verified ? '#4A8A6A' : '' }">
-                {{ selectedUser?.verified ? '✓ 已认证' : '未认证' }}
-              </span>
+            <div class="panel-rows">
+              <div class="panel-row">
+                <span class="panel-row-label">姓名</span>
+                <span class="panel-row-value">{{ selectedUser?.name }}</span>
+              </div>
+              <div class="panel-row">
+                <span class="panel-row-label">手机号</span>
+                <span class="panel-row-value">{{ selectedUser?.phone || '—' }}</span>
+              </div>
+              <div class="panel-row">
+                <span class="panel-row-label">邮箱</span>
+                <span class="panel-row-value">{{ selectedUser?.email || '—' }}</span>
+              </div>
+              <div class="panel-row">
+                <span class="panel-row-label">注册时间</span>
+                <span class="panel-row-value">{{ formatDate(selectedUser?.created_at) }}</span>
+              </div>
+              <div class="panel-row">
+                <span class="panel-row-label">最后登录</span>
+                <span class="panel-row-value">{{ selectedUser?.last_login || '—' }}</span>
+              </div>
             </div>
           </div>
 
           <!-- Subscription Info -->
           <div class="panel-section">
             <div class="panel-section-title">订阅信息</div>
-            <div class="panel-row">
-              <span class="panel-row-label">套餐</span>
-              <span class="panel-row-value" :style="{ color: selectedUser?.tier === 'pro' ? '#5C8D73' : '#6E9FC4' }">
-                {{ tierLabel(selectedUser?.tier || '') }} {{ (selectedUser as any).sub_type || '' }}
-              </span>
+            <div class="panel-rows">
+              <div class="panel-row">
+                <span class="panel-row-label">套餐</span>
+                <span class="panel-row-value panel-row-value--highlight">{{ tierLabel(selectedUser?.tier || '') }} {{ (selectedUser as any).sub_type || '' }}</span>
+              </div>
+              <div class="panel-row">
+                <span class="panel-row-label">到期时间</span>
+                <span class="panel-row-value">{{ formatDate((selectedUser as any).sub_expires) }}</span>
+              </div>
+              <div class="panel-row">
+                <span class="panel-row-label">月费</span>
+                <span class="panel-row-value">¥{{ subAmount(selectedUser?.tier) }} / 月</span>
+              </div>
+              <div class="panel-row">
+                <span class="panel-row-label">支付方式</span>
+                <span class="panel-row-value">{{ (selectedUser as any).pay_method || '—' }}</span>
+              </div>
             </div>
-            <div class="panel-row"><span class="panel-row-label">到期时间</span><span class="panel-row-value">{{ formatDate((selectedUser as any).sub_expires) }}</span></div>
-            <div class="panel-row"><span class="panel-row-label">月费</span><span class="panel-row-value">¥{{ subAmount(selectedUser?.tier) }}/月</span></div>
-            <div class="panel-row"><span class="panel-row-label">支付方式</span><span class="panel-row-value">{{ (selectedUser as any).pay_method || '—' }}</span></div>
           </div>
 
           <!-- Related Elderly -->
@@ -209,35 +282,33 @@
             <div
               v-for="(profile, i) in (selectedUser as any).elderly_profiles"
               :key="i"
-              class="panel-row"
-              style="cursor:pointer;color:#5C8D73;font-weight:500;"
+              class="elderly-link"
               @click="viewElderlyProfile(profile)"
             >
-              {{ profile.name }}（{{ profile.relation }}）· {{ profile.devices || '无设备' }}
+              <HopeAvatar :name="profile.name" size="sm" />
+              <span class="elderly-name">{{ profile.name }}</span>
+              <span class="elderly-relation">{{ profile.relation }}</span>
+              <span class="elderly-devices">{{ profile.devices || '无设备' }}</span>
             </div>
-            <div v-if="!selectedUser || !(selectedUser as any).elderly_profiles?.length" style="color:#8FA8A0;font-size:13px;padding:6px 0;">暂无关联老人</div>
+            <div v-if="!selectedUser || !(selectedUser as any).elderly_profiles?.length" class="empty-text">暂无关联老人</div>
           </div>
 
-          <!-- Recent Activity -->
+          <!-- Recent Activity — HopeTimeline -->
           <div class="panel-section">
             <div class="panel-section-title">最近活动</div>
-            <div class="activity-list">
-              <div v-for="(item, i) in activityTimeline" :key="i" class="activity-item">
-                <div class="activity-dot" :class="item.dotClass"></div>
-                <div class="activity-text">{{ item.text }}</div>
-                <div class="activity-time">{{ item.time }}</div>
-              </div>
-            </div>
+            <HopeTimeline
+              :items="timelineItems"
+            />
           </div>
 
           <!-- Actions -->
           <div class="panel-section">
             <div class="panel-section-title">操作</div>
             <div class="panel-actions">
-              <el-button type="primary" size="small" style="flex:1;">发送通知</el-button>
-              <el-button size="small" style="flex:1;">编辑信息</el-button>
-              <el-button size="small" style="flex:1;">查看日志</el-button>
-              <el-button size="small" style="flex:1;color:#D77B72;border-color:#D77B72;">禁用账号</el-button>
+              <HopeBtn variant="filled" size="sm" style="flex:1;">发送通知</HopeBtn>
+              <HopeBtn variant="outlined" size="sm" style="flex:1;">编辑信息</HopeBtn>
+              <HopeBtn variant="outlined" size="sm" style="flex:1;">查看日志</HopeBtn>
+              <HopeBtn variant="ghost" size="sm" style="flex:1;">禁用账号</HopeBtn>
             </div>
           </div>
         </div>
@@ -245,7 +316,7 @@
     </div>
 
     <!-- Add User Dialog -->
-    <el-dialog v-model="showAddDialog" title="创建用户" width="480px">
+    <el-dialog v-model="showAddDialog" title="创建用户" width="480px" class="hope-dialog">
       <el-form :model="addForm" label-width="100px">
         <el-form-item label="姓名"><el-input v-model="addForm.name" placeholder="请输入姓名" /></el-form-item>
         <el-form-item label="手机号"><el-input v-model="addForm.phone" placeholder="请输入手机号" /></el-form-item>
@@ -260,13 +331,13 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showAddDialog = false">取消</el-button>
-        <el-button type="primary" @click="confirmAddUser">创建</el-button>
+        <HopeBtn variant="plain" @click="showAddDialog = false">取消</HopeBtn>
+        <HopeBtn variant="filled" @click="confirmAddUser">创建</HopeBtn>
       </template>
     </el-dialog>
 
     <!-- Edit User Dialog -->
-    <el-dialog v-model="showEditDialog" title="编辑用户" width="480px">
+    <el-dialog v-model="showEditDialog" title="编辑用户" width="480px" class="hope-dialog">
       <el-form :model="editForm" label-width="100px">
         <el-form-item label="姓名"><el-input v-model="editForm.name" placeholder="请输入姓名" /></el-form-item>
         <el-form-item label="手机号"><el-input v-model="editForm.phone" placeholder="请输入手机号" /></el-form-item>
@@ -281,8 +352,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showEditDialog = false">取消</el-button>
-        <el-button type="primary" @click="confirmEditUser">保存</el-button>
+        <HopeBtn variant="plain" @click="showEditDialog = false">取消</HopeBtn>
+        <HopeBtn variant="filled" @click="confirmEditUser">保存</HopeBtn>
       </template>
     </el-dialog>
   </div>
@@ -294,16 +365,25 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUsersStore } from '@/stores/users'
 import { usersApi } from '@/api/users'
 import type { User } from '@/types'
+import {
+  HopeBtn,
+  HopeStatCard,
+  HopeBadge,
+  HopeAvatar,
+  HopeCard,
+  HopeTabs,
+  HopeTimeline,
+} from '@/components/hope'
 
 const usersStore = useUsersStore()
 const activeTab = ref('all')
 
 // Tab definitions with counts
-const userTabs = computed(() => [
-  { name: 'all', label: '全部用户', count: usersStore.familyUsers.length + usersStore.elderlyProfiles.length },
-  { name: 'family', label: '家属', count: usersStore.familyUsers.length },
-  { name: 'elderly', label: '老人', count: usersStore.elderlyProfiles.length },
-  { name: 'institution', label: '机构', count: 0 },
+const tabItems = computed(() => [
+  { value: 'all', label: '全部用户', badge: usersStore.familyUsers.length + usersStore.elderlyProfiles.length },
+  { value: 'family', label: '家属', badge: usersStore.familyUsers.length },
+  { value: 'elderly', label: '老人', badge: usersStore.elderlyProfiles.length },
+  { value: 'institution', label: '机构', badge: 0 },
 ])
 
 // Stats
@@ -389,11 +469,16 @@ function roleLabel(role: string): string {
   return map[role] || role
 }
 
-function userStatColor(status: string): string {
-  if (status === '活跃') return '#4A8A6A'
-  if (status === '正常') return '#4A8A6A'
-  if (status.includes('未活')) return '#D9A441'
-  return '#8FA8A0'
+function tierBadgeColor(tier?: string): 'primary' | 'accent' | 'info' {
+  if (tier === 'pro') return 'accent'
+  if (tier === 'plus') return 'primary'
+  return 'info'
+}
+
+function statStatusClass(status: string): string {
+  if (status === '活跃' || status === '正常') return 'stat-ok'
+  if (status.includes('未活')) return 'stat-warn'
+  return 'stat-muted'
 }
 
 function subAmount(tier?: string): string {
@@ -407,10 +492,10 @@ function formatDate(date?: string): string {
 }
 
 function getPanelAvatarBg(user?: User | null): string {
-  if (!user) return '#E8EEE9'
-  if ((user as any).gender === 'male') return '#DBEAFE'
-  if ((user as any).gender === 'female') return '#FCE7F3'
-  return '#EDE9FE'
+  if (!user) return '#3a57e8'
+  if ((user as any).gender === 'male') return '#3a57e8'
+  if ((user as any).gender === 'female') return '#8C57FF'
+  return '#3a57e8'
 }
 
 function handleSearch() {
@@ -436,12 +521,12 @@ function viewElderlyProfile(profile: any) {
 }
 
 // Activity Timeline
-const activityTimeline = [
-  { text: '登录家属APP', time: '2小时前', dotClass: 'login' },
-  { text: '收到SOS告警通知', time: '昨天', dotClass: 'alert' },
-  { text: '修改用药规则', time: '3天前', dotClass: 'config' },
-  { text: '登录家属APP', time: '5天前', dotClass: 'login' },
-]
+const timelineItems = computed(() => [
+  { title: '登录家属APP', meta: '2小时前', color: 'success' as const },
+  { title: '收到SOS告警通知', meta: '昨天', color: 'error' as const },
+  { title: '修改用药规则', meta: '3天前', color: 'info' as const },
+  { title: '登录家属APP', meta: '5天前', color: 'success' as const },
+])
 
 // Add User Dialog
 const showAddDialog = ref(false)
@@ -534,141 +619,131 @@ onMounted(async () => {
   padding: 0;
 }
 
+/* ─── Page Header ─── */
 .page-header {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.page-header__left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .page-title {
   font-size: 22px;
-  font-weight: 700;
-  color: #29404A;
+  font-weight: 800;
+  color: var(--hope-text);
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
-/* User Type Tabs — pill style */
-.user-tabs {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 16px;
-  background: #FFFFFF;
-  border-radius: 14px;
-  padding: 4px;
-  border: 1px solid #E5EDE6;
-  width: fit-content;
-  box-shadow: 0 2px 8px rgba(60,90,70,0.04);
-}
-
-.el-button--primary {
-  background: linear-gradient(135deg, #5C8D73 0%, #6FAF8F 100%) !important;
-  border-color: transparent !important;
-  border-radius: var(--hope-radius-lg) !important;
-  box-shadow: var(--hope-shadow-primary) !important;
-  font-weight: 600 !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-.el-button--primary:hover {
-  background: linear-gradient(135deg, #6FAF8F 0%, #7BAF8C 100%) !important;
-  box-shadow: var(--hope-shadow-primary-hover) !important;
-  transform: translateY(-1px) !important;
-}
-
-.user-tabs .el-button {
-  border-radius: var(--hope-radius-pill) !important;
+.page-subtitle {
   font-size: 13px;
-  font-weight: 600;
-  padding: 9px 22px;
-  border: none;
-  background: transparent;
-  color: #6B8980;
-  transition: all 0.2s;
-}
-.user-tabs .el-button.active {
-  background: linear-gradient(135deg, #5C8D73, #6FAF8F) !important;
-  color: white !important;
-  box-shadow: 0 4px 12px rgba(92,141,115,0.25) !important;
+  color: var(--hope-text-muted);
+  margin: 0;
+  font-weight: 500;
 }
 
-.tab-count {
-  font-size: 11px;
-  opacity: 0.7;
-  margin-left: 6px;
-  font-weight: 600;
+/* ─── KPI Grid ─── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
 }
 
-/* KPI Cards */
-.kpi-card {
-  position: relative;
-  overflow: hidden;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: var(--hope-radius-lg) !important;
+/* ─── Filter Bar ─── */
+.filter-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hope-text);
 }
-.kpi-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #5C8D73, #6FAF8F);
-  border-radius: var(--hope-radius-lg) var(--hope-radius-lg) 0 0;
-  opacity: 0;
-  transition: opacity 0.2s;
+
+.filter-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
 }
-.kpi-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(26,46,38,0.12) !important;
-}
-.kpi-card:hover::before { opacity: 1; }
-.kpi-card :deep(.el-card__body) {
-  padding: 18px;
+
+.filter-item {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  border: 1px solid var(--hope-border);
+  gap: 5px;
+  flex: 1;
+  min-width: 140px;
 }
 
-.kpi-value {
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  margin-bottom: 4px;
+.filter-item--search {
+  flex: 2;
+  min-width: 220px;
 }
 
-.kpi-label {
+.filter-label {
   font-size: 12px;
-  color: #6B8980;
-  margin-top: 6px;
   font-weight: 600;
+  color: var(--hope-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
-.kpi-primary .kpi-value { color: #5C8D73; }
-.kpi-success .kpi-value { color: #6FAF8F; }
-.kpi-info .kpi-value { color: #6E9FC4; }
-.kpi-warning .kpi-value { color: #D9A441; }
-
-/* Filter Card */
-.filter-card :deep(.el-card__body) {
-  padding: 12px 16px;
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding-bottom: 1px;
 }
 
-/* User Grid */
+/* Hope UI Select/Input overrides */
+:deep(.hope-select) {
+  width: 100%;
+}
+:deep(.hope-select .el-input__wrapper) {
+  border-radius: var(--hope-radius-md) !important;
+  box-shadow: var(--hope-shadow-sm) !important;
+  border: 1px solid var(--hope-border) !important;
+  padding: 5px 11px !important;
+}
+:deep(.hope-select .el-input__wrapper:hover) {
+  box-shadow: 0 0 0 2px rgba(58,87,232,0.15) !important;
+}
+:deep(.hope-select .el-input__wrapper.is-focus) {
+  box-shadow: var(--hope-shadow-input-focus) !important;
+}
+
+:deep(.hope-input .el-input__wrapper) {
+  border-radius: var(--hope-radius-md) !important;
+  box-shadow: var(--hope-shadow-sm) !important;
+  border: 1px solid var(--hope-border) !important;
+}
+:deep(.hope-input .el-input__wrapper:hover) {
+  box-shadow: 0 0 0 2px rgba(58,87,232,0.15) !important;
+}
+:deep(.hope-input .el-input__wrapper.is-focus) {
+  box-shadow: var(--hope-shadow-input-focus) !important;
+}
+
+/* ─── User Grid ─── */
 .user-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 14px;
+  margin-bottom: 20px;
 }
 
 .user-card {
+  background: var(--hope-surface);
+  border: 1px solid var(--hope-border);
+  border-radius: var(--hope-radius-lg);
+  padding: 16px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: var(--hope-radius-xl) !important;
-  border: 1px solid var(--hope-border) !important;
-  background: var(--hope-surface);
   box-shadow: var(--hope-shadow-sm);
 }
 
@@ -678,106 +753,141 @@ onMounted(async () => {
   transform: translateY(-2px);
 }
 
-.user-card :deep(.el-card__body) {
-  padding: 16px;
+.user-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
 }
 
-.user-card-header {
+.user-card__avatar-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 12px;
-}
-
-.user-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  font-weight: 700;
-  flex-shrink: 0;
-  background: #E8EEE9;
-  color: #8FA8A0;
-}
-
-.user-avatar.male { background: #DBEAFE; color: #6E9FC4; }
-.user-avatar.female { background: #FCE7F3; color: #D48EC0; }
-
-.user-name-info {
-  flex: 1;
   min-width: 0;
 }
 
-.user-name {
+.user-card__info {
+  min-width: 0;
+}
+
+.user-card__name {
   font-size: 15px;
   font-weight: 700;
-  color: #29404A;
+  color: var(--hope-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.user-phone {
+.user-card__phone {
   font-size: 12px;
-  color: #8FA8A0;
+  color: var(--hope-text-muted);
   font-family: monospace;
+  margin-top: 2px;
 }
 
-.tier-pro { background: #EDE9FE; color: #7C3AED; }
-.tier-plus { background: #DBEAFE; color: #6E9FC4; }
-.tier-starter { background: #F3F4F6; color: #6B7280; }
-
-.user-stats {
+.user-card__stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--hope-border);
+  border-bottom: 1px solid var(--hope-border);
 }
 
-.user-stat {
+.stat-cell {
   text-align: center;
-  padding: 8px;
-  background: #F8F6F1;
-  border-radius: 8px;
-}
-
-.user-stat-val {
-  font-size: 16px;
-  font-weight: 700;
-  color: #29404A;
-}
-
-.user-stat-lbl {
-  font-size: 10px;
-  color: #8FA8A0;
-}
-
-.user-tags {
   display: flex;
-  gap: 4px;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--hope-text);
+}
+
+.stat-lbl {
+  font-size: 11px;
+  color: var(--hope-text-muted);
+  font-weight: 500;
+}
+
+.stat-ok { color: var(--hope-success); }
+.stat-warn { color: var(--hope-warning); }
+.stat-muted { color: var(--hope-text-muted); }
+
+.user-card__tags {
+  display: flex;
+  gap: 5px;
   flex-wrap: wrap;
   margin-bottom: 12px;
 }
 
-.user-card-actions {
+.user-card__actions {
   display: flex;
-  gap: 6px;
-  padding-top: 12px;
-  border-top: 1px solid #F3F5F1;
+  gap: 4px;
 }
 
-/* Pagination */
+/* ─── Empty State ─── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 12px;
+  color: var(--hope-text-muted);
+}
+
+.empty-state p {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ─── Pagination ─── */
 .pagination-wrapper {
   display: flex;
   justify-content: flex-end;
   margin-top: 8px;
+  margin-bottom: 24px;
 }
 
-/* Side Panel */
+:deep(.el-pagination) {
+  --el-pagination-button-bg-color: var(--hope-surface);
+  --el-pagination-button-border-radius: var(--hope-radius-md);
+}
+
+:deep(.el-pagination .btn-prev),
+:deep(.el-pagination .btn-next),
+:deep(.el-pagination .el-pager li) {
+  border-radius: var(--hope-radius-md);
+  border: 1px solid var(--hope-border);
+  background: var(--hope-surface);
+  color: var(--hope-text-secondary);
+  font-weight: 600;
+}
+
+:deep(.el-pagination .el-pager li.active) {
+  background: var(--hope-primary);
+  border-color: var(--hope-primary);
+  color: #fff;
+}
+
+:deep(.el-pagination .el-pager li:hover) {
+  color: var(--hope-primary);
+}
+
+/* ─── Side Panel ─── */
 .side-panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(41,64,74,0.3);
+  background: rgba(26,26,46,0.4);
+  backdrop-filter: blur(4px);
   z-index: 200;
   display: flex;
   justify-content: flex-end;
@@ -792,12 +902,12 @@ onMounted(async () => {
 .side-panel {
   width: 520px;
   max-width: 90vw;
-  background: white;
+  background: var(--hope-surface);
   overflow-y: auto;
-  box-shadow: -10px 0 40px rgba(60,90,70,0.12);
+  box-shadow: -10px 0 40px rgba(58,87,232,0.15);
   display: flex;
   flex-direction: column;
-  animation: slideIn 0.3s ease;
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes slideIn {
@@ -807,153 +917,262 @@ onMounted(async () => {
 
 .panel-header {
   padding: 20px 24px;
-  border-bottom: 1px solid #E5EDE6;
+  border-bottom: 1px solid var(--hope-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky;
   top: 0;
-  background: white;
+  background: var(--hope-surface);
   z-index: 1;
+}
+
+.panel-header__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--hope-text);
 }
 
 .panel-close {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
-  border: none;
-  background: #F3F5F1;
+  border-radius: var(--hope-radius-md);
+  border: 1px solid var(--hope-border);
+  background: var(--hope-surface-light);
   cursor: pointer;
-  font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s;
-  color: #6B8980;
+  transition: all 0.15s;
+  color: var(--hope-text-muted);
 }
 .panel-close:hover {
-  background: #E5EDE6;
+  background: var(--hope-primary-light);
+  border-color: var(--hope-primary);
+  color: var(--hope-primary);
 }
 
 .panel-body {
   padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
 }
 
+/* Panel Profile */
 .panel-profile {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 24px;
 }
 
-.panel-avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
+.panel-profile__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel-profile__name {
+  font-size: 18px;
   font-weight: 700;
+  color: var(--hope-text);
+}
+
+.panel-profile__role {
+  font-size: 13px;
+  color: var(--hope-text-muted);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.panel-profile__badge {
   flex-shrink: 0;
 }
 
-.panel-name {
-  font-size: 18px;
-  font-weight: 700;
-  color: #29404A;
-}
-
-.panel-role {
-  font-size: 12px;
-  color: #6B8980;
-  margin-top: 2px;
-}
-
+/* Panel Sections */
 .panel-section {
-  margin-bottom: 20px;
-}
-
-.panel-section-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: #6B8980;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #F3F5F1;
-}
-
-.panel-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 6px 0;
-  font-size: 13px;
-}
-
-.panel-row-label {
-  color: #6B8980;
-}
-
-.panel-row-value {
-  font-weight: 600;
-  color: #29404A;
-}
-
-/* Activity Timeline */
-.activity-list {
   display: flex;
   flex-direction: column;
   gap: 0;
 }
 
-.activity-item {
-  display: flex;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid #F3F5F1;
-  font-size: 12px;
-  align-items: flex-start;
+.panel-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--hope-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--hope-border);
 }
 
-.activity-item:last-child {
+.panel-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.panel-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--hope-border);
+  font-size: 13px;
+  gap: 12px;
+}
+
+.panel-row:last-child {
   border-bottom: none;
 }
 
-.activity-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-top: 5px;
+.panel-row-label {
+  color: var(--hope-text-muted);
+  font-weight: 500;
   flex-shrink: 0;
 }
 
-.activity-dot.login { background: #6FAF8F; }
-.activity-dot.alert { background: #D77B72; }
-.activity-dot.config { background: #6E9FC4; }
-
-.activity-text {
-  flex: 1;
+.panel-row-value {
   font-weight: 600;
-  color: #29404A;
+  color: var(--hope-text);
+  text-align: right;
+  word-break: break-all;
 }
 
-.activity-time {
-  color: #8FA8A0;
+.panel-row-value--highlight {
+  color: var(--hope-primary);
+  font-weight: 700;
 }
 
+/* Elderly Links */
+.elderly-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--hope-radius-md);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.elderly-link:hover {
+  background: var(--hope-primary-light);
+}
+
+.elderly-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hope-text);
+  flex: 1;
+}
+
+.elderly-relation {
+  font-size: 12px;
+  color: var(--hope-text-muted);
+  background: var(--hope-bg);
+  padding: 2px 8px;
+  border-radius: var(--hope-radius-pill);
+  font-weight: 500;
+}
+
+.elderly-devices {
+  font-size: 12px;
+  color: var(--hope-text-muted);
+}
+
+.empty-text {
+  font-size: 13px;
+  color: var(--hope-text-muted);
+  padding: 8px 0;
+  font-weight: 500;
+}
+
+/* Panel Actions */
 .panel-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-/* Responsive */
+/* ─── Dialog ─── */
+:deep(.hope-dialog .el-dialog) {
+  border-radius: var(--hope-radius-xl) !important;
+  border: 1px solid var(--hope-border) !important;
+  box-shadow: var(--hope-shadow-lg) !important;
+}
+
+:deep(.hope-dialog .el-dialog__header) {
+  padding: 20px 24px 16px !important;
+  border-bottom: 1px solid var(--hope-border) !important;
+  margin-right: 0 !important;
+}
+
+:deep(.hope-dialog .el-dialog__title) {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: var(--hope-text) !important;
+}
+
+:deep(.hope-dialog .el-dialog__body) {
+  padding: 20px 24px !important;
+}
+
+:deep(.hope-dialog .el-dialog__footer) {
+  padding: 16px 24px 20px !important;
+  border-top: 1px solid var(--hope-border) !important;
+}
+
+:deep(.hope-dialog .el-form-item__label) {
+  font-weight: 600 !important;
+  color: var(--hope-text-secondary) !important;
+}
+
+:deep(.hope-dialog .el-input__wrapper),
+:deep(.hope-dialog .el-select .el-input__wrapper) {
+  border-radius: var(--hope-radius-md) !important;
+  box-shadow: var(--hope-shadow-sm) !important;
+  border: 1px solid var(--hope-border) !important;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 1200px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
-  .users-page :deep(.el-col) { width: 100% !important; flex: 0 0 100% !important; }
-  .users-page :deep(.el-table) { font-size: 12px; }
-  .users-page :deep(.el-table th),
-  .users-page :deep(.el-table td) { padding: 6px 4px; }
+  .page-header {
+    flex-direction: column;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-item, .filter-item--search {
+    min-width: 100%;
+  }
+
+  .user-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pagination-wrapper {
+    justify-content: center;
+  }
+
+  .panel-actions {
+    flex-direction: column;
+  }
+
+  .panel-actions .hope-btn {
+    width: 100%;
+  }
 }
 </style>
