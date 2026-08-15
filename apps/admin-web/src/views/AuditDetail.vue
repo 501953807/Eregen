@@ -1,71 +1,95 @@
 <template>
   <div class="audit-detail-page">
-    <!-- Breadcrumb Header -->
+    <!-- Page Header -->
     <div class="page-header">
-      <div>
+      <div class="page-header__left">
         <el-breadcrumb separator="/">
           <el-breadcrumb-item :to="{ path: '/regulatory' }">监管总览看板</el-breadcrumb-item>
           <el-breadcrumb-item>穿透审计详情</el-breadcrumb-item>
         </el-breadcrumb>
-        <h2 class="page-title" style="margin-top: 8px;">穿透审计详情</h2>
+        <h2 class="page-title">穿透审计详情</h2>
       </div>
-      <div class="header-actions">
-        <el-button @click="handleRefresh"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>刷新状态</el-button>
-        <el-button type="primary" @click="exportReport"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>导出审计报告</el-button>
+      <div class="page-header__actions">
+        <HopeBtn variant="plain" size="md" @click="handleRefresh">
+          <template #icon>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+          </template>
+          刷新状态
+        </HopeBtn>
+        <HopeBtn variant="filled" size="md" @click="exportReport">
+          <template #icon>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </template>
+          导出审计报告
+        </HopeBtn>
       </div>
     </div>
 
     <!-- Patient Info Card -->
-    <el-card shadow="hover" class="patient-card">
-      <div class="patient-card-inner">
-        <div class="patient-avatar" :class="patientData.gender === '女' ? 'avatar-pink' : 'avatar-blue'">{{ patientName.charAt(0) }}</div>
-        <div class="patient-details">
-          <div class="patient-name-row">
-            <span class="patient-name">{{ patientName }}</span>
-            <span class="patient-id-badge">ID: {{ patientId }}</span>
+    <HopeCard>
+      <div class="patient-card">
+        <div class="patient-card__avatar-wrap">
+          <HopeAvatar
+            :name="patientName"
+            :size="'lg'"
+            :style="{ background: patientData.gender === '女' ? 'linear-gradient(135deg, #fce7f3, #fbcfe8)' : 'linear-gradient(135deg, #ddebfa, #d0e8f7)', color: patientData.gender === '女' ? '#d48ec0' : '#3a57e8' }"
+          />
+          <span class="patient-card__wearable-status" :class="patientData.wearableStatus === '在线正常' ? 'wearable-online' : 'wearable-offline'">
+            <span class="wearable-dot"></span>
+            {{ patientData.wearableStatus }}
+          </span>
+        </div>
+        <div class="patient-card__info">
+          <div class="patient-card__name-row">
+            <span class="patient-card__name">{{ patientName }}</span>
+            <span class="patient-card__id">ID: {{ patientId }}</span>
           </div>
-          <div class="patient-meta-grid">
-            <div class="meta-item"><span class="meta-label">性别:</span> <span class="meta-value">{{ patientData.gender }}</span></div>
-            <div class="meta-item"><span class="meta-label">年龄:</span> <span class="meta-value">{{ patientData.age }}岁</span></div>
-            <div class="meta-item"><span class="meta-label">科室:</span> <span class="meta-value">{{ patientData.department }}</span></div>
-            <div class="meta-item"><span class="meta-label">入院日期:</span> <span class="meta-value">{{ formatDate(patientData.admissionDate) }}</span></div>
-            <div class="meta-item"><span class="meta-label">主治医生:</span> <span class="meta-value">{{ patientData.doctor }}</span></div>
-            <div class="meta-item"><span class="meta-label">腕带状态:</span>
-              <span class="status-badge" :class="patientData.wearableStatus === '在线正常' ? 'badge-success' : 'badge-danger'">
-                <span class="status-dot" :class="patientData.wearableStatus === '在线正常' ? 'dot-success' : 'dot-danger'"></span>
-                {{ patientData.wearableStatus }}
-              </span>
+          <div class="patient-card__meta">
+            <div class="meta-item">
+              <span class="meta-label">性别</span>
+              <span class="meta-value">{{ patientData.gender }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">年龄</span>
+              <span class="meta-value">{{ patientData.age }}岁</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">科室</span>
+              <span class="meta-value">{{ patientData.department }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">入院日期</span>
+              <span class="meta-value">{{ formatDate(patientData.admissionDate) }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">主治医生</span>
+              <span class="meta-value">{{ patientData.doctor }}</span>
             </div>
           </div>
         </div>
-        <div class="patient-actions">
-          <el-button type="primary" @click="viewRealtimeLocation">查看实时定位</el-button>
-          <el-button @click="contactNurseStation">联系护士站</el-button>
+        <div class="patient-card__actions">
+          <HopeBtn variant="filled" size="md" @click="viewRealtimeLocation">查看实时定位</HopeBtn>
+          <HopeBtn variant="outlined" size="md" @click="contactNurseStation">联系护士站</HopeBtn>
         </div>
       </div>
-    </el-card>
+    </HopeCard>
 
-    <!-- Audit Timeline -->
-    <el-card shadow="never" class="timeline-card">
-      <template #header>
-        <div class="timeline-header">
-          <span class="panel-title">全链路数据追溯</span>
-          <span class="timeline-meta">共 {{ timeline.length }} 条记录 | 最后更新: {{ lastUpdateTime }}</span>
-        </div>
-      </template>
-
+    <!-- Audit Timeline Card -->
+    <HopeCard :title="`全链路数据追溯`" :subtitle="`共 ${timeline.length} 条记录 | 最后更新: ${lastUpdateTime}`">
       <div class="audit-timeline">
-        <div v-for="(item, idx) in timeline" :key="idx" class="timeline-node" :class="item.type">
-          <div class="timeline-dot" :class="item.type"></div>
-          <div class="timeline-content" :class="item.type">
-            <div class="content-title">
-              <span>{{ item.icon }} {{ item.title }}</span>
-              <span class="content-time">{{ formatTime(item.time) }}</span>
+        <div v-for="(item, idx) in timeline" :key="idx" class="timeline-node" :class="`timeline-node--${item.type}`">
+          <div class="timeline-node__line"></div>
+          <div class="timeline-node__dot" :class="`timeline-node__dot--${item.type}`"></div>
+          <div class="timeline-node__content" :class="`timeline-node__content--${item.type}`">
+            <div class="timeline-node__header">
+              <span class="timeline-node__icon">{{ item.icon }}</span>
+              <span class="timeline-node__title">{{ item.title }}</span>
+              <span class="timeline-node__time">{{ formatTime(item.time) }}</span>
             </div>
-            <div class="content-body" v-if="item.bodyHtml">
+            <div class="timeline-node__body" v-if="item.bodyHtml">
               <div v-html="item.bodyHtml"></div>
             </div>
-            <div class="content-body" v-else>
+            <div class="timeline-node__body" v-else>
               <div v-for="(line, lIdx) in item.lines" :key="lIdx" class="data-line">
                 <strong>{{ line.label }}：</strong>{{ renderCell(line.value) }}
               </div>
@@ -81,10 +105,9 @@
                   <tr v-for="(row, rIdx) in item.table.rows" :key="rIdx">
                     <td v-for="(cell, cIdx2) in row" :key="cIdx2">
                       <template v-if="typeof cell === 'object' && cell !== null">
-                        <span class="status-badge" :class="cell.tagType === 'success' ? 'badge-success' : cell.tagType === 'warning' ? 'badge-warning' : 'badge-danger'">
-                          <span class="status-dot" :class="cell.tagType === 'success' ? 'dot-success' : cell.tagType === 'warning' ? 'dot-warning' : 'dot-danger'"></span>
+                        <HopeBadge :color="cell.tagType === 'success' ? 'success' : cell.tagType === 'warning' ? 'warning' : 'error'">
                           {{ cell.text }}
-                        </span>
+                        </HopeBadge>
                       </template>
                       <template v-else>{{ cell }}</template>
                     </td>
@@ -95,7 +118,7 @@
           </div>
         </div>
       </div>
-    </el-card>
+    </HopeCard>
   </div>
 </template>
 
@@ -105,6 +128,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { regulatoryApi } from '@/api/regulatory'
 import type { AuditTrail } from '@/api/regulatory'
+import { HopeCard, HopeBtn, HopeBadge, HopeAvatar } from '@/components/hope'
 
 const route = useRoute()
 const patientId = computed(() => route.params.patientId as string)
@@ -127,10 +151,6 @@ const auditTrail = ref<AuditTrail | null>(null)
 function renderCell(value: any): string {
   if (typeof value === 'object' && value !== null) return value.text || ''
   return String(value ?? '')
-}
-
-function getAvatarBg(): string {
-  return 'linear-gradient(135deg, #fce7f3, #fbcfe8)'
 }
 
 // Build timeline from real audit trail data
@@ -296,243 +316,250 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.audit-detail-page { padding: 0; }
-.audit-detail-page :deep(.el-card) {
-  border-radius: 12px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
-  transition: all var(--duration-normal) var(--easing-out);
-}
-.audit-detail-page :deep(.el-card:hover) {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
-  transform: translateY(-1px);
+.audit-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
+/* ── Page Header ── */
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.page-header__left :deep(.el-breadcrumb) {
+  margin-bottom: 6px;
 }
 
 .page-title {
   font-size: 22px;
   font-weight: 800;
-  color: var(--el-text-color-primary);
+  color: var(--hope-text);
   margin: 0;
+  letter-spacing: -0.02em;
 }
 
-.header-actions {
+.page-header__actions {
   display: flex;
-  gap: 8px;
-}
-
-/* Patient Card */
-.patient-card :deep(.el-card__body) {
-  padding: 20px;
-}
-
-.patient-card-inner {
-  display: flex;
-  gap: 20px;
+  gap: 10px;
+  flex-shrink: 0;
   align-items: flex-start;
+  padding-top: 4px;
 }
 
-.patient-avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
+/* ── Patient Card ── */
+.patient-card {
   display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.patient-card__avatar-wrap {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: 32px;
-  font-weight: 700;
+  gap: 8px;
   flex-shrink: 0;
 }
-.avatar-blue { background: #DDEBE1; color: #47745C; }
-.avatar-pink { background: #FCE7F3; color: #D48EC0; }
 
-.patient-details {
-  flex-grow: 1;
+.patient-card__wearable-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--hope-radius-pill);
+  white-space: nowrap;
 }
 
-.patient-name-row {
+.wearable-online {
+  background: rgba(26, 160, 83, 0.12);
+  color: #1aa053;
+}
+
+.wearable-offline {
+  background: rgba(192, 50, 33, 0.12);
+  color: #c03221;
+}
+
+.wearable-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.patient-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.patient-card__name-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 14px;
 }
 
-.patient-name {
+.patient-card__name {
   font-size: 20px;
   font-weight: 700;
-  color: var(--el-text-color-primary);
+  color: var(--hope-text);
+  letter-spacing: -0.01em;
 }
 
-.patient-id-badge {
+.patient-card__id {
   font-size: 12px;
   font-weight: 600;
   padding: 2px 10px;
-  border-radius: 8px;
-  background: #EFF6FF;
-  color: #165DFF;
+  border-radius: var(--hope-radius-pill);
+  background: var(--hope-primary-lighter);
+  color: var(--hope-primary);
 }
 
-.patient-meta-grid {
+.patient-card__meta {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 8px 16px;
 }
 
 .meta-item {
-  font-size: 14px;
-  color: var(--el-text-color-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .meta-label {
-  color: var(--el-text-color-secondary);
-}
-
-.meta-value {
-  color: var(--el-text-color-primary);
+  font-size: 12px;
+  color: var(--hope-text-muted);
   font-weight: 500;
 }
 
-.patient-actions {
+.meta-value {
+  font-size: 14px;
+  color: var(--hope-text);
+  font-weight: 500;
+}
+
+.patient-card__actions {
   display: flex;
   flex-direction: column;
   gap: 8px;
   flex-shrink: 0;
 }
 
-/* Status badges with dots */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.badge-success { background: #F0FDF4; color: #16A34A; }
-.badge-danger { background: #FEF2F2; color: #DC2626; }
-.badge-warning { background: #FFFBEB; color: #D97706; }
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.dot-success { background: #16A34A; }
-.dot-danger { background: #DC2626; }
-.dot-warning { background: #D97706; }
-
-/* Timeline Card */
-.timeline-card :deep(.el-card__header) {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.timeline-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.panel-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--el-text-color-primary);
-  border-left: 3px solid #165DFF;
-  padding-left: 8px;
-}
-
-.timeline-meta {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-/* Timeline */
+/* ── Audit Timeline ── */
 .audit-timeline {
   position: relative;
-  padding-left: 30px;
+  padding-left: 36px;
 }
 
 .audit-timeline::before {
   content: '';
   position: absolute;
-  left: 8px;
-  top: 0;
-  bottom: 0;
+  left: 14px;
+  top: 8px;
+  bottom: 8px;
   width: 2px;
-  background: var(--el-border-color-light);
+  background: var(--hope-border);
+  border-radius: 1px;
 }
 
 .timeline-node {
   position: relative;
-  margin-bottom: 30px;
+  margin-bottom: 24px;
 }
 
 .timeline-node:last-child {
   margin-bottom: 0;
 }
 
-.timeline-dot {
+.timeline-node__line {
   position: absolute;
-  left: -26px;
+  left: -22px;
+  top: 20px;
+  bottom: -8px;
+  width: 2px;
+  background: transparent;
+}
+
+.timeline-node__dot {
+  position: absolute;
+  left: -28px;
   top: 4px;
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2px solid #fff;
+  border: 2px solid var(--hope-surface);
+  box-shadow: 0 0 0 2px currentColor;
 }
 
-.timeline-dot.inbound { background: #6FAF8F; }
-.timeline-dot.verify { background: #5C8D73; }
-.timeline-dot.medication { background: #D9A441; }
-.timeline-dot.geofence { background: #D77B72; }
-.timeline-dot.discharge { background: #8FA8A0; }
+/* Timeline node colors */
+.timeline-node--inbound .timeline-node__dot { background: #1aa053; color: #1aa053; }
+.timeline-node--verify .timeline-node__dot { background: #3a57e8; color: #3a57e8; }
+.timeline-node--medication .timeline-node__dot { background: #faa938; color: #faa938; }
+.timeline-node--geofence .timeline-node__dot { background: #c03221; color: #c03221; }
+.timeline-node--discharge .timeline-node__dot { background: #949aab; color: #949aab; }
 
-.timeline-content {
-  background: #fafafa;
-  padding: 15px;
-  border-radius: 6px;
+.timeline-node__content {
+  background: var(--hope-surface-light);
+  border: 1px solid var(--hope-border);
   border-left: 3px solid transparent;
-  transition: all 0.2s;
+  border-radius: var(--hope-radius-md);
+  padding: 14px 16px;
+  transition: all 0.2s ease;
 }
 
-.timeline-content:hover {
-  background: #f5f7fa;
+.timeline-node__content:hover {
+  background: var(--hope-bg);
+  border-color: var(--hope-border-strong);
+  box-shadow: var(--hope-shadow-sm);
 }
 
-.timeline-content.inbound { border-left-color: #16A34A; }
-.timeline-content.verify { border-left-color: #165DFF; }
-.timeline-content.medication { border-left-color: #F59E0B; }
-.timeline-content.geofence { border-left-color: #EF4444; }
-.timeline-content.discharge { border-left-color: #6B7280; }
+.timeline-node--inbound .timeline-node__content { border-left-color: #1aa053; }
+.timeline-node--verify .timeline-node__content { border-left-color: #3a57e8; }
+.timeline-node--medication .timeline-node__content { border-left-color: #faa938; }
+.timeline-node--geofence .timeline-node__content { border-left-color: #c03221; }
+.timeline-node--discharge .timeline-node__content { border-left-color: #949aab; }
 
-.content-title {
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--el-text-color-primary);
-  margin-bottom: 8px;
+.timeline-node__header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
-.content-time {
+.timeline-node__icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.timeline-node__title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--hope-text);
+}
+
+.timeline-node__time {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
-  font-weight: normal;
+  color: var(--hope-text-muted);
+  margin-left: auto;
 }
 
-.content-body {
+.timeline-node__body {
   font-size: 13px;
   line-height: 1.8;
-  color: var(--el-text-color-regular);
+  color: var(--hope-text-secondary);
 }
 
 .data-line {
@@ -540,13 +567,16 @@ onMounted(() => {
 }
 
 .data-line strong {
-  color: var(--el-text-color-primary);
+  color: var(--hope-text);
+  font-weight: 600;
 }
 
 /* Data Table */
 .data-table-wrap {
-  margin-top: 10px;
+  margin-top: 12px;
   overflow-x: auto;
+  border-radius: var(--hope-radius-sm);
+  border: 1px solid var(--hope-border);
 }
 
 .audit-table {
@@ -557,25 +587,75 @@ onMounted(() => {
 
 .audit-table th,
 .audit-table td {
-  padding: 8px;
+  padding: 9px 12px;
   text-align: left;
-  border-bottom: 1px solid var(--el-border-color-light);
+  border-bottom: 1px solid var(--hope-border);
 }
 
 .audit-table th {
-  background: #f5f7fa;
-  color: var(--el-text-color-secondary);
+  background: var(--hope-bg);
+  color: var(--hope-text-secondary);
   font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .audit-table td {
-  color: var(--el-text-color-primary);
+  color: var(--hope-text);
+}
+
+.audit-table tr:last-child td {
+  border-bottom: none;
+}
+
+.audit-table tr:hover td {
+  background: var(--hope-primary-lighter);
 }
 
 /* Responsive */
 @media (max-width: 1200px) {
-  .patient-meta-grid {
+  .patient-card {
+    flex-wrap: wrap;
+  }
+
+  .patient-card__meta {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .patient-card__actions {
+    flex-direction: row;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+  }
+
+  .page-header__actions {
+    width: 100%;
+  }
+
+  .page-header__actions .hope-btn {
+    flex: 1;
+  }
+
+  .patient-card__meta {
+    grid-template-columns: 1fr;
+  }
+
+  .audit-timeline {
+    padding-left: 28px;
+  }
+
+  .audit-timeline::before {
+    left: 10px;
+  }
+
+  .timeline-node__dot {
+    left: -24px;
   }
 }
 </style>
