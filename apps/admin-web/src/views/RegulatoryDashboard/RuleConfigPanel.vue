@@ -128,7 +128,7 @@ defineExpose({ editRuleConfig })
 .dept-item { display: flex; align-items: center; gap: 10px; font-size: 13px; }
 .dept-name { width: 80px; flex-shrink: 0; color: var(--hope-text-secondary); font-weight: 500; }
 .dept-bar-wrap { flex: 1; height: 8px; background: var(--hope-bg); border-radius: 4px; overflow: hidden; }
-.dept-bar { height: 100%; background: linear-gradient(90deg, #5C8D73, #7BAF8C); border-radius: 4px; transition: width 0.4s ease; }
+.dept-bar { height: 100%; background: linear-gradient(90deg, var(--hope-primary), var(--hope-accent)); border-radius: 4px; transition: width 0.4s ease; }
 .dept-count { width: 60px; text-align: right; color: var(--hope-text-muted); font-size: 12px; }
 .mono { font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px; color: var(--hope-text-secondary); }
 .rule-name-cell { font-size: 13px; color: var(--hope-text); font-weight: 500; }

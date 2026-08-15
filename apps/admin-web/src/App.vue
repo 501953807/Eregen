@@ -64,7 +64,7 @@
           </el-menu-item>
         </el-menu>
         <div class="sidebar-footer">
-          <el-avatar size="small" style="background: linear-gradient(135deg, #4A7C5F, #6FAF8F);">管</el-avatar>
+          <el-avatar size="small" style="background: linear-gradient(135deg, #3a57e8, #6f42c1);">管</el-avatar>
           <div>
             <div class="footer-name">{{ authStore.user.name }}</div>
             <div class="footer-role">{{ authStore.user.role === 'super_admin' ? '超级管理员' : '管理员' }}</div>

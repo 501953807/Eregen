@@ -352,7 +352,7 @@ onMounted(async () => {
   font-size: 15px;
   font-weight: 700;
   color: var(--hope-text);
-  border-left: 3px solid #5C8D73;
+  border-left: 3px solid var(--hope-primary);
   padding-left: 8px;
 }
 

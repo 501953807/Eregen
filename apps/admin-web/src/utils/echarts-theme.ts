@@ -317,13 +317,13 @@ export function initMaterioChart(dom: HTMLElement | string, option: any) {
  */
 export const eregenGreenEChartsTheme = {
   color: [
-    '#4A7C5F', // Eregen primary 绿色
+    '#3a57e8', // Eregen primary 绿色
     '#8C57FF', // Materio accent 紫色（点缀）
     '#56CA00', // success
     '#FFB400', // warning
     '#C04A42', // error
     '#4A8FB8', // info
-    '#6FAF8F', // primary light
+    '#6f42c1', // primary light
     '#D5E6DA', // primary lighter
   ],
 }
