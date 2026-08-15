@@ -7,7 +7,7 @@
       ref="inputRef"
       class="hope-input"
       :class="[`hope-input--${size}`, { 'hope-input--password': type === 'password' }]"
-      :type="showPassword ? 'text' : type"
+      :type="showPasswordVisible ? 'text' : type"
       :placeholder="placeholder"
       :disabled="disabled"
       :value="modelValue"
@@ -17,8 +17,8 @@
       @blur="focused = false"
     />
     <div v-if="$slots.suffix || showPasswordToggle" class="hope-input-suffix">
-      <button v-if="showPasswordToggle && type === 'password'" type="button" class="hope-input-pw-toggle" @click="showPassword = !showPassword">
-        <svg v-if="!showPassword" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      <button v-if="showPasswordToggle && type === 'password'" type="button" class="hope-input-pw-toggle" @click="showPasswordVisible = !showPasswordVisible">
+        <svg v-if="!showPasswordVisible" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
       </button>
       <slot name="suffix" />
@@ -58,6 +58,7 @@ defineEmits<{ 'update:modelValue': [v: string] }>()
 
 const focused = ref(false)
 const inputRef = ref<HTMLInputElement | null>(null)
+const showPasswordVisible = ref(props.showPassword)
 
 const showPasswordToggle = computed(() => props.type === 'password')
 </script>
@@ -78,7 +79,7 @@ const showPasswordToggle = computed(() => props.type === 'password')
   font-family: inherit;
   color: var(--hope-text);
   background: var(--hope-surface);
-  box-shadow: var(--hope-shadow-input);
+  box-shadow: var(--hope-shadow-sm);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
   box-sizing: border-box;
@@ -86,17 +87,17 @@ const showPasswordToggle = computed(() => props.type === 'password')
 
 .hope-input-wrap--focused .hope-input {
   border-color: var(--hope-primary);
-  box-shadow: 0 0 0 3px rgba(74,124,95,0.1), var(--hope-shadow-input);
+  box-shadow: var(--hope-shadow-input-focus);
 }
 
 .hope-input-wrap--error .hope-input {
   border-color: var(--hope-error);
-  box-shadow: 0 0 0 3px rgba(192,74,66,0.1), var(--hope-shadow-input);
+  box-shadow: 0 0 0 3px rgba(192,74,66,0.1), var(--hope-shadow-sm);
 }
 
 .hope-input-wrap--success .hope-input {
   border-color: var(--hope-success);
-  box-shadow: 0 0 0 3px rgba(86,202,0,0.1), var(--hope-shadow-input);
+  box-shadow: 0 0 0 3px rgba(86,202,0,0.1), var(--hope-shadow-sm);
 }
 
 .hope-input::placeholder { color: var(--hope-text-muted); }

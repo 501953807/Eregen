@@ -18,3 +18,24 @@ withDefaults(defineProps<{
   type: 'text',
 })
 </script>
+
+<style scoped>
+.hope-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--hope-radius-pill);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+.hope-badge--dot { padding: 0; width: 8px; height: 8px; border-radius: 50%; }
+.hope-badge--primary   { background: rgba(58,87,232,0.12); color: var(--hope-primary); }
+.hope-badge--success   { background: rgba(26,160,83,0.12); color: #1aa053; }
+.hope-badge--warning   { background: rgba(250,169,56,0.12); color: #B8860B; }
+.hope-badge--error     { background: rgba(192,50,33,0.12); color: #c03221; }
+.hope-badge--info      { background: rgba(7,154,162,0.12); color: #079aa2; }
+.hope-badge--accent    { background: rgba(140,87,255,0.12); color: #8C57FF; }
+</style>

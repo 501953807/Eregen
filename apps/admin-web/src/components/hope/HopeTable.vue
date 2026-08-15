@@ -82,5 +82,30 @@ function sort(prop: string) {
 
 <style scoped>
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-.hope-row-selected { background: rgba(74,124,95,0.06) !important; }
+
+.hope-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--hope-radius-lg);
+  border: 1px solid var(--hope-border);
+  background: var(--hope-surface);
+}
+.hope-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.hope-table thead { background: #F6F7FB; border-bottom: 1px solid var(--hope-border); }
+.hope-table th {
+  padding: 14px 18px; text-align: left; font-size: 13px; font-weight: 600;
+  color: #616161; text-transform: uppercase; letter-spacing: 0.04em;
+  white-space: nowrap; position: relative; cursor: pointer; user-select: none;
+}
+.hope-table th:hover { color: var(--hope-primary); }
+.hope-table th .sort-icon { margin-left: 4px; opacity: 0.4; }
+.hope-table th.sort-asc .sort-icon,
+.hope-table th.sort-desc .sort-icon { opacity: 1; color: var(--hope-primary); }
+.hope-table td { padding: 14px 18px; border-bottom: 1px solid rgba(26,46,38,0.06); color: var(--hope-text); vertical-align: middle; }
+.hope-table tbody tr { transition: background 0.12s; }
+.hope-table tbody tr:hover { background: rgba(58,87,232,0.04); }
+.hope-table tbody tr:last-child td { border-bottom: none; }
+.hope-table--striped tbody tr:nth-child(even) { background: rgba(26,46,38,0.02); }
+.hope-table--striped tbody tr:nth-child(even):hover { background: rgba(58,87,232,0.06); }
+.hope-table--compact td, .hope-table--compact th { padding: 10px 14px; }
+.hope-row-selected { background: rgba(58,87,232,0.06) !important; }
 </style>
