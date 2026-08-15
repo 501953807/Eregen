@@ -92,6 +92,7 @@ export interface Subscription {
   id: string;
   user_id: string;
   user_name?: string;
+  user_phone?: string;
   plan: 'free' | 'pro' | 'enterprise';
   plan_tier?: 'starter' | 'plus' | 'pro';
   status: 'active' | 'expired' | 'cancelled' | 'pending_renewal' | 'past_due';
@@ -99,6 +100,7 @@ export interface Subscription {
   start_date: string;
   end_date: string;
   downgrade_reason?: string;
+  cancellation_reason?: string;
   per_device?: boolean;
   total_spent?: number;
   devices?: string[];

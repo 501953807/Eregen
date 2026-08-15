@@ -2,64 +2,87 @@
   <div class="subscriptions-page">
     <!-- Page Header -->
     <div class="page-header">
-      <h2 class="page-title">订阅管理</h2>
-      <el-button type="primary" @click="handleCreatePlan" size="default">+ 创建订阅计划</el-button>
+      <div>
+        <h2 class="page-title">订阅管理</h2>
+        <p class="page-subtitle">管理所有用户订阅套餐、续费与取消记录</p>
+      </div>
+      <HopeBtn variant="filled" size="md" @click="handleCreatePlan">
+        + 创建订阅计划
+      </HopeBtn>
     </div>
 
-    <!-- Revenue KPI Row (5 columns) -->
-    <el-row :gutter="12" style="margin-bottom: 16px;">
-      <el-col :span="5">
-        <el-card shadow="hover" class="rev-card">
-          <div class="rev-label">本月收入</div>
-          <div class="rev-value" style="color: var(--el-color-success);">¥{{ revenue.mth.toLocaleString() }}</div>
-          <div class="rev-change up">↑ {{ revenue.mth_change }}% vs 上月</div>
-        </el-card>
-      </el-col>
-      <el-col :span="5">
-        <el-card shadow="hover" class="rev-card">
-          <div class="rev-label">MRR</div>
-          <div class="rev-value">¥{{ revenue.mrr.toLocaleString() }}</div>
-          <div class="rev-change up">↑ {{ revenue.mrr_change }}%</div>
-        </el-card>
-      </el-col>
-      <el-col :span="5">
-        <el-card shadow="hover" class="rev-card">
-          <div class="rev-label">活跃订阅</div>
-          <div class="rev-value">{{ stats.active.toLocaleString() }}</div>
-          <div class="rev-change up">↑ {{ revenue.active_change }}%</div>
-        </el-card>
-      </el-col>
-      <el-col :span="4">
-        <el-card shadow="hover" class="rev-card">
-          <div class="rev-label">Churn 率</div>
-          <div class="rev-value" style="color: var(--el-color-danger);">{{ revenue.churn_rate }}%</div>
-          <div class="rev-change down">↓ {{ revenue.churn_improve }}% 改善</div>
-        </el-card>
-      </el-col>
-      <el-col :span="4">
-        <el-card shadow="hover" class="rev-card">
-          <div class="rev-label">续费率</div>
-          <div class="rev-value" style="color: var(--el-color-primary);">{{ revenue.renewal_rate }}%</div>
-          <div class="rev-change up">↑ {{ revenue.renewal_change }}%</div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- Revenue KPI Row -->
+    <div class="kpi-grid">
+      <HopeStatCard
+        :value="'¥' + revenue.mth.toLocaleString()"
+        label="本月收入"
+        icon-color="success"
+        gradient="linear-gradient(135deg, #16a34a, #22c55e)"
+      >
+        <template #trend>
+          <span class="hope-stat-card__trend hope-stat-card__trend-up">↑ {{ revenue.mth_change }}% vs 上月</span>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="'¥' + revenue.mrr.toLocaleString()"
+        label="MRR"
+        icon-color="primary"
+        gradient="linear-gradient(135deg, #3a57e8, #6366f1)"
+      >
+        <template #trend>
+          <span class="hope-stat-card__trend hope-stat-card__trend-up">↑ {{ revenue.mrr_change }}% vs 上月</span>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="stats.active.toLocaleString()"
+        label="活跃订阅"
+        icon-color="accent"
+        gradient="linear-gradient(135deg, #8C57FF, #a78bfa)"
+      >
+        <template #trend>
+          <span class="hope-stat-card__trend hope-stat-card__trend-up">↑ {{ revenue.active_change }}% vs 上月</span>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="revenue.churn_rate + '%'"
+        label="Churn 率"
+        icon-color="error"
+        gradient="linear-gradient(135deg, #c04a42, #e11d48)"
+      >
+        <template #trend>
+          <span class="hope-stat-card__trend hope-stat-card__trend-up">↓ {{ revenue.churn_improve }}% 改善</span>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="revenue.renewal_rate + '%'"
+        label="续费率"
+        icon-color="info"
+        gradient="linear-gradient(135deg, #079aa2, #14b8a6)"
+      >
+        <template #trend>
+          <span class="hope-stat-card__trend hope-stat-card__trend-up">↑ {{ revenue.renewal_change }}% vs 上月</span>
+        </template>
+      </HopeStatCard>
+    </div>
 
     <!-- Conversion Funnel -->
-    <el-card shadow="hover" class="funnel-card" style="margin-bottom: 16px;">
-      <template #header><span class="section-title">订阅转化漏斗</span></template>
+    <HopeCard title="订阅转化漏斗" subtitle="从注册到付费的完整转化路径">
       <div class="funnel">
-        <div v-for="(step, i) in funnelSteps" :key="i" class="funnel-step">
+        <div v-for="(step, i) in funnelSteps" :key="i" class="funnel-step" :style="{ animationDelay: i * 0.08 + 's' }">
+          <div class="funnel-step-label">{{ step.label }}</div>
           <div class="funnel-bar-wrap">
-            <div class="funnel-bar" :style="{ width: step.width + '%' }">{{ step.label }} · {{ step.count.toLocaleString() }}</div>
-            <div class="funnel-pct">{{ step.percent }}%</div>
+            <div class="funnel-bar" :style="{ width: step.width + '%', background: step.gradient }"></div>
+            <div class="funnel-stat">
+              <span class="funnel-count">{{ step.count.toLocaleString() }}</span>
+              <span class="funnel-pct">{{ step.percent }}%</span>
+            </div>
           </div>
         </div>
       </div>
-    </el-card>
+    </HopeCard>
 
     <!-- Tier Comparison -->
-    <div class="tier-compare" style="margin-bottom: 16px;">
+    <div class="tier-compare">
       <div class="tier-card" v-for="tier in tiers" :key="tier.name" :class="{ recommended: tier.recommended }">
         <div v-if="tier.recommended" class="tier-rec-badge">最受欢迎</div>
         <div class="tier-name">{{ tier.name }}</div>
@@ -67,6 +90,7 @@
         <div class="tier-users">{{ tier.sub_count }} 订阅中</div>
         <div class="tier-features">
           <div v-for="(f, fi) in tier.features" :key="fi" class="tier-feature" :class="{ disabled: !f.active }">
+            <span class="feature-icon">{{ f.active ? '✓' : '—' }}</span>
             {{ f.text }}
           </div>
         </div>
@@ -74,136 +98,117 @@
     </div>
 
     <!-- Subscription Table -->
-    <el-card shadow="never" class="table-card">
-      <template #header>
-        <div class="filter-bar" style="border:none;padding:0;margin:0;background:transparent;">
+    <HopeCard title="订阅列表" subtitle="共 {{ subStore.total }} 条订阅记录">
+      <template #toolbar>
+        <div class="filter-bar">
           <span class="filter-label">筛选：</span>
-          <el-select v-model="tableFilters.status" placeholder="全部状态" clearable class="filter-select" style="width:120px;">
-            <el-option label="活跃" value="active" />
-            <el-option label="试用中" value="trial" />
-            <el-option label="已过期" value="expired" />
-            <el-option label="已取消" value="cancelled" />
-            <el-option label="逾期" value="past_due" />
-          </el-select>
-          <el-select v-model="tableFilters.plan" placeholder="全部套餐" clearable class="filter-select" style="width:120px;">
-            <el-option label="Starter" value="free" />
+          <HopeInput v-model="tableFilters.status" placeholder="状态筛选" clearable style="width:140px;" @input="onFilterChange">
+            <template #prepend>状态</template>
+          </HopeInput>
+          <el-select v-model="tableFilters.plan" placeholder="全部套餐" clearable @change="searchTable" style="width:130px;">
+            <el-option label="免费" value="free" />
             <el-option label="Plus" value="premium" />
             <el-option label="Pro" value="enterprise" />
           </el-select>
-          <el-select v-model="tableFilters.renewal" placeholder="续费时间" clearable class="filter-select" style="width:130px;">
+          <el-select v-model="tableFilters.renewal" placeholder="续费时间" clearable @change="searchTable" style="width:140px;">
             <el-option label="即将到期(7天)" value="soon" />
             <el-option label="本月到期" value="this_month" />
             <el-option label="已过期" value="expired" />
           </el-select>
           <span class="filter-spacer"></span>
-          <el-button size="small" @click="resetTableFilters">重置</el-button>
-          <el-button size="small" type="primary" @click="searchTable">搜索</el-button>
+          <HopeBtn variant="plain" size="sm" @click="resetTableFilters">重置</HopeBtn>
+          <HopeBtn variant="filled" size="sm" @click="searchTable">搜索</HopeBtn>
         </div>
       </template>
 
-      <el-table
-        v-loading="subStore.loading"
+      <HopeTable
+        :columns="tableColumns"
         :data="filteredSubscriptions"
-        stripe
+        :loading="subStore.loading"
+        :striped="true"
+        compact
         class="sub-table"
-        @row-click="openPanel"
-        highlight-current-row
       >
-        <el-table-column type="selection" width="30" />
-        <el-table-column label="用户" min-width="130">
-          <template #default="{ row }">
-            <div class="user-cell">
-              <strong>{{ row.user_name || '—' }}</strong>
-              <span class="user-phone">{{ row.user_phone || '' }}</span>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="套餐" width="90">
-          <template #default="{ row }">
-            <span class="tier-tag" :class="tierClass(row.plan_tier || '')">{{ tierLabel(row.plan_tier || '') }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="计费周期" width="80">
-          <template #default="{ row }">
-            <span class="plan-tag">{{ row.billing_cycle === 'annual' ? '年度' : '月度' }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="90">
-          <template #default="{ row }">
-            <span class="status-badge" :class="statusBadgeClass(row.status)">
-              <span class="status-dot" :class="statusBadgeClass(row.status)"></span>
-              {{ statusLabel(row.status) }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column label="到期时间" width="110">
-          <template #default="{ row }">
-            <span class="renewal-count" :class="{ critical: isCritical(row.end_date) }">
-              {{ formatRenewalDate(row.end_date) }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column label="月费" width="80">
-          <template #default="{ row }">
-            ¥{{ planPrice(row.plan_tier || '') }}/月
-          </template>
-        </el-table-column>
-        <el-table-column label="取消原因" min-width="100">
-          <template #default="{ row }">
-            <span v-if="row.cancellation_reason" class="churn-reason">{{ row.cancellation_reason }}</span>
-            <span v-else>—</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="80" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" size="small" @click.stop="openPanel(row)">详情</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+        <template #col-user_name="{ row }">
+          <div class="user-cell">
+            <strong>{{ row.user_name || '—' }}</strong>
+            <span class="user-phone">{{ row.user_phone || '' }}</span>
+          </div>
+        </template>
+        <template #col-plan_tier="{ row }">
+          <HopeBadge :color="tierBadgeColor(row.plan_tier || '')">{{ tierLabel(row.plan_tier || '') }}</HopeBadge>
+        </template>
+        <template #col-billing_cycle="{ row }">
+          <span class="plan-tag">{{ row.billing_cycle === 'annual' ? '年度' : '月度' }}</span>
+        </template>
+        <template #col-status="{ row }">
+          <HopeBadge :color="statusBadgeColor(row.status)">{{ statusLabel(row.status) }}</HopeBadge>
+        </template>
+        <template #col-end_date="{ row }">
+          <span class="renewal-count" :class="{ critical: isCritical(row.end_date) }">
+            {{ formatRenewalDate(row.end_date) }}
+          </span>
+        </template>
+        <template #col-plan_price="{ row }">
+          ¥{{ planPrice(row.plan_tier || '') }}/月
+        </template>
+        <template #col-cancellation_reason="{ row }">
+          <span v-if="row.cancellation_reason" class="churn-reason">{{ row.cancellation_reason }}</span>
+          <span v-else class="text-muted">—</span>
+        </template>
+        <template #col-actions="{ row }">
+          <HopeBtn variant="text" size="sm" @click.stop="openPanel(row)">详情</HopeBtn>
+        </template>
+      </HopeTable>
 
-      <div class="pagination-wrapper">
-        <el-pagination
-          background
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="subStore.total"
-          :page-size="tableFilters.pageSize"
-          :current-page="tableFilters.page"
-          :page-sizes="[10, 20, 50, 100]"
-          @size-change="handleSizeChange"
-          @current-change="handlePageChange"
-        />
-      </div>
-    </el-card>
+      <template #footer>
+        <div class="pagination-wrapper">
+          <el-pagination
+            background
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="subStore.total"
+            :page-size="tableFilters.pageSize"
+            :current-page="tableFilters.page"
+            :page-sizes="[10, 20, 50, 100]"
+            @size-change="handleSizeChange"
+            @current-change="handlePageChange"
+          />
+        </div>
+      </template>
+    </HopeCard>
 
     <!-- Side Panel (Subscription Detail) -->
     <div class="side-panel-overlay" :class="{ show: panelOpen }" @click="closePanel" />
     <div class="side-panel" :class="{ open: panelOpen }">
       <div class="panel-header">
         <span class="panel-title">订阅详情</span>
-        <button class="panel-close" @click="closePanel">&#10005;</button>
+        <HopeBtn variant="ghost" size="sm" @click="closePanel">✕</HopeBtn>
       </div>
       <div class="panel-body" v-if="panelSub">
         <!-- User header -->
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <div class="panel-user-row">
           <div class="panel-user-avatar">{{ userEmoji(panelSub.user_name) }}</div>
           <div>
-            <div style="font-size:18px;font-weight:700;">{{ panelSub.user_name || '—' }}</div>
-            <div style="font-size:12px;color:var(--el-text-color-secondary);">{{ tierLabel(panelSub.plan_tier || '') }} 订阅</div>
+            <div class="panel-user-name">{{ panelSub.user_name || '—' }}</div>
+            <div class="panel-user-plan">{{ tierLabel(panelSub.plan_tier || '') }} 订阅</div>
           </div>
         </div>
 
         <!-- Subscription info -->
         <div class="panel-section">
           <div class="panel-section-title">订阅信息</div>
-          <div class="panel-row"><span class="panel-row-label">状态</span><span class="panel-row-value">
-            <span class="status-badge" :class="statusBadgeClass(panelSub.status)">
-              <span class="status-dot" :class="statusBadgeClass(panelSub.status)"></span>
-              {{ statusLabel(panelSub.status) }}
+          <div class="panel-row">
+            <span class="panel-row-label">状态</span>
+            <span class="panel-row-value">
+              <HopeBadge :color="statusBadgeColor(panelSub.status)">{{ statusLabel(panelSub.status) }}</HopeBadge>
             </span>
-          </span></div>
-          <div class="panel-row"><span class="panel-row-label">套餐等级</span><span class="panel-row-value">
-            <span class="tier-tag" :class="tierClass(panelSub.plan_tier || '')">{{ tierLabel(panelSub.plan_tier || '') }}</span>
-          </span></div>
+          </div>
+          <div class="panel-row">
+            <span class="panel-row-label">套餐等级</span>
+            <span class="panel-row-value">
+              <HopeBadge :color="tierBadgeColor(panelSub.plan_tier || '')">{{ tierLabel(panelSub.plan_tier || '') }}</HopeBadge>
+            </span>
+          </div>
           <div class="panel-row"><span class="panel-row-label">计费周期</span><span class="panel-row-value">{{ panelSub.billing_cycle === 'annual' ? '年度' : '月度' }}</span></div>
           <div class="panel-row"><span class="panel-row-label">开始时间</span><span class="panel-row-value">{{ formatDate(panelSub.start_date) }}</span></div>
           <div class="panel-row"><span class="panel-row-label">到期时间</span><span class="panel-row-value">{{ formatDate(panelSub.end_date) }}</span></div>
@@ -215,34 +220,26 @@
         <!-- Related devices -->
         <div class="panel-section">
           <div class="panel-section-title">关联设备</div>
-          <div class="panel-row" v-for="(dev, i) in (panelSub.devices || [])" :key="i" style="cursor:pointer;color:var(--el-color-primary);">
-            <span class="panel-row-value">{{ dev }}</span>
+          <div v-if="panelSub.devices?.length" class="device-list">
+            <HopeBadge v-for="(dev, i) in panelSub.devices" :key="i" color="info" type="dot">{{ dev }}</HopeBadge>
           </div>
-          <div v-if="!panelSub.devices?.length" class="panel-row">
-            <span class="panel-row-value" style="color:var(--el-text-color-placeholder);">暂无关联设备</span>
-          </div>
+          <div v-else class="text-muted panel-empty">暂无关联设备</div>
         </div>
 
         <!-- Billing timeline -->
         <div class="panel-section">
           <div class="panel-section-title">账单记录</div>
-          <div class="billing-timeline">
-            <div v-for="(item, i) in billingTimeline" :key="i" class="timeline-item" :class="item.state">
-              <div class="timeline-date">{{ item.date }}</div>
-              <div class="timeline-desc">{{ item.desc }}</div>
-              <div class="timeline-amount">{{ item.amount }}</div>
-            </div>
-          </div>
+          <HopeTimeline :items="timelineItems" />
         </div>
 
         <!-- Actions -->
         <div class="panel-section">
           <div class="panel-section-title">操作</div>
           <div class="panel-actions">
-            <el-button size="small" type="primary" @click="manualRenew">手动续费</el-button>
-            <el-button size="small" @click="changePlan">变更套餐</el-button>
-            <el-button size="small" @click="sendReminder">发送提醒</el-button>
-            <el-button size="small" type="danger" plain @click="forceCancel">强制取消</el-button>
+            <HopeBtn variant="filled" size="sm" @click="manualRenew">手动续费</HopeBtn>
+            <HopeBtn variant="outlined" size="sm" @click="changePlan">变更套餐</HopeBtn>
+            <HopeBtn variant="outlined" size="sm" @click="sendReminder">发送提醒</HopeBtn>
+            <HopeBtn variant="error" size="sm" @click="forceCancel">强制取消</HopeBtn>
           </div>
         </div>
       </div>
@@ -255,6 +252,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useSubscriptionStore } from '@/stores/subscription'
 import type { Subscription } from '@/types'
+import { HopeCard, HopeStatCard, HopeTable, HopeBadge, HopeBtn, HopeTimeline, HopeInput } from '@/components/hope'
 
 const subStore = useSubscriptionStore()
 
@@ -274,11 +272,11 @@ const revenue = ref({
 
 // Funnel steps — v2 prototype enhancement
 const funnelSteps = ref([
-  { label: '注册账号', count: 5234, width: 100, percent: 100, gradient: 'linear-gradient(90deg, #165DFF, #9B8ED8)' },
-  { label: '绑定设备', count: 3558, width: 68, percent: 68.0, gradient: 'linear-gradient(90deg, #3B82F6, #6366F1)' },
-  { label: '使用7天+', count: 1832, width: 35, percent: 35.0, gradient: 'linear-gradient(90deg, #6366F1, #8B5CF6)' },
-  { label: '试用开始', count: 945, width: 18, percent: 18.1, gradient: 'linear-gradient(90deg, #8B5CF6, #A78BFA)' },
-  { label: '付费订阅', count: 487, width: 9, percent: 9.3, gradient: 'linear-gradient(90deg, #A78BFA, #C4B5FD)' },
+  { label: '注册账号', count: 5234, width: 100, percent: 100, gradient: 'linear-gradient(90deg, #3a57e8, #6366f1)' },
+  { label: '绑定设备', count: 3558, width: 68, percent: 68.0, gradient: 'linear-gradient(90deg, #6366f1, #8C57FF)' },
+  { label: '使用7天+', count: 1832, width: 35, percent: 35.0, gradient: 'linear-gradient(90deg, #8C57FF, #a78bfa)' },
+  { label: '试用开始', count: 945, width: 18, percent: 18.1, gradient: 'linear-gradient(90deg, #a78bfa, #c4b5fd)' },
+  { label: '付费订阅', count: 487, width: 9, percent: 9.3, gradient: 'linear-gradient(90deg, #16a34a, #22c55e)' },
 ])
 
 // Tier comparison data — v2 prototype
@@ -343,6 +341,18 @@ const filteredSubscriptions = computed(() => {
   return list
 })
 
+// HopeTable columns
+const tableColumns = [
+  { prop: 'user_name', label: '用户' },
+  { prop: 'plan_tier', label: '套餐' },
+  { prop: 'billing_cycle', label: '计费周期' },
+  { prop: 'status', label: '状态' },
+  { prop: 'end_date', label: '到期时间' },
+  { prop: 'plan_price', label: '月费' },
+  { prop: 'cancellation_reason', label: '取消原因' },
+  { prop: 'actions', label: '操作' },
+]
+
 // Helpers
 function tierLabel(tier: string): string {
   const map: Record<string, string> = { free: '免费', premium: 'Plus', enterprise: 'Pro' }
@@ -354,17 +364,24 @@ function tierClass(tier: string): string {
   return map[tier] || 'tier-basic'
 }
 
+function tierBadgeColor(tier: string): 'primary' | 'success' | 'accent' | 'info' {
+  const map: Record<string, 'primary' | 'success' | 'accent' | 'info'> = {
+    free: 'info', premium: 'primary', enterprise: 'accent'
+  }
+  return map[tier] || 'info'
+}
+
 function planPrice(tier: string): number {
   const map: Record<string, number> = { free: 0, premium: 59, enterprise: 99 }
   return map[tier] || 29
 }
 
-function statusBadgeClass(status: string): string {
-  const map: Record<string, string> = {
-    active: 'status-active', trial: 'status-trial', expired: 'status-expired',
-    cancelled: 'status-cancelled', past_due: 'status-past-due',
+function statusBadgeColor(status: string): 'success' | 'warning' | 'info' | 'error' | 'accent' {
+  const map: Record<string, 'success' | 'warning' | 'info' | 'error' | 'accent'> = {
+    active: 'success', trial: 'warning', expired: 'info',
+    cancelled: 'error', past_due: 'accent',
   }
-  return map[status] || 'status-active'
+  return map[status] || 'success'
 }
 
 function statusLabel(status: string): string {
@@ -400,12 +417,12 @@ function userEmoji(name?: string): string {
   return ['👨', '👩', '👴', '👵'][name.length % 4]
 }
 
-// Billing timeline mock data
-const billingTimeline = ref([
-  { date: '2025-01-15', desc: '年度续费成功', amount: '¥1,188.00', state: 'paid' },
-  { date: '2024-08-15', desc: '年度续费成功', amount: '¥1,188.00', state: 'paid' },
-  { date: '2024-07-01', desc: '月度扣款成功', amount: '¥99.00', state: 'paid' },
-  { date: '2025-08-15', desc: '下次自动续费', amount: '¥1,188.00', state: 'pending' },
+// Billing timeline mapped to HopeTimeline items
+const timelineItems = ref([
+  { title: '年度续费成功', meta: '2025-01-15', body: '¥1,188.00', color: 'success' as const },
+  { title: '年度续费成功', meta: '2024-08-15', body: '¥1,188.00', color: 'success' as const },
+  { title: '月度扣款成功', meta: '2024-07-01', body: '¥99.00', color: 'success' as const },
+  { title: '下次自动续费', meta: '2025-08-15', body: '¥1,188.00', color: 'warning' as const },
 ])
 
 // Side Panel
@@ -424,6 +441,10 @@ function closePanel() {
 // Table actions
 function resetTableFilters() {
   tableFilters.value = { status: '', plan: '', renewal: '', page: 1, pageSize: 20 }
+}
+
+function onFilterChange() {
+  // debounce handled by el-select
 }
 
 function searchTable() {
@@ -469,240 +490,208 @@ onMounted(async () => {
 .subscriptions-page {
   padding: 0;
 }
-.subscriptions-page :deep(.el-card) {
-  border-radius: 12px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
-  transition: all var(--duration-normal) var(--easing-out);
-}
-.subscriptions-page :deep(.el-card:hover) {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
-  transform: translateY(-1px);
-}
-.subscriptions-page :deep(.el-card__header) {
-  background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%);
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  padding: 16px 20px;
-  border-radius: 12px 12px 0 0 !important;
-}
-.subscriptions-page :deep(.el-card__body) {
-  padding: 20px;
-}
 
-/* Page header */
+/* Page Header */
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  align-items: flex-end;
+  margin-bottom: 24px;
 }
 .page-title {
   font-size: 22px;
   font-weight: 800;
-  color: var(--el-text-color-primary);
+  color: var(--hope-text);
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+.page-subtitle {
+  font-size: 13px;
+  color: var(--hope-text-muted);
   margin: 0;
 }
 
-/* Revenue KPI cards */
-.rev-card {
-  position: relative;
-  overflow: hidden;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+/* KPI Grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
 }
-.rev-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
-  pointer-events: none;
-}
-.rev-card:hover {
-  transform: translateY(-3px);
-}
-.rev-card :deep(.el-card__body) {
-  padding: 16px;
-  text-align: left;
-}
-.rev-label {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  margin-bottom: 6px;
-}
-.rev-value {
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  margin-bottom: 4px;
-}
-.rev-change {
-  font-size: 11px;
-  margin-top: 4px;
-  font-weight: 600;
-}
-.rev-change.up { color: var(--el-color-success); }
-.rev-change.down { color: var(--el-color-danger); }
 
-/* Funnel card */
-.funnel-card :deep(.el-card__body) {
-  padding: 20px;
-}
-.section-title {
-  font-size: 15px;
-  font-weight: 700;
-}
+/* Funnel */
 .funnel {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  gap: 10px;
 }
 .funnel-step {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 0;
-  transition: transform 0.15s;
-  cursor: pointer;
-  width: 100%;
+  gap: 16px;
+  animation: funnelSlideIn 0.4s ease both;
 }
-.funnel-step:hover {
-  transform: scale(1.02);
+@keyframes funnelSlideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.funnel-step-label {
+  width: 90px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hope-text);
+  flex-shrink: 0;
 }
 .funnel-bar-wrap {
   flex: 1;
-  max-width: 600px;
   display: flex;
   align-items: center;
   gap: 12px;
 }
 .funnel-bar {
-  height: 36px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  padding: 0 14px;
-  font-size: 13px;
-  font-weight: 700;
-  color: white;
+  height: 28px;
+  border-radius: 6px;
   transition: width 0.6s ease;
+  min-width: 32px;
+}
+.funnel-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 56px;
+}
+.funnel-count {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--hope-text);
 }
 .funnel-pct {
-  font-size: 12px;
-  color: var(--el-text-color-placeholder);
-  width: 60px;
-  text-align: right;
+  font-size: 11px;
+  color: var(--hope-text-muted);
 }
 
-/* Tier comparison */
+/* Tier Cards */
 .tier-compare {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 .tier-card {
-  background: white;
-  border-radius: 14px;
-  padding: 20px;
-  border: 1px solid var(--el-border-color-light);
+  background: var(--hope-surface);
+  border-radius: var(--hope-radius-xl);
+  padding: 24px;
+  border: 1px solid var(--hope-border);
   text-align: center;
   position: relative;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.tier-card:hover {
+  box-shadow: var(--hope-shadow-md);
+  transform: translateY(-2px);
 }
 .tier-card.recommended {
-  border-color: var(--el-color-primary);
-  box-shadow: 0 0 0 1px var(--el-color-primary);
+  border-color: var(--hope-primary);
+  box-shadow: 0 0 0 1px var(--hope-primary), var(--hope-shadow-primary);
 }
 .tier-rec-badge {
   position: absolute;
   top: -10px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--el-color-primary);
+  background: linear-gradient(135deg, #3a57e8, #8C57FF);
   color: white;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  padding: 2px 12px;
-  border-radius: 10px;
+  padding: 3px 14px;
+  border-radius: 12px;
 }
 .tier-name {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
-  margin-bottom: 4px;
+  color: var(--hope-text);
+  margin-bottom: 6px;
 }
 .tier-price {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
-  color: var(--el-text-color-primary);
-  margin: 8px 0;
+  color: var(--hope-primary);
+  margin: 10px 0;
+  letter-spacing: -0.03em;
 }
 .tier-price span {
   font-size: 14px;
   font-weight: 400;
-  color: var(--el-text-color-placeholder);
+  color: var(--hope-text-muted);
 }
 .tier-users {
   font-size: 13px;
-  color: var(--el-text-color-secondary);
-  margin-bottom: 12px;
+  color: var(--hope-text-muted);
+  margin-bottom: 16px;
 }
 .tier-features {
   text-align: left;
-  font-size: 12px;
-  color: var(--el-text-color-regular);
+  font-size: 13px;
 }
 .tier-feature {
-  padding: 4px 0;
+  padding: 6px 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  color: var(--hope-text);
 }
-.tier-feature::before {
-  content: '✓';
-  color: var(--el-color-success);
+.tier-feature .feature-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
   font-weight: 700;
+  flex-shrink: 0;
+}
+.tier-feature:not(.disabled) .feature-icon {
+  background: rgba(26,160,83,0.12);
+  color: #1aa053;
 }
 .tier-feature.disabled {
-  color: var(--el-text-color-placeholder);
+  color: var(--hope-text-muted);
 }
-.tier-feature.disabled::before {
-  content: '—';
-  color: var(--el-text-color-placeholder);
+.tier-feature.disabled .feature-icon {
+  background: rgba(148,169,162,0.12);
+  color: #94a9a2;
 }
 
-/* Filter bar inside table header */
+/* Filter Bar */
 .filter-bar {
   display: flex;
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
+  padding: 16px 22px 0;
 }
 .filter-label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--el-text-color-regular);
+  color: var(--hope-text-muted);
   white-space: nowrap;
-}
-.filter-select {
-  width: 120px;
 }
 .filter-spacer {
   flex: 1;
 }
 
 /* Table */
-.table-card :deep(.el-card__header) {
-  padding: 0;
-}
 .sub-table {
-  width: 100%;
+  margin-top: 8px;
 }
-.sub-table :deep(.el-table__row) {
-  cursor: pointer;
+.sub-table :deep(.hope-table th) {
+  font-size: 12px;
 }
-.sub-table :deep(.el-table__row:hover) {
-  background-color: var(--el-fill-color-light) !important;
+.sub-table :deep(.hope-table td) {
+  font-size: 13px;
 }
-
 .user-cell {
   display: flex;
   flex-direction: column;
@@ -710,84 +699,43 @@ onMounted(async () => {
 }
 .user-phone {
   font-size: 11px;
-  color: var(--el-text-color-placeholder);
+  color: var(--hope-text-muted);
   font-family: monospace;
 }
-
-/* Status badges */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.status-active { background: #F0FDF4; color: var(--el-color-success); }
-.status-trial { background: #FEF7E8; color: #B8860B; }
-.status-expired { background: var(--el-fill-color-light); color: var(--el-text-color-secondary); }
-.status-cancelled { background: #FEF2F2; color: var(--el-color-danger); }
-.status-past-due { background: #FFF7ED; color: #C2410C; }
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-.status-active .status-dot { background: var(--el-color-success); }
-.status-trial .status-dot { background: #D9A441; }
-.status-expired .status-dot { background: var(--el-text-color-placeholder); }
-.status-cancelled .status-dot { background: var(--el-color-danger); }
-.status-past-due .status-dot { background: #C2410C; animation: pulse 1.5s infinite; }
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.tier-tag {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 6px;
-}
-.tier-pro { background: #DDEBE1; color: #47745C; }
-.tier-plus { background: #E8F4EC; color: #4A8A6A; }
-.tier-basic { background: var(--el-fill-color-light); color: var(--el-text-color-secondary); }
-
 .plan-tag {
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  color: var(--hope-text-muted);
 }
-
 .renewal-count {
   font-size: 12px;
   font-weight: 600;
 }
 .renewal-count.critical {
-  color: var(--el-color-danger);
+  color: var(--hope-danger);
 }
-
 .churn-reason {
   font-size: 11px;
-  color: var(--el-text-color-secondary);
-  background: var(--el-fill-color-light);
+  color: var(--hope-text-muted);
+  background: rgba(148,169,162,0.1);
   padding: 2px 8px;
   border-radius: 6px;
+}
+.text-muted {
+  color: var(--hope-text-muted);
 }
 
 /* Pagination */
 .pagination-wrapper {
   display: flex;
   justify-content: flex-end;
-  padding: 14px 20px;
-  border-top: 1px solid var(--el-border-color-light);
+  padding: 14px 0;
 }
 
 /* ========== Side Panel ========== */
 .side-panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.3);
   z-index: 200;
   display: none;
 }
@@ -797,12 +745,12 @@ onMounted(async () => {
 .side-panel {
   position: fixed;
   top: 0;
-  right: -520px;
+  right: -540px;
   bottom: 0;
-  width: 520px;
-  background: white;
+  width: 540px;
+  background: var(--hope-bg);
   z-index: 201;
-  transition: right 0.3s ease;
+  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-y: auto;
   box-shadow: -10px 0 40px rgba(0,0,0,0.1);
 }
@@ -811,127 +759,113 @@ onMounted(async () => {
 }
 .panel-header {
   padding: 20px 24px;
-  border-bottom: 1px solid var(--el-border-color-light);
+  background: var(--hope-surface);
+  border-bottom: 1px solid var(--hope-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky;
   top: 0;
-  background: white;
   z-index: 1;
 }
 .panel-title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
+  color: var(--hope-text);
 }
 .panel-close {
   width: 32px;
   height: 32px;
   border-radius: 8px;
   border: none;
-  background: var(--el-fill-color-light);
+  background: var(--hope-bg);
   cursor: pointer;
-  font-size: 18px;
+  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--hope-text-muted);
 }
 .panel-close:hover {
-  background: var(--el-border-color-light);
+  background: var(--hope-border);
+  color: var(--hope-text);
 }
 
 .panel-body {
   padding: 20px 24px;
 }
+.panel-user-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--hope-surface);
+  border-radius: var(--hope-radius-lg);
+  border: 1px solid var(--hope-border);
+}
 .panel-user-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 24px;
-  background: var(--el-color-primary-light-9);
+  width: 52px;
+  height: 52px;
+  border-radius: 26px;
+  background: linear-gradient(135deg, #3a57e8, #8C57FF);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.panel-user-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--hope-text);
+}
+.panel-user-plan {
+  font-size: 12px;
+  color: var(--hope-text-muted);
+  margin-top: 2px;
 }
 
 .panel-section {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 .panel-section-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--el-text-color-secondary);
+  color: var(--hope-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 10px;
+  letter-spacing: 0.6px;
+  margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  border-bottom: 1px solid var(--hope-border);
 }
 .panel-row {
   display: flex;
   justify-content: space-between;
-  padding: 6px 0;
+  padding: 8px 0;
   font-size: 13px;
+  border-bottom: 1px solid rgba(26,46,38,0.04);
+}
+.panel-row:last-child {
+  border-bottom: none;
 }
 .panel-row-label {
-  color: var(--el-text-color-secondary);
+  color: var(--hope-text-muted);
 }
 .panel-row-value {
   font-weight: 600;
+  color: var(--hope-text);
 }
 
-/* Billing timeline */
-.billing-timeline {
-  position: relative;
-  padding-left: 20px;
+/* Device list in panel */
+.device-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
-.billing-timeline::before {
-  content: '';
-  position: absolute;
-  left: 6px;
-  top: 4px;
-  bottom: 4px;
-  width: 2px;
-  background: var(--el-border-color-light);
-}
-.timeline-item {
-  position: relative;
-  padding-bottom: 14px;
-}
-.timeline-item::before {
-  content: '';
-  position: absolute;
-  left: -17px;
-  top: 5px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 2px solid var(--el-border-color-base);
-  background: white;
-}
-.timeline-item.paid::before {
-  border-color: var(--el-color-success);
-  background: var(--el-color-success);
-}
-.timeline-item.pending::before {
-  border-color: var(--el-color-warning);
-  background: var(--el-color-warning);
-}
-.timeline-item.failed::before {
-  border-color: var(--el-color-danger);
-  background: var(--el-color-danger);
-}
-.timeline-date {
-  font-size: 11px;
-  color: var(--el-text-color-placeholder);
-}
-.timeline-desc {
-  font-size: 12px;
-  font-weight: 600;
-}
-.timeline-amount {
-  font-size: 12px;
-  color: var(--el-text-color-regular);
+.panel-empty {
+  font-size: 13px;
+  color: var(--hope-text-muted);
 }
 
 /* Panel actions */
@@ -942,11 +876,13 @@ onMounted(async () => {
 }
 
 /* Responsive */
-@media (max-width: 992px) {
-  .subscriptions-page :deep(.el-col) { width: 50% !important; flex: 0 0 50% !important; }
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+  .tier-compare { grid-template-columns: 1fr; }
 }
 @media (max-width: 768px) {
-  .subscriptions-page :deep(.el-col) { width: 100% !important; flex: 0 0 100% !important; }
-  .subscriptions-page .page-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .subscriptions-page .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .side-panel { width: 100%; right: -100%; }
 }
 </style>
