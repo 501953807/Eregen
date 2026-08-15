@@ -2,86 +2,97 @@
   <div class="ota-page">
     <!-- Page Header -->
     <div class="page-header">
-      <h2 class="page-title">OTA 固件管理</h2>
-      <el-button type="primary" @click="showCreateDialog = true" size="default">+ 创建固件版本</el-button>
+      <div class="page-header__left">
+        <h2 class="page-title">OTA 固件管理</h2>
+        <p class="page-subtitle">管理手环和药盒固件版本 · 发布 OTA 推送任务</p>
+      </div>
+      <HopeBtn variant="filled" size="md" @click="showCreateDialog = true">
+        <template #icon>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </template>
+        创建固件版本
+      </HopeBtn>
     </div>
 
-    <!-- KPI Row -->
-    <el-row :gutter="12" style="margin-bottom: 16px;">
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-blue">
-          <div class="kpi-value">{{ firmwares.length }}</div>
-          <div class="kpi-label">固件版本</div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-green">
-          <div class="kpi-value">{{ bracelets }}</div>
-          <div class="kpi-label">手环设备</div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-purple">
-          <div class="kpi-value">{{ pillboxes }}</div>
-          <div class="kpi-label">药盒设备</div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="kpi-card kpi-warning">
-          <div class="kpi-value">{{ activeJobs }}</div>
-          <div class="kpi-label">活跃任务</div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- Firmware Table -->
-    <el-card shadow="never" class="table-card">
-      <template #header><span class="section-title">固件版本列表</span></template>
-      <el-table
-        :data="firmwares"
-        stripe
-        class="ota-table"
-        v-loading="loading"
+    <!-- KPI Cards — HopeStatCard -->
+    <div class="kpi-grid">
+      <HopeStatCard
+        :value="firmwares.length"
+        label="固件版本"
+        icon-color="primary"
       >
-        <el-table-column label="设备类型" width="100">
-          <template #default="{ row }">
-            <span class="device-type-badge" :class="row.type === 'bracelet' ? 'badge-bracelet' : 'badge-pillbox'">
-              {{ row.type === 'bracelet' ? '📱' : '💊' }}
-              <span>{{ deviceTypeLabel(row.type) }}</span>
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column label="档位" width="90">
-          <template #default="{ row }">
-            <span class="tier-tag" :class="tierClass(row.tier)">{{ tierLabel(row.tier) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="版本号" width="130">
-          <template #default="{ row }">
-            <span class="version-tag" :class="{ outdated: !isLatest(row) }">{{ row.version }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="changelog" label="更新说明" min-width="180" show-overflow-tooltip />
-        <el-table-column label="SHA256" width="100">
-          <template #default="{ row }">
-            <span class="mono">{{ row.sha256_hash?.slice(0, 12) + '…' || '—' }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="创建时间" width="170">
-          <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
-        </el-table-column>
-        <el-table-column label="操作" width="240" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" size="small" @click.stop="handlePush(row)">推送升级</el-button>
-            <el-button link type="info" size="small" @click.stop="handleVerify(row)" :loading="verifyingId === row.id">验证签名</el-button>
-            <el-button link type="primary" size="small" @click.stop="handleShowJobs(row.id)" v-if="jobMap[row.id]?.length">查看进度</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+        <template #icon>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 15 21 19 17 23"/><polyline points="7 10 3 10 3 14"/><path d="M21 3l-9 9-9-9"/></svg>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="bracelets"
+        label="手环设备"
+        icon-color="success"
+      >
+        <template #icon>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="pillboxes"
+        label="药盒设备"
+        icon-color="accent"
+      >
+        <template #icon>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 1.5H3.5A2.5 2.5 0 001 4v4a2.5 2.5 0 002.5 2.5h7A2.5 2.5 0 0013 8V4a2.5 2.5 0 00-2.5-2.5z"/><path d="M13.5 1.5h7A2.5 2.5 0 0123 4v4a2.5 2.5 0 01-2.5 2.5h-7A2.5 2.5 0 0111 8V4a2.5 2.5 0 012.5-2.5z"/><line x1="12" y1="8" x2="12" y2="22"/></svg>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="activeJobs"
+        label="活跃任务"
+        icon-color="warning"
+      >
+        <template #icon>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </template>
+      </HopeStatCard>
+    </div>
+
+    <!-- Firmware Table — HopeCard + HopeTable -->
+    <HopeCard title="固件版本列表">
+      <HopeTable
+        :columns="tableColumns"
+        :data="firmwares"
+        :loading="loading"
+        striped
+        :row-key="(row: FirmwareRelease) => row.id"
+      >
+        <template #col-type="{ row }">
+          <HopeBadge :color="row.type === 'bracelet' ? 'success' : 'accent'">
+            {{ row.type === 'bracelet' ? '手环' : '药盒' }}
+          </HopeBadge>
+        </template>
+        <template #col-tier="{ row }">
+          <span class="tier-tag" :class="tierClass(row.tier)">{{ tierLabel(row.tier) }}</span>
+        </template>
+        <template #col-version="{ row }">
+          <span class="version-tag" :class="{ outdated: !isLatest(row) }">{{ row.version }}</span>
+          <span v-if="isLatest(row)" class="latest-dot" title="最新版本">✓</span>
+        </template>
+        <template #col-sha256="{ row }">
+          <span class="mono">{{ row.sha256_hash?.slice(0, 12) + '…' || '—' }}</span>
+        </template>
+        <template #col-created_at="{ row }">
+          {{ formatDate(row.created_at) }}
+        </template>
+        <template #col-actions="{ row }">
+          <div class="action-group">
+            <HopeBtn variant="text" size="sm" @click.stop="handlePush(row)">推送升级</HopeBtn>
+            <HopeBtn variant="text" size="sm" @click.stop="handleVerify(row)" :loading="verifyingId === row.id">验证签名</HopeBtn>
+            <HopeBtn v-if="jobMap[row.id]?.length" variant="text" size="sm" @click.stop="handleShowJobs(row.id)">查看进度</HopeBtn>
+          </div>
+        </template>
+      </HopeTable>
+    </HopeCard>
 
     <!-- Create Firmware Dialog -->
-    <el-dialog v-model="showCreateDialog" title="创建固件版本" width="550px" destroy-on-close>
+    <el-dialog v-model="showCreateDialog" title="创建固件版本" width="550px" class="hope-dialog" destroy-on-close>
       <el-form :model="createForm" label-width="120px">
         <el-form-item label="设备类型" required>
           <el-select v-model="createForm.device_type" style="width: 100%;">
@@ -116,14 +127,17 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleCreateFirmware" :loading="creating">创建</el-button>
+        <HopeBtn variant="plain" @click="showCreateDialog = false">取消</HopeBtn>
+        <HopeBtn variant="filled" @click="handleCreateFirmware" :loading="creating">创建</HopeBtn>
       </template>
     </el-dialog>
 
     <!-- Push OTA Dialog -->
-    <el-dialog v-model="showPushDialog" title="推送OTA升级" width="550px" destroy-on-close>
-      <p style="margin-bottom: 12px;">目标固件: <strong>{{ selectedFirmware?.version }}</strong> ({{ deviceTypeLabel(selectedFirmware?.type ?? '') }}/{{ tierLabel(selectedFirmware?.tier ?? '') }})</p>
+    <el-dialog v-model="showPushDialog" title="推送OTA升级" width="550px" class="hope-dialog" destroy-on-close>
+      <p style="margin-bottom: 16px; color: var(--hope-text-secondary); font-size: 14px;">
+        目标固件: <strong style="color: var(--hope-text);">{{ selectedFirmware?.version }}</strong>
+        ({{ deviceTypeLabel(selectedFirmware?.type ?? '') }}/{{ tierLabel(selectedFirmware?.tier ?? '') }})
+      </p>
       <el-form :model="pushForm" label-width="100px">
         <el-form-item label="目标设备">
           <el-radio-group v-model="pushForm.mode">
@@ -141,8 +155,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showPushDialog = false">取消</el-button>
-        <el-button type="primary" @click="handlePushOTA" :loading="pushing">确认推送</el-button>
+        <HopeBtn variant="plain" @click="showPushDialog = false">取消</HopeBtn>
+        <HopeBtn variant="filled" @click="handlePushOTA" :loading="pushing">确认推送</HopeBtn>
       </template>
     </el-dialog>
 
@@ -150,7 +164,10 @@
     <div class="side-panel-overlay" :class="{ show: showJobPanel }" @click="showJobPanel = false" />
     <div class="side-panel" :class="{ open: showJobPanel }">
       <div class="panel-header">
-        <span class="panel-title">推送进度 — {{ selectedFirmware?.version }}</span>
+        <div>
+          <div class="panel-title">推送进度</div>
+          <div class="panel-subtitle">{{ selectedFirmware?.version }}</div>
+        </div>
         <button class="panel-close" @click="showJobPanel = false">&#10005;</button>
       </div>
       <div class="panel-body" v-if="currentJob">
@@ -164,8 +181,8 @@
           <el-descriptions-item label="已推送">{{ currentJob.progress.succeeded + currentJob.progress.failed }}</el-descriptions-item>
           <el-descriptions-item label="下载中">{{ currentJob.progress.downloading }}</el-descriptions-item>
           <el-descriptions-item label="待推送">{{ currentJob.progress.pending }}</el-descriptions-item>
-          <el-descriptions-item label="成功"><span style="color:#16A34A;font-weight:700;">{{ currentJob.progress.succeeded }}</span></el-descriptions-item>
-          <el-descriptions-item label="失败"><span style="color:#EF4444;font-weight:700;">{{ currentJob.progress.failed }}</span></el-descriptions-item>
+          <el-descriptions-item label="成功"><span style="color:var(--hope-success);font-weight:700;">{{ currentJob.progress.succeeded }}</span></el-descriptions-item>
+          <el-descriptions-item label="失败"><span style="color:var(--hope-danger);font-weight:700;">{{ currentJob.progress.failed }}</span></el-descriptions-item>
         </el-descriptions>
 
         <div class="progress-section">
@@ -178,15 +195,19 @@
             :status="progressStatus"
             :stroke-width="12"
             :show-text="false"
+            class="hope-progress"
           />
         </div>
 
         <div class="job-actions">
-          <el-button size="small" type="danger" plain @click="cancelJob">取消任务</el-button>
-          <el-button size="small" @click="refreshJob">刷新状态</el-button>
+          <HopeBtn variant="error" size="sm" @click="cancelJob">取消任务</HopeBtn>
+          <HopeBtn variant="plain" size="sm" @click="refreshJob">刷新状态</HopeBtn>
         </div>
       </div>
-      <div v-else class="panel-empty">加载中...</div>
+      <div v-else class="panel-empty">
+        <el-icon :size="28" style="color:var(--hope-text-muted);margin-bottom:8px;display:block;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 11-6.219-8.56"/><polyline points="21 3 21 9 15 9"/></svg></el-icon>
+        加载中...
+      </div>
     </div>
   </div>
 </template>
@@ -195,6 +216,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { otaApi, type FirmwareRelease, type OTAJob, type CreateFirmwareRequest } from '@/api/ota'
+import HopeCard from '@/components/hope/HopeCard.vue'
+import HopeBtn from '@/components/hope/HopeBtn.vue'
+import HopeTable from '@/components/hope/HopeTable.vue'
+import HopeStatCard from '@/components/hope/HopeStatCard.vue'
+import HopeBadge from '@/components/hope/HopeBadge.vue'
 
 /* ---------- Data ---------- */
 
@@ -226,6 +252,18 @@ const createForm = ref<Partial<CreateFirmwareRequest>>({
 
 const showPushDialog = ref(false)
 const pushForm = ref({ mode: 'all', deviceIdsStr: '' })
+
+/* ---------- HopeTable columns ---------- */
+
+const tableColumns = [
+  { prop: 'type', label: '设备类型' },
+  { prop: 'tier', label: '档位' },
+  { prop: 'version', label: '版本号' },
+  { prop: 'changelog', label: '更新说明' },
+  { prop: 'sha256_hash', label: 'SHA256' },
+  { prop: 'created_at', label: '创建时间' },
+  { prop: 'actions', label: '操作' },
+]
 
 /* ---------- Computed ---------- */
 
@@ -421,245 +459,262 @@ function formatDate(ts: string): string {
 </script>
 
 <style scoped>
-.ota-page { padding: 0; }
-.ota-page :deep(.el-card) {
-  border-radius: 12px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06) !important;
-  transition: all var(--duration-normal) var(--easing-out);
-}
-.ota-page :deep(.el-card:hover) {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.08) !important;
-  transform: translateY(-1px);
+/* ─── Page layout ─── */
+.ota-page {
+  padding: 0;
 }
 
 .page-header {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  gap: 16px;
 }
-.ota-page :deep(.el-card__header) {
-  background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%);
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  padding: 16px 20px;
-  border-radius: 12px 12px 0 0 !important;
-}
-.ota-page :deep(.el-card__body) {
-  padding: 20px;
-}
+.page-header__left { display: flex; flex-direction: column; gap: 4px; }
 
 .page-title {
   font-size: 22px;
   font-weight: 800;
-  color: var(--el-text-color-primary);
+  color: var(--hope-text);
   margin: 0;
+  letter-spacing: -0.02em;
+}
+.page-subtitle {
+  font-size: 13px;
+  color: var(--hope-text-muted);
+  margin: 0;
+  font-weight: 500;
 }
 
-/* KPI Cards */
-.kpi-card {
-  position: relative;
-  overflow: hidden;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.kpi-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 60%);
-  pointer-events: none;
-}
-.kpi-card:hover {
-  transform: translateY(-3px);
-}
-.kpi-card :deep(.el-card__body) {
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  border-radius: 14px;
-}
-.kpi-value {
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  margin-bottom: 4px;
-}
-.kpi-label {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  margin-top: 6px;
-  font-weight: 600;
-}
-.kpi-blue .kpi-value { color: #5C8D73; }
-.kpi-green .kpi-value { color: #6FAF8F; }
-.kpi-purple .kpi-value { color: #7BAF8C; }
-.kpi-warning .kpi-value { color: #D9A441; }
-
-/* Section title */
-.section-title {
-  font-size: 15px;
-  font-weight: 700;
+/* ─── KPI Grid ─── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-/* Table */
-.table-card :deep(.el-card__header) {
-  padding: 16px 20px;
-}
-.ota-table {
-  width: 100%;
-}
+/* ─── Table section ─── */
+.hope-content-card__body { padding: 0 !important; }
+.hope-content-card__header { padding: 20px 22px 0 !important; }
 
-/* Device type badge */
-.device-type-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.badge-bracelet { background: #DDEBE1; color: #47745C; }
-.badge-pillbox { background: #FCE7F3; color: #D48EC0; }
-
-/* Tier tag */
+/* ─── Tier tags ─── */
 .tier-tag {
   font-size: 11px;
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 6px;
 }
-.tier-pro { background: #DDEBE1; color: #47745C; }
-.tier-plus { background: #E8F4EC; color: #4A8A6A; }
-.tier-basic { background: #F3F4F6; color: #6B7280; }
+.tier-pro  { background: var(--hope-primary-light); color: var(--hope-primary); }
+.tier-plus { background: var(--hope-success-light); color: var(--hope-success); }
+.tier-basic { background: rgba(148,169,162,0.12); color: var(--hope-text-muted); }
 
-/* Version tag */
+/* ─── Version tag ─── */
 .version-tag {
   font-family: 'SF Mono', 'Consolas', monospace;
   font-size: 12px;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 6px;
-  background: #F3F4F6;
+  background: rgba(148,169,162,0.10);
+  color: var(--hope-text-secondary);
 }
 .version-tag.outdated {
-  background: #FFFBEB;
-  color: #D97706;
+  background: var(--hope-warning-light);
+  color: #B8860B;
+}
+.latest-dot {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 11px;
+  color: var(--hope-success);
+  font-weight: 700;
 }
 
 .mono {
   font-family: 'SF Mono', 'Consolas', monospace;
   font-size: 12px;
+  color: var(--hope-text-muted);
 }
 
-/* ========== Job Side Panel ========== */
+/* ─── Action group ─── */
+.action-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+/* ─── Hope progress ─── */
+.hope-progress {
+  :deep(.el-progress-bar__outer) {
+    border-radius: 6px;
+    background: var(--hope-border);
+  }
+  :deep(.el-progress-bar__inner) {
+    border-radius: 6px;
+    background: var(--hope-primary);
+  }
+}
+
+/* ─── Job Side Panel ─── */
 .side-panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.3);
   z-index: 200;
   display: none;
 }
-.side-panel-overlay.show {
-  display: block;
-}
+.side-panel-overlay.show { display: block; }
+
 .side-panel {
   position: fixed;
   top: 0;
-  right: -520px;
+  right: -540px;
   bottom: 0;
-  width: 520px;
-  background: white;
+  width: 540px;
+  background: var(--hope-surface);
   z-index: 201;
-  transition: right 0.3s ease;
+  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-y: auto;
-  box-shadow: -10px 0 40px rgba(0,0,0,0.1);
+  box-shadow: -12px 0 40px rgba(17,38,146,0.10);
 }
-.side-panel.open {
-  right: 0;
-}
+.side-panel.open { right: 0; }
+
 .panel-header {
   padding: 20px 24px;
-  border-bottom: 1px solid var(--el-border-color-light);
+  border-bottom: 1px solid var(--hope-border);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   position: sticky;
   top: 0;
-  background: white;
+  background: var(--hope-surface);
   z-index: 1;
+  gap: 12px;
 }
 .panel-title {
   font-size: 15px;
   font-weight: 700;
+  color: var(--hope-text);
+  margin: 0;
+}
+.panel-subtitle {
+  font-size: 13px;
+  color: var(--hope-text-muted);
+  margin-top: 2px;
+  font-family: 'SF Mono', 'Consolas', monospace;
 }
 .panel-close {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
-  border: none;
-  background: var(--el-fill-color-light);
+  border-radius: var(--hope-radius-md);
+  border: 1px solid var(--hope-border);
+  background: var(--hope-bg);
   cursor: pointer;
-  font-size: 18px;
+  font-size: 16px;
+  color: var(--hope-text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s;
+  transition: all 0.15s;
+  flex-shrink: 0;
 }
 .panel-close:hover {
-  background: var(--el-border-color-light);
+  background: var(--hope-border);
+  color: var(--hope-text);
 }
-.panel-body {
-  padding: 20px 24px;
-}
+
+.panel-body { padding: 20px 24px; }
 .panel-empty {
   padding: 60px 24px;
   text-align: center;
-  color: var(--el-text-color-placeholder);
+  color: var(--hope-text-muted);
+  font-size: 14px;
 }
 
-.job-info {
-  margin-bottom: 16px;
-}
+.job-info { margin-bottom: 16px; }
 .job-id {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  color: var(--hope-text-muted);
 }
 
-.job-desc :deep(.el-descriptions__label) {
-  width: 100px;
-  font-weight: 600;
+.job-desc {
+  :deep(.el-descriptions) {
+    border-radius: var(--hope-radius-md);
+    border: 1px solid var(--hope-border);
+  }
+  :deep(.el-descriptions__label) {
+    width: 90px;
+    font-weight: 600;
+    color: var(--hope-text-secondary);
+    background: var(--hope-surface-light);
+  }
 }
 
-.progress-section {
-  margin: 20px 0;
-}
+.progress-section { margin: 20px 0; }
 .progress-label {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
   font-weight: 600;
   margin-bottom: 8px;
-  color: var(--el-text-color-regular);
+  color: var(--hope-text-secondary);
 }
 .progress-pct {
   font-size: 14px;
-  color: var(--el-color-primary);
+  color: var(--hope-primary);
+  font-weight: 700;
 }
 
 .job-actions {
   display: flex;
   gap: 8px;
-  margin-top: 16px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hope-border);
 }
 
-/* Responsive */
+/* ─── Dialog (hope-dialog class applied via class attr) ─── */
+:deep(.hope-dialog .el-dialog) {
+  border-radius: var(--hope-radius-xl) !important;
+  border: 1px solid var(--hope-border) !important;
+  box-shadow: var(--hope-shadow-lg) !important;
+}
+:deep(.hope-dialog .el-dialog__header) {
+  padding: 20px 24px 16px !important;
+  border-bottom: 1px solid var(--hope-border) !important;
+  margin-right: 0 !important;
+}
+:deep(.hope-dialog .el-dialog__title) {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: var(--hope-text) !important;
+}
+:deep(.hope-dialog .el-dialog__body) { padding: 20px 24px !important; }
+:deep(.hope-dialog .el-dialog__footer) {
+  padding: 16px 24px 20px !important;
+  border-top: 1px solid var(--hope-border) !important;
+}
+:deep(.hope-dialog .el-form-item__label) {
+  font-weight: 600 !important;
+  color: var(--hope-text-secondary) !important;
+}
+:deep(.hope-dialog .el-input__wrapper),
+:deep(.hope-dialog .el-select .el-input__wrapper) {
+  border-radius: var(--hope-radius-md) !important;
+  box-shadow: var(--hope-shadow-sm) !important;
+  border: 1px solid var(--hope-border) !important;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 768px) {
-  .ota-page :deep(.el-table) { font-size: 12px; }
-  .ota-page :deep(.el-table th),
-  .ota-page :deep(.el-table td) { padding: 6px 4px; }
+  .page-header { flex-direction: column; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .side-panel { width: 100%; right: -100%; }
 }
 </style>
