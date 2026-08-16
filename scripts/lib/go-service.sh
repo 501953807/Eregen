@@ -18,13 +18,13 @@ unset _LIB_DIR
 # ---------------------------------------------------------------------------
 GO_SERVICES="api-server|push-service|data-pipeline|admin-api|hospital-api|community-platform|insurance-integration|gateway"
 
-GO_CONFIG="api-server:cloud/api-server:PORT_API_SERVER:8080|\
+GO_CONFIG="api-server:cloud/api-server:PORT_API_SERVER:8180|\
 push-service:cloud/push-service:PORT_PUSH_SERVICE:8085|\
 data-pipeline:cloud/data-pipeline:PORT_DATA_PIPELINE:8087|\
 admin-api:cloud/admin-api:PORT_ADMIN_API:8089|\
 hospital-api:b2b/hospital-api:PORT_HOSPITAL_API:8082|\
-community-platform:b2b/community-platform:PORT_COMMUNITY_PLATFORM:8083|\
-insurance-integration:b2b/insurance-integration:PORT_INSURANCE_INTEGRATION:8084|\
+community-platform:b2b/community-platform:PORT_COMMUNITY_PLATFORM:8183|\
+insurance-integration:b2b/insurance-integration:PORT_INSURANCE_INTEGRATION:8184|\
 gateway:cloud/gateway::0"
 
 # ---------------------------------------------------------------------------

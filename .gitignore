@@ -158,3 +158,8 @@ apps/website/website.log
 dump.rdb
 cloud/config/
 login-snapshot.yml
+
+# UI 截图和原型输出
+apps/ui-prototypes/*/screenshots/*.png
+apps/ui-prototypes/*/screenshots/*.jpg
+apps/ui-prototypes/*/screenshots/*.webp

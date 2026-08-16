@@ -365,16 +365,31 @@ cp scripts/default-ports.env .env
 
 - **所有文档文件**：`docs/` 目录下的设计文档、架构文档、规格说明、方案文档等（`.md`, `.txt`, `.png`, `.jpg` 等）
 - **项目描述文件**：`README.md`、`slogan.md`、`product-overview.md` 等全盘文字描述项目的文件
+- **UI 截图和原型图**：根目录下的 `.png` 文件、`apps/ui-prototypes/screenshots/` 中的截图
 - **工具配置文件**：`.claude/`、`.serena/`、`.codegraph/`、`.playwright-mcp/` 等 AI 工具和本地配置
 - **CI/CD 工作流**：`.github/workflows/`（避免暴露内部工具链信息）
-- **超能力相关**：`docs/superpowers/specs/` 目录下的设计决策（已实施部分）
+- **超能力相关**：`docs/superpowers/specs/`、`docs/superpowers/plans/` 目录下的设计决策
+- **环境变量**：`.env`、`.env.local`、`.env.*.local`（含密钥和端口配置）
+- **构建产物**：`node_modules/`、`dist/`、`public/`、`.vite/`、`__pycache__/`
+- **日志和临时文件**：`*.log`、`*.rdb`、`dump.rdb`、`.hugo_build.lock`、`test-results/`
+- **SQLite 数据库**：`*.db`、`*.sqlite`、`data/` 目录
+- **种子脚本版本**：`scripts/` 下已废弃的 seed 脚本（保留 `seed_final_*.py`，旧版本移入 `scripts/archive/`）
 
 **允许提交的：**
 - 源代码文件（`.go`, `.dart`, `.ts`, `.vue`, `.js`, `.wxml`, `.wxss`, `.c`, `.h` 等）
 - 构建配置文件（`go.mod`, `pubspec.yaml`, `package.json`, `tsconfig.json`, `CMakeLists.txt` 等）
 - `.gitignore`
+- `scripts/archive/` 下的旧版本脚本（作为历史记录保留）
+- `CLAUDE.md`（项目核心规范）
 
 **核心原则：** 我们只使用 GitHub 的代码管理能力做版本迭代，所有涉及项目方案、架构设计、功能描述的文档只保留在本地。这是保证项目不泄密的关键准则。
+
+**提交前自检清单：**
+1. 根目录是否混入了 `.png`/`.jpg`/`.pdf` 截图？
+2. `docs/specs/` 或 `docs/superpowers/` 下的文档是否被提交？
+3. `.env` 文件是否意外被添加？
+4. `node_modules/`、`dist/`、`*.log`、`*.rdb` 等是否在 staged 列表中？
+5. 如有新增文件，先问「这个文件是否应该被提交？」
 
 ## Agent skills
 
