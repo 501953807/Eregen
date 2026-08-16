@@ -1,0 +1,521 @@
+/**
+ * Hope UI × Eregen 品牌风格层
+ * 覆盖 Curative 蓝色调 → Hope UI 蓝紫色调 (#3a57e8 / #6f42c1 / #8C57FF)
+ * 参照: https://templates.iqonic.design/hope-ui/html/dist/dashboard/index-boxed-fancy.html
+ *
+ * 仅改视觉样式，不改动 Hugo 模板结构和功能。
+ */
+
+/* ═══════════════════════════════════════════════════════════
+   HOPE UI DESIGN TOKENS — 覆盖/补充 Curative 令牌
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  /* ── Hope UI Primary Palette ── */
+  --hope-primary:        #3a57e8;
+  --hope-primary-hover:  #314ac5;
+  --hope-primary-active: #2e46ba;
+  --hope-primary-light:  #eef1fb;
+  --hope-primary-lighter:#f5f7fd;
+  --hope-accent:         #8C57FF;
+  --hope-accent-dark:    #7E4EE6;
+  --hope-accent-light:   #A88AFF;
+  --hope-gradient:       linear-gradient(135deg, #3a57e8 0%, #6f42c1 60%, #8C57FF 100%);
+  --hope-gradient-soft:  linear-gradient(135deg, rgba(58,87,232,0.08) 0%, rgba(140,87,255,0.08) 100%);
+
+  /* ── Curative 品牌 → Hope UI 映射 ── */
+  --curative-blue:       var(--hope-primary);
+  --curative-blue-dark:  var(--hope-primary-hover);
+  --curative-blue-light: var(--hope-primary-light);
+  --curative-sky:        rgba(58,87,232,0.12);
+
+  /* ── Backgrounds ── */
+  --hope-bg:             #f4f6fa;
+  --hope-surface:        #ffffff;
+  --hope-surface-light:  #f8f9fc;
+
+  /* ── Text ── */
+  --hope-text:           #1a1a2e;
+  --hope-text-secondary: #5a6275;
+  --hope-text-muted:     #949aab;
+
+  /* ── Borders ── */
+  --hope-border:         #e2e6ef;
+  --hope-border-strong:  #c8ced8;
+
+  /* ── Shadows (Hope UI — 带蓝色调) ── */
+  --hope-shadow-sm:  0 1px 3px rgba(58,87,232,0.08);
+  --hope-shadow-md:  0 4px 12px rgba(58,87,232,0.10);
+  --hope-shadow-lg:  0 8px 24px rgba(58,87,232,0.12);
+  --hope-shadow-xl:  0 16px 48px rgba(17,38,146,0.12);
+  --shadow-blue:     0 4px 16px rgba(58,87,232,0.20);
+  --shadow-blue-lg:  0 8px 32px rgba(58,87,232,0.25);
+
+  /* ── Semantic (keep existing) ── */
+  --hope-success: #1aa053;
+  --hope-success-light: #e6f5ec;
+  --hope-warning: #FAA938;
+  --hope-warning-light: #fef6e4;
+  --hope-error:   #c03221;
+  --hope-error-light: #fdf0ee;
+  --hope-info:    #079aa2;
+  --hope-info-light: #e8f2f8;
+
+  /* ── Radius — Hope UI 更大圆角 ── */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-2xl: 24px;
+  --radius-3xl: 32px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOPE UI — GLOBAL OVERRIDES
+   ═══════════════════════════════════════════════════════════ */
+
+/* Body — Hope UI 浅蓝灰背景 */
+body {
+  background: var(--hope-bg);
+  color: var(--hope-text);
+  font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOPE UI — NAVIGATION (Boxed Fancy 风格：固定顶栏 + 毛玻璃)
+   ═══════════════════════════════════════════════════════════ */
+.nav {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid var(--hope-border) !important;
+  box-shadow: var(--hope-shadow-sm) !important;
+}
+.nav.scrolled {
+  box-shadow: var(--hope-shadow-md) !important;
+}
+
+.nav-logo {
+  background: var(--hope-primary) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+.nav-name span {
+  color: var(--hope-primary) !important;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+  color: var(--hope-primary) !important;
+}
+
+.nav-links a.active::after {
+  background: var(--hope-primary) !important;
+}
+
+.nav-actions .btn-primary {
+  background: var(--hope-primary) !important;
+  border-color: var(--hope-primary) !important;
+  box-shadow: var(--shadow-blue) !important;
+}
+.nav-actions .btn-primary:hover {
+  background: var(--hope-primary-hover) !important;
+  border-color: var(--hope-primary-hover) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: var(--shadow-blue-lg) !important;
+}
+
+.nav-actions .btn-secondary {
+  border-color: var(--hope-border) !important;
+  color: var(--hope-text-secondary) !important;
+}
+.nav-actions .btn-secondary:hover {
+  border-color: var(--hope-primary) !important;
+  color: var(--hope-primary) !important;
+  background: var(--hope-primary-light) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOPE UI — BUTTONS
+   ═══════════════════════════════════════════════════════════ */
+.btn-primary {
+  background: var(--hope-primary) !important;
+  border-color: var(--hope-primary) !important;
+  box-shadow: var(--shadow-blue) !important;
+  border-radius: var(--radius-pill) !important;
+}
+.btn-primary:hover {
+  background: var(--hope-primary-hover) !important;
+  border-color: var(--hope-primary-hover) !important;
+  box-shadow: var(--shadow-blue-lg) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-secondary {
+  border-color: var(--hope-border) !important;
+  color: var(--hope-text-secondary) !important;
+  border-radius: var(--radius-pill) !important;
+}
+.btn-secondary:hover {
+  border-color: var(--hope-primary) !important;
+  color: var(--hope-primary) !important;
+  background: var(--hope-primary-light) !important;
+}
+
+.btn-white:hover {
+  background: var(--hope-primary-light) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOPE UI — HERO SECTION (Boxed Fancy: 渐变背景)
+   ═══════════════════════════════════════════════════════════ */
+.hero {
+  background: var(--hope-gradient) !important;
+  min-height: 90vh;
+}
+.hero::before,
+.hero::after {
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%) !important;
+}
+.hero::before {
+  top: -20%; right: -10%;
+  width: 600px; height: 600px;
+}
+.hero::after {
+  bottom: -10%; left: -5%;
+  width: 400px; height: 400px;
+}
+
+.hero-content {
+  color: white !important;
+}
+.hero-title {
+  color: white !important;
+  font-family: 'Inter', 'Noto Sans SC', sans-serif !important;
+  font-weight: 800 !important;
+}
+.hero-title .highlight {
+  color: rgba(255,255,255,0.9) !important;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.hero-subtitle {
+  color: rgba(255,255,255,0.85) !important;
+}
+.hero-badge {
+  border-color: rgba(255,255,255,0.3) !important;
+  background: rgba(255,255,255,0.15) !important;
+  color: rgba(255,255,255,0.9) !important;
+  backdrop-filter: blur(8px);
+}
+.hero-badge-dot {
+  background: rgba(255,255,255,0.9) !important;
+}
+.hero-trust {
+  color: rgba(255,255,255,0.7) !important;
+}
+.trust-item {
+  color: rgba(255,255,255,0.7) !important;
+}
+
+/* Hero device mockup — Hope UI 风格 */
+.hero-device {
+  background: white !important;
+  border: 1px solid var(--hope-border) !important;
+  box-shadow: var(--hope-shadow-xl) !important;
+  border-radius: var(--radius-2xl) !important;
+}
+
+.floating-card {
+  background: white !important;
+  border: 1px solid var(--hope-border) !important;
+  box-shadow: var(--hope-shadow-lg) !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOPE UI — SECTIONS
+   ═══════════════════════════════════════════════════════════ */
+.section {
+  padding: 80px 0;
+}
+.section-alt {
+  background: var(--hope-surface-light) !important;
+}
+
+.section-tag {
+  background: var(--hope-primary-light) !important;
+  color: var(--hope-primary) !important;
+  border-radius: var(--radius-pill) !important;
+}
+
+.section-title {
+  color: var(--hope-text) !important;
+  font-family: 'Inter', 'Noto Sans SC', sans-serif !important;
+  font-weight: 800 !important;
+}
+
+.section-desc {
+  color: var(--hope-text-secondary) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOPE UI — PRODUCT CARDS (Boxed Fancy 风格：顶部彩色条)
+   ═══════════════════════════════════════════════════════════ */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.product-card {
+  background: var(--hope-surface) !important;
+  border: 1.5px solid var(--hope-border) !important;
+  border-radius: var(--radius-xl) !important;
+  padding: 28px !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+.product-card::before {
+  opacity: 1 !important;
+  background: var(--hope-primary) !important;
+}
+.product-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: var(--hope-shadow-xl) !important;
+  border-color: var(--hope-primary) !important;
+}
+
+.product-card.featured {
+  border-color: var(--hope-primary) !important;
+  box-shadow: 0 0 0 1px var(--hope-primary), var(--hope-shadow-md) !important;
+}
+.product-card.featured::before {
+  height: 4px !important;
+  background: var(--hope-gradient) !important;
+  opacity: 1 !important;
+}
+
+.product-tier {
+  color: var(--hope-text-muted) !important;
+}
+
+.product-name {
+  color: var(--hope-text) !important;
+  font-family: 'Inter', 'Noto Sans SC', sans-serif !important;
+  font-weight: 700 !important;
+}
+
+.product-price {
+  color: var(--hope-primary) !important;
+}
+
+.product-features li::before {
+  background: var(--hope-primary) !important;
+}
+
+.product-btn.primary {
+  background: var(--hope-primary) !important;
+  border-color: var(--hope-primary) !important;
+}
+.product-btn.primary:hover {
+  background: var(--hope-primary-hover) !important;
+  border-color: var(--hope-primary-hover) !important;
+  box-shadow: var(--shadow-blue) !important;
+}
+
+.product-btn.outline {
+  border-color: var(--hope-primary) !important;
+  color: var(--hope-primary) !important;
+}
+.product-btn.outline:hover {
+  background: var(--hope-primary-light) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOPE UI — FEATURE CARDS
+   ═══════════════════════════════════════════════════════════ */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.feature-card {
+  background: var(--hope-surface) !important;
+  border: 1px solid var(--hope-border) !important;
+  border-radius: var(--radius-xl) !important;
+  padding: 32px !important;
+  transition: all 0.25s ease !important;
+}
+.feature-card:hover {
+  border-color: var(--hope-border-strong) !important;
+  box-shadow: var(--hope-shadow-lg) !important;
+  transform: translateY(-2px) !important;
+}
+
+.feature-icon {
+  background: var(--hope-primary-light) !important;
+  color: var(--hope-primary) !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+.feature-title {
+  color: var(--hope-text) !important;
+  font-family: 'Inter', 'Noto Sans SC', sans-serif !important;
+  font-weight: 700 !important;
+}
+
+.feature-desc {
+  color: var(--hope-text-secondary) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOPE UI — ECOSYSTEM
+   ═══════════════════════════════════════════════════════════ */
+.eco-node {
+  background: var(--hope-surface) !important;
+  border: 1px solid var(--hope-border) !important;
+  border-radius: var(--radius-xl) !important;
+  transition: all 0.2s ease !important;
+}
+.eco-node:hover {
+  border-color: var(--hope-primary) !important;
+  box-shadow: var(--hope-shadow-md) !important;
+}
+.eco-node.cloud {
+  border-color: var(--hope-primary) !important;
+  background: var(--hope-gradient-soft) !important;
+}
+.eco-icon { font-size: 32px; margin-bottom: 8px; }
+.eco-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hope-text) !important;
+}
+.eco-arrow {
+  font-size: 20px;
+  color: var(--hope-border-strong) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOPE UI — TESTIMONIALS
+   ═══════════════════════════════════════════════════════════ */
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.testimonial-card {
+  background: var(--hope-surface) !important;
+  border: 1px solid var(--hope-border) !important;
+  border-radius: var(--radius-xl) !important;
+  padding: 28px !important;
+  transition: all 0.25s ease !important;
+}
+.testimonial-card:hover {
+  box-shadow: var(--hope-shadow-lg) !important;
+  transform: translateY(-2px) !important;
+}
+
+.testimonial-stars { color: var(--hope-warning) !important; }
+
+.testimonial-text {
+  color: var(--hope-text-secondary) !important;
+}
+
+.testimonial-avatar {
+  background: var(--hope-primary-light) !important;
+  color: var(--hope-primary) !important;
+}
+
+.testimonial-name { color: var(--hope-text) !important; }
+.testimonial-role { color: var(--hope-text-muted) !important; }
+
+/* ═══════════════════════════════════════════════════════════
+   HOPE UI — CTA SECTION
+   ═══════════════════════════════════════════════════════════ */
+.cta-section {
+  background: var(--hope-gradient) !important;
+  color: white !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+.cta-section::before,
+.cta-section::after {
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%) !important;
+}
+.cta-title {
+  color: white !important;
+  font-family: 'Inter', 'Noto Sans SC', sans-serif !important;
+  font-weight: 800 !important;
+}
+.cta-desc {
+  color: rgba(255,255,255,0.85) !important;
+}
+.cta-trust {
+  color: rgba(255,255,255,0.7) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOPE UI — FOOTER
+   ═══════════════════════════════════════════════════════════ */
+footer {
+  background: #1a1a2e !important;
+}
+.footer-brand-name { color: white !important; }
+.footer-brand-desc { color: rgba(255,255,255,0.5) !important; }
+.footer-col h4 { color: white !important; }
+.footer-col a { color: rgba(255,255,255,0.5) !important; }
+.footer-col a:hover { color: white !important; }
+.footer-bottom {
+  border-top-color: rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.35) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOPE UI — PAGE HERO (内部页面)
+   ═══════════════════════════════════════════════════════════ */
+.page-hero {
+  background: var(--hope-gradient) !important;
+  border-bottom: none !important;
+}
+.page-hero .breadcrumb a {
+  color: rgba(255,255,255,0.6) !important;
+}
+.page-hero .breadcrumb a:hover {
+  color: white !important;
+}
+.page-hero .breadcrumb-sep {
+  color: rgba(255,255,255,0.4) !important;
+}
+.page-hero .breadcrumb .active {
+  color: rgba(255,255,255,0.8) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOPE UI — RESPONSIVE
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .products-grid { grid-template-columns: repeat(2, 1fr); }
+  .features-grid,
+  .testimonials-grid { grid-template-columns: repeat(2, 1fr); }
+  .footer-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .hero-inner { grid-template-columns: 1fr !important; gap: 40px; }
+  .hero-visual { display: none; }
+  .hero-title { font-size: 32px !important; }
+  .features-grid,
+  .testimonials-grid { grid-template-columns: 1fr !important; }
+  .products-grid { grid-template-columns: 1fr !important; }
+  .footer-grid { grid-template-columns: 1fr !important; }
+  .nav-links { display: none; }
+  .section { padding: 64px 0; }
+  .cta-section { padding: 64px 24px; }
+}
+@media print {
+  body { font-family: var(--font-serif); }
+  .nav, .cta-section, .hero { display: none; }
+}

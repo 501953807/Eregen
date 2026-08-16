@@ -20,7 +20,9 @@
     <el-icon v-if="!loading && icon && !$slots.icon" :size="iconSize">
       <component :is="icon" />
     </el-icon>
-    <span v-if="$slots.default || label" class="hope-btn__label">{{ label || $slots.default?.() }}</span>
+    <span v-if="$slots.default || label" class="hope-btn__label">
+      <slot />
+    </span>
   </button>
 </template>
 
@@ -78,7 +80,7 @@ defineEmits<{ click: [e: MouseEvent] }>()
 }
 
 .hope-btn:hover::after { opacity: 1; }
-.hope-btn:focus-visible { box-shadow: 0 0 0 3px rgba(74,124,95,0.25); }
+.hope-btn:focus-visible { box-shadow: 0 0 0 3px rgba(58,87,232,0.25); }
 .hope-btn:active { transform: scale(0.97); }
 .hope-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
@@ -111,7 +113,7 @@ defineEmits<{ click: [e: MouseEvent] }>()
   border-color: transparent;
   padding: 6px 12px;
 }
-.hope-btn--text:hover:not(:disabled) { background: rgba(74,124,95,0.06); }
+.hope-btn--text:hover:not(:disabled) { background: rgba(58,87,232,0.06); }
 
 /* Variant: ghost */
 .hope-btn--ghost {
@@ -130,14 +132,14 @@ defineEmits<{ click: [e: MouseEvent] }>()
 .hope-btn--plain:hover:not(:disabled) { background: var(--hope-border); }
 
 /* Semantic variants */
-.hope-btn--success { background: var(--hope-success); color: #fff; border-color: transparent; box-shadow: 0 2px 8px rgba(86,202,0,0.2); }
-.hope-btn--success:hover:not(:disabled) { background: #4DB600; transform: translateY(-1px); }
+.hope-btn--success { background: var(--hope-success); color: #fff; border-color: transparent; box-shadow: 0 2px 8px rgba(26,160,83,0.2); }
+.hope-btn--success:hover:not(:disabled) { background: #158a45; transform: translateY(-1px); }
 .hope-btn--warning { background: var(--hope-warning); color: #000; border-color: transparent; }
-.hope-btn--warning:hover:not(:disabled) { background: #B8860B; transform: translateY(-1px); }
-.hope-btn--error   { background: var(--hope-error); color: #fff; border-color: transparent; box-shadow: 0 2px 8px rgba(192,74,66,0.2); }
-.hope-btn--error:hover:not(:disabled) { background: #9B3A33; transform: translateY(-1px); }
+.hope-btn--warning:hover:not(:disabled) { background: #e09430; transform: translateY(-1px); }
+.hope-btn--error   { background: var(--hope-danger); color: #fff; border-color: transparent; box-shadow: 0 2px 8px rgba(192,50,33,0.2); }
+.hope-btn--error:hover:not(:disabled) { background: #a82a1d; transform: translateY(-1px); }
 .hope-btn--info    { background: var(--hope-info); color: #fff; border-color: transparent; }
-.hope-btn--info:hover:not(:disabled) { background: #3D7A9E; transform: translateY(-1px); }
+.hope-btn--info:hover:not(:disabled) { background: #068a90; transform: translateY(-1px); }
 .hope-btn--accent  { background: var(--hope-accent); color: #fff; border-color: transparent; }
 .hope-btn--accent:hover:not(:disabled) { background: var(--hope-accent-dark); transform: translateY(-1px); }
 

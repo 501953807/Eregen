@@ -1,54 +1,98 @@
 <template>
-  <div class="hope-tabs" :class="{ 'hope-tabs--pills': pillStyle }">
-    <div class="hope-tabs__list" ref="listRef">
-      <div v-if="animated" class="hope-tabs__indicator" ref="indicatorRef"></div>
+  <div class="hope-tabs">
+    <div class="hope-tabs__nav" role="tablist">
       <button
-        v-for="(tab, i) in tabs"
+        v-for="tab in tabs"
         :key="tab.value"
-        class="hope-tab"
-        :class="{ active: modelValue === tab.value }"
-        :disabled="tab.disabled"
-        @click="!tab.disabled && selectTab(tab.value)"
+        role="tab"
+        :aria-selected="modelValue === tab.value"
+        :class="['hope-tabs__tab', { 'active': modelValue === tab.value }]"
+        @click="$emit('update:modelValue', tab.value)"
       >
+        <span v-if="tab.icon" class="hope-tabs__tab-icon">
+          <slot :name="`icon-${tab.value}`" />
+        </span>
         {{ tab.label }}
-        <span v-if="tab.badge" class="hope-tab__badge">{{ tab.badge }}</span>
+        <span v-if="tab.badge" class="hope-tabs__badge">{{ tab.badge }}</span>
       </button>
+    </div>
+    <div class="hope-tabs__content" role="tabpanel">
+      <slot :name="`content-${modelValue}`" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
-
-interface TabItem {
-  label: string
-  value: string | number
-  badge?: number
-  disabled?: boolean
-}
+import { computed } from 'vue'
 
 const props = defineProps<{
   modelValue: string | number
-  tabs: TabItem[]
-  animated?: boolean
-  pillStyle?: boolean
+  tabs: Array<{ value: string | number; label: string; badge?: string | number; icon?: string }>
 }>()
 
-const emit = defineEmits<{ 'update:modelValue': [v: string | number] }>()
-const listRef = ref<HTMLElement | null>(null)
-const indicatorRef = ref<HTMLElement | null>(null)
-
-function selectTab(value: string | number) {
-  emit('update:modelValue', value)
-  if (props.animated && listRef.value && indicatorRef.value) {
-    const activeEl = listRef.value.querySelector('.hope-tab.active') as HTMLElement
-    if (activeEl) {
-      indicatorRef.value.style.left = activeEl.offsetLeft + 'px'
-      indicatorRef.value.style.width = activeEl.offsetWidth + 'px'
-    }
-  }
-}
-
-onMounted(() => selectTab(props.modelValue))
-watch(() => props.modelValue, () => selectTab(props.modelValue))
+defineEmits<{ 'update:modelValue': [value: string | number] }>()
 </script>
+
+<style scoped>
+.hope-tabs {
+  width: 100%;
+}
+.hope-tabs__nav {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--hope-border);
+  margin-bottom: 20px;
+}
+.hope-tabs__tab {
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--hope-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  transition: color 0.2s ease;
+  font-family: inherit;
+}
+.hope-tabs__tab:hover {
+  color: var(--hope-primary);
+}
+.hope-tabs__tab.active {
+  color: var(--hope-primary);
+  font-weight: 600;
+}
+.hope-tabs__tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--hope-primary);
+  border-radius: 2px 2px 0 0;
+}
+.hope-tabs__tab-icon {
+  width: 16px;
+  height: 16px;
+}
+.hope-tabs__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--hope-danger);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+}
+.hope-tabs__content {
+  padding: 4px 0;
+}
+</style>

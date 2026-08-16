@@ -11,11 +11,11 @@ import (
 )
 
 type AlertHandler struct {
-	store store.Store
+	store store.Database
 	log   *zap.Logger
 }
 
-func NewAlertHandler(store store.Store, log *zap.Logger) *AlertHandler {
+func NewAlertHandler(store store.Database, log *zap.Logger) *AlertHandler {
 	return &AlertHandler{store: store, log: log}
 }
 

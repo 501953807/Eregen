@@ -15,3 +15,31 @@ defineProps<{
   crumbs: Array<{ text: string; href?: string; click?: () => void }>
 }>()
 </script>
+
+<style scoped>
+.hope-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--hope-text-muted);
+  padding: 8px 0;
+}
+.hope-breadcrumb-sep {
+  color: var(--hope-text-muted);
+  opacity: 0.5;
+  margin: 0 2px;
+}
+.hope-breadcrumb-item a {
+  color: var(--hope-text-secondary);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.hope-breadcrumb-item a:hover {
+  color: var(--hope-primary);
+}
+.hope-breadcrumb-item.active {
+  color: var(--hope-text);
+  font-weight: 500;
+}
+</style>

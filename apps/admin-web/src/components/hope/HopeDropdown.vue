@@ -45,3 +45,47 @@ function handleClickOutside(e: MouseEvent) {
   }
 }
 </script>
+
+<style scoped>
+.hope-dropdown {
+  position: relative;
+  display: inline-block;
+}
+.hope-dropdown.open .hope-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.hope-dropdown-trigger {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+.hope-dropdown-menu {
+  position: absolute;
+  z-index: 50;
+  min-width: 180px;
+  background: var(--hope-surface);
+  border: 1px solid var(--hope-border);
+  border-radius: var(--hope-radius-md);
+  box-shadow: var(--hope-shadow-lg);
+  padding: 6px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: all 0.15s ease;
+}
+.hope-dropdown--up .hope-dropdown-menu {
+  bottom: 100%;
+  top: auto;
+  margin-bottom: 6px;
+  transform: translateY(4px);
+}
+.hope-dropdown.open.hope-dropdown--up .hope-dropdown-menu {
+  transform: translateY(0);
+}
+.hope-dropdown-menu > * {
+  display: block;
+  width: 100%;
+}
+</style>

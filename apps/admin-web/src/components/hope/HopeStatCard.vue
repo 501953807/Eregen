@@ -1,11 +1,16 @@
 <template>
-  <div class="hope-stat-card" :style="`--hope-primary-gradient: ${gradient || 'linear-gradient(135deg, #3a57e8, #6f42c1)'}`">
-    <div class="hope-stat-card__icon" :class="`hope-stat-card__icon--${iconColor}`">
-      <slot name="icon" />
+  <div class="hope-stat-card" :style="{ '--hope-stat-gradient': gradient || 'linear-gradient(135deg, #3a57e8, #6f42c1)' }">
+    <div class="hope-stat-card__icon-wrap" :class="`hope-stat-card__icon-wrap--${iconColor}`">
+      <div class="hope-stat-card__icon">
+        <slot name="icon" />
+      </div>
     </div>
-    <div class="hope-stat-card__value">{{ value }}</div>
-    <div class="hope-stat-card__label">{{ label }}</div>
-    <slot name="trend" />
+    <div class="hope-stat-card__content">
+      <div class="hope-stat-card__value">{{ value }}</div>
+      <div class="hope-stat-card__label">{{ label }}</div>
+      <slot name="trend" />
+    </div>
+    <div class="hope-stat-card__bg-decoration"></div>
   </div>
 </template>
 
@@ -26,7 +31,7 @@ withDefaults(defineProps<{
   border-radius: var(--hope-radius-lg);
   border: 1px solid var(--hope-border);
   padding: 22px;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
   position: relative;
   overflow: hidden;
 }
@@ -35,29 +40,40 @@ withDefaults(defineProps<{
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 3px;
-  background: var(--hope-primary-gradient);
+  background: var(--hope-stat-gradient);
   border-radius: var(--hope-radius-lg) var(--hope-radius-lg) 0 0;
-  opacity: 0;
-  transition: opacity 0.2s;
+  opacity: 0.8;
 }
 .hope-stat-card:hover {
   box-shadow: var(--hope-shadow-md);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
 }
-.hope-stat-card:hover::before { opacity: 1; }
-.hope-stat-card__icon {
-  width: 52px; height: 52px;
+.hope-stat-card__icon-wrap {
+  width: 52px;
+  height: 52px;
   border-radius: 14px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
 }
-.hope-stat-card__icon--primary   { background: rgba(58,87,232,0.12); color: #3a57e8; }
-.hope-stat-card__icon--success  { background: rgba(26,160,83,0.12); color: #1aa053; }
-.hope-stat-card__icon--warning  { background: rgba(250,169,56,0.12); color: #FAA938; }
-.hope-stat-card__icon--error    { background: rgba(192,50,33,0.12); color: #c03221; }
-.hope-stat-card__icon--info     { background: rgba(7,154,162,0.12); color: #079aa2; }
-.hope-stat-card__icon--accent   { background: rgba(140,87,255,0.12); color: #8C57FF; }
+.hope-stat-card__icon-wrap--primary   { background: rgba(58,87,232,0.12); color: #3a57e8; }
+.hope-stat-card__icon-wrap--success  { background: rgba(26,160,83,0.12); color: #1aa053; }
+.hope-stat-card__icon-wrap--warning  { background: rgba(250,169,56,0.12); color: #FAA938; }
+.hope-stat-card__icon-wrap--error    { background: rgba(192,50,33,0.12); color: #c03221; }
+.hope-stat-card__icon-wrap--info     { background: rgba(7,154,162,0.12); color: #079aa2; }
+.hope-stat-card__icon-wrap--accent   { background: rgba(140,87,255,0.12); color: #8C57FF; }
+.hope-stat-card__icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+.hope-stat-card__content {
+  position: relative;
+  z-index: 1;
+}
 .hope-stat-card__value {
   font-size: 30px;
   font-weight: 800;
@@ -84,4 +100,15 @@ withDefaults(defineProps<{
 .hope-stat-card__trend-up   { background: var(--hope-success-light); color: var(--hope-success); }
 .hope-stat-card__trend-down { background: var(--hope-danger-light); color: var(--hope-danger); }
 .hope-stat-card__trend-neutral { background: rgba(148,169,162,0.12); color: #6b7280; }
+.hope-stat-card__bg-decoration {
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: var(--hope-stat-gradient);
+  opacity: 0.05;
+  z-index: 0;
+}
 </style>

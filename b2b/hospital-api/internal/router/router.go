@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func Register(r *gin.Engine, st store.Store, log *zap.Logger) {
+func Register(r *gin.Engine, st store.Database, log *zap.Logger) {
 	instH := handler.NewInstitutionHandler(st, log)
 	healthH := handler.NewHealthDataHandler(st, log)
 	linkH := handler.NewLinkHandler(st, log)

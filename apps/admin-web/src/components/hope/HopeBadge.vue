@@ -26,12 +26,13 @@ withDefaults(defineProps<{
   gap: 6px;
   padding: 3px 10px;
   border-radius: var(--hope-radius-pill);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   white-space: nowrap;
   line-height: 1.5;
+  transition: all 0.2s ease;
 }
-.hope-badge--dot { padding: 0; width: 8px; height: 8px; border-radius: 50%; }
+.hope-badge--dot { padding: 0; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .hope-badge--primary   { background: rgba(58,87,232,0.12); color: var(--hope-primary); }
 .hope-badge--success   { background: rgba(26,160,83,0.12); color: #1aa053; }
 .hope-badge--warning   { background: rgba(250,169,56,0.12); color: var(--hope-warning); }

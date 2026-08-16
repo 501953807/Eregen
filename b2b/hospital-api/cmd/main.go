@@ -29,7 +29,7 @@ func main() {
 		sqlitePath = "./data/eregen.db"
 	}
 
-	var st store.Store
+	var st store.Database
 	var closer func() error
 	switch dbType {
 	case "postgres":

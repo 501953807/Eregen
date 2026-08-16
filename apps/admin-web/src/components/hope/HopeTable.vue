@@ -88,19 +88,20 @@ function sort(prop: string) {
   border-radius: var(--hope-radius-lg);
   border: 1px solid var(--hope-border);
   background: var(--hope-surface);
+  box-shadow: var(--hope-shadow-card);
 }
 .hope-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.hope-table thead { background: var(--hope-surface-light); border-bottom: 1px solid var(--hope-border); }
+.hope-table thead { background: var(--hope-surface-light); border-bottom: 2px solid var(--hope-border); }
 .hope-table th {
-  padding: 14px 18px; text-align: left; font-size: 13px; font-weight: 600;
-  color: #616161; text-transform: uppercase; letter-spacing: 0.04em;
+  padding: 14px 18px; text-align: left; font-size: 12px; font-weight: 600;
+  color: var(--hope-text-muted); text-transform: uppercase; letter-spacing: 0.05em;
   white-space: nowrap; position: relative; cursor: pointer; user-select: none;
 }
 .hope-table th:hover { color: var(--hope-primary); }
 .hope-table th .sort-icon { margin-left: 4px; opacity: 0.4; }
 .hope-table th.sort-asc .sort-icon,
 .hope-table th.sort-desc .sort-icon { opacity: 1; color: var(--hope-primary); }
-.hope-table td { padding: 14px 18px; border-bottom: 1px solid rgba(26,46,38,0.06); color: var(--hope-text); vertical-align: middle; }
+.hope-table td { padding: 14px 18px; border-bottom: 1px solid var(--hope-border); color: var(--hope-text); vertical-align: middle; }
 .hope-table tbody tr { transition: background 0.12s; }
 .hope-table tbody tr:hover { background: rgba(58,87,232,0.04); }
 .hope-table tbody tr:last-child td { border-bottom: none; }

@@ -19,7 +19,7 @@ const (
 )
 
 // APIKeyAuth validates the X-API-Key header against stored hashes.
-func APIKeyAuth(s store.Store, log *zap.Logger) gin.HandlerFunc {
+func APIKeyAuth(s store.Database, log *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		rawKey := c.GetHeader("X-API-Key")
 		if rawKey == "" {

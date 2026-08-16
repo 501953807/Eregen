@@ -11,10 +11,6 @@
     </div>
 
     <div class="topbar-right">
-      <button class="topbar-btn go-pro-btn">
-        Go Pro
-      </button>
-
       <button class="topbar-btn" title="Notifications">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -152,23 +148,6 @@ function handleCommand(command: string) {
   background: var(--hope-primary-lighter);
   color: var(--hope-primary);
   border-color: var(--hope-primary-light);
-}
-
-.go-pro-btn {
-  width: auto;
-  padding: 0 16px;
-  background: var(--hope-primary-gradient);
-  color: white;
-  border: none;
-  font-weight: 600;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.go-pro-btn:hover {
-  background: var(--hope-primary-gradient-hover);
-  color: white;
 }
 
 .badge {

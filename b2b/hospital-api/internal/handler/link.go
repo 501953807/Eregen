@@ -11,11 +11,11 @@ import (
 )
 
 type LinkHandler struct {
-	store store.Store
+	store store.Database
 	log   *zap.Logger
 }
 
-func NewLinkHandler(store store.Store, log *zap.Logger) *LinkHandler {
+func NewLinkHandler(store store.Database, log *zap.Logger) *LinkHandler {
 	return &LinkHandler{store: store, log: log}
 }
 

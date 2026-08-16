@@ -13,6 +13,7 @@ type Database interface {
 	DiagnosisStore
 	MedicationStore
 	PatientLinkStore
+	ElderlyLinkStore
 }
 
 // InstitutionStore handles institution and API key operations.

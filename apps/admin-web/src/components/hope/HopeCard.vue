@@ -1,5 +1,5 @@
 <template>
-  <div class="hope-content-card">
+  <div class="hope-content-card" :class="{ 'hope-content-card--elevated': elevated }">
     <div v-if="$slots.header || title" class="hope-content-card__header">
       <div>
         <div v-if="title" class="hope-content-card__title">{{ title }}</div>
@@ -20,6 +20,7 @@
 defineProps<{
   title?: string
   subtitle?: string
+  elevated?: boolean
 }>()
 </script>
 
@@ -30,24 +31,28 @@ defineProps<{
   border: 1px solid var(--hope-border);
   box-shadow: var(--hope-shadow-card);
   overflow: hidden;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 .hope-content-card:hover {
   box-shadow: var(--hope-shadow-card-hover);
   transform: translateY(-2px);
 }
+.hope-content-card--elevated {
+  box-shadow: var(--hope-shadow-lg);
+}
 .hope-content-card__header {
   padding: 20px 22px 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 }
 .hope-content-card__title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--hope-text);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 .hope-content-card__subtitle {
   font-size: 13px;

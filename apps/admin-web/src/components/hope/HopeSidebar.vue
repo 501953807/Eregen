@@ -2,9 +2,11 @@
   <aside class="hope-sidebar" :class="{ 'collapsed': collapsed }">
     <!-- Logo -->
     <div class="sidebar-logo">
-      <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-      </svg>
+      <div class="logo-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
       <span class="logo-text">Eregen</span>
     </div>
 
@@ -43,7 +45,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -110,11 +111,22 @@ const menuItems = [
   border-bottom: 1px solid var(--hope-border);
 }
 
-.logo-icon {
-  width: 28px;
-  height: 28px;
-  color: var(--hope-primary);
+.logo-icon-wrap {
+  width: 32px;
+  height: 32px;
+  background: var(--hope-primary-gradient);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(58,87,232,0.25);
+}
+
+.logo-icon-wrap svg {
+  width: 18px;
+  height: 18px;
 }
 
 .logo-text {
@@ -149,14 +161,15 @@ const menuItems = [
 .nav-link {
   display: flex;
   align-items: center;
-  padding: 0.5rem 1.125rem;
+  padding: 0.625rem 1rem;
   margin: 0.125rem 0.5rem;
-  border-radius: 0.25rem;
+  border-radius: var(--hope-radius-md);
   color: var(--hope-text-secondary);
   text-decoration: none;
   transition: background-color 0.2s ease, color 0.2s ease;
   white-space: nowrap;
   overflow: hidden;
+  font-weight: 500;
 }
 
 .nav-link:hover {
@@ -165,21 +178,20 @@ const menuItems = [
 }
 
 .nav-link.active {
-  background: var(--hope-primary);
+  background: var(--hope-primary-gradient);
   color: var(--hope-text-inverse);
   box-shadow: var(--hope-shadow-active);
 }
 
 .nav-icon {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
 }
 
 .nav-text {
   margin-left: 0.75rem;
   font-size: 0.875rem;
-  font-weight: 500;
   transition: opacity 0.4s ease, transform 0.4s ease;
 }
 

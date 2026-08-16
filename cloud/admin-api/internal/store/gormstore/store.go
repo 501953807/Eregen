@@ -49,6 +49,27 @@ func NewFromDSN(dbType, dsn string) (*Store, error) {
 	return New(db), nil
 }
 
+func nullableString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func nullableStringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func ptrString(s *string) *string {
+	if s == nil {
+		return nil
+	}
+	return s
+}
+
 func (s *Store) AutoMigrate() error {
 	return s.db.AutoMigrate(
 		&models.User{}, &models.ElderlyProfile{}, &models.Device{},
@@ -1548,7 +1569,7 @@ func (s *Store) CreateCommunityElder(ctx context.Context, e *model.CommunityElde
 	}
 	e.CreatedAt = time.Now()
 	e.UpdatedAt = time.Now()
-	rec := &models.CommunityElder{BaseModel: models.BaseModel{ID: e.ID, CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt}, Name: e.Name, IDCard: e.IDCard, Gender: e.Gender, Age: e.Age, Address: e.Address, EmergencyContact: e.EmergencyContact, BankAccount: e.BankAccount, HospitalID: e.HospitalID, Status: e.Status, DeactivatedAt: e.DeactivatedAt, DeactivatedReason: e.DeactivatedReason}
+	rec := &models.CommunityElder{BaseModel: models.BaseModel{ID: e.ID, CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt}, Name: e.Name, IDCard: e.IDCard, Gender: e.Gender, Age: e.Age, Address: e.Address, EmergencyContact: e.EmergencyContact, BankAccount: func(s string) string { if e.BankAccount != nil { return *e.BankAccount }; return s }(""), HospitalID: e.HospitalID, Status: e.Status, DeactivatedAt: e.DeactivatedAt, DeactivatedReason: func(s string) string { if e.DeactivatedReason != nil { return *e.DeactivatedReason }; return s }("")}
 	return s.db.WithContext(ctx).Create(rec).Error
 }
 
@@ -1557,7 +1578,7 @@ func (s *Store) GetCommunityElder(ctx context.Context, id string) (*model.Commun
 	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&rec).Error; err != nil {
 		return nil, err
 	}
-	return &model.CommunityElder{ID: rec.ID, Name: rec.Name, IDCard: rec.IDCard, Gender: rec.Gender, Age: rec.Age, Address: rec.Address, EmergencyContact: rec.EmergencyContact, BankAccount: rec.BankAccount, HospitalID: rec.HospitalID, Status: rec.Status, CreatedAt: rec.CreatedAt, UpdatedAt: rec.UpdatedAt, DeactivatedAt: rec.DeactivatedAt, DeactivatedReason: rec.DeactivatedReason}, nil
+	return &model.CommunityElder{ID: rec.ID, Name: rec.Name, IDCard: rec.IDCard, Gender: rec.Gender, Age: rec.Age, Address: rec.Address, EmergencyContact: ptrString(rec.EmergencyContact), BankAccount: ptrString(&rec.BankAccount), HospitalID: rec.HospitalID, Status: rec.Status, CreatedAt: rec.CreatedAt, UpdatedAt: rec.UpdatedAt, DeactivatedAt: rec.DeactivatedAt, DeactivatedReason: ptrString(&rec.DeactivatedReason)}, nil
 }
 
 func (s *Store) ListCommunityElders(ctx context.Context, page, pageSize int, status string) ([]model.CommunityElder, error) {
@@ -1574,7 +1595,7 @@ func (s *Store) ListCommunityElders(ctx context.Context, page, pageSize int, sta
 	}
 	result := make([]model.CommunityElder, len(items))
 	for i, e := range items {
-		result[i] = model.CommunityElder{ID: e.ID, Name: e.Name, IDCard: e.IDCard, Gender: e.Gender, Age: e.Age, Address: e.Address, EmergencyContact: e.EmergencyContact, BankAccount: e.BankAccount, HospitalID: e.HospitalID, Status: e.Status, CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt, DeactivatedAt: e.DeactivatedAt, DeactivatedReason: e.DeactivatedReason}
+		result[i] = model.CommunityElder{ID: e.ID, Name: e.Name, IDCard: e.IDCard, Gender: e.Gender, Age: e.Age, Address: e.Address, EmergencyContact: ptrString(e.EmergencyContact), BankAccount: ptrString(&e.BankAccount), HospitalID: e.HospitalID, Status: e.Status, CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt, DeactivatedAt: e.DeactivatedAt, DeactivatedReason: ptrString(&e.DeactivatedReason)}
 	}
 	return result, nil
 }
@@ -1596,7 +1617,7 @@ func (s *Store) BulkUpsertCommunityElders(ctx context.Context, elders []model.Co
 		}
 		e.CreatedAt = time.Now()
 		e.UpdatedAt = time.Now()
-		rec := &models.CommunityElder{BaseModel: models.BaseModel{ID: e.ID, CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt}, Name: e.Name, IDCard: e.IDCard, Gender: e.Gender, Age: e.Age, Address: e.Address, EmergencyContact: e.EmergencyContact, BankAccount: e.BankAccount, HospitalID: e.HospitalID, Status: e.Status}
+		rec := &models.CommunityElder{BaseModel: models.BaseModel{ID: e.ID, CreatedAt: e.CreatedAt, UpdatedAt: e.UpdatedAt}, Name: e.Name, IDCard: e.IDCard, Gender: e.Gender, Age: e.Age, Address: e.Address, EmergencyContact: e.EmergencyContact, BankAccount: func(s string) string { if e.BankAccount != nil { return *e.BankAccount }; return s }(""), HospitalID: e.HospitalID, Status: e.Status}
 		if err := s.db.WithContext(ctx).Save(rec).Error; err != nil {
 			return fmt.Errorf("bulk upsert elder: %w", err)
 		}

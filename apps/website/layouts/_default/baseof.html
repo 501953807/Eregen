@@ -36,6 +36,10 @@
   <!-- Curative × Eregen Design System CSS -->
   {{ $styles := resources.Get "css/curative-styles.css" | resources.Minify | resources.Fingerprint }}
   <link rel="stylesheet" href="{{ $styles.RelPermalink }}" integrity="{{ $styles.Data.Integrity }}">
+
+  <!-- Hope UI × Eregen Brand Layer (overrides Curative blue → Hope UI blue-purple) -->
+  {{ $hopeStyles := resources.Get "css/hope-ui-styles.css" | resources.Minify | resources.Fingerprint }}
+  <link rel="stylesheet" href="{{ $hopeStyles.RelPermalink }}" integrity="{{ $hopeStyles.Data.Integrity }}">
 </head>
 <body>
   {{ block "main" . }}{{ end }}

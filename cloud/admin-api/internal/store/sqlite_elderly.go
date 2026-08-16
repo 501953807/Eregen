@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -22,6 +23,7 @@ func (s *SqliteStore) ListElderly(ctx context.Context, page, pageSize int) ([]mo
 		ORDER BY p.created_at DESC LIMIT ? OFFSET ?`,
 		pageSize, (page-1)*pageSize)
 	if err != nil {
+		log.Printf("[DEBUG-ListElderly] query error: %v", err)
 		return nil, fmt.Errorf("list elderly: %w", err)
 	}
 	defer rows.Close()
@@ -29,25 +31,28 @@ func (s *SqliteStore) ListElderly(ctx context.Context, page, pageSize int) ([]mo
 	var profiles []model.ElderlyProfile
 	for rows.Next() {
 		var p model.ElderlyProfile
-		var birthRaw, statusRaw, riskLevel, subTier string
-		var avatarNull sql.NullString
-		if err := rows.Scan(&p.ID, &p.Name, &p.UserID, &birthRaw, &avatarNull, &statusRaw, &riskLevel, &subTier); err != nil {
+		var birthRaw, statusRaw, riskLevel, subTier sql.NullString
+		var phoneNull, avatarNull sql.NullString
+		if err := rows.Scan(&p.ID, &p.Name, &phoneNull, &birthRaw, &avatarNull, &statusRaw, &riskLevel, &subTier); err != nil {
 			return nil, fmt.Errorf("scan elderly: %w", err)
 		}
+		if phoneNull.Valid {
+			p.UserID = phoneNull.String
+		}
 		p.CreatedAt = time.Now()
-		if birthRaw != "" {
-			if t, err := time.Parse("2006-01-02", birthRaw); err == nil {
+		if birthRaw.Valid && birthRaw.String != "" {
+			if t, err := time.Parse("2006-01-02", birthRaw.String); err == nil {
 				p.BirthDate = &t
 			}
 		}
 		if avatarNull.Valid {
 			p.AvatarURL = &avatarNull.String
 		}
-		if riskLevel != "" {
-			p.HealthTiers = []string{riskLevel}
+		if riskLevel.Valid {
+			p.HealthTiers = append(p.HealthTiers, riskLevel.String)
 		}
-		if subTier != "" {
-			p.HealthTiers = append(p.HealthTiers, subTier)
+		if subTier.Valid {
+			p.HealthTiers = append(p.HealthTiers, subTier.String)
 		}
 		profiles = append(profiles, p)
 	}
@@ -57,12 +62,13 @@ func (s *SqliteStore) ListElderly(ctx context.Context, page, pageSize int) ([]mo
 func (s *SqliteStore) GetElderly(ctx context.Context, id string) (*model.ElderlyProfile, error) {
 	var p model.ElderlyProfile
 	var birthRaw, avatarRaw, statusRaw, riskLevel, subTier string
+	var phoneNull sql.NullString
 	err := s.db.QueryRowContext(ctx, `
 		SELECT p.id, p.name, p.phone, p.birth_date, p.avatar_url, p.status, pp.health_risk_level, pp.subscription_tier
 		FROM persons p
 		JOIN person_profiles pp ON p.id = pp.person_id AND pp.business_chain = 'self'
 		WHERE p.id = ?`, id).Scan(
-		&p.ID, &p.Name, &p.UserID, &birthRaw, &avatarRaw, &statusRaw, &riskLevel, &subTier)
+		&p.ID, &p.Name, &phoneNull, &birthRaw, &avatarRaw, &statusRaw, &riskLevel, &subTier)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("elderly not found")
@@ -70,6 +76,9 @@ func (s *SqliteStore) GetElderly(ctx context.Context, id string) (*model.Elderly
 		return nil, fmt.Errorf("get elderly: %w", err)
 	}
 	p.CreatedAt = time.Now()
+	if phoneNull.Valid {
+		p.UserID = phoneNull.String
+	}
 	if birthRaw != "" {
 		if t, err := time.Parse("2006-01-02", birthRaw); err == nil {
 			p.BirthDate = &t
@@ -89,10 +98,11 @@ func (s *SqliteStore) GetElderly(ctx context.Context, id string) (*model.Elderly
 
 func (s *SqliteStore) CreateElderly(ctx context.Context, name, birthDate, userID string, healthTiers []string, avatarURL string) (*model.ElderlyProfile, error) {
 	id := uuid.New().String()
+	idCard := "EC-" + strings.ToUpper(strings.ReplaceAll(id, "-", ""))[:11]
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO persons (id, name, phone, birth_date, avatar_url, status)
-		 VALUES (?, ?, ?, ?, ?, 'active')`,
-		id, name, userID, birthDate, avatarURL)
+		`INSERT INTO persons (id, id_card, name, phone, birth_date, avatar_url, status)
+		 VALUES (?, ?, ?, ?, ?, ?, 'active')`,
+		id, idCard, name, userID, birthDate, avatarURL)
 	if err != nil {
 		return nil, fmt.Errorf("create person: %w", err)
 	}

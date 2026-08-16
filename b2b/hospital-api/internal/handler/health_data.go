@@ -14,11 +14,11 @@ import (
 )
 
 type HealthDataHandler struct {
-	store store.Store
+	store store.Database
 	log   *zap.Logger
 }
 
-func NewHealthDataHandler(store store.Store, log *zap.Logger) *HealthDataHandler {
+func NewHealthDataHandler(store store.Database, log *zap.Logger) *HealthDataHandler {
 	return &HealthDataHandler{store: store, log: log}
 }
 

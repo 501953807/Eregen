@@ -77,6 +77,10 @@ func (a *DefaultAdapter) ExtractFields(row map[string]string) model.CommunityEld
 	if v := row["emergency_contact"]; v != "" {
 		emergencyContact = &v
 	}
+	var bankAccount *string
+	if v := row["bank_account"]; v != "" {
+		bankAccount = &v
+	}
 	return model.CommunityElder{
 		Name:             row["name"],
 		IDCard:           row["id_card"],
@@ -84,7 +88,7 @@ func (a *DefaultAdapter) ExtractFields(row map[string]string) model.CommunityEld
 		Age:              age,
 		Address:          row["address"],
 		EmergencyContact: emergencyContact,
-		BankAccount:      row["bank_account"],
+		BankAccount:      bankAccount,
 		Status:           "active",
 		CreatedAt:        time.Now().UTC(),
 		UpdatedAt:        time.Now().UTC(),

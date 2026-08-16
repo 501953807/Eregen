@@ -50,6 +50,7 @@ func TestAPIV1Endpoints(t *testing.T) {
 	defer db.Close()
 
 	seedTestData(db)
+	seedPersonData(db)
 
 	logger, _ := zap.NewProduction()
 	r := router.Setup(store.NewSqliteStore(db), logger)
@@ -283,6 +284,22 @@ func seedTestData(db *sql.DB) {
 		{"eld-1", "usr-family-1", "张建国", "1950-01-01", `["基础版"]`},
 		{"eld-2", "usr-family-2", "李秀英", "1948-05-05", `["防跌倒"]`},
 	}
+	// Insert into unified persons table
+	for _, e := range elders {
+		_, err := db.Exec(`INSERT OR REPLACE INTO persons (id, id_card, name, gender, birth_date, status)
+			VALUES (?, ?, ?, ?, ?, 'active')`,
+			e.id, e.id+"-card", e.name, 1, e.birthDate)
+		if err != nil {
+			log.Printf("failed to insert person %s: %v", e.id, err)
+		}
+		_, err = db.Exec(`INSERT OR REPLACE INTO person_profiles (person_id, business_chain, subscription_tier, subscription_status, health_risk_level)
+			VALUES (?, 'self', 'starter', 'active', 'low')`,
+			e.id)
+		if err != nil {
+			log.Printf("failed to insert profile for %s: %v", e.id, err)
+		}
+	}
+	// Also insert old-style elderly_profiles for backward compatibility
 	for _, e := range elders {
 		_, err := db.Exec(`INSERT OR REPLACE INTO elderly_profiles (id, user_id, name, birth_date, health_tiers) VALUES (?, ?, ?, ?, ?)`,
 			e.id, e.userID, e.name, e.birthDate, e.healthTiers)
