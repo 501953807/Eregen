@@ -478,7 +478,7 @@ function handleConfig(row: Device) {
 async function confirmConfig() {
   if (!configDevice.value) return
   try {
-    await devicesApi.adminUpdateConfig(configDevice.value.device_id, {
+    await devicesApi.updateConfig(configDevice.value.device_id, {
       interval: configForm.value.interval,
       volume: configForm.value.volume,
       gps_enabled: configForm.value.gps_enabled,

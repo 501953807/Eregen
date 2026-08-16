@@ -12,11 +12,11 @@ import (
 
 // AdminStatsHandler serves admin dashboard statistics.
 type AdminStatsHandler struct {
-	pg  *store.Postgres
+	pg  store.Backend
 	log *zap.Logger
 }
 
-func NewAdminStatsHandler(pg *store.Postgres, log *zap.Logger) *AdminStatsHandler {
+func NewAdminStatsHandler(pg store.Backend, log *zap.Logger) *AdminStatsHandler {
 	return &AdminStatsHandler{pg: pg, log: log}
 }
 

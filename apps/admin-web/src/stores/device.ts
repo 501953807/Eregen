@@ -15,8 +15,9 @@ export const useDeviceStore = defineStore('device', () => {
     loading.value = true
     try {
       const res = await devicesApi.list(params || {})
-      devices.value = res.data.data || []
-      total.value = (res.data as any).total || devices.value.length
+      const d = res as any
+      devices.value = d.devices || []
+      total.value = d.total || devices.value.length
     } finally {
       loading.value = false
     }
@@ -25,14 +26,15 @@ export const useDeviceStore = defineStore('device', () => {
   async function fetchStats() {
     try {
       const res = await devicesApi.list({ page_size: 1 })
-      const list = res.data.data || []
-      const bracelets = list.filter((d: Device) => d.type === 'bracelet')
-      const pillboxes = list.filter((d: Device) => d.type === 'pillbox')
-      const onlineCount = list.filter((d: Device) => d.status === 'online').length
+      const d = res as any
+      const list = d.devices || []
+      const bracelets = list.filter((dev: Device) => dev.type === 'bracelet')
+      const pillboxes = list.filter((dev: Device) => dev.type === 'pillbox')
+      const onlineCount = list.filter((dev: Device) => dev.status === 'online').length
       stats.value = {
         bracelet_count: bracelets.length,
         pillbox_count: pillboxes.length,
-        online_rate: list.length ? Math.round((onlineCount / list.length) * 1000) / 10 : 0,
+        online_rate: list.length ? Math.round((onlineCount / list.length) * 100) : 0,
       }
     } catch {
       stats.value = { bracelet_count: 0, pillbox_count: 0, online_rate: 0 }

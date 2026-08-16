@@ -10,7 +10,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: parseInt(process.env.PORT_ADMIN_WEB || '3100', 10),
     strictPort: true,
     host: '0.0.0.0',
     proxy: {

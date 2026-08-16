@@ -3,6 +3,11 @@ import { useAuthStore } from '@/stores/auth';
 import { ElMessage } from 'element-plus';
 import router from '@/router';
 
+// CSRF token shared between auth store and apiClient
+let csrfTokenValue = '';
+export const setCsrfToken = (token: string) => { csrfTokenValue = token; };
+export const getCsrfToken = () => csrfTokenValue;
+
 export interface ApiResponse<T> {
   code: number;
   msg?: string;
@@ -25,6 +30,10 @@ apiClient.interceptors.request.use(
 
     if (token && config.headers) {
       config.headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    if (getCsrfToken()) {
+      config.headers['X-CSRF-Token'] = getCsrfToken();
     }
 
     if (config.method === 'post' || config.method === 'put') {
@@ -89,7 +98,7 @@ export default apiClient;
 export async function apiCall<T>(func: () => Promise<ApiResponse<T>>): Promise<T> {
   try {
     const res = await func();
-    if ((res.code && (res.code < 200 || res.code >= 300)) && (!res.code || res.code < 200)) {
+    if (res.code >= 400) {
       throw new Error(res.msg || 'API call failed');
     }
     return res.data;

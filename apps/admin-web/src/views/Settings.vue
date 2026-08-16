@@ -164,11 +164,9 @@ const notifFields = [
 
 async function loadNotificationSettings() {
   try {
-    const res = await settingsApi.getNotificationSettings()
-    const data = res.data.data || res.data
-    Object.assign(notifSettings.value, data)
+    ElMessage.warning('设置功能暂不可用（后端未实现）')
+    Object.assign(notifSettings.value, { sms_alerts: true, push_alerts: true, voice_reminders: true, geofence_alerts: true })
     originalNotifSettings.value = { ...notifSettings.value }
-    ElMessage.success('加载成功')
   } catch {
     ElMessage.warning('使用默认设置（后端未连接）')
   }
@@ -179,12 +177,7 @@ function resetNotificationSettings() {
 }
 
 async function saveNotificationSettings() {
-  try {
-    await settingsApi.updateNotificationSettings(notifSettings.value)
-    ElMessage.success('保存成功')
-  } catch {
-    ElMessage.warning('保存成功（模拟）')
-  }
+  ElMessage.warning('设置功能暂不可用（后端未实现）')
 }
 
 // API Keys
@@ -203,9 +196,7 @@ const apiKeyColumns = [
 async function handleRevokeApiKey(row: any) {
   try {
     await ElMessageBox.confirm(`确定要吊销密钥 "${row.name}" 吗？`, '确认', { type: 'warning' })
-    await settingsApi.revokeApiKey(row.id)
-    ElMessage.success('已吊销')
-    apiKeys.value = apiKeys.value.filter((k: any) => k.id !== row.id)
+    ElMessage.warning('API密钥管理功能暂不可用（后端未实现）')
   } catch {
     // cancelled
   }
@@ -216,25 +207,9 @@ async function handleCreateApiKey() {
     ElMessage.warning('请输入密钥名称')
     return
   }
-  try {
-    const res = await settingsApi.createApiKey(newKeyForm.value)
-    const key = res.data.data || res.data
-    apiKeys.value.unshift(key)
-    showCreateKeyDialog.value = false
-    newKeyForm.value = { name: '', expires_at: '' }
-    ElMessage.success(`密钥创建成功: ${key.key_prefix}${'•'.repeat(24)}`)
-  } catch {
-    ElMessage.success('密钥创建成功（模拟）')
-    apiKeys.value.unshift({
-      id: Date.now().toString(),
-      name: newKeyForm.value.name,
-      key_prefix: 'eregen_sk_' + Math.random().toString(36).slice(2, 10),
-      created_at: new Date().toISOString(),
-      active: true,
-    })
-    showCreateKeyDialog.value = false
-    newKeyForm.value = { name: '', expires_at: '' }
-  }
+  ElMessage.warning('API密钥管理功能暂不可用（后端未实现）')
+  showCreateKeyDialog.value = false
+  newKeyForm.value = { name: '', expires_at: '' }
 }
 
 // Password change

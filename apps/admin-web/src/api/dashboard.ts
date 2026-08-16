@@ -20,18 +20,18 @@ export interface UserGrowthPoint {
 
 export const dashboardApi = {
   overview() {
-    return apiClient.get<{ data: any }>('/admin/stats/overview')
+    return apiClient.get('/admin/stats/overview')
   },
   alertTrend(params?: Record<string, any>) {
-    return apiClient.get<{ data: AlertTrendPoint[] }>('/admin/stats/alert-trend', { params })
+    return apiClient.get('/admin/stats/alert-trend', { params })
   },
   alertDistribution() {
-    return apiClient.get<{ data: AlertDistributionItem[] }>('/admin/stats/alert-distribution')
+    return apiClient.get('/admin/stats/alert-distribution')
   },
   userGrowth(params?: Record<string, any>) {
-    return apiClient.get<{ data: UserGrowthPoint[] }>('/admin/stats/user-growth', { params })
+    return apiClient.get('/admin/stats/user-growth', { params })
   },
   recentAlerts(params?: Record<string, any>) {
-    return apiClient.get<{ data: Alert[] }>('/admin/alerts', { params: { ...params, limit: 10 } })
+    return apiClient.get('/alerts', { params: { ...params, limit: 10 } })
   },
 }

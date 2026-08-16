@@ -88,13 +88,13 @@ func HMACSign(signKey []byte, token string) string {
 
 // DeviceAuth provides middleware for device-to-cloud mutual authentication.
 type DeviceAuth struct {
-	store      *store.Postgres
+	store      store.Backend
 	log        *zap.Logger
 	deviceKey  []byte // HMAC key for device JWT signing
 }
 
 // NewDeviceAuth creates a device auth handler.
-func NewDeviceAuth(pg *store.Postgres, log *zap.Logger, deviceSecret string) *DeviceAuth {
+func NewDeviceAuth(pg store.Backend, log *zap.Logger, deviceSecret string) *DeviceAuth {
 	if len(deviceSecret) == 0 {
 		log.Fatal("DEVICE_SECRET environment variable is required for device authentication")
 	}
@@ -172,12 +172,12 @@ type JWTAuth struct {
 	tokenTTL   time.Duration
 	refreshTTL time.Duration
 	log        *zap.Logger
-	store      *store.Postgres
+	store      store.Backend
 	csrf       *CSRFToken
 }
 
 // NewJWTAuth creates an auth middleware with the given secret.
-func NewJWTAuth(secret string, tokenTTL, refreshTTL time.Duration, log *zap.Logger, pg *store.Postgres, redisClient *redis.Client, csrfSecret string, csrfTTL time.Duration) *JWTAuth {
+func NewJWTAuth(secret string, tokenTTL, refreshTTL time.Duration, log *zap.Logger, pg store.Backend, redisClient *redis.Client, csrfSecret string, csrfTTL time.Duration) *JWTAuth {
 csrf := NewCSRFToken([]byte(csrfSecret), redisClient, csrfTTL)
 	return &JWTAuth{
 		secret:     secret,

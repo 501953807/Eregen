@@ -17,11 +17,11 @@ import (
 // HealthAggregateHandler provides top-level health endpoints
 // not scoped to a specific elderly profile.
 type HealthAggregateHandler struct {
-	pg  *store.Postgres
+	pg  store.Backend
 	log *zap.Logger
 }
 
-func NewHealthAggregateHandler(pg *store.Postgres, log *zap.Logger) *HealthAggregateHandler {
+func NewHealthAggregateHandler(pg store.Backend, log *zap.Logger) *HealthAggregateHandler {
 	return &HealthAggregateHandler{pg: pg, log: log}
 }
 

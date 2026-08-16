@@ -103,7 +103,7 @@
     <div class="products-grid">
       {{ range .Site.Params.products }}
       <div class="product-card {{ if $.Site.Params.featuredProduct | eq .name }}featured{{ end }} fade-in">
-        <div class="product-tier {{ lower .tierClass }}">{{ .tier | default "Starter" }}</div>
+        <div class="product-tier {{ .tierClass | lower }}">{{ .tier | default "Starter" }}</div>
         <div class="product-name">{{ .name }}</div>
         <div class="product-price">{{ .price }} <small>/ 起</small></div>
         <ul class="product-features">

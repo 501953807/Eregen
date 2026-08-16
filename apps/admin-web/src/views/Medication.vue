@@ -287,8 +287,8 @@ onMounted(async () => {
   loading.value.rules = true
   try {
     const res = await medicationApi.listRules(currentElder.value.id as string)
-    if (res.data && Array.isArray(res.data.data)) {
-      rules.value = res.data.data.map((r: any) => ({
+    if (res.data && Array.isArray(res.data)) {
+      rules.value = res.data.map((r: any) => ({
         ...r,
         daysOfWeek: r.daysOfWeek || []
       }))
@@ -365,8 +365,8 @@ async function saveRule() {
       ElMessage.success('创建成功')
     }
     const res = await medicationApi.listRules(currentElder.value.id as string)
-    if (res.data && Array.isArray(res.data.data)) {
-      rules.value = res.data.data.map((r: any) => ({
+    if (res.data && Array.isArray(res.data)) {
+      rules.value = res.data.map((r: any) => ({
         ...r,
         daysOfWeek: r.daysOfWeek || []
       }))

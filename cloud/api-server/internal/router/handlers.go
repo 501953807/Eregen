@@ -12,7 +12,7 @@ import (
 )
 
 // healthSummary returns a handler for GET /elderly/:id/health/summary
-func healthSummary(pg *store.Postgres) gin.HandlerFunc {
+func healthSummary(pg store.Backend) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		elderlyID := c.Param("elderly_id")
 		dayStr := c.DefaultQuery("day", time.Now().Format("2006-01-02"))
@@ -30,7 +30,7 @@ func healthSummary(pg *store.Postgres) gin.HandlerFunc {
 	}
 }
 
-func healthHistory(pg *store.Postgres) gin.HandlerFunc {
+func healthHistory(pg store.Backend) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		elderlyID := c.Param("elderly_id")
 		days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
@@ -46,7 +46,7 @@ func healthHistory(pg *store.Postgres) gin.HandlerFunc {
 	}
 }
 
-func healthTrend(pg *store.Postgres) gin.HandlerFunc {
+func healthTrend(pg store.Backend) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		elderlyID := c.Param("elderly_id")
 		metric := c.DefaultQuery("metric", "hr")
@@ -68,7 +68,7 @@ func healthTrend(pg *store.Postgres) gin.HandlerFunc {
 	}
 }
 
-func locationLatest(pg *store.Postgres) gin.HandlerFunc {
+func locationLatest(pg store.Backend) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		elderlyID := c.Param("elderly_id")
 		loc, err := pg.GetLatestLocation(c.Request.Context(), elderlyID)
@@ -80,7 +80,7 @@ func locationLatest(pg *store.Postgres) gin.HandlerFunc {
 	}
 }
 
-func locationHistory(pg *store.Postgres) gin.HandlerFunc {
+func locationHistory(pg store.Backend) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		elderlyID := c.Param("elderly_id")
 		dateStr := c.DefaultQuery("date", time.Now().Format("2006-01-02"))
@@ -100,7 +100,7 @@ func locationHistory(pg *store.Postgres) gin.HandlerFunc {
 	}
 }
 
-func geofenceSet(pg *store.Postgres) gin.HandlerFunc {
+func geofenceSet(pg store.Backend) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		elderlyID := c.Param("elderly_id")
 		var req struct {
@@ -129,7 +129,7 @@ func geofenceSet(pg *store.Postgres) gin.HandlerFunc {
 	}
 }
 
-func geofenceList(pg *store.Postgres) gin.HandlerFunc {
+func geofenceList(pg store.Backend) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		elderlyID := c.Param("elderly_id")
 		fences, err := pg.ListGeofences(c.Request.Context(), elderlyID)
@@ -141,7 +141,7 @@ func geofenceList(pg *store.Postgres) gin.HandlerFunc {
 	}
 }
 
-func geofenceUpdate(pg *store.Postgres) gin.HandlerFunc {
+func geofenceUpdate(pg store.Backend) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		gfID := c.Param("geofence_id")
 		var req model.UpdateGeofenceRequest
@@ -157,7 +157,7 @@ func geofenceUpdate(pg *store.Postgres) gin.HandlerFunc {
 	}
 }
 
-func geofenceDelete(pg *store.Postgres) gin.HandlerFunc {
+func geofenceDelete(pg store.Backend) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		gfID := c.Param("geofence_id")
 		if err := pg.DeleteGeofence(c.Request.Context(), gfID); err != nil {
@@ -168,7 +168,7 @@ func geofenceDelete(pg *store.Postgres) gin.HandlerFunc {
 	}
 }
 
-func medRules(pg *store.Postgres) gin.HandlerFunc {
+func medRules(pg store.Backend) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		elderlyID := c.Param("elderly_id")
 		rules, err := pg.ListMedicationRules(c.Request.Context(), elderlyID)
@@ -180,7 +180,7 @@ func medRules(pg *store.Postgres) gin.HandlerFunc {
 	}
 }
 
-func medCreateRule(pg *store.Postgres, nats *service.NatsClient) gin.HandlerFunc {
+func medCreateRule(pg store.Backend, nats *service.NatsClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		elderlyID := c.Param("elderly_id")
 		var req model.CreateMedicationRuleRequest
@@ -224,7 +224,7 @@ func medCreateRule(pg *store.Postgres, nats *service.NatsClient) gin.HandlerFunc
 	}
 }
 
-func medUpdateRule(pg *store.Postgres, nats *service.NatsClient) gin.HandlerFunc {
+func medUpdateRule(pg store.Backend, nats *service.NatsClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ruleID, exists := c.Get("rule_id")
 		if !exists {
@@ -268,7 +268,7 @@ func medUpdateRule(pg *store.Postgres, nats *service.NatsClient) gin.HandlerFunc
 	}
 }
 
-func medDeleteRule(pg *store.Postgres, nats *service.NatsClient) gin.HandlerFunc {
+func medDeleteRule(pg store.Backend, nats *service.NatsClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ruleID, exists := c.Get("rule_id")
 		if !exists {
@@ -295,7 +295,7 @@ func medDeleteRule(pg *store.Postgres, nats *service.NatsClient) gin.HandlerFunc
 	}
 }
 
-func medToday(pg *store.Postgres) gin.HandlerFunc {
+func medToday(pg store.Backend) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		elderlyID := c.Param("elderly_id")
 		records, err := pg.GetTodayMedStatus(c.Request.Context(), elderlyID)
@@ -307,7 +307,7 @@ func medToday(pg *store.Postgres) gin.HandlerFunc {
 	}
 }
 
-func medHistory(pg *store.Postgres) gin.HandlerFunc {
+func medHistory(pg store.Backend) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		elderlyID := c.Param("elderly_id")
 		days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))

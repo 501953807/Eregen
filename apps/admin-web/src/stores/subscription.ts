@@ -24,9 +24,10 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     loading.value = true
     try {
       const res = await subscriptionsApi.list({ page: page.value, page_size: pageSize.value, status, plan_tier: planTier })
-      subscriptions.value = res.data?.data || []
-      total.value = subscriptions.value.length
-      if (res.data?.page) page.value = res.data.page
+      const d = res as any
+      subscriptions.value = d.subscriptions || d.data?.subscriptions || []
+      total.value = d.total || subscriptions.value.length
+      if (d.page) page.value = d.page
     } catch (error) {
       console.error('Failed to fetch subscriptions:', error)
       subscriptions.value = []
@@ -38,7 +39,7 @@ export const useSubscriptionStore = defineStore('subscription', () => {
   async function fetchStats() {
     try {
       const res = await subscriptionsApi.stats()
-      const tiers = res.data?.data || []
+      const tiers = (res as any)?.tiers || (res as any)?.data?.tiers || []
       let total = 0, active = 0, expired = 0
       for (const s of tiers) {
         total += s.count
@@ -51,11 +52,5 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     }
   }
 
-  async function renewSubscription(id: string, endDate: string) {
-    await subscriptionsApi.renew(id, endDate)
-    await fetchList()
-    await fetchStats()
-  }
-
-  return { subscriptions, stats, loading, page, pageSize, total, activeCount, expiringCount, fetchList, fetchStats, renewSubscription }
+  return { subscriptions, stats, loading, page, pageSize, total, activeCount, expiringCount, fetchList, fetchStats }
 })

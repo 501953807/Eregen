@@ -29,7 +29,7 @@ func main() {
 	defer log.Sync()
 
 	// SQLite or PostgreSQL
-	var pg *store.Postgres
+	var pg store.Backend
 	var pgPool *pgxpool.Pool
 	dbType := cfg.StorageType
 	if dbType == "" {
@@ -52,14 +52,7 @@ func main() {
 		pg = store.NewPostgres(pgPool, log)
 		defer pgPool.Close()
 	default: // sqlite
-		sqliteErr := func() error {
-			db, err := store.NewSqlite(cfg.SQLitePath)
-			if err != nil {
-				return err
-			}
-			defer db.Close()
-			return nil
-		}()
+		sqliteDB, sqliteErr := store.NewSqlite(cfg.SQLitePath)
 		if sqliteErr != nil {
 			log.Warn("sqlite init failed (using postgres fallback if DB_URL set)", zap.Error(sqliteErr))
 			// Fall through to postgres if DB_URL is set
@@ -80,6 +73,8 @@ func main() {
 			}
 		} else {
 			log.Info("api-server using SQLite", zap.String("path", cfg.SQLitePath))
+			pg = store.NewSqliteStore(sqliteDB)
+			defer sqliteDB.Close()
 		}
 	}
 

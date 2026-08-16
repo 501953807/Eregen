@@ -251,7 +251,7 @@ async function fetchAlerts() {
     if (filters.value.severity) params.severity = filters.value.severity
     if (filters.value.status) params.status = filters.value.status
     const res = await alertsApi.list(params)
-    allAlerts.value = (res.data.data || res.data) as Alert[]
+    allAlerts.value = (res.data?.alerts || []) as Alert[]
   } catch {
     ElMessage.warning('加载失败，使用模拟数据')
   } finally {
@@ -261,7 +261,7 @@ async function fetchAlerts() {
 
 function connectSSE() {
   const token = localStorage.getItem('admin_token')
-  const url = `/api/v1/admin/stream/alerts${token ? `?token=${encodeURIComponent(token)}` : ''}`
+  const url = `/ws/alerts${token ? `?token=${encodeURIComponent(token)}` : ''}`
   eventSource = new EventSource(url)
 
   eventSource.addEventListener('alert', (e: Event) => {

@@ -26,7 +26,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     loading.value = true
     try {
       const res = await dashboardApi.overview()
-      stats.value = res.data.data || res.data
+      stats.value = (res as any) || stats.value
     } finally {
       loading.value = false
     }
@@ -40,9 +40,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
         dashboardApi.alertDistribution(),
         dashboardApi.userGrowth(),
       ])
-      chartData.value.alertTrend = trendRes.data.data || []
-      chartData.value.alertDistribution = distRes.data.data || []
-      chartData.value.userGrowth = growthRes.data.data || []
+      chartData.value.alertTrend = (trendRes as any) || []
+      chartData.value.alertDistribution = (distRes as any) || []
+      chartData.value.userGrowth = (growthRes as any) || []
     } finally {
       loading.value = false
     }
@@ -51,7 +51,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   async function fetchRecentAlerts() {
     try {
       const res = await dashboardApi.recentAlerts({ limit: 10 })
-      recentAlerts.value = res.data.data || []
+      recentAlerts.value = (res as any) || []
     } catch {
       recentAlerts.value = []
     }

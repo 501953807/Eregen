@@ -9,6 +9,8 @@ import (
 
 	"eregen.dev/api-server/internal/model"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "modernc.org/sqlite"
 )
 
@@ -407,4 +409,109 @@ func migrate(db *sql.DB) error {
 		}
 	}
 	return nil
+}
+
+// Pool returns a pgxpool-like interface wrapper for SQLite.
+// This allows handlers that expect *pgxpool.Pool to work with SQLite.
+func (s *SqliteStore) Pool() *PgPoolLike {
+	return NewPgPoolLike(s.db)
+}
+
+// PgPoolLike provides a query interface compatible with pgxpool.
+// It wraps either a *sql.DB (for SQLite) or a *pgxpool.Pool (for PostgreSQL).
+type PgPoolLike struct {
+	db      *sql.DB
+	pgxPool *pgxpool.Pool
+}
+
+// Row is a single query result that supports Scan.
+type Row struct {
+	src any // *sql.Row or pgx.Row
+}
+
+func (r *Row) Scan(dest ...any) error {
+	switch v := r.src.(type) {
+	case *sql.Row:
+		return v.Scan(dest...)
+	case pgx.Row:
+		return v.Scan(dest...)
+	default:
+		return fmt.Errorf("unknown row type %T", v)
+	}
+}
+
+// QueryRow executes a query that is expected to return at most one row.
+func (p *PgPoolLike) QueryRow(ctx context.Context, query string, args ...any) *Row {
+	if p.pgxPool != nil {
+		return &Row{src: p.pgxPool.QueryRow(ctx, query, args...)}
+	}
+	return &Row{src: p.db.QueryRowContext(ctx, query, args...)}
+}
+
+// PgRows wraps query results to provide Next/Scan/Close/Err methods.
+type PgRows struct {
+	sqlRows *sql.Rows
+	pgxRows pgxRowsCloser
+	err     error
+}
+
+type pgxRowsCloser interface {
+	Next() bool
+	Scan(dest ...any) error
+	Close()
+	Err() error
+}
+
+// QueryRows executes a query and returns rows with Next/Scan/Close/Err interface.
+func (p *PgPoolLike) QueryRows(ctx context.Context, query string, args ...any) *PgRows {
+	if p.pgxPool != nil {
+		rows, err := p.pgxPool.Query(ctx, query, args...)
+		if err != nil {
+			return &PgRows{err: err}
+		}
+		return &PgRows{pgxRows: pgxRowsAdapter{rows}}
+	}
+	rows, err := p.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return &PgRows{err: err}
+	}
+	return &PgRows{sqlRows: rows}
+}
+
+type pgxRowsAdapter struct {
+	rows pgxRowsCloser
+}
+
+func (a pgxRowsAdapter) Next() bool         { return a.rows.Next() }
+func (a pgxRowsAdapter) Scan(dest ...any) error { return a.rows.Scan(dest...) }
+func (a pgxRowsAdapter) Close()             { a.rows.Close() }
+func (a pgxRowsAdapter) Err() error         { return a.rows.Err() }
+
+// Query executes a query and returns all rows.
+func (p *PgPoolLike) Query(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	return p.QueryRows(ctx, query, args...).asSqlRows()
+}
+
+func (r *PgRows) asSqlRows() (*sql.Rows, error) {
+	if r.err != nil {
+		return nil, r.err
+	}
+	if r.sqlRows != nil {
+		return r.sqlRows, nil
+	}
+	// Return a no-op wrapper for pgx rows (handlers should use QueryRows instead)
+	return nil, fmt.Errorf("pgx pool: use QueryRows for row iteration")
+}
+
+// Ping checks if the database is available.
+func (p *PgPoolLike) Ping(ctx context.Context) error {
+	if p.pgxPool != nil {
+		return p.pgxPool.Ping(ctx)
+	}
+	return p.db.PingContext(ctx)
+}
+
+// NewPgPoolLike creates a PgPoolLike wrapper around a SQLite database.
+func NewPgPoolLike(db *sql.DB) *PgPoolLike {
+	return &PgPoolLike{db: db}
 }

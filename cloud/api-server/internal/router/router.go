@@ -16,7 +16,7 @@ import (
 )
 
 // New creates the full Gin engine with all route groups.
-func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth *middleware.JWTAuth, deviceAuth *middleware.DeviceAuth, sms *service.SMSProvider, push *service.PushProvider, log *zap.Logger, wsHub *ws.Hub, corsOrigins []string, chronic *store.ChronicStore) *gin.Engine {
+func New(pg store.Backend, redis *store.Redis, nats *service.NatsClient, auth *middleware.JWTAuth, deviceAuth *middleware.DeviceAuth, sms *service.SMSProvider, push *service.PushProvider, log *zap.Logger, wsHub *ws.Hub, corsOrigins []string, chronic *store.ChronicStore) *gin.Engine {
 	r := gin.Default()
 
 	// Security Headers Middleware - protects against common web vulnerabilities
@@ -417,7 +417,7 @@ func New(pg *store.Postgres, redis *store.Redis, nats *service.NatsClient, auth 
 func corsMiddleware(origins []string) gin.HandlerFunc {
 	allowed := make(map[string]bool)
 	if len(origins) == 0 {
-		origins = []string{"http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000"}
+		origins = []string{"http://localhost:3000", "http://localhost:3100", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:3100"}
 	}
 	for _, o := range origins {
 		allowed[o] = true
@@ -425,6 +425,11 @@ func corsMiddleware(origins []string) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
+		if origin == "" {
+			// No Origin header = same-origin or non-browser client (health check, CLI, etc.)
+			c.Next()
+			return
+		}
 		if allowed[origin] {
 			c.Header("Access-Control-Allow-Origin", origin)
 			c.Header("Vary", "Origin")

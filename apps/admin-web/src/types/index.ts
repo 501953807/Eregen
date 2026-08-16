@@ -139,14 +139,17 @@ export interface ApiResponse<T> {
 }
 
 export interface LoginRequest {
-  method: 'email' | 'phone';
-  credential: string;
-  secret: string;
+  identifier: string;
+  password: string;
 }
 
 export interface LoginResponse {
-  token: string;
-  user: User;
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  refresh_token: string;
+  user_id: string;
+  role: string;
 }
 
 export interface AuthState {

@@ -10,6 +10,9 @@
       <div class="hope-stat-card__label">{{ label }}</div>
       <slot name="trend" />
     </div>
+    <div class="hope-stat-card__progress" v-if="$slots.progress">
+      <slot name="progress" />
+    </div>
     <div class="hope-stat-card__bg-decoration"></div>
   </div>
 </template>
@@ -29,11 +32,12 @@ withDefaults(defineProps<{
 .hope-stat-card {
   background: var(--hope-surface);
   border-radius: var(--hope-radius-lg);
-  border: 1px solid var(--hope-border);
+  border: none;
   padding: 22px;
   transition: box-shadow 0.25s ease, transform 0.25s ease;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 10px 30px rgba(17,38,146,0.05);
 }
 .hope-stat-card::before {
   content: '';
@@ -42,11 +46,11 @@ withDefaults(defineProps<{
   height: 3px;
   background: var(--hope-stat-gradient);
   border-radius: var(--hope-radius-lg) var(--hope-radius-lg) 0 0;
-  opacity: 0.8;
+  opacity: 1;
 }
 .hope-stat-card:hover {
-  box-shadow: var(--hope-shadow-md);
-  transform: translateY(-3px);
+  box-shadow: 0 16px 48px rgba(17,38,146,0.08);
+  transform: translateY(-2px);
 }
 .hope-stat-card__icon-wrap {
   width: 52px;
@@ -95,11 +99,16 @@ withDefaults(defineProps<{
   font-weight: 600;
   margin-top: 10px;
   padding: 3px 8px;
-  border-radius: var(--hope-radius-pill);
+  border-radius: 50px;
 }
-.hope-stat-card__trend-up   { background: var(--hope-success-light); color: var(--hope-success); }
-.hope-stat-card__trend-down { background: var(--hope-danger-light); color: var(--hope-danger); }
-.hope-stat-card__trend-neutral { background: rgba(148,169,162,0.12); color: #6b7280; }
+.hope-stat-card__trend-up   { background: rgba(26,160,83,0.10); color: #1aa053; }
+.hope-stat-card__trend-down { background: rgba(192,74,66,0.10); color: #c03221; }
+.hope-stat-card__trend-neutral { background: rgba(148,169,162,0.10); color: #6b7280; }
+.hope-stat-card__progress {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+}
 .hope-stat-card__bg-decoration {
   position: absolute;
   top: -20px;

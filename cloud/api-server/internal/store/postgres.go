@@ -28,9 +28,9 @@ func NewPostgres(pool *pgxpool.Pool, log *zap.Logger) *Postgres {
 	return &Postgres{pool: pool, log: log}
 }
 
-// Pool returns the underlying pgxpool for raw queries.
-func (p *Postgres) Pool() *pgxpool.Pool {
-	return p.pool
+// Pool returns a PgPoolLike wrapper around the underlying pgxpool for raw queries.
+func (p *Postgres) Pool() *PgPoolLike {
+	return &PgPoolLike{pgxPool: p.pool}
 }
 
 // Health checks PostgreSQL connectivity.

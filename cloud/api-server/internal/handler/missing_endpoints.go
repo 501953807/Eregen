@@ -14,11 +14,11 @@ import (
 
 // SubscriptionHandler handles subscription queries.
 type SubscriptionHandler struct {
-	pg *store.Postgres
+	pg store.Backend
 	log *zap.Logger
 }
 
-func NewSubscriptionHandler(pg *store.Postgres, log *zap.Logger) *SubscriptionHandler {
+func NewSubscriptionHandler(pg store.Backend, log *zap.Logger) *SubscriptionHandler {
 	return &SubscriptionHandler{pg: pg, log: log}
 }
 
@@ -74,11 +74,11 @@ func (h *SubscriptionHandler) Stats(c *gin.Context) {
 
 // UserListHandler provides user management endpoints.
 type UserListHandler struct {
-	pg *store.Postgres
+	pg store.Backend
 	log *zap.Logger
 }
 
-func NewUserListHandler(pg *store.Postgres, log *zap.Logger) *UserListHandler {
+func NewUserListHandler(pg store.Backend, log *zap.Logger) *UserListHandler {
 	return &UserListHandler{pg: pg, log: log}
 }
 
@@ -153,11 +153,11 @@ func (h *UserListHandler) UpdateRole(c *gin.Context) {
 
 // MedicationTakeHandler handles medication confirmation.
 type MedicationTakeHandler struct {
-	pg *store.Postgres
+	pg store.Backend
 	log *zap.Logger
 }
 
-func NewMedicationTakeHandler(pg *store.Postgres, log *zap.Logger) *MedicationTakeHandler {
+func NewMedicationTakeHandler(pg store.Backend, log *zap.Logger) *MedicationTakeHandler {
 	return &MedicationTakeHandler{pg: pg, log: log}
 }
 
@@ -203,11 +203,11 @@ func (h *MedicationTakeHandler) Take(c *gin.Context) {
 
 // AlertHandleHandler handles alert resolution and sharing.
 type AlertHandleHandler struct {
-	pg *store.Postgres
+	pg store.Backend
 	log *zap.Logger
 }
 
-func NewAlertHandleHandler(pg *store.Postgres, log *zap.Logger) *AlertHandleHandler {
+func NewAlertHandleHandler(pg store.Backend, log *zap.Logger) *AlertHandleHandler {
 	return &AlertHandleHandler{pg: pg, log: log}
 }
 

@@ -16,12 +16,9 @@ export interface SubscriptionStatItem {
 
 export const subscriptionsApi = {
   stats() {
-    return apiClient.get<{ data: SubscriptionStatItem[] }>('/admin/stats/subscriptions')
+    return apiClient.get('/subscriptions/stats')
   },
   list(params?: SubscriptionListParams) {
-    return apiClient.get<{ data: Subscription[]; page: number; page_size: number }>('/admin/subscriptions', { params })
-  },
-  renew(id: string, endDate: string) {
-    return apiClient.put(`/admin/subscriptions/${id}/renew`, { expires_at: endDate })
+    return apiClient.get('/subscriptions', { params })
   },
 }

@@ -235,7 +235,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
@@ -268,9 +268,8 @@ async function submitEmailLogin() {
   if (!validateEmail()) return
   try {
     await authStore.login({
-      method: 'email',
-      credential: emailForm.value.email,
-      secret: emailForm.value.password
+      identifier: emailForm.value.email,
+      password: emailForm.value.password
     })
     const to = route.query.redirect || '/dashboard'
     router.push(to as string)
@@ -290,9 +289,9 @@ function validatePhone(): boolean {
   phoneError.value = ''
   otpError.value = ''
   if (!phoneForm.value.phone) { phoneError.value = '请输入手机号'; return false }
-  if (!/^(\\+86|86)?1[3-9]\\d{9}$/.test(phoneForm.value.phone.replace(/\s/g, ''))) { phoneError.value = '请输入正确的中国大陆手机号'; return false }
+  if (!/^(\\+86|86)?1[3-9]\d{9}$/.test(phoneForm.value.phone.replace(/\s/g, ''))) { phoneError.value = '请输入正确的中国大陆手机号'; return false }
   if (!phoneForm.value.otp) { otpError.value = '请输入验证码'; return false }
-  if (!/^\\d{6}$/.test(phoneForm.value.otp)) { otpError.value = '验证码应为6位数字'; return false }
+  if (!/^\d{6}$/.test(phoneForm.value.otp)) { otpError.value = '验证码应为6位数字'; return false }
   return true
 }
 
@@ -300,9 +299,8 @@ async function submitPhoneLogin() {
   if (!validatePhone()) return
   try {
     await authStore.login({
-      method: 'phone',
-      credential: phoneForm.value.phone,
-      secret: phoneForm.value.otp
+      identifier: phoneForm.value.phone,
+      password: phoneForm.value.otp
     })
     const to = route.query.redirect || '/dashboard'
     router.push(to as string)
@@ -448,7 +446,7 @@ onBeforeUnmount(() => {
   padding: 12px 16px;
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.12);
-  border-radius: var(--hope-radius-md);
+  border-radius: 10px;
   backdrop-filter: blur(8px);
   transition: background 0.2s ease;
 }
@@ -541,7 +539,7 @@ onBeforeUnmount(() => {
   width: 36px;
   height: 36px;
   background: var(--hope-primary-gradient);
-  border-radius: var(--hope-radius-sm);
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -576,7 +574,7 @@ onBeforeUnmount(() => {
   display: flex;
   gap: 4px;
   background: var(--hope-primary-lighter);
-  border-radius: var(--hope-radius-pill);
+  border-radius: 50px;
   padding: 4px;
   border: 1px solid var(--hope-border);
   margin-bottom: 28px;
@@ -585,7 +583,7 @@ onBeforeUnmount(() => {
 .login-tab {
   flex: 1;
   padding: 9px 16px;
-  border-radius: var(--hope-radius-pill);
+  border-radius: 50px;
   font-size: 13px;
   font-weight: 600;
   color: var(--hope-text-secondary);
@@ -603,7 +601,7 @@ onBeforeUnmount(() => {
 .login-tab.active {
   background: var(--hope-primary-gradient);
   color: #FFFFFF;
-  box-shadow: var(--hope-shadow-active);
+  box-shadow: 0 6px 16px rgba(58, 87, 232, 0.32), 0 2px 6px rgba(58, 87, 232, 0.18);
 }
 
 /* ==================== FORM ==================== */
@@ -643,8 +641,8 @@ onBeforeUnmount(() => {
 .input {
   height: 42px;
   padding: 0 40px;
-  border: 1px solid var(--hope-border);
-  border-radius: var(--hope-radius-sm);
+  border: 1.5px solid var(--hope-border-strong);
+  border-radius: var(--hope-radius-lg);
   font-size: 14px;
   font-family: inherit;
   color: var(--hope-text);
@@ -655,15 +653,15 @@ onBeforeUnmount(() => {
   width: 100%;
   box-sizing: border-box;
 }
-.input:hover { border-color: var(--hope-border-strong); }
+.input:hover { border-color: rgba(58,87,232,0.4); }
 .input:focus {
   border-color: var(--hope-primary);
-  box-shadow: var(--hope-shadow-input-focus);
+  box-shadow: 0 0 0 3px rgba(58, 87, 232, 0.12);
 }
 .input::placeholder { color: var(--hope-text-muted); }
 .input-error {
-  border-color: var(--hope-danger) !important;
-  box-shadow: 0 0 0 3px rgba(192,50,33,0.1) !important;
+  border-color: var(--hope-error) !important;
+  box-shadow: 0 0 0 3px rgba(192,74,66,0.1) !important;
 }
 .pw-toggle {
   position: absolute;
@@ -689,8 +687,8 @@ onBeforeUnmount(() => {
   height: 42px;
   padding: 0 16px;
   border-radius: var(--hope-radius-sm);
-  border: 1px solid var(--hope-border);
-  background: var(--hope-surface);
+  border: 1.5px solid rgba(var(--hope-primary-rgb), 0.30);
+  background: transparent;
   color: var(--hope-primary);
   font-size: 13px;
   font-weight: 600;
@@ -701,7 +699,7 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 .btn-send-otp:hover {
-  background: var(--hope-primary-lighter);
+  background: rgba(var(--hope-primary-rgb), 0.06);
   border-color: var(--hope-primary);
 }
 .btn-send-otp:disabled {
@@ -714,7 +712,7 @@ onBeforeUnmount(() => {
 /* Field error */
 .field-error {
   font-size: 12px;
-  color: var(--hope-danger);
+  color: var(--hope-error);
   margin-top: 2px;
 }
 
@@ -761,7 +759,7 @@ onBeforeUnmount(() => {
   font-family: inherit;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: var(--hope-shadow-primary);
+  box-shadow: 0 2px 8px rgba(58,87,232,0.25);
   margin-top: 4px;
   display: flex;
   align-items: center;
@@ -770,7 +768,7 @@ onBeforeUnmount(() => {
 }
 .btn-login:hover:not(:disabled) {
   background: var(--hope-primary-gradient-hover);
-  box-shadow: var(--hope-shadow-active);
+  box-shadow: 0 4px 16px rgba(58,87,232,0.35);
   transform: translateY(-1px);
 }
 .btn-login:active:not(:disabled) { transform: translateY(0); }
@@ -787,9 +785,9 @@ onBeforeUnmount(() => {
 .error-message {
   padding: 10px 14px;
   border-radius: var(--hope-radius-md);
-  background: var(--hope-danger-light);
-  border: 1px solid var(--hope-danger-light);
-  color: var(--hope-danger);
+  background: var(--hope-error-light);
+  border: 1px solid rgba(192,74,66,0.20);
+  color: var(--hope-error);
   font-size: 13px;
   text-align: center;
   display: flex;

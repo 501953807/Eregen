@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import router from '@/router';
-import axios from 'axios';
 import type { User, LoginResponse, AuthState, LoginRequest } from '@/types';
 import { parseJwt } from '@/utils/auth';
+import apiClient, { setCsrfToken } from '@/api/client';
 
 const STORAGE_KEY = 'eregen_admin_auth_state';
 
@@ -43,22 +43,52 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true;
     error.value = null;
     try {
-      let resp: LoginResponse;
-      if ('method' in input) {
-        const res = await axios.post('/api/v1/auth/login', input, { timeout: 10000 });
-        resp = res.data.data as LoginResponse;
+      let token: string;
+      let userId: string;
+      let role: string;
+
+      if ('identifier' in input) {
+        const res = await apiClient.post('/auth/login', {
+          identifier: input.identifier,
+          password: input.password,
+        }, { timeout: 10000 });
+        const d = res as any;
+        token = d.access_token;
+        userId = d.user_id;
+        role = d.role;
+
+        // Fetch CSRF token after login
+        try {
+          const csrfRes = await apiClient.get('/auth/csrf/get');
+          const csrfData = csrfRes as any;
+          if (csrfData?.csrf_token) {
+            setCsrfToken(csrfData.csrf_token);
+          }
+        } catch { /* CSRF token fetch non-fatal */ }
       } else {
-        resp = input as LoginResponse;
+        token = input.access_token;
+        userId = input.user_id;
+        role = input.role;
       }
-      const jwt = parseJwt(resp.token);
-      const exp = jwt?.exp || Math.floor(Date.now() / 1000) + 7200;
-      state.value = { token: resp.token, user: resp.user, expiresAt: Number(exp) };
+
+      const exp = Math.floor(Date.now() / 1000) + (token ? parseJwt(token)?.exp || 7200 : 7200);
+      state.value = {
+        token,
+        user: {
+          id: userId,
+          name: role === 'super_admin' ? '管理员' : '用户',
+          role: role as any,
+          phone: '',
+          created_at: '',
+        },
+        expiresAt: Number(exp),
+      };
       persist();
       const rd = (router.currentRoute.value.query.redirect as string) || '/dashboard';
       router.push({ path: rd });
-      return resp.user;
+      return state.value.user;
     } catch (e: any) {
-      error.value = e?.response?.data?.msg || '登录失败';
+      error.value = e?.response?.data?.msg || e?.response?.data?.message || '登录失败';
       throw e;
     } finally {
       loading.value = false;
@@ -91,8 +121,14 @@ export const useAuthStore = defineStore('auth', () => {
     if (jp?.exp && Date.now() >= jp.exp * 1000) {
       state.value = { token: null, user: null, expiresAt: null };
       localStorage.removeItem(STORAGE_KEY);
-    } else if (jp?.sub && !state.value.user) {
-      state.value.user = { id: jp.sub || '', name: jp.name || '用户', role: jp.role || 'family', phone: jp.phone || '', created_at: jp.iat ? new Date(jp.iat * 1000).toISOString() : '' };
+    } else if ((jp?.user_id || jp?.sub) && !state.value.user) {
+      state.value.user = {
+        id: (jp?.user_id || jp?.sub || '') as string,
+        name: (jp?.name || '用户') as string,
+        role: (jp?.role || 'family') as any,
+        phone: '',
+        created_at: '',
+      };
       persist();
     }
   }

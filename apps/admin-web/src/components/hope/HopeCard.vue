@@ -28,17 +28,17 @@ defineProps<{
 .hope-content-card {
   background: var(--hope-surface);
   border-radius: var(--hope-radius-lg);
-  border: 1px solid var(--hope-border);
-  box-shadow: var(--hope-shadow-card);
+  border: none;
+  box-shadow: 0 10px 30px rgba(17,38,146,0.05);
   overflow: hidden;
   transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 .hope-content-card:hover {
-  box-shadow: var(--hope-shadow-card-hover);
+  box-shadow: 0 16px 48px rgba(17,38,146,0.08);
   transform: translateY(-2px);
 }
 .hope-content-card--elevated {
-  box-shadow: var(--hope-shadow-lg);
+  box-shadow: 0 16px 48px rgba(17,38,146,0.08);
 }
 .hope-content-card__header {
   padding: 20px 22px 0;

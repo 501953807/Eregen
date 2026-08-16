@@ -10,11 +10,11 @@ import (
 )
 
 type MedicalHandler struct {
-	pg *store.Postgres
+	pg store.Backend
 	log *zap.Logger
 }
 
-func NewMedicalHandler(pg *store.Postgres, log *zap.Logger) *MedicalHandler {
+func NewMedicalHandler(pg store.Backend, log *zap.Logger) *MedicalHandler {
 	return &MedicalHandler{pg: pg, log: log}
 }
 

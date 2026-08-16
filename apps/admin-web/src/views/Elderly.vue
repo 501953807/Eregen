@@ -110,8 +110,8 @@ onMounted(async () => {
   loading.value.elderly = true
   try {
     const res = await elderlyApi.list()
-    if (res.data?.data) {
-      elderlyList.value = res.data.data.map((item: any) => ({
+    if (res.data?.profiles) {
+      elderlyList.value = res.data.profiles.map((item: any) => ({
         id: item.id || '', name: item.name || '', id_card: item.id_card || '',
         birth_date: item.birth_date || '', gender: item.gender || '',
         emergency_contact: item.emergency_contact || '', address: item.address || '',

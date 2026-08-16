@@ -12,14 +12,19 @@
         <!-- Hero Banner (Dashboard only) -->
         <HopeHeroBanner v-if="route.path === '/dashboard'" />
 
-        <!-- Content -->
-        <main class="hope-content">
-          <router-view v-slot="{ Component }">
-            <transition name="page-fade" mode="out-in">
-              <component :is="Component" />
-            </transition>
-          </router-view>
-        </main>
+        <!-- Content wrapper with overlap -->
+        <div class="content-wrapper">
+          <main class="hope-content" :class="{ 'has-hero': route.path === '/dashboard' }">
+            <!-- Content card with proper padding for non-Dashboard pages -->
+            <div class="page-content" :class="{ 'page-content--no-hero': route.path !== '/dashboard' }">
+              <router-view v-slot="{ Component }">
+                <transition name="page-fade" mode="out-in">
+                  <component :is="Component" />
+                </transition>
+              </router-view>
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   </HopeTheme>
@@ -49,11 +54,6 @@ async function handleLogout() {
   ElMessage.info('已安全退出')
 }
 
-function handleUserAction(command: string) {
-  if (command === 'logout') handleLogout()
-  else ElMessage.info('功能开发中...')
-}
-
 onMounted(async () => {
   if (!authStore.checkLoggedIn()) {
     if (route.path !== '/login') {
@@ -75,18 +75,46 @@ onMounted(async () => {
   margin-left: 16.2rem;
   display: flex;
   flex-direction: column;
-  transition: margin-left 0.4s ease-in-out;
+  transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 
 .hope-main.collapsed {
-  margin-left: 0;
+  margin-left: 4.8rem;
 }
 
 .hope-content {
   flex: 1;
   overflow-y: auto;
   background: var(--hope-bg);
+  margin-top: -3rem;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.hope-content.has-hero {
+  padding-top: 0;
+}
+
+.hope-content:not(.has-hero) {
+  margin-top: 0;
+  padding-top: 1.5rem;
+}
+
+.content-wrapper {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-content {
+  padding: 0 1.5rem 2rem;
+  max-width: 100%;
+}
+.page-content--no-hero {
+  padding-top: 1.5rem;
 }
 
 /* Page transition */
