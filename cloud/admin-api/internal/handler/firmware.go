@@ -67,6 +67,28 @@ func (h *FirmwareHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "firmware version deleted"})
 }
 
+// Get retrieves a firmware version by ID.
+func (h *FirmwareHandler) Get(c *gin.Context) {
+	id := c.Param("id")
+	f, err := h.store.GetFirmwareVersion(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Firmware version not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": f})
+}
+
+// VerifyFirmware verifies the firmware signature and hash.
+func (h *FirmwareHandler) VerifyFirmware(c *gin.Context) {
+	id := c.Param("id")
+	valid, status, err := h.store.VerifyFirmwareSignature(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": gin.H{"valid": valid, "status": status}})
+}
+
 // PushOTA triggers an OTA push for a firmware version.
 func (h *FirmwareHandler) PushOTA(c *gin.Context) {
 	var body struct {

@@ -265,7 +265,7 @@ const assignWelfare = (row: CommunityElder) => {
   currentElder.value = row
   currentWelfareTags.value = []
   showWelfareDialog.value = true
-  communityApi.getStats(row.id).then((res: any) => {
+  communityApi.getStats().then((res: any) => {
     currentWelfareTags.value = res.data?.welfare_tags || []
   }).catch(() => {})
 }

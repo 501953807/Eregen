@@ -192,8 +192,10 @@ patient := handler.NewPatientHandler(s)
 		fw := api.Group("/firmware-versions")
 		{
 			fw.GET("", firmware.List)
+			fw.GET("/:id", firmware.Get)
 			fw.POST("", firmware.Create)
 			fw.DELETE("/:id", firmware.Delete)
+			fw.POST("/:id/verify", firmware.VerifyFirmware)
 		}
 		api.POST("/ota/push", firmware.PushOTA)
 		api.GET("/ota/jobs/:id", firmware.GetOTAJob)

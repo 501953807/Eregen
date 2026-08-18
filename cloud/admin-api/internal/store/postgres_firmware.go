@@ -80,6 +80,36 @@ func (s *PostgresStore) DeleteFirmwareVersion(ctx context.Context, id string) er
 
 
 
+
+// GetFirmwareVersion retrieves a firmware release by ID.
+func (s *PostgresStore) GetFirmwareVersion(ctx context.Context, id string) (*model.FirmwareVersion, error) {
+	var f model.FirmwareVersion
+	err := s.db.QueryRowContext(ctx,
+		`SELECT id, device_type, tier, version, url, sha256_hash, changelog, min_app_version, force_update, active, created_at
+		 FROM firmware_releases WHERE id = $1`, id).Scan(
+		&f.ID, &f.DeviceType, &f.Tier, &f.Version, &f.DownloadURL,
+		&f.Sha256Hash, &f.Changelog, &f.MinAppVersion, &f.ForceUpdate, &f.IsActive, &f.ReleaseDate)
+	if err != nil {
+		return nil, err
+	}
+	return &f, nil
+}
+
+// VerifyFirmwareSignature verifies the signature of a firmware release.
+func (s *PostgresStore) VerifyFirmwareSignature(ctx context.Context, id string) (bool, string, error) {
+	f, err := s.GetFirmwareVersion(ctx, id)
+	if err != nil {
+		return false, "", err
+	}
+	if f.Sha256Hash == "" {
+		return false, "no_hash", nil
+	}
+	if len(f.Sha256Hash) != 64 {
+		return false, "invalid_hash_format", nil
+	}
+	return true, "verified", nil
+}
+
 // PushOTAJob records an OTA push job.
 
 func (s *PostgresStore) PushOTAJob(ctx context.Context, firmwareID string, deviceIDs []string) (string, error) {

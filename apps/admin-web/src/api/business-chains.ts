@@ -17,14 +17,14 @@ export const personApi = {
   delete(id: string) {
     return apiClient.delete(`/admin/persons/${id}`)
   },
-  createProfile(data: Partial<PersonProfile>) {
-    return apiClient.post('/admin/persons/profile', data)
+  createProfile(personId: string, data: Partial<PersonProfile>) {
+    return apiClient.post(`/admin/persons/${personId}/profile`, data)
   },
   getProfile(personId: string, chain: string) {
     return apiClient.get<{ data: PersonProfile }>(`/admin/persons/${personId}/profile?chain=${chain}`)
   },
-  assignWelfareTag(data: Partial<PersonWelfareTag>) {
-    return apiClient.post('/admin/persons/welfare-tags', data)
+  assignWelfareTag(personId: string, data: Partial<PersonWelfareTag>) {
+    return apiClient.post(`/admin/persons/${personId}/welfare-tags`, data)
   },
   revokeWelfareTag(personId: string, tagCode: string) {
     return apiClient.delete(`/admin/persons/${personId}/welfare-tags/${tagCode}`)
@@ -89,29 +89,29 @@ export const communityApi = {
   signin(personId: string, data: any) {
     return apiClient.post(`/admin/community/elders/${personId}/signin`, data)
   },
-  assignWelfare(personId: string, data: any) {
-    return apiClient.post(`/admin/community/elders/${personId}/welfare`, data)
+  assignWelfare(personId: string, tagCode: string, data: any) {
+    return apiClient.post(`/admin/community/elders/${personId}/welfare/${tagCode}`, data)
   },
-  getStats(personId: string) {
-    return apiClient.get(`/admin/community/elders/${personId}/stats`)
+  getStats() {
+    return apiClient.get('/admin/community/elders/stats')
   },
   revokeWelfareTag(elderId: string, tagCode: string) {
-    return apiClient.delete(`/admin/community-wb/elders/${elderId}/welfare/${tagCode}`)
+    return apiClient.delete(`/admin/community/elders/${elderId}/welfare/${tagCode}`)
   },
 }
 
 export const regulatoryApi = {
   getCompliance(params?: any) {
-    return apiClient.get('/regulatory/compliance', { params })
+    return apiClient.get('/admin/regulatory/compliance', { params })
   },
   runCompliance(params?: any) {
-    return apiClient.post('/regulatory/compliance/run', params)
+    return apiClient.post('/admin/regulatory/compliance/run', params)
   },
   getAudit(personId: string) {
-    return apiClient.get(`/regulatory/audit/patient/${personId}`)
+    return apiClient.get(`/admin/regulatory/audit/patient/${personId}`)
   },
   getReports(params?: any) {
-    return apiClient.get('/regulatory/reports', { params })
+    return apiClient.get('/admin/regulatory/reports', { params })
   },
 }
 

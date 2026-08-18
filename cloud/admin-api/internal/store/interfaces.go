@@ -67,10 +67,12 @@ type ElderlyStore interface {
 
 type FirmwareStore interface {
 	ListFirmwareVersions(ctx context.Context) ([]model.FirmwareVersion, error)
+	GetFirmwareVersion(ctx context.Context, id string) (*model.FirmwareVersion, error)
 	CreateFirmwareVersion(ctx context.Context, v *model.FirmwareVersion) error
 	DeleteFirmwareVersion(ctx context.Context, id string) error
 	PushOTAJob(ctx context.Context, firmwareID string, deviceIDs []string) (string, error)
 	GetOTAJob(ctx context.Context, jobID string) (*model.OTAJob, error)
+	VerifyFirmwareSignature(ctx context.Context, id string) (bool, string, error)
 }
 
 type SettingsStore interface {

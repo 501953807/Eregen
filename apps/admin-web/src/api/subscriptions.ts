@@ -16,7 +16,7 @@ export interface SubscriptionStatItem {
 
 export const subscriptionsApi = {
   stats() {
-    return apiClient.get('/admin/subscriptions/stats')
+    return apiClient.get('/admin/stats/subscriptions')
   },
   list(params?: SubscriptionListParams) {
     return apiClient.get('/admin/subscriptions', { params })
