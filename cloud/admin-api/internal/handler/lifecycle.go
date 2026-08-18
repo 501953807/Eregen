@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"eregen.dev/admin-api/internal/model"
 	"eregen.dev/admin-api/internal/store"
@@ -47,6 +48,28 @@ func (h *LifecycleHandler) GetPersonStatus(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": gin.H{"person_id": personID, "chain": chain, "status": status}})
+}
+
+// GetStatusHistory returns the status transition history for a person in a business chain.
+func (h *LifecycleHandler) GetStatusHistory(c *gin.Context) {
+	personID := c.Param("id")
+	chain := model.BusinessChain(c.Query("chain"))
+	if chain == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "chain query parameter is required"})
+		return
+	}
+	limit := 50
+	if l := c.Query("limit"); l != "" {
+		if n, err := strconv.Atoi(l); err == nil && n > 0 && n <= 200 {
+			limit = n
+		}
+	}
+	history, err := h.store.GetStatusHistory(c.Request.Context(), personID, chain, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": history})
 }
 
 // LinkPerson creates a cross-chain link between two persons.

@@ -1064,3 +1064,16 @@ type OTAJob struct {
 	CreatedAt     string          `json:"created_at"`
 	UpdatedAt     string          `json:"updated_at"`
 }
+
+// StatusTransition records a single status change in a person's business chain lifecycle.
+type StatusTransition struct {
+	ID            string    `json:"id"`
+	PersonID      string    `json:"person_id"`
+	BusinessChain string    `json:"business_chain"`
+	FromStatus    string    `json:"from_status"`
+	ToStatus      string    `json:"to_status"`
+	Reason        string    `json:"reason,omitempty"`
+	PerformedBy   string    `json:"performed_by,omitempty"`
+	Metadata      string    `json:"metadata,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+}

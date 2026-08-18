@@ -112,3 +112,4 @@ func (s *PostgresStore) ListNotificationLogs(ctx context.Context, personID strin
 func (s *PostgresStore) TransitionStatus(ctx context.Context, personID string, chain model.BusinessChain, newStatus, reason string) error { return ErrNotImplemented }
 func (s *PostgresStore) GetPersonStatus(ctx context.Context, personID string, chain model.BusinessChain) (string, error) { return "", ErrNotImplemented }
 func (s *PostgresStore) LinkPersons(ctx context.Context, personID1, personID2 string, chain1, chain2 model.BusinessChain) error { return ErrNotImplemented }
+func (s *PostgresStore) GetStatusHistory(ctx context.Context, personID string, chain model.BusinessChain, limit int) ([]model.StatusTransition, error) { return nil, ErrNotImplemented }

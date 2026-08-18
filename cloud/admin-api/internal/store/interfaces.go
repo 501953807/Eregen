@@ -248,6 +248,7 @@ type LifecycleStore interface {
 	TransitionStatus(ctx context.Context, personID string, chain model.BusinessChain, newStatus, reason string) error
 	GetPersonStatus(ctx context.Context, personID string, chain model.BusinessChain) (string, error)
 	LinkPersons(ctx context.Context, personID1, personID2 string, chain1, chain2 model.BusinessChain) error
+	GetStatusHistory(ctx context.Context, personID string, chain model.BusinessChain, limit int) ([]model.StatusTransition, error)
 }
 
 type MedicationRuleStore interface {

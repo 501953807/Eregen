@@ -218,6 +218,7 @@ patient := handler.NewPatientHandler(s)
 			persons.POST("", person.Create)
 			// Person lifecycle / cross-chain transitions
 			persons.PUT("/:id/status", lifecycle.TransitionStatus)
+			persons.GET("/:id/status/history", lifecycle.GetStatusHistory)
 			persons.POST("/link", lifecycle.LinkPerson)
 			// Person detail and sub-resources
 			personDetail := persons.Group("/:id")
