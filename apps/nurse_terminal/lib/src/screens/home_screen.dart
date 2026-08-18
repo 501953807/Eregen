@@ -5,7 +5,6 @@ import '../services/medical_wristband_ble_service.dart';
 import 'patient_detail_screen.dart';
 
 /// Home screen showing the list of admitted patients.
-/// Supports both admin-api JWT and hospital-api key authentication.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -14,46 +13,24 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Try admin-api first (JWT), fall back to hospital-api (API key)
-  final ApiClient _adminApi = ApiClient();
-  final HospitalApiClient _hospitalApi = HospitalApiClient();
+  final ApiClient _api = ApiClient();
   late PatientService _patientService;
 
   List<dynamic> patients = [];
   bool loading = true;
-  bool _usingHospitalApi = false;
   final _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _initService();
+    _patientService = PatientService(_api);
     _loadPatients();
-  }
-
-  void _initService() async {
-    // Check which auth method is available
-    final hasAdminToken = await _adminApi.isLoggedIn;
-    final hasHospitalKey = await _hospitalApi.isLoggedIn;
-
-    setState(() {
-      _usingHospitalApi = !hasAdminToken && hasHospitalKey;
-      _patientService = _usingHospitalApi
-          ? PatientService(_hospitalApi)
-          : PatientService(_adminApi as dynamic); // Cast for compatibility
-    });
   }
 
   Future<void> _loadPatients() async {
     setState(() => loading = true);
     try {
-      late Map<String, dynamic> res;
-      if (_usingHospitalApi) {
-        res = await _hospitalApi.get('/api/v2/b2b/institutions/${_hospitalApi.institutionId}/nurses/patients');
-      } else {
-        res = await _adminApi.get('/api/v1/admin/medical/patients?page=1&page_size=50&status=admitted');
-      }
-      final data = res['data'] as List<dynamic>? ?? [];
+      final data = await _patientService.listAdmitted();
       setState(() => patients = data);
     } catch (e) {
       if (mounted) {
@@ -114,8 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await _adminApi.logout();
-              await _hospitalApi.logout();
+              await _api.logout();
               if (mounted) {
                 Navigator.of(context).pushReplacementNamed('/');
               }
@@ -146,21 +122,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ]),
         ),
-        if (_usingHospitalApi)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: Colors.blue.shade50,
-            child: Row(
-              children: [
-                const Icon(Icons.business, size: 16, color: Colors.blue),
-                const SizedBox(width: 8),
-                Text(
-                  '医院 API 模式 | 机构: ${_hospitalApi.institutionId}',
-                  style: const TextStyle(color: Colors.blue, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
         Expanded(
           child: loading
               ? const Center(child: CircularProgressIndicator())

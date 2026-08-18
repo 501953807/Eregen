@@ -9,13 +9,13 @@ export const devicesApi = {
     return apiClient.get(`/admin/devices/${id}`)
   },
   updateSettings(id: string, settings: Record<string, any>) {
-    return apiClient.put(`/admin/devices/${id}/settings`, { settings })
+    return apiClient.post(`/admin/devices/${id}/config`, { settings })
   },
   triggerOTA(id: string, firmwareUrl: string, hash: string) {
     return apiClient.post(`/admin/devices/${id}/ota`, { url: firmwareUrl, hash })
   },
   updateConfig(deviceId: string, config: Record<string, any>) {
-    return apiClient.put(`/admin/devices/${deviceId}/settings`, config)
+    return apiClient.post(`/admin/devices/${deviceId}/config`, config)
   },
   batchOtaPush(deviceIds: string[], firmwareUrl: string, hash: string) {
     return apiClient.post('/admin/devices/batch-ota', { device_ids: deviceIds, url: firmwareUrl, hash })

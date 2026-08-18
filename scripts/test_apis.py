@@ -2,7 +2,7 @@
 """Test all admin APIs after bug fixes"""
 import requests, json, time
 
-BASE = 'http://localhost:8089/api/v1'
+BASE = 'http://localhost:8085/api/v1'
 r = requests.post(f'{BASE}/auth/login', json={'method':'email','credential':'admin@eregen.com','secret':'Admin@123'}, timeout=10)
 token = r.json()['data']['token']
 h = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"eregen.dev/admin-api/internal/model"
 	"fmt"
+	"time"
 )
 
 
@@ -46,14 +47,27 @@ func (s *SqliteStore) DeleteFirmwareVersion(ctx context.Context, id string) erro
 }
 
 // PushOTAJob records an OTA push job.
-func (s *SqliteStore) PushOTAJob(ctx context.Context, firmwareID string, deviceIDs []string) error {
+func (s *SqliteStore) PushOTAJob(ctx context.Context, firmwareID string, deviceIDs []string) (string, error) {
 	devicesJSON := "[]"
 	if len(deviceIDs) > 0 {
 		data, _ := json.Marshal(deviceIDs)
 		devicesJSON = string(data)
 	}
+	id := fmt.Sprintf("job_%d", time.Now().UnixNano())
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO ota_jobs (firmware_id, target_devices, progress) VALUES (?, ?, '{"total":0,"pending":0}')`,
-		firmwareID, devicesJSON)
-	return err
+		`INSERT INTO ota_jobs (id, firmware_id, target_devices, progress) VALUES (?, ?, ?, '{"total":0,"pending":0}')`,
+		id, firmwareID, devicesJSON)
+	return id, err
+}
+
+// GetOTAJob retrieves an OTA job by ID.
+func (s *SqliteStore) GetOTAJob(ctx context.Context, jobID string) (*model.OTAJob, error) {
+	var job model.OTAJob
+	err := s.db.QueryRowContext(ctx,
+		`SELECT id, firmware_id, target_devices, progress, created_at, updated_at FROM ota_jobs WHERE id = ?`,
+		jobID).Scan(&job.ID, &job.FirmwareID, &job.TargetDevices, &job.Progress, &job.CreatedAt, &job.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &job, nil
 }

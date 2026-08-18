@@ -1,5 +1,5 @@
 const app = getApp()
-const API_BASE = 'https://api.eregen.com/api/v1'
+const { ApiClient } = require('../../utils/api')
 
 Page({
   data: {
@@ -12,9 +12,9 @@ Page({
 
   async loadElderlyList() {
     try {
-      const token = wx.getStorageSync('token')
-      const res = await this._request('/elderly', {}, token)
-      const list = (res.data || []).map((e, i) => ({
+      const api = new ApiClient()
+      const res = await api.get('/elderly')
+      const list = (res?.data || []).map((e, i) => ({
         id: e.id,
         name: e.name,
         avatar: i % 2 === 0 ? '👴' : '👵',
@@ -59,21 +59,6 @@ Page({
       title: '退出登录',
       content: '确定要退出登录吗？',
       success: (res) => { if (res.confirm) { wx.removeStorageSync('token'); wx.reLaunch({ url: '/pages/login/index' }) } },
-    })
-  },
-
-  _request(url, data, token) {
-    return new Promise((resolve, reject) => {
-      wx.request({
-        url: `${API_BASE}${url}`,
-        data,
-        header: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        success: (res) => res.statusCode < 400 ? resolve(res) : reject(res),
-        fail: reject,
-      })
     })
   },
 })

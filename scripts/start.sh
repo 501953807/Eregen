@@ -76,7 +76,7 @@ case "$COMMAND" in
       --all|"")
         log_header "Starting All Services"
         log_info "Cloud backend..."
-        for svc in api-server push-service data-pipeline admin-api gateway; do
+        for svc in api-server admin-api push-service data-pipeline gateway; do
           go_start "$svc" "$EXTRA_PORT" || log_warn "Failed to start $svc"
         done
         log_info "B2B services..."
@@ -91,7 +91,7 @@ case "$COMMAND" in
         log_success "All services started (check individual logs for errors)"
         ;;
       cloud)
-        for svc in api-server push-service data-pipeline admin-api gateway; do
+        for svc in api-server admin-api push-service data-pipeline gateway; do
           go_start "$svc" "$EXTRA_PORT"
         done
         ;;
@@ -109,7 +109,7 @@ case "$COMMAND" in
       firmware)
         firmware_list_targets
         ;;
-      api-server|push-service|data-pipeline|admin-api|gateway)
+      api-server|admin-api|push-service|data-pipeline|gateway)
         go_start "$SERVICE" "$EXTRA_PORT"
         ;;
       hospital-api|community-platform|insurance-integration)
@@ -154,7 +154,7 @@ case "$COMMAND" in
 
     case "$SERVICE" in
       --all|"")
-        for svc in api-server push-service data-pipeline admin-api gateway; do
+        for svc in api-server admin-api push-service data-pipeline gateway; do
           go_stop "$svc"
         done
         for svc in hospital-api community-platform insurance-integration; do
@@ -165,7 +165,7 @@ case "$COMMAND" in
         flutter_stop family-app
         ;;
       cloud)
-        for svc in api-server push-service data-pipeline admin-api gateway; do
+        for svc in api-server admin-api push-service data-pipeline gateway; do
           go_stop "$svc"
         done
         ;;
@@ -179,7 +179,7 @@ case "$COMMAND" in
         hugo_stop website
         flutter_stop family-app
         ;;
-      api-server|push-service|data-pipeline|admin-api|gateway)
+      api-server|admin-api|push-service|data-pipeline|gateway)
         go_stop "$SERVICE"
         ;;
       hospital-api|community-platform|insurance-integration)
@@ -219,7 +219,7 @@ case "$COMMAND" in
 
     if [ "$SERVICE" = "--all" ] || [ -z "$SERVICE" ]; then
       log_header "Service Status"
-      for svc in api-server push-service data-pipeline admin-api gateway; do
+      for svc in api-server admin-api push-service data-pipeline gateway; do
         go_status "$svc" 2>/dev/null || true
       done
       for svc in hospital-api community-platform insurance-integration; do

@@ -24,7 +24,7 @@ class _ElderlyDetailPageState extends State<ElderlyDetailPage> {
 
   Future<void> _fetchData() async {
     try {
-      final resp = await ApiClient.instance.get('/admin/elderly');
+      final resp = await ApiClient.instance.listElderly();
       if (resp.data != null && (resp.data as Map).containsKey('data')) {
         final list = resp.data['data'] as List;
         setState(() {
@@ -358,7 +358,7 @@ class _AddElderlyPageState extends State<AddElderlyPage> {
                             ? '${_selectedBirthDate!.year}-${_selectedBirthDate!.month.toString().padLeft(2, '0')}-${_selectedBirthDate!.day.toString().padLeft(2, '0')}'
                             : null;
                         final healthTiers = _selectedTier != null ? [_selectedTier] : <String>[];
-                        await ApiClient.instance.post('/elderly', data: {
+                        await ApiClient.instance.createElderly({
                           'name': _nameController.text.trim(),
                           if (birthDate != null) 'birth_date': birthDate,
                           'health_tiers': healthTiers,

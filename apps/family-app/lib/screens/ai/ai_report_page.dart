@@ -36,7 +36,7 @@ class _AIReportPageState extends State<AIReportPage> {
 
   Future<void> _fetchData() async {
     try {
-      final healthResp = await ApiClient.instance.get('/health/records', query: {'range': '本月'});
+      final healthResp = await ApiClient.instance.get('/api/v1/health/records', query: {'range': '本月'});
       final list = (healthResp.data as List);
       final records = list.map((r) => HealthRecord.fromJson(r as Map<String, dynamic>)).toList();
 
@@ -50,7 +50,7 @@ class _AIReportPageState extends State<AIReportPage> {
       String riskLevel = '暂无数据';
       Color riskColor = AppTheme.statusNormal;
       try {
-        final riskResp = await ApiClient.instance.get('/health/risk-score');
+        final riskResp = await ApiClient.instance.get('/api/v1/health/risk-score');
         if (riskResp.data != null) {
           final riskData = riskResp.data as Map<String, dynamic>;
           riskScore = (riskData['score'] ?? 0).toDouble();

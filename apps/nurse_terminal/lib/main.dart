@@ -21,7 +21,6 @@ class NurseTerminalApp extends StatelessWidget {
         colorSchemeSeed: NurseTerminalTheme.primary,
         brightness: Brightness.light,
         fontFamily: 'PingFang SC',
-        primaryColor: NurseTerminalTheme.primary,
         scaffoldBackgroundColor: NurseTerminalTheme.bgScaffold,
         cardTheme: CardThemeData(
           margin: EdgeInsets.zero,
@@ -38,7 +37,6 @@ class NurseTerminalApp extends StatelessWidget {
       themeMode: ThemeMode.light,
       home: const LoginScreen(),
       routes: {
-        '/': (_) => const LoginScreen(),
         '/home': (_) => const HomeScreen(),
         '/nfc-scan': (_) => const NfcScanPage(),
       },

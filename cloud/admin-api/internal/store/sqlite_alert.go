@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"eregen.dev/admin-api/internal/model"
 	"fmt"
 	"github.com/google/uuid"
@@ -9,8 +10,8 @@ import (
 )
 
 func (s *SqliteStore) ListAlerts(ctx context.Context, severity, status string, limit int) ([]model.AlertSummary, error) {
-	query := `SELECT a.id, a.elderly_id, a.alert_type, a.severity, a.status, a.created_at,
-		COALESCE(d.device_id, '')
+	query := `SELECT a.id, a.elderly_id, a.business_chain, a.alert_type, a.severity,
+		a.status, a.rule_id, a.created_at, COALESCE(d.device_id, '')
 		FROM alerts a LEFT JOIN devices d ON a.device_id = d.id WHERE 1=1`
 	args := []interface{}{}
 	idx := 1
@@ -36,9 +37,15 @@ func (s *SqliteStore) ListAlerts(ctx context.Context, severity, status string, l
 	var alerts []model.AlertSummary
 	for rows.Next() {
 		var a model.AlertSummary
-		if err := rows.Scan(&a.ID, &a.ElderlyID, &a.AlertType, &a.Severity, &a.Status, &a.CreatedAt, &a.DeviceID); err != nil {
+		var createdAtStr string
+		var ruleID sql.NullString
+		if err := rows.Scan(&a.ID, &a.ElderlyID, &a.BusinessChain, &a.AlertType, &a.Severity, &a.Status, &ruleID, &createdAtStr, &a.DeviceID); err != nil {
 			return nil, fmt.Errorf("scan alert: %w", err)
 		}
+		if ruleID.Valid {
+			a.RuleID = ruleID.String
+		}
+		a.CreatedAt = parseTimeStrict(createdAtStr)
 		alerts = append(alerts, a)
 	}
 	return alerts, rows.Err()

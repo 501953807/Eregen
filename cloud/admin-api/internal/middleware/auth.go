@@ -51,6 +51,11 @@ func (j *AdminJWT) AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Normalize legacy "admin" role to "super_admin"
+		if claims.Role == "admin" {
+			claims.Role = "super_admin"
+		}
+
 		c.Set(string(ContextUserID), claims.UserID)
 		c.Set(string(ContextRole), claims.Role)
 
@@ -118,7 +123,7 @@ func (j *AdminJWT) RequireAdminRole(minRole string) gin.HandlerFunc {
 // ChainPermissions maps role string → allowed business chains.
 var ChainPermissions = map[string][]string{
 	"super_admin":     {"self", "hospital", "community", "regulatory"},
-	"operator":        {"self", "regulatory"},
+	"operator":        {"self"},
 	"hospital_doc":    {"hospital"},
 	"nurse":           {"hospital"},
 	"community_staff": {"community"},

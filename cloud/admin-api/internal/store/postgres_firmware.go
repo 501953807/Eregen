@@ -4,6 +4,7 @@ import (
 	"context"
 	"eregen.dev/admin-api/internal/model"
 	"fmt"
+	"time"
 )
 
 
@@ -81,7 +82,9 @@ func (s *PostgresStore) DeleteFirmwareVersion(ctx context.Context, id string) er
 
 // PushOTAJob records an OTA push job.
 
-func (s *PostgresStore) PushOTAJob(ctx context.Context, firmwareID string, deviceIDs []string) error {
+func (s *PostgresStore) PushOTAJob(ctx context.Context, firmwareID string, deviceIDs []string) (string, error) {
+
+	id := fmt.Sprintf("job_%d", time.Now().UnixNano())
 
 	devicesJSON := "[]"
 
@@ -93,11 +96,31 @@ func (s *PostgresStore) PushOTAJob(ctx context.Context, firmwareID string, devic
 
 	_, err := s.db.ExecContext(ctx,
 
-		`INSERT INTO ota_jobs (firmware_id, target_devices, progress) VALUES ($1, $2, '{"total":0,"pending":0}')`,
+		`INSERT INTO ota_jobs (id, firmware_id, target_devices, progress) VALUES ($1, $2, $3, '{"total":0,"pending":0}')`,
 
-		firmwareID, devicesJSON)
+		id, firmwareID, devicesJSON)
 
-	return err
+	return id, err
+
+}
+
+func (s *PostgresStore) GetOTAJob(ctx context.Context, jobID string) (*model.OTAJob, error) {
+
+	var job model.OTAJob
+
+	err := s.db.QueryRowContext(ctx,
+
+		`SELECT id, firmware_id, target_devices, progress, created_at, updated_at FROM ota_jobs WHERE id = $1`,
+
+		jobID).Scan(&job.ID, &job.FirmwareID, &job.TargetDevices, &job.Progress, &job.CreatedAt, &job.UpdatedAt)
+
+	if err != nil {
+
+		return nil, err
+
+	}
+
+	return &job, nil
 
 }
 

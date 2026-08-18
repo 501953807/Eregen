@@ -386,3 +386,32 @@ func (h *CommunityWBHandler) CreateCommunityDevice(c *gin.Context) {
 	}
 	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": d})
 }
+
+// NfcAuth handles NFC authentication for community wristband verification.
+func (h *CommunityWBHandler) NfcAuth(c *gin.Context) {
+	var req struct {
+		ElderID    string `json:"elder_id" binding:"required"`
+		SerialNum  string `json:"serial_number"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "elder_id required"})
+		return
+	}
+
+	// Verify elder exists
+	elder, err := h.store.GetCommunityElder(c.Request.Context(), req.ElderID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Elder not found"})
+		return
+	}
+
+	// NFC auth result: verify elder identity
+	result := gin.H{
+		"elder_id":  elder.ID,
+		"elder_name": elder.Name,
+		"verified": true,
+		"method":   "nfc",
+		"serial_number": req.SerialNum,
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": result})
+}

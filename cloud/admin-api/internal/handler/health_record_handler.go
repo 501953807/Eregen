@@ -35,7 +35,7 @@ func (h *HealthRecordHandler) Create(c *gin.Context) {
 
 // List returns health records for a person.
 func (h *HealthRecordHandler) List(c *gin.Context) {
-	personID := c.Param("personId")
+	personID := c.Param("id")
 	if personID == "" {
 		personID = c.Query("personId")
 	}
@@ -55,7 +55,7 @@ func (h *HealthRecordHandler) List(c *gin.Context) {
 
 // GetSummary returns the health summary for a person.
 func (h *HealthRecordHandler) GetSummary(c *gin.Context) {
-	personID := c.Param("personId")
+	personID := c.Param("id")
 	if personID == "" {
 		personID = c.Query("personId")
 	}

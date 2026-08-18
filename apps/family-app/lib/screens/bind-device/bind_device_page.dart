@@ -30,7 +30,7 @@ class _BindDevicePageState extends State<BindDevicePage> {
     if (!_formKey.currentState!.validate()) return;
     setState(() { _loading = true; _error = null; });
     try {
-      await ApiClient.instance.post('/devices/bind', data: {
+      await ApiClient.instance.registerDevice({
         'device_id': _ctrl.text.trim().toUpperCase(),
       });
       if (!mounted) return;

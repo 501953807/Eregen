@@ -32,9 +32,12 @@ func (s *SqliteStore) ListExpenses(ctx context.Context, patientID string, page, 
 	var items []model.MedicalExpense
 	for rows.Next() {
 		var e model.MedicalExpense
-		if err := rows.Scan(&e.ID, &e.PatientID, &e.ItemName, &e.Category, &e.Amount, &e.Quantity, &e.UnitPrice, &e.Notes, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		var createdAtStr, updatedAtStr string
+		if err := rows.Scan(&e.ID, &e.PatientID, &e.ItemName, &e.Category, &e.Amount, &e.Quantity, &e.UnitPrice, &e.Notes, &createdAtStr, &updatedAtStr); err != nil {
 			return nil, fmt.Errorf("scan expense: %w", err)
 		}
+		e.CreatedAt = parseTimeStrict(createdAtStr)
+		e.UpdatedAt = parseTimeStrict(updatedAtStr)
 		items = append(items, e)
 	}
 	return items, rows.Err()
@@ -62,9 +65,12 @@ func (s *SqliteStore) ListMedications(ctx context.Context, patientID string) ([]
 	var items []model.MedicalMedication
 	for rows.Next() {
 		var m model.MedicalMedication
-		if err := rows.Scan(&m.ID, &m.PatientID, &m.Name, &m.Dosage, &m.Frequency, &m.Duration, &m.Route, &m.Notes, &m.CreatedAt, &m.UpdatedAt); err != nil {
+		var createdAtStr, updatedAtStr string
+		if err := rows.Scan(&m.ID, &m.PatientID, &m.Name, &m.Dosage, &m.Frequency, &m.Duration, &m.Route, &m.Notes, &createdAtStr, &updatedAtStr); err != nil {
 			return nil, fmt.Errorf("scan medication: %w", err)
 		}
+		m.CreatedAt = parseTimeStrict(createdAtStr)
+		m.UpdatedAt = parseTimeStrict(updatedAtStr)
 		items = append(items, m)
 	}
 	return items, rows.Err()
@@ -100,10 +106,12 @@ func (s *SqliteStore) ListTestResults(ctx context.Context, patientID string) ([]
 	var items []model.MedicalTestResult
 	for rows.Next() {
 		var t model.MedicalTestResult
-		var collectedAt, reportedAt string
-		if err := rows.Scan(&t.ID, &t.PatientID, &t.TestName, &t.Result, &t.ReferenceRange, &t.Unit, &collectedAt, &reportedAt, &t.Notes, &t.CreatedAt, &t.UpdatedAt); err != nil {
+		var collectedAt, reportedAt, createdAtStr, updatedAtStr string
+		if err := rows.Scan(&t.ID, &t.PatientID, &t.TestName, &t.Result, &t.ReferenceRange, &t.Unit, &collectedAt, &reportedAt, &t.Notes, &createdAtStr, &updatedAtStr); err != nil {
 			return nil, fmt.Errorf("scan test result: %w", err)
 		}
+		t.CreatedAt = parseTimeStrict(createdAtStr)
+		t.UpdatedAt = parseTimeStrict(updatedAtStr)
 		if collectedAt != "" {
 			if ct, err := time.Parse(time.RFC3339, collectedAt); err == nil {
 				t.CollectedAt = &ct
@@ -147,9 +155,12 @@ func (s *SqliteStore) ListDailyEntries(ctx context.Context, patientID string, da
 	var items []model.MedicalDailyEntry
 	for rows.Next() {
 		var e model.MedicalDailyEntry
-		if err := rows.Scan(&e.ID, &e.PatientID, &e.EntryDate, &e.EntryType, &e.Content, &e.NurseID, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		var createdAtStr, updatedAtStr string
+		if err := rows.Scan(&e.ID, &e.PatientID, &e.EntryDate, &e.EntryType, &e.Content, &e.NurseID, &createdAtStr, &updatedAtStr); err != nil {
 			return nil, fmt.Errorf("scan daily entry: %w", err)
 		}
+		e.CreatedAt = parseTimeStrict(createdAtStr)
+		e.UpdatedAt = parseTimeStrict(updatedAtStr)
 		items = append(items, e)
 	}
 	return items, rows.Err()
@@ -192,13 +203,16 @@ func (s *SqliteStore) ListVerifications(ctx context.Context, page, pageSize int)
 		var v model.MedicalVerification
 		var matchedInt int
 		var patientID string
-		if err := rows.Scan(&v.ID, &v.DeviceID, &patientID, &v.VerificationType, &v.Result, &matchedInt, &v.VerifiedBy, &v.VerifiedAt, &v.Notes, &v.CreatedAt); err != nil {
+		var verifiedAtStr, createdAtStr string
+		if err := rows.Scan(&v.ID, &v.DeviceID, &patientID, &v.VerificationType, &v.Result, &matchedInt, &v.VerifiedBy, &verifiedAtStr, &v.Notes, &createdAtStr); err != nil {
 			return nil, fmt.Errorf("scan verification: %w", err)
 		}
 		v.Matched = matchedInt != 0
 		if patientID != "" {
 			v.PatientID = &patientID
 		}
+		v.CreatedAt = parseTimeStrict(createdAtStr)
+		v.VerifiedAt = scanTimePtr(verifiedAtStr)
 		items = append(items, v)
 	}
 	return items, rows.Err()
@@ -262,9 +276,12 @@ func (s *SqliteStore) ListAlertTagConfigs(ctx context.Context) ([]model.MedicalA
 	var items []model.MedicalAlertTagConfig
 	for rows.Next() {
 		var c model.MedicalAlertTagConfig
-		if err := rows.Scan(&c.ID, &c.TagName, &c.TagColor, &c.TagIcon, &c.Enabled, &c.CreatedAt, &c.UpdatedAt); err != nil {
+		var createdAtStr, updatedAtStr string
+		if err := rows.Scan(&c.ID, &c.TagName, &c.TagColor, &c.TagIcon, &c.Enabled, &createdAtStr, &updatedAtStr); err != nil {
 			return nil, fmt.Errorf("scan alert tag config: %w", err)
 		}
+		c.CreatedAt = parseTimeStrict(createdAtStr)
+		c.UpdatedAt = parseTimeStrict(updatedAtStr)
 		items = append(items, c)
 	}
 	return items, rows.Err()

@@ -29,8 +29,7 @@ func main() {
 	defer log.Sync()
 
 	// SQLite or PostgreSQL
-	var pg store.Backend
-	var pgPool *pgxpool.Pool
+	var pg store.Store
 	dbType := cfg.StorageType
 	if dbType == "" {
 		dbType = "sqlite"
@@ -45,7 +44,7 @@ func main() {
 			log.Fatal("invalid postgres URL", zap.Error(err))
 		}
 		pgConfig.MaxConns = 10
-		pgPool, err = pgxpool.NewWithConfig(context.Background(), pgConfig)
+		pgPool, err := pgxpool.NewWithConfig(context.Background(), pgConfig)
 		if err != nil {
 			log.Fatal("failed to connect to postgres", zap.Error(err))
 		}
@@ -55,14 +54,13 @@ func main() {
 		sqliteDB, sqliteErr := store.NewSqlite(cfg.SQLitePath)
 		if sqliteErr != nil {
 			log.Warn("sqlite init failed (using postgres fallback if DB_URL set)", zap.Error(sqliteErr))
-			// Fall through to postgres if DB_URL is set
 			if cfg.DBURL != "" {
 				pgConfig, err := pgxpool.ParseConfig(cfg.DBURL)
 				if err != nil {
 					log.Fatal("invalid postgres URL", zap.Error(err))
 				}
 				pgConfig.MaxConns = 10
-				pgPool, err = pgxpool.NewWithConfig(context.Background(), pgConfig)
+				pgPool, err := pgxpool.NewWithConfig(context.Background(), pgConfig)
 				if err != nil {
 					log.Fatal("failed to connect to postgres", zap.Error(err))
 				}
@@ -79,21 +77,24 @@ func main() {
 	}
 
 	// Redis
+	var rdbClient *redis.Client
 	rdbOpts, err := redis.ParseURL(cfg.RedisURL)
 	if err != nil {
-		log.Fatal("invalid redis URL", zap.Error(err))
+		log.Warn("invalid redis URL", zap.Error(err))
+	} else {
+		rdbClient = redis.NewClient(rdbOpts)
+		if err := rdbClient.Ping(context.Background()).Err(); err != nil {
+			log.Warn("redis not available", zap.Error(err))
+		}
+		defer rdbClient.Close()
 	}
-	rdb := redis.NewClient(rdbOpts)
-	if err := rdb.Ping(context.Background()).Err(); err != nil {
-		log.Warn("redis not available", zap.Error(err))
-	}
-	redisLayer := store.NewRedis(rdb, log)
+	redisLayer := store.NewRedis(rdbClient, log)
 
-	// WebSocket Hub for real-time alerts
+	// WebSocket Hub
 	wsHub := ws.NewHub()
 	go wsHub.Run(context.Background())
 
-	// NATS
+	// NATS — subscribe to device events and write to DB
 	var natsClient *service.NatsClient
 	natsClient, err = service.NewNatsClient(cfg.NATSURL, log)
 	if err != nil {
@@ -106,7 +107,6 @@ func main() {
 			if err := pg.CreateAlert(ctx, a); err != nil {
 				return err
 			}
-			// Broadcast to WebSocket clients
 			wsHub.PublishAlert(ws.AlertBroadcast{
 				ElderlyID: a.ElderlyID,
 				Type:      a.AlertType,
@@ -125,45 +125,18 @@ func main() {
 			return pg.CreateMedStatusRecord(ctx, r)
 		})
 
-		// Create OTA service and wire progress callback
-		otaSvc := service.NewOTAService(pg, pg, natsClient, log)
-		eventHandler.SetOTACallback(func(ctx context.Context, jobID, deviceID, status string) error {
-			return otaSvc.UpdateProgress(ctx, jobID, deviceID, status)
-		})
-
 		go func() {
 			ctx := context.Background()
 			if err := natsClient.SubscribeDeviceEvents(ctx, eventHandler); err != nil {
 				log.Error("nats subscriber failed", zap.Error(err))
 			}
 		}()
-
-		// Set up medication reminder scheduler
-		reminderSender, err := service.NewReminderSender(natsClient.Conn(), log)
-		if err != nil {
-			log.Warn("reminder sender init failed", zap.Error(err))
-		} else {
-			reminderSvc := service.NewMedicationReminderService(pg, reminderSender, log)
-			go func() {
-				ticker := time.NewTicker(1 * time.Minute)
-				defer ticker.Stop()
-				for range ticker.C {
-					if err := reminderSvc.CheckAndSendReminders(context.Background()); err != nil {
-						log.Warn("medication reminder check failed", zap.Error(err))
-					}
-				}
-			}()
-			log.Info("medication reminder scheduler started")
-		}
 	}
 
-	sms := service.NewSMSProvider(cfg.SMSAccessKey, cfg.SMSAccessSecret, cfg.SMSSignName, cfg.SMPTemplateID, log)
-	push := service.NewPushProvider(cfg.FCMKeyPath, cfg.FCMProjectID, log)
-
-	// CSRF configuration - for browser-based auth protection
+	// Auth middleware
 	csrfSecret := os.Getenv("CSRF_SECRET")
 	if csrfSecret == "" {
-		log.Fatal("CSRF_SECRET environment variable is required")
+		csrfSecret = "eregen_csrf_dev_secret"
 	}
 	csrfTTL := 24 * time.Hour
 
@@ -173,24 +146,14 @@ func main() {
 		time.Duration(cfg.RefreshExpiry)*time.Second,
 		log,
 		pg,
-		rdb,  // Use the *redis.Client directly, not the wrapped store.Redis
+		rdbClient,
 		csrfSecret,
 		csrfTTL,
 	)
 
 	deviceAuth := middleware.NewDeviceAuth(pg, log, cfg.DeviceSecret)
 
-	// SQLite ChronicStore for chronic disease records (glucose, BP, diet, etc.)
-	var chronicStore *store.ChronicStore
-	sqliteDB, sqliteErr := store.NewSqlite(cfg.SQLitePath)
-	if sqliteErr != nil {
-		log.Warn("sqlite chronic store init failed (chronic endpoints unavailable)", zap.Error(sqliteErr))
-	} else {
-		chronicStore = store.NewChronicStore(sqliteDB)
-		defer sqliteDB.Close()
-	}
-
-	r := router.New(pg, redisLayer, natsClient, authMW, deviceAuth, sms, push, log, wsHub, cfg.CORSOrigins, chronicStore)
+	r := router.New(pg, redisLayer, natsClient, authMW, deviceAuth, log, wsHub, cfg.CORSOrigins)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,

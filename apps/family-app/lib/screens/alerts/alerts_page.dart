@@ -89,7 +89,7 @@ class _AlertsPageState extends State<AlertsPage> {
 
   Future<void> _fetchData() async {
     try {
-      final resp = await ApiClient.instance.get('/alerts', query: {'limit': 50});
+      final resp = await ApiClient.instance.get('/api/v1/alerts', query: {'limit': 50});
       final list = resp.data as List;
       final alerts = list.map((a) => Alert.fromJson(a as Map<String, dynamic>)).toList();
 
@@ -165,7 +165,9 @@ class _AlertsPageState extends State<AlertsPage> {
       return;
     }
     try {
-      await ApiClient.instance.post('/alerts/handle-all');
+      for (final alert in pendingAlerts) {
+        await ApiClient.instance.handleAlert(alert.id);
+      }
       setState(() {
         for (int i = 0; i < _allAlerts.length; i++) {
           if (_allAlerts[i].status == 'pending') {

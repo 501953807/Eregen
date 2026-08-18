@@ -197,7 +197,8 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { hospitalApi, regulatoryApi } from '@/api/business-chains'
+import { hospitalApi } from '@/api/business-chains'
+import { regulatoryApi } from '@/api/regulatory'
 import { medicalApi } from '@/api/medical'
 import { HopeBtn, HopeCard, HopeStatCard, HopeTimeline } from '@/components/hope'
 import type { HospitalAdmission } from '@/api/medical'
@@ -284,7 +285,7 @@ const viewAudit = async (row: HospitalAdmission) => {
   showAuditDialog.value = true
   auditLoading.value = true
   try {
-    const res: any = await regulatoryApi.getAudit(row.id!)
+    const res: any = await regulatoryApi.getAuditTrail(row.id!)
     auditTrail.value = res.data || { events: [] }
   } catch {
     auditTrail.value = { events: [] }

@@ -26,7 +26,7 @@ func newTestRouter(jwt *AdminJWT, extraMws ...gin.HandlerFunc) *gin.Engine {
 func TestChainPermissionsMapping(t *testing.T) {
 	expected := map[string][]string{
 		"super_admin":     {"self", "hospital", "community", "regulatory"},
-		"operator":        {"self", "regulatory"},
+		"operator":        {"self"},
 		"hospital_doc":    {"hospital"},
 		"nurse":           {"hospital"},
 		"community_staff": {"community"},

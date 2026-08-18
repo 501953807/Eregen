@@ -42,9 +42,11 @@ func (s *SqliteStore) ListAuditLogs(ctx context.Context, limit int) ([]model.Aud
 	for rows.Next() {
 		var l model.AuditLog
 		var detailsJSON string
-		if err := rows.Scan(&l.ID, &l.UserID, &l.Action, &l.Resource, &l.ResourceID, &detailsJSON, &l.IP, &l.CreatedAt); err != nil {
+		var createdAtStr string
+		if err := rows.Scan(&l.ID, &l.UserID, &l.Action, &l.Resource, &l.ResourceID, &detailsJSON, &l.IP, &createdAtStr); err != nil {
 			return nil, err
 		}
+		l.CreatedAt = parseTimeStrict(createdAtStr)
 		json.Unmarshal([]byte(detailsJSON), &l.Details)
 		logs = append(logs, l)
 	}
@@ -66,9 +68,11 @@ func (s *SqliteStore) ListAuditLogsByUser(ctx context.Context, userID string, li
 	for rows.Next() {
 		var l model.AuditLog
 		var detailsJSON string
-		if err := rows.Scan(&l.ID, &l.UserID, &l.Action, &l.Resource, &l.ResourceID, &detailsJSON, &l.IP, &l.CreatedAt); err != nil {
+		var createdAtStr string
+		if err := rows.Scan(&l.ID, &l.UserID, &l.Action, &l.Resource, &l.ResourceID, &detailsJSON, &l.IP, &createdAtStr); err != nil {
 			return nil, err
 		}
+		l.CreatedAt = parseTimeStrict(createdAtStr)
 		json.Unmarshal([]byte(detailsJSON), &l.Details)
 		logs = append(logs, l)
 	}
@@ -90,9 +94,11 @@ func (s *SqliteStore) ListAuditLogsByAction(ctx context.Context, action string, 
 	for rows.Next() {
 		var l model.AuditLog
 		var detailsJSON string
-		if err := rows.Scan(&l.ID, &l.UserID, &l.Action, &l.Resource, &l.ResourceID, &detailsJSON, &l.IP, &l.CreatedAt); err != nil {
+		var createdAtStr string
+		if err := rows.Scan(&l.ID, &l.UserID, &l.Action, &l.Resource, &l.ResourceID, &detailsJSON, &l.IP, &createdAtStr); err != nil {
 			return nil, err
 		}
+		l.CreatedAt = parseTimeStrict(createdAtStr)
 		json.Unmarshal([]byte(detailsJSON), &l.Details)
 		logs = append(logs, l)
 	}

@@ -23,13 +23,13 @@ func (s *SqliteStore) CreateAdmission(ctx context.Context, a *model.HospitalAdmi
 
 func (s *SqliteStore) GetAdmission(ctx context.Context, id string) (*model.HospitalAdmission, error) {
 	var a model.HospitalAdmission
-	var expectedDischarge, dischargedAt, transferTo string
+	var admittedAtStr, expectedDischarge, dischargedAt, transferTo string
 	err := s.db.QueryRowContext(ctx,
 		`SELECT id, patient_id, admission_no, bed_no, department, diagnosis, emergency_contact,
 		 allergies, admitted_at, expected_discharge_at, discharged_at, discharge_type, transferred_to, notes
 		 FROM hospital_admissions WHERE id = ?`, id).Scan(
 		&a.ID, &a.PatientID, &a.AdmissionNo, &a.BedNo, &a.Department, &a.Diagnosis,
-		&a.EmergencyContact, &a.Allergies, &a.AdmittedAt, &expectedDischarge, &dischargedAt,
+		&a.EmergencyContact, &a.Allergies, &admittedAtStr, &expectedDischarge, &dischargedAt,
 		&a.DischargeType, &transferTo, &a.Notes)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -37,13 +37,18 @@ func (s *SqliteStore) GetAdmission(ctx context.Context, id string) (*model.Hospi
 		}
 		return nil, fmt.Errorf("get admission: %w", err)
 	}
+	if t, err := time.Parse("2006-01-02 15:04:05", admittedAtStr); err == nil {
+		a.AdmittedAt = t
+	}
 	if expectedDischarge != "" {
-		t, _ := time.Parse(time.RFC3339, expectedDischarge)
-		a.ExpectedDischargeAt = &t
+		if t, err := time.Parse("2006-01-02 15:04:05", expectedDischarge); err == nil {
+			a.ExpectedDischargeAt = &t
+		}
 	}
 	if dischargedAt != "" {
-		t, _ := time.Parse(time.RFC3339, dischargedAt)
-		a.DischargedAt = &t
+		if t, err := time.Parse("2006-01-02 15:04:05", dischargedAt); err == nil {
+			a.DischargedAt = &t
+		}
 	}
 	a.TransferredTo = transferTo
 	return &a, nil
@@ -54,8 +59,6 @@ func (s *SqliteStore) ListAdmissions(ctx context.Context, page, pageSize int, de
 		  allergies, admitted_at, expected_discharge_at, discharged_at, discharge_type, transferred_to, notes
 		  FROM hospital_admissions WHERE 1=1`
 	var args []interface{}
-	idx := 1
-	_ = idx
 	if department != "" {
 		query += fmt.Sprintf(" AND department=?")
 		args = append(args, department)
@@ -76,19 +79,24 @@ func (s *SqliteStore) ListAdmissions(ctx context.Context, page, pageSize int, de
 	var items []model.HospitalAdmission
 	for rows.Next() {
 		var a model.HospitalAdmission
-		var expectedDischarge, dischargedAt, transferTo string
+		var admittedAtStr, expectedDischargeStr, dischargedAtStr, transferTo string
 		if err := rows.Scan(&a.ID, &a.PatientID, &a.AdmissionNo, &a.BedNo, &a.Department,
-			&a.Diagnosis, &a.EmergencyContact, &a.Allergies, &a.AdmittedAt,
-			&expectedDischarge, &dischargedAt, &a.DischargeType, &transferTo, &a.Notes); err != nil {
+			&a.Diagnosis, &a.EmergencyContact, &a.Allergies, &admittedAtStr,
+			&expectedDischargeStr, &dischargedAtStr, &a.DischargeType, &transferTo, &a.Notes); err != nil {
 			return nil, fmt.Errorf("scan admission: %w", err)
 		}
-		if expectedDischarge != "" {
-			t, _ := time.Parse(time.RFC3339, expectedDischarge)
-			a.ExpectedDischargeAt = &t
+		if t, err := time.Parse("2006-01-02 15:04:05", admittedAtStr); err == nil {
+			a.AdmittedAt = t
 		}
-		if dischargedAt != "" {
-			t, _ := time.Parse(time.RFC3339, dischargedAt)
-			a.DischargedAt = &t
+		if expectedDischargeStr != "" {
+			if t, err := time.Parse("2006-01-02 15:04:05", expectedDischargeStr); err == nil {
+				a.ExpectedDischargeAt = &t
+			}
+		}
+		if dischargedAtStr != "" {
+			if t, err := time.Parse("2006-01-02 15:04:05", dischargedAtStr); err == nil {
+				a.DischargedAt = &t
+			}
 		}
 		a.TransferredTo = transferTo
 		items = append(items, a)

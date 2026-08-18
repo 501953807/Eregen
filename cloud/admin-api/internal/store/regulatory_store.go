@@ -247,13 +247,21 @@ func (s *SqliteStore) ListRegulatoryPatients(ctx context.Context, department str
 	var patients []model.RegulatoryPatientRow
 	for rows.Next() {
 		var p model.RegulatoryPatientRow
-		var tagsRaw string
+		var tagsRaw, boundAtStr, statusRaw string
 		if err := rows.Scan(&p.ID, &p.Name, &p.AdmissionNo, &p.Department, &p.BedNumber,
-			&p.BoundAt, &p.LastVerify, &p.VerifyGapHours, &p.FenceStatus,
-			&p.FenceExitDurationSec, &tagsRaw); err != nil {
+			&boundAtStr, &p.LastVerify, &p.VerifyGapHours, &p.FenceStatus,
+			&p.FenceExitDurationSec, &tagsRaw, &statusRaw); err != nil {
+			return nil, fmt.Errorf("scan patient row: %w", err)
+		}
+		if t := scanTimePtr(boundAtStr); t != nil {
+			p.BoundAt = *t
+		}
+		if tagsRaw == "" || tagsRaw == "null" {
+			tagsRaw = "[]"
+		}
+		if err := json.Unmarshal([]byte(tagsRaw), &p.AlertTags); err != nil {
 			return nil, err
 		}
-		json.Unmarshal([]byte(tagsRaw), &p.AlertTags)
 		patients = append(patients, p)
 	}
 	return patients, rows.Err()
@@ -276,7 +284,16 @@ func (s *SqliteStore) GetRegulatoryAuditTrail(ctx context.Context, patientID str
 		defer bindRows.Close()
 		if bindRows.Next() {
 			var b model.MedicalBinding
-			if err := bindRows.Scan(&b.ID, &b.PatientID, &b.DeviceID, &b.BoundAt, &b.UnboundAt); err == nil {
+			var boundAtStr, unboundAtStr string
+			if err := bindRows.Scan(&b.ID, &b.PatientID, &b.DeviceID, &boundAtStr, &unboundAtStr); err == nil {
+				if t, err := time.Parse("2006-01-02 15:04:05", boundAtStr); err == nil {
+					b.BoundAt = t
+				}
+				if unboundAtStr != "" {
+					if t, err := time.Parse("2006-01-02 15:04:05", unboundAtStr); err == nil {
+						b.UnboundAt = &t
+					}
+				}
 				trail.Binding = &b
 			}
 		}
@@ -289,8 +306,15 @@ func (s *SqliteStore) GetRegulatoryAuditTrail(ctx context.Context, patientID str
 		defer verRows.Close()
 		for verRows.Next() {
 			var v model.MedicalVerification
+			var verifiedAtStr, createdAtStr string
 			if err := verRows.Scan(&v.ID, &v.PatientID, &v.DeviceID, &v.VerificationType, &v.VerifiedBy,
-				&v.Result, &v.Notes, &v.VerifiedAt, &v.CreatedAt); err == nil {
+				&v.Result, &v.Notes, &verifiedAtStr, &createdAtStr); err == nil {
+				v.CreatedAt = parseTimeStrict(createdAtStr)
+				if verifiedAtStr != "" {
+					if t, err := time.Parse("2006-01-02 15:04:05", verifiedAtStr); err == nil {
+						v.VerifiedAt = &t
+					}
+				}
 				trail.Verifications = append(trail.Verifications, v)
 			}
 		}
@@ -303,8 +327,10 @@ func (s *SqliteStore) GetRegulatoryAuditTrail(ctx context.Context, patientID str
 		defer medRows.Close()
 		for medRows.Next() {
 			var m model.MedicalMedication
+			var createdAtStr string
 			if err := medRows.Scan(&m.ID, &m.PatientID, &m.Name, &m.Dosage, &m.Frequency,
-				&m.Duration, &m.Route, &m.Notes, &m.CreatedAt); err == nil {
+				&m.Duration, &m.Route, &m.Notes, &createdAtStr); err == nil {
+				m.CreatedAt = parseTimeStrict(createdAtStr)
 				trail.Medications = append(trail.Medications, m)
 			}
 		}
@@ -317,8 +343,10 @@ func (s *SqliteStore) GetRegulatoryAuditTrail(ctx context.Context, patientID str
 		defer expRows.Close()
 		for expRows.Next() {
 			var e model.MedicalExpense
+			var createdAtStr string
 			if err := expRows.Scan(&e.ID, &e.PatientID, &e.ItemName, &e.Category, &e.Amount,
-				&e.Quantity, &e.UnitPrice, &e.Notes, &e.CreatedAt); err == nil {
+				&e.Quantity, &e.UnitPrice, &e.Notes, &createdAtStr); err == nil {
+				e.CreatedAt = parseTimeStrict(createdAtStr)
 				trail.Expenses = append(trail.Expenses, e)
 			}
 		}
@@ -331,7 +359,9 @@ func (s *SqliteStore) GetRegulatoryAuditTrail(ctx context.Context, patientID str
 		defer dailyRows.Close()
 		for dailyRows.Next() {
 			var d model.MedicalDailyEntry
-			if err := dailyRows.Scan(&d.ID, &d.PatientID, &d.EntryType, &d.Content, &d.NurseID, &d.CreatedAt); err == nil {
+			var createdAtStr string
+			if err := dailyRows.Scan(&d.ID, &d.PatientID, &d.EntryType, &d.Content, &d.NurseID, &createdAtStr); err == nil {
+				d.CreatedAt = parseTimeStrict(createdAtStr)
 				trail.DailyEntries = append(trail.DailyEntries, d)
 			}
 		}

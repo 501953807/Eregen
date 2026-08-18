@@ -46,12 +46,12 @@ class _HomePageState extends State<HomePage> {
   Future<void> _fetchData() async {
     try {
       final futures = <Future>[];
-      futures.add(ApiClient.instance.get('/health/latest').then((resp) {
+      futures.add(ApiClient.instance.get('/api/v1/health/latest').then((resp) {
         if (resp.data != null && (resp.data as Map).isNotEmpty) {
           setState(() => _latestHealth = HealthRecord.fromJson(resp.data as Map<String, dynamic>));
         }
       }).catchError((_) {}));
-      futures.add(ApiClient.instance.get('/alerts', query: {'limit': 5}).then((resp) {
+      futures.add(ApiClient.instance.get('/api/v1/alerts', query: {'limit': 5}).then((resp) {
         final list = (resp.data as List);
         setState(() => _recentAlerts = list.map((a) => Alert.fromJson(a as Map<String, dynamic>)).toList());
       }).catchError((_) {}));

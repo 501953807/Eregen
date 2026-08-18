@@ -301,7 +301,7 @@ check_process_running() {
 # --- Service Discovery ---
 list_available_services() {
   log_header "Available Services"
-  echo "  Cloud:    api-server push-service data-pipeline admin-api gateway"
+  echo "  Cloud:    api-server admin-api push-service data-pipeline gateway"
   echo "  B2B:      hospital-api community-platform insurance-integration"
   echo "  Apps:     family-app admin-web website miniprogram"
   echo "  Firmware: bracelet pillbox medical-wristband"

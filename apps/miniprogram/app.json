@@ -9,7 +9,8 @@
     "pages/elderly-detail/index",
     "pages/bind-device/index",
     "pages/health/index",
-    "pages/map/index"
+    "pages/map/index",
+    "pages/hospitalization/index"
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -19,7 +20,7 @@
   },
   "tabBar": {
     "color": "#999999",
-    "selectedColor": "#F59E0B", /* Unified brand amber instead of green */
+    "selectedColor": "#F59E0B",
     "backgroundColor": "#ffffff",
     "list": [
       {

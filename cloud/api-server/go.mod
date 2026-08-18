@@ -73,3 +73,4 @@ replace eregen.dev/shared/crypto => ../../shared/crypto
 replace eregen.dev/shared/sanitize => ../../shared/sanitize
 
 replace eregen.dev/shared/ratelimit => ../../shared/ratelimit
+replace eregen.dev/shared/response => ../../shared/response

@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from typing import List, Tuple, Optional
 
 # ─── 配置 ───────────────────────────────────────────────────────────
-ADMIN_API = "http://localhost:8089/api/v1"        # admin-api
+ADMIN_API = "http://localhost:8085/api/v1"        # admin-api
 HOSPITAL_B2B = "http://localhost:8082/api/v2/b2b" # hospital-api
 COMMUNITY_B2B = "http://localhost:8083/api/v2/b2b" # community-platform
 
@@ -776,8 +776,11 @@ def verify():
     # 老人数据
     r = api_get(f"{ADMIN_API}/admin/elderly?page=1&page_size=100")
     if r.status_code == 200:
-        data = r.json().get("data", {})
-        total = data.get("total", len(data.get("elderly", [])))
+        data = r.json().get("data", [])
+        if isinstance(data, list):
+            total = len(data)
+        else:
+            total = data.get("total", 0)
         results.append(check("老人档案数量", total >= 10, f"={total}"))
     else:
         results.append(False)
@@ -809,8 +812,8 @@ def verify():
     # 住院患者
     r = api_get(f"{ADMIN_API}/admin/medical/patients?page=1&page_size=30")
     if r.status_code == 200:
-        data = r.json().get("data", {})
-        total = data.get("total", data.get("count", len(data.get("patients", []))))
+        data = r.json().get("data", [])
+        total = len(data) if isinstance(data, list) else data.get("total", 0)
         results.append(check("住院患者", total >= 10, f"={total}"))
     else:
         results.append(False)
@@ -819,8 +822,8 @@ def verify():
     # 社区老人
     r = api_get(f"{ADMIN_API}/admin/community-wb/elders?page=1&page_size=20")
     if r.status_code == 200:
-        data = r.json().get("data", {})
-        total = data.get("total", data.get("count", len(data.get("elders", []))))
+        data = r.json().get("data", [])
+        total = len(data) if isinstance(data, list) else data.get("total", 0)
         results.append(check("社区老人", total >= 10, f"={total}"))
     else:
         results.append(False)

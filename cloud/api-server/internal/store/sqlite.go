@@ -245,7 +245,7 @@ func (s *SqliteStore) UpdateDailyTaskComplete(ctx context.Context, taskID string
 	return nil
 }
 
-// migrate creates tables if they don't exist using schema from admin-api.
+// migrate creates tables if they don't exist using unified schema.
 func migrate(db *sql.DB) error {
 	migrations := []string{
 		`CREATE TABLE IF NOT EXISTS devices (

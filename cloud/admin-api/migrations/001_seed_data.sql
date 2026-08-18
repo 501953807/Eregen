@@ -46,23 +46,17 @@ INSERT OR IGNORE INTO alerts (id, elderly_id, alert_type, severity, status, mess
 -- ============================================
 -- 4. Insert sample health records
 -- ============================================
-WITH hourly_data AS (
-    SELECT generate_series(
-        strftime('%Y-%m-%d %H:%M:%s', datetime('-5 hours')),
-        strftime('%Y-%m-%d %H:%M:%s', datetime('-1 hour')),
-        '1 hour'
-    ) as ts
-)
+WITH RECURSIVE t(n) AS (VALUES(0) UNION ALL SELECT n+1 FROM t WHERE n < 4)
 INSERT OR IGNORE INTO health_records (id, elderly_id, timestamp, hr, spo2, steps, sleep_hours)
 SELECT
-    'hr-' || random() || '-' || (abs(random()) % 100),
+    'hr-' || lower(hex(randomblob(8))) || '-' || n,
     'elderly-001',
-    strftime('%Y-%m-%d %H:%M:%S', CAST(ts AS INTEGER)),
+    strftime('%Y-%m-%d %H:%M:%S', datetime('-5 hours', '+' || n || ' hours')),
     72 + (abs(random()) % 10),
     95 + (abs(random()) % 6),
     (abs(random()) % 5000) + 2000,
     CAST((random() / 1000.0) * 8 AS REAL)
-FROM hourly_data;
+FROM t;
 
 -- ============================================
 -- 5. Insert sample medication rule
@@ -89,17 +83,17 @@ INSERT OR IGNORE INTO regulatory_rule_config (rule_code, rule_name, enabled, con
 ('R03', '虚假入院', 1, '{"bind_duration_hours":48,"severity":"medium"}'),
 ('R04', '费用突增', 1, '{"expense_multiplier":3,"severity":"medium"}'),
 ('R05', '用药与核验不匹配', 1, '{"severity":"medium"}'),
-('R06', '频繁转科', 1, {"transfers_per_week":3,"severity":"low"}),
-('R07', '腕带异常断开', 1, {"disconnect_hours":2,"severity":"high"}),
-('R08', '长期不在院', 1, {"severity":"low"}'),
-('R_C01', '重复领取福利', 1, {"overlap_days":30,"severity":"high"}'),
-('R_C02', '跨社区医院互认', 1, {"enabled":1,"severity":"low"}),
-('R_C03', '冒领嫌疑', 1, {"id_card_mismatch":1,"severity":"high"}),
-('R_C04', '福利标签超期未续', 1, {"grace_days":7,"severity":"medium"}'),
-('R_C05', '签到-发药时间差异常', 1, {"max_gap_hours":24,"severity":"medium"}'),
-('R_C06', '批量发放失败重试超限', 1, {"max_retries":3,"severity":"high"}'),
-('R_C07', '僵尸账户', 1, {"inactive_days":180,"severity":"low"}),
-('R_C08', '死亡后仍激活', 1, {"severity":"high"}');
+('R06', '频繁转科', 1, '{"transfers_per_week":3,"severity":"low"}'),
+('R07', '腕带异常断开', 1, '{"disconnect_hours":2,"severity":"high"}'),
+('R08', '长期不在院', 1, '{"severity":"low"}'),
+('R_C01', '重复领取福利', 1, '{"overlap_days":30,"severity":"high"}'),
+('R_C02', '跨社区医院互认', 1, '{"enabled":1,"severity":"low"}'),
+('R_C03', '冒领嫌疑', 1, '{"id_card_mismatch":1,"severity":"high"}'),
+('R_C04', '福利标签超期未续', 1, '{"grace_days":7,"severity":"medium"}'),
+('R_C05', '签到-发药时间差异常', 1, '{"max_gap_hours":24,"severity":"medium"}'),
+('R_C06', '批量发放失败重试超限', 1, '{"max_retries":3,"severity":"high"}'),
+('R_C07', '僵尸账户', 1, '{"inactive_days":180,"severity":"low"}'),
+('R_C08', '死亡后仍激活', 1, '{"severity":"high"}');
 
 -- ============================================
 -- 8. Insert community welfare tags
@@ -127,7 +121,8 @@ INSERT OR IGNORE INTO medical_wristband_devices (id, device_id, firmware_version
 ('wb-device-001', 'WB-BED001', 'v1.2.3', 'idle', NULL),
 ('wb-device-002', 'WB-BED002', 'v1.2.3', 'active', 'wb-patient-001');
 
-Medical binding
+-- Medical binding
+-- INSERT for medical_bindings
 INSERT OR IGNORE INTO medical_bindings (id, patient_id, device_id, bound_at) VALUES
 ('wb-bind-001', 'wb-patient-001', 'wb-device-002', datetime('now'));
 

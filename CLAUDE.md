@@ -35,6 +35,8 @@
 | 用户数据库 | SQLite | — | MVP阶段全项目统一，零部署单文件存储 |
 | 推送 | FCM + 阿里云SMS + 微信订阅消息 | — |
 
+> **架构说明（2026-08-18）**：api-server (port 8180) 专司 IoT/设备层（NATS消费、WebSocket、OTA、设备管理），admin-api (port 8085) 负责所有业务 API（persons/hospital/community/regulatory/chronic/health/alerts...）。两服务共用单一 SQLite 数据库。gateway 收窄为纯 MQTT→NATS 消息网关，不再写数据库。
+
 **为什么不用Java/Spring Boot：** Spring Boot太重，IoT网关需要高并发低延迟，Go goroutine天然适合。
 **SQLite 迁移说明：** MVP 阶段采用 SQLite 替代 PostgreSQL/InfluxDB/Redis，实现单文件零部署、免运维的轻量方案。所有数据库操作封装在 `store/` 层，未来切换至 PostgreSQL 时只需替换存储实现代码，业务逻辑无需改动。
 
@@ -283,7 +285,7 @@ cp scripts/default-ports.env .env
 ./scripts/start.sh start --docker                    # Docker 模式
 ```
 
-**按组启动：** `cloud` (api-server, push-service, data-pipeline, admin-api, gateway) / `b2b` (hospital-api, community-platform, insurance-integration) / `apps` (family-app, admin-web, website) / `medical` (admin-api regulatory/, admin-api community_wb/, gateway community handlers)
+**按组启动：** `cloud` (api-server, push-service, data-pipeline, gateway) / `b2b` (hospital-api, community-platform, insurance-integration) / `apps` (family-app, admin-web, website) / `medical` (api-server regulatory/, api-server community_wb/, gateway community handlers)
 
 **端口配置：** 编辑根目录 `.env` 中的 `PORT_*` 变量，或命令行 `--port X` 覆盖。
 

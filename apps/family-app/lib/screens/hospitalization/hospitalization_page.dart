@@ -48,7 +48,7 @@ class _HospitalizationPageState extends State<HospitalizationPage> with SingleTi
 
       // Fetch patient history (includes daily entries)
       futures.add(
-        ApiClient.instance.get('/medical/patients/$_patientId/history').then((resp) {
+        ApiClient.instance.get('/api/v1/medical/patients/$_patientId/history').then((resp) {
           if (resp.data != null) {
             final data = resp.data as Map<String, dynamic>;
             final entriesRaw = data['daily_entries'] as List? ?? [];
@@ -61,7 +61,7 @@ class _HospitalizationPageState extends State<HospitalizationPage> with SingleTi
 
       // Fetch medications
       futures.add(
-        ApiClient.instance.get('/medical/medications', query: {'patient_id': _patientId}).then((resp) {
+        ApiClient.instance.get('/api/v1/medical/patients/$_patientId/medications', query: {'patient_id': _patientId}).then((resp) {
           if (resp.data is List) {
             setState(() {
               _medications = (resp.data as List).map((m) => MedicationRecord.fromJson(m as Map<String, dynamic>)).toList();
@@ -72,7 +72,7 @@ class _HospitalizationPageState extends State<HospitalizationPage> with SingleTi
 
       // Fetch test results
       futures.add(
-        ApiClient.instance.get('/medical/test-results', query: {'patient_id': _patientId}).then((resp) {
+        ApiClient.instance.get('/api/v1/medical/patients/$_patientId/test-results', query: {'patient_id': _patientId}).then((resp) {
           if (resp.data is List) {
             setState(() {
               _testResults = (resp.data as List).map((t) => TestResult.fromJson(t as Map<String, dynamic>)).toList();
@@ -83,7 +83,7 @@ class _HospitalizationPageState extends State<HospitalizationPage> with SingleTi
 
       // Fetch verifications
       futures.add(
-        ApiClient.instance.get('/medical/verifications', query: {'page': 1, 'page_size': 20}).then((resp) {
+        ApiClient.instance.get('/api/v1/medical/verifications', query: {'page': 1, 'page_size': 20}).then((resp) {
           if (resp.data is Map) {
             final raw = (resp.data as Map<String, dynamic>)['data'] as List? ?? [];
             setState(() {

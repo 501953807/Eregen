@@ -49,9 +49,12 @@ func (s *SqliteStore) ListAPIKeys(ctx context.Context) ([]model.APIKeySummary, e
 	var result []model.APIKeySummary
 	for rows.Next() {
 		var k model.APIKeySummary
-		if err := rows.Scan(&k.ID, &k.Name, &k.KeyPrefix, &k.ExpiresAt, &k.Active, &k.CreatedAt); err != nil {
+		var expiresAtStr, createdAtStr string
+		if err := rows.Scan(&k.ID, &k.Name, &k.KeyPrefix, &expiresAtStr, &k.Active, &createdAtStr); err != nil {
 			return nil, fmt.Errorf("scan api key: %w", err)
 		}
+		k.ExpiresAt = scanTimePtr(expiresAtStr)
+		k.CreatedAt = parseTimeStrict(createdAtStr)
 		result = append(result, k)
 	}
 	return result, rows.Err()

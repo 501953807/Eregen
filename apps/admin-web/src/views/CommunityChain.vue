@@ -177,7 +177,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { communityApi, personApi } from '@/api/business-chains'
+import { communityApi } from '@/api/business-chains'
 import { HopeBtn, HopeCard, HopeStatCard } from '@/components/hope'
 
 interface CommunityElder {
@@ -272,7 +272,7 @@ const assignWelfare = (row: CommunityElder) => {
 
 const revokeTag = (tagCode: string) => {
   if (!currentElder.value) return
-  personApi.revokeWelfareTag(currentElder.value.id, tagCode)
+  communityApi.revokeWelfareTag(currentElder.value.id, tagCode)
     .then(() => {
       ElMessage.success('已撤销')
       currentWelfareTags.value = currentWelfareTags.value.filter((t: any) => t.tag_code !== tagCode)

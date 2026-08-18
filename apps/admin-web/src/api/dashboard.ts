@@ -32,6 +32,6 @@ export const dashboardApi = {
     return apiClient.get('/admin/stats/user-growth', { params })
   },
   recentAlerts(params?: Record<string, any>) {
-    return apiClient.get('/alerts', { params: { ...params, limit: 10 } })
+    return apiClient.get('/admin/alerts', { params: { ...params, page: 1, page_size: 10 } })
   },
 }

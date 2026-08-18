@@ -16,16 +16,16 @@ unset _LIB_DIR
 # Format: service:dir:port_var:default_port|...
 # Gateway is MQTT-only and has no HTTP port (default_port=0).
 # ---------------------------------------------------------------------------
-GO_SERVICES="api-server|push-service|data-pipeline|admin-api|hospital-api|community-platform|insurance-integration|gateway"
+GO_SERVICES="api-server|push-service|data-pipeline|hospital-api|community-platform|insurance-integration|gateway|admin-api"
 
 GO_CONFIG="api-server:cloud/api-server:PORT_API_SERVER:8180|\
-push-service:cloud/push-service:PORT_PUSH_SERVICE:8085|\
+push-service:cloud/push-service:PORT_PUSH_SERVICE:8086|\
 data-pipeline:cloud/data-pipeline:PORT_DATA_PIPELINE:8087|\
-admin-api:cloud/admin-api:PORT_ADMIN_API:8089|\
 hospital-api:b2b/hospital-api:PORT_HOSPITAL_API:8082|\
 community-platform:b2b/community-platform:PORT_COMMUNITY_PLATFORM:8183|\
 insurance-integration:b2b/insurance-integration:PORT_INSURANCE_INTEGRATION:8184|\
-gateway:cloud/gateway::0"
+gateway:cloud/gateway::0|\
+admin-api:cloud/admin-api:PORT_ADMIN_API:8085"
 
 # ---------------------------------------------------------------------------
 # Helpers — lookup functions replacing associative-array indexing.
@@ -92,14 +92,10 @@ _build_extra_env() {
       echo "DB_URL=${DB_URL:-postgres://eregen:eregen@localhost:5432/eregen?sslmode=disable}"
       ;;
     push-service)
-      echo "PUSH_SERVICE_PORT=${PUSH_SERVICE_PORT:-8085}"
+      echo "PUSH_SERVICE_PORT=${PUSH_SERVICE_PORT:-8086}"
       ;;
     data-pipeline)
       echo "PIPELINE_PORT=${PIPELINE_PORT:-8087}"
-      ;;
-    admin-api)
-      echo "JWT_SECRET=${JWT_SECRET:-changeme}"
-      echo "SQLITE_PATH=${SQLITE_PATH:-$PROJECT_ROOT/data/admin.db}"
       ;;
     hospital-api)
       echo "DATABASE_URL=${DATABASE_URL:-postgres://eregen:eregen@localhost:5432/hospital?sslmode=disable}"
@@ -175,11 +171,12 @@ go_start() {
   local service_has_health="false"
   local health_path="/api/v1/health"
   case "$service" in
-    api-server|admin-api) service_has_health="true" ;;
+    api-server) service_has_health="true" ;;
     push-service)
       service_has_health="true"
       health_path="/health"
       ;;
+    admin-api) service_has_health="true" ;;
     *) service_has_health="false" ;;
   esac
 

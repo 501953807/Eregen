@@ -1,4 +1,4 @@
-module gorm_poc
+module eregen.dev/b2b-hospital-api
 
 go 1.26.5
 

@@ -60,16 +60,16 @@ function firmwareParams(params?: Record<string, any>): Record<string, any> {
 
 export const otaApi = {
   listFirmware(params?: Record<string, any>) {
-    return apiClient.get('/admin/firmware', { params: firmwareParams(params) })
+    return apiClient.get('/admin/firmware-versions', { params: firmwareParams(params) })
   },
   getFirmware(id: string) {
-    return apiClient.get(`/admin/firmware/${id}`)
+    return apiClient.get(`/admin/firmware-versions/${id}`)
   },
   createFirmware(data: CreateFirmwareRequest) {
-    return apiClient.post('/admin/firmware', data)
+    return apiClient.post('/admin/firmware-versions', data)
   },
   verifyFirmware(id: string) {
-    return apiClient.post(`/admin/firmware/${id}/verify`)
+    return apiClient.post(`/admin/firmware-versions/${id}/verify`)
   },
   pushOTA(data: PushOTARequest) {
     return apiClient.post('/admin/ota/push', data)

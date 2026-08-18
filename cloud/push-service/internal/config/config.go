@@ -47,7 +47,7 @@ func Load() (*Config, error) {
 		SMHealthAlertTmpl: getEnv("SMS_HEALTH_ALERT_TPL", ""),
 		SMSMedRemindTmpl:  getEnv("SMS_MED_REMIND_TPL", ""),
 		LogLevel:        getEnv("LOG_LEVEL", "info"),
-		Port:            getIntEnv("PUSH_SERVICE_PORT", 8085),
+		Port:            getIntEnv("PUSH_SERVICE_PORT", 8086),
 	}
 	return c, nil
 }

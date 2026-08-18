@@ -80,17 +80,17 @@ Page({
     // Mark as read via API
     const token = wx.getStorageSync('token')
     if (token) {
-      this._request(`/alerts/${alertId}/resolve`, {}, token).catch(() => {})
+      this._request(`/alerts/${alertId}/resolve`, {}, token, 'PUT').catch(() => {})
     }
     // Navigate to detail
     wx.navigateTo({ url: `/pages/alert-detail/index?id=${alertId}` })
   },
 
-  _request(url, data, token) {
+  _request(url, data, token, method = 'POST') {
     return new Promise((resolve, reject) => {
       wx.request({
         url: `${API_BASE}${url}`,
-        method: 'POST',
+        method,
         data,
         header: {
           'Content-Type': 'application/json',

@@ -24,12 +24,12 @@ func (s *SqliteStore) CreatePatient(ctx context.Context, p *model.MedicalPatient
 // GetPatient returns a patient by ID.
 func (s *SqliteStore) GetPatient(ctx context.Context, id string) (*model.MedicalPatient, error) {
 	var p model.MedicalPatient
-	var tagsRaw string
+	var tagsRaw, createdAtStr, updatedAtStr string
 	err := s.db.QueryRowContext(ctx, `
 		SELECT id, admission_no, name, gender, age, department, bed_number, blood_type, allergies, special_conditions, tag_ids, status, created_at, updated_at
 		FROM medical_wristband_patients WHERE id = ?`, id).Scan(
 		&p.ID, &p.AdmissionNo, &p.Name, &p.Gender, &p.Age, &p.Department, &p.BedNumber,
-		&p.BloodType, &p.Allergies, &p.SpecialConditions, &tagsRaw, &p.Status, &p.CreatedAt, &p.UpdatedAt)
+		&p.BloodType, &p.Allergies, &p.SpecialConditions, &tagsRaw, &p.Status, &createdAtStr, &updatedAtStr)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("patient not found")
@@ -37,6 +37,8 @@ func (s *SqliteStore) GetPatient(ctx context.Context, id string) (*model.Medical
 		return nil, fmt.Errorf("get patient: %w", err)
 	}
 	json.Unmarshal([]byte(tagsRaw), &p.TagIDs)
+	p.CreatedAt = parseTimeStrict(createdAtStr)
+	p.UpdatedAt = parseTimeStrict(updatedAtStr)
 	return &p, nil
 }
 
@@ -63,9 +65,12 @@ func (s *SqliteStore) ListPatients(ctx context.Context, page, pageSize int, stat
 	var patients []model.MedicalPatient
 	for rows.Next() {
 		var p model.MedicalPatient
-		if err := rows.Scan(&p.ID, &p.AdmissionNo, &p.Name, &p.Gender, &p.Age, &p.Department, &p.BedNumber, &p.Status, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		var createdAtStr, updatedAtStr string
+		if err := rows.Scan(&p.ID, &p.AdmissionNo, &p.Name, &p.Gender, &p.Age, &p.Department, &p.BedNumber, &p.Status, &createdAtStr, &updatedAtStr); err != nil {
 			return nil, fmt.Errorf("scan patient: %w", err)
 		}
+		p.CreatedAt = parseTimeStrict(createdAtStr)
+		p.UpdatedAt = parseTimeStrict(updatedAtStr)
 		patients = append(patients, p)
 	}
 	return patients, rows.Err()
@@ -90,12 +95,12 @@ func (s *SqliteStore) DeletePatient(ctx context.Context, id string) error {
 // GetPatientByAdmissionNo returns a patient by admission number.
 func (s *SqliteStore) GetPatientByAdmissionNo(ctx context.Context, admissionNo string) (*model.MedicalPatient, error) {
 	var p model.MedicalPatient
-	var tagsRaw string
+	var tagsRaw, createdAtStr, updatedAtStr string
 	err := s.db.QueryRowContext(ctx, `
 		SELECT id, admission_no, name, gender, age, department, bed_number, blood_type, allergies, special_conditions, tag_ids, status, created_at, updated_at
 		FROM medical_wristband_patients WHERE admission_no=?`, admissionNo).Scan(
 		&p.ID, &p.AdmissionNo, &p.Name, &p.Gender, &p.Age, &p.Department, &p.BedNumber,
-		&p.BloodType, &p.Allergies, &p.SpecialConditions, &tagsRaw, &p.Status, &p.CreatedAt, &p.UpdatedAt)
+		&p.BloodType, &p.Allergies, &p.SpecialConditions, &tagsRaw, &p.Status, &createdAtStr, &updatedAtStr)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("patient not found")
@@ -103,6 +108,8 @@ func (s *SqliteStore) GetPatientByAdmissionNo(ctx context.Context, admissionNo s
 		return nil, err
 	}
 	json.Unmarshal([]byte(tagsRaw), &p.TagIDs)
+	p.CreatedAt = parseTimeStrict(createdAtStr)
+	p.UpdatedAt = parseTimeStrict(updatedAtStr)
 	return &p, nil
 }
 

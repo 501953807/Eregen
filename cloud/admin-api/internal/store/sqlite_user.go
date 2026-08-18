@@ -32,9 +32,11 @@ func (s *SqliteStore) ListUsers(ctx context.Context, page, pageSize int, role st
 	var users []model.UserSummary
 	for rows.Next() {
 		var u model.UserSummary
-		if err := rows.Scan(&u.ID, &u.Name, &u.Role, &u.CreatedAt, &u.Devices); err != nil {
+		var createdAtStr string
+		if err := rows.Scan(&u.ID, &u.Name, &u.Role, &createdAtStr, &u.Devices); err != nil {
 			return nil, fmt.Errorf("scan user: %w", err)
 		}
+		u.CreatedAt = parseTimeStrict(createdAtStr)
 		users = append(users, u)
 	}
 	return users, rows.Err()

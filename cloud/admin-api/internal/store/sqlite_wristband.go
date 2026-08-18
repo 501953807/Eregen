@@ -79,9 +79,12 @@ func (s *SqliteStore) ListWristbands(ctx context.Context, page, pageSize int, st
 	var devices []model.MedicalWristbandDevice
 	for rows.Next() {
 		var d model.MedicalWristbandDevice
-		if err := rows.Scan(&d.ID, &d.DeviceID, &d.FirmwareVersion, &d.Status, &d.BoundPatientID, &d.CreatedAt, &d.UpdatedAt); err != nil {
+		var createdAtStr, updatedAtStr string
+		if err := rows.Scan(&d.ID, &d.DeviceID, &d.FirmwareVersion, &d.Status, &d.BoundPatientID, &createdAtStr, &updatedAtStr); err != nil {
 			return nil, fmt.Errorf("scan wristband: %w", err)
 		}
+		d.CreatedAt = parseTimeStrict(createdAtStr)
+		d.UpdatedAt = parseTimeStrict(updatedAtStr)
 		devices = append(devices, d)
 	}
 	return devices, rows.Err()

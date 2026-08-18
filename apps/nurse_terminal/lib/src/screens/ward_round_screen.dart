@@ -3,7 +3,6 @@ import '../services/api_client.dart';
 import '../services/ward_round_service.dart';
 
 /// Ward round screen: collect vital signs and observations, then submit.
-/// Uses hospital-api for ward round data storage.
 class WardRoundScreen extends StatefulWidget {
   final String patientId;
 
@@ -14,7 +13,7 @@ class WardRoundScreen extends StatefulWidget {
 }
 
 class _WardRoundScreenState extends State<WardRoundScreen> {
-  final HospitalApiClient _hospitalApi = HospitalApiClient();
+  final ApiClient _api = ApiClient();
   late final WardRoundService _wardRoundService;
 
   // Vitals controllers
@@ -39,7 +38,7 @@ class _WardRoundScreenState extends State<WardRoundScreen> {
   @override
   void initState() {
     super.initState();
-    _wardRoundService = WardRoundService(_hospitalApi);
+    _wardRoundService = WardRoundService(_api);
   }
 
   @override
@@ -54,7 +53,6 @@ class _WardRoundScreenState extends State<WardRoundScreen> {
   }
 
   Future<void> _submit() async {
-    // Validate vitals are numeric where expected
     if (_bpController.text.isEmpty &&
         _hrController.text.isEmpty &&
         _spo2Controller.text.isEmpty &&

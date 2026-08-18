@@ -33,9 +33,10 @@ func (h *RegulatoryHandler) GetDashboardOverview(c *gin.Context) {
 
 // ListRegulatoryPatients returns the patient list with fence/alert status.
 func (h *RegulatoryHandler) ListRegulatoryPatients(c *gin.Context) {
+	var err error
 	page, _ := strconv.Atoi(c.Query("page"))
 	pageSize, _ := strconv.Atoi(c.Query("page_size"))
-	page, pageSize, err := validation.ValidatePagination(page, pageSize, 100)
+	page, pageSize, err = validation.ValidatePagination(page, pageSize, 100)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pagination parameters"})
 		return

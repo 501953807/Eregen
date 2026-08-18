@@ -64,7 +64,7 @@ func (h *AlertHandler) Create(c *gin.Context) {
 		ElderlyID: body.ElderlyID,
 		AlertType: body.AlertType,
 		Severity:  body.Severity,
-		Status:    body.Severity,
+		Status:    "pending",
 		DeviceID:  body.DeviceID,
 	}
 	if err := h.store.CreateAlert(c.Request.Context(), alert); err != nil {
@@ -80,7 +80,7 @@ func (h *AlertHandler) List(c *gin.Context) {
 	var sev, status string
 
 	if sev = c.Query("severity"); sev != "" {
-		if err := validation.ValidateEnum(sev, []string{"P0", "P1", "P2"}); err != nil {
+		if err := validation.ValidateEnum(sev, []string{"low", "medium", "high"}); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"code": "OK", "msg": "invalid severity"})
 			return
 		}

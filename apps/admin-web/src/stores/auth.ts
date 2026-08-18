@@ -49,22 +49,16 @@ export const useAuthStore = defineStore('auth', () => {
 
       if ('identifier' in input) {
         const res = await apiClient.post('/auth/login', {
-          identifier: input.identifier,
-          password: input.password,
+          method: 'email',
+          credential: input.identifier,
+          secret: input.password,
         }, { timeout: 10000 });
-        const d = res as any;
-        token = d.access_token;
-        userId = d.user_id;
-        role = d.role;
-
-        // Fetch CSRF token after login
-        try {
-          const csrfRes = await apiClient.get('/auth/csrf/get');
-          const csrfData = csrfRes as any;
-          if (csrfData?.csrf_token) {
-            setCsrfToken(csrfData.csrf_token);
-          }
-        } catch { /* CSRF token fetch non-fatal */ }
+        // Backend response: { code: "OK", data: { token: "...", user: {...} } }
+        const respData = res as any;
+        token = respData?.data?.token || respData?.access_token;
+        const backendUser = respData?.data?.user || {};
+        userId = backendUser.id || respData?.data?.user_id || '';
+        role = backendUser.role || respData?.role || 'admin';
       } else {
         token = input.access_token;
         userId = input.user_id;
@@ -119,6 +113,7 @@ export const useAuthStore = defineStore('auth', () => {
   if (state.value.token) {
     const jp = parseJwt(state.value.token);
     if (jp?.exp && Date.now() >= jp.exp * 1000) {
+      // Token expired — clear both state and storage
       state.value = { token: null, user: null, expiresAt: null };
       localStorage.removeItem(STORAGE_KEY);
     } else if ((jp?.user_id || jp?.sub) && !state.value.user) {
@@ -131,6 +126,9 @@ export const useAuthStore = defineStore('auth', () => {
       };
       persist();
     }
+  } else if (state.value.user) {
+    // Token was cleared but user remained in state — reset user too
+    state.value.user = null;
   }
 
   return { state, user, isLoggedIn, getUser, getToken, checkLoggedIn, isExpired, loading, error, login, logout, hasPermission, refreshToken, parseJwt };

@@ -450,7 +450,7 @@ func (h *EventHandler) handlePatientRegister(ctx context.Context, ev *DeviceEven
 		zap.String("device", ev.DevID),
 		zap.String("elderly", ev.ElderlyID),
 	)
-	// Patient registration is handled via admin-api REST API, not via NATS
+	// Patient registration is handled via api-server REST API, not via NATS
 	// This event is logged for monitoring purposes
 }
 
@@ -460,7 +460,7 @@ func (h *EventHandler) handleVerificationScan(ctx context.Context, ev *DeviceEve
 		zap.String("device", ev.DevID),
 		zap.String("elderly", ev.ElderlyID),
 	)
-	// Verification records are created via admin-api REST API
+	// Verification records are created via api-server REST API
 	// This event is logged for monitoring purposes
 }
 
@@ -470,7 +470,7 @@ func (h *EventHandler) handleDeviceStatus(ctx context.Context, ev *DeviceEvent) 
 		zap.String("device", ev.DevID),
 		zap.String("status", ev.Status),
 	)
-	// Device status is managed via admin-api REST API
+	// Device status is managed via api-server REST API
 }
 
 // handleAlertTag processes alert tag events from medical wristbands.
@@ -479,7 +479,7 @@ func (h *EventHandler) handleAlertTag(ctx context.Context, ev *DeviceEvent) {
 		zap.String("device", ev.DevID),
 		zap.String("elderly", ev.ElderlyID),
 	)
-	// Alert tags are managed via admin-api REST API
+	// Alert tags are managed via api-server REST API
 }
 
 // handleCommunitySignin processes community wristband check-in events.
@@ -488,7 +488,7 @@ func (h *EventHandler) handleCommunitySignin(ctx context.Context, ev *DeviceEven
 		zap.String("device", ev.DevID),
 		zap.String("elderly", ev.ElderlyID),
 	)
-	// Community signin is managed via admin-api REST API
+	// Community signin is managed via api-server REST API
 }
 
 // handleCommunityWelfareUpdate processes welfare tag update events.

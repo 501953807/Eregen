@@ -29,8 +29,8 @@ func TestLoad_DefaultValues(t *testing.T) {
 	if cfg.LogLevel != "info" {
 		t.Errorf("LogLevel = %q, want info", cfg.LogLevel)
 	}
-	if cfg.Port != 8085 {
-		t.Errorf("Port = %d, want 8085", cfg.Port)
+	if cfg.Port != 8086 {
+		t.Errorf("Port = %d, want 8086", cfg.Port)
 	}
 	if cfg.SSignName != "颐贞" {
 		t.Errorf("SSignName = %q, want 颐贞", cfg.SSignName)

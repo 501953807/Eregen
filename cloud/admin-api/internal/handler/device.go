@@ -82,7 +82,7 @@ func (h *DeviceHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"code": "OK"})
+	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": gin.H{"id": summary.DeviceID}})
 }
 
 // List returns a paginated list of devices with optional filters.

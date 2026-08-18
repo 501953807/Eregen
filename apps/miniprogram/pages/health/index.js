@@ -44,7 +44,6 @@ Page({
   },
 
   onShow() {
-    // Refresh when coming back
     this._fetchHealthData();
   },
 
@@ -53,16 +52,15 @@ Page({
     const elderlyId = wx.getStorageSync('elderly_id') || '';
     if (!elderlyId) return;
 
-    api.get(`/health/history`, {
-      query: { elderly_id: elderlyId, days: 7 }
-    }).then(res => {
-      if (res.code === 'OK' && res.data && res.data.length > 0) {
-        this._processHealthData(res.data);
-      }
-    }).catch(() => {
-      // Use demo data for now
-      this._loadDemoData();
-    });
+    api.get(`/elderly/${elderlyId}/health/history`, { query: { days: 7 } })
+      .then(res => {
+        if (res && res.code === 'OK' && res.data && res.data.length > 0) {
+          this._processHealthData(res.data);
+        }
+      })
+      .catch(() => {
+        this._loadDemoData();
+      });
   },
 
   _processHealthData(records) {
@@ -74,7 +72,6 @@ Page({
     const sys = latest.bp_systolic;
     const dia = latest.bp_diastolic;
 
-    // Risk score calculation
     let riskScore = 0;
     if (hr && (hr < 60 || hr > 100)) riskScore += 20;
     if (spo2 && spo2 < 95) riskScore += 30;
@@ -98,7 +95,6 @@ Page({
     if (sys && sys > 140) insightParts.push('收缩压偏高，建议减少盐分摄入');
     if (insightParts.length === 0) insightParts.push('各项指标基本正常，继续保持健康生活方式');
 
-    // Intergenerational comparison data
     const elderAvg = {
       hr: hr || 72,
       spo2: spo2 || 97,
@@ -186,14 +182,12 @@ Page({
     const ctx = wx.createCanvasContext('riskGauge', this);
     const cx = 100, cy = 60, r = 45;
 
-    // Background arc
     ctx.setStrokeStyle('rgba(255,255,255,0.2)');
     ctx.setLineWidth(10);
     ctx.beginPath();
     ctx.arc(cx, cy, r, Math.PI * 0.8, Math.PI * 2.2);
     ctx.stroke();
 
-    // Score arc
     const color = score < 30 ? '#4CAF50' : (score < 60 ? '#FFA726' : '#FF5252');
     ctx.setStrokeStyle(color);
     ctx.setLineWidth(10);
@@ -212,11 +206,9 @@ Page({
     const chartW = w - pad.left - pad.right;
     const chartH = h - pad.top - pad.bottom;
 
-    // Background
     ctx.setFillStyle('#FFFFFF');
     ctx.fillRect(0, 0, w, h);
 
-    // Grid lines
     ctx.setStrokeStyle('#F0F0F5');
     ctx.setLineWidth(1);
     for (let i = 0; i <= 4; i++) {
@@ -227,11 +219,9 @@ Page({
       ctx.stroke();
     }
 
-    // Heart rate line
     const hrValues = records.slice(0, 7).map(r => r.hr || 70);
     this._drawLine(ctx, hrValues, '#4A90D9', pad, chartW, chartH, 7);
 
-    // X-axis labels
     ctx.setFontSize(20);
     ctx.setFillStyle('#999999');
     const days = ['日', '一', '二', '三', '四', '五', '六'];
@@ -262,7 +252,6 @@ Page({
     }
     ctx.stroke();
 
-    // Dots
     for (let i = 0; i < count; i++) {
       const x = pad.left + (chartW / (count - 1)) * i;
       const y = pad.top + chartH - ((values[i] - minVal) / range) * chartH;

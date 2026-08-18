@@ -184,7 +184,7 @@ services:
     container_name: eregen-push-service
     restart: unless-stopped
     ports:
-      - "8085:8085"
+      - "8086:8086"
     environment:
       NATS_URL: nats://nats:4222
       POSTGRES_DSN: postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable
@@ -195,7 +195,7 @@ services:
       SMS_ACCESS_KEY: ""
       SMS_ACCESS_SECRET: ""
       SMS_SIGN_NAME: 颐贞
-      PUSH_SERVICE_PORT: "8085"
+      PUSH_SERVICE_PORT: "8086"
     volumes:
       - ./cloud/push-service/data:/data
     depends_on:
@@ -211,12 +211,13 @@ services:
     container_name: eregen-admin-api
     restart: unless-stopped
     ports:
-      - "8089:8089"
+      - "8085:8085"
     environment:
       DATABASE_URL: postgres://eregen:eregen@postgres:5432/eregen?sslmode=disable
-      DATABASE_TYPE: postgres
+      DATABASE_TYPE: sqlite
+      SQLITE_PATH: /data/eregen.db
       JWT_SECRET: eregen-admin-secret-change-in-production
-      PORT: "8089"
+      PORT: "8085"
     volumes:
       - ./cloud/admin-api/data:/data
     depends_on:
@@ -335,7 +336,7 @@ services:
       - "3001:3000"
     environment:
       VITE_API_BASE: http://localhost:8180
-      VITE_ADMIN_API_BASE: http://localhost:8089
+      VITE_ADMIN_API_BASE: http://localhost:8085
     depends_on:
       - api-server
       - admin-api

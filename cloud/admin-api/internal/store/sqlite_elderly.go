@@ -135,8 +135,8 @@ func (s *SqliteStore) GetElderlyHealthStats(ctx context.Context, elderlyID strin
 	var stats model.HealthStats
 	stats.ElderlyID = elderlyID
 	err := s.db.QueryRowContext(ctx, `
-		SELECT AVG(hr), MAX(hr), AVG(spo2), SUM(steps), MAX(recorded_at)
-		FROM health_records WHERE person_id = ?`, elderlyID).Scan(
+		SELECT AVG(hr), MAX(hr), AVG(spo2), SUM(steps), MAX(timestamp)
+		FROM health_records WHERE elderly_id = ?`, elderlyID).Scan(
 		&stats.AvgHR, &stats.MaxHR, &stats.AvgSpO2, &stats.TotalSteps, &stats.LastSeen)
 	if err != nil {
 		return nil, fmt.Errorf("get health stats: %w", err)
@@ -146,8 +146,8 @@ func (s *SqliteStore) GetElderlyHealthStats(ctx context.Context, elderlyID strin
 
 func (s *SqliteStore) GetElderlyHealthRecords(ctx context.Context, elderlyID string, limit int) ([]model.HealthRecordRow, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, person_id, timestamp, hr, spo2, steps, sleep_hours
-		FROM health_records WHERE person_id = ? ORDER BY timestamp DESC LIMIT ?`, elderlyID, limit)
+		SELECT id, elderly_id, timestamp, hr, spo2, steps, sleep_hours
+		FROM health_records WHERE elderly_id = ? ORDER BY timestamp DESC LIMIT ?`, elderlyID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list health records: %w", err)
 	}
@@ -156,9 +156,11 @@ func (s *SqliteStore) GetElderlyHealthRecords(ctx context.Context, elderlyID str
 	var items []model.HealthRecordRow
 	for rows.Next() {
 		var r model.HealthRecordRow
-		if err := rows.Scan(&r.ID, &r.ElderlyID, &r.Timestamp, &r.HR, &r.SpO2, &r.Steps, &r.SleepHours); err != nil {
+		var timestampStr string
+		if err := rows.Scan(&r.ID, &r.ElderlyID, &timestampStr, &r.HR, &r.SpO2, &r.Steps, &r.SleepHours); err != nil {
 			return nil, fmt.Errorf("scan health record: %w", err)
 		}
+		r.Timestamp = parseTimeStrict(timestampStr)
 		items = append(items, r)
 	}
 	return items, rows.Err()
@@ -166,8 +168,8 @@ func (s *SqliteStore) GetElderlyHealthRecords(ctx context.Context, elderlyID str
 
 func (s *SqliteStore) GetElderlyMedicationRules(ctx context.Context, elderlyID string) ([]model.MedicationRuleRow, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, person_id, schedule_time, drug_name, dosage, frequency, days_of_week, active, created_at
-		FROM medication_rules WHERE person_id = ? ORDER BY schedule_time`, elderlyID)
+		SELECT id, elderly_id, schedule_time, dose_count, pill_type, days_of_week, active, created_at
+		FROM medication_rules WHERE elderly_id = ? ORDER BY schedule_time`, elderlyID)
 	if err != nil {
 		return nil, fmt.Errorf("list medication rules: %w", err)
 	}
@@ -177,9 +179,11 @@ func (s *SqliteStore) GetElderlyMedicationRules(ctx context.Context, elderlyID s
 	for rows.Next() {
 		var r model.MedicationRuleRow
 		var daysRaw string
-		if err := rows.Scan(&r.ID, &r.ElderlyID, &r.ScheduleTime, &r.DrugName, &r.Dosage, &r.Frequency, &daysRaw, &r.Active, &r.CreatedAt); err != nil {
+		var createdAtStr string
+		if err := rows.Scan(&r.ID, &r.ElderlyID, &r.ScheduleTime, &r.DoseCount, &r.PillType, &daysRaw, &r.Active, &createdAtStr); err != nil {
 			return nil, fmt.Errorf("scan medication rule: %w", err)
 		}
+		r.CreatedAt = createdAtStr
 		json.Unmarshal([]byte(daysRaw), &r.DaysOfWeek)
 		items = append(items, r)
 	}
@@ -190,9 +194,9 @@ func (s *SqliteStore) CreateMedicationRule(ctx context.Context, elderlyID string
 	rule.ID = uuid.New().String()
 	daysJSON, _ := json.Marshal(rule.DaysOfWeek)
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO medication_rules (id, person_id, business_chain, schedule_time, drug_name, dosage, frequency, days_of_week, active)
-		 VALUES (?, ?, 'self', ?, ?, ?, ?, ?, ?)`,
-		rule.ID, elderlyID, rule.ScheduleTime, rule.DrugName, rule.Dosage, rule.Frequency, daysJSON, rule.Active)
+		`INSERT INTO medication_rules (id, elderly_id, schedule_time, dose_count, pill_type, days_of_week, active)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		rule.ID, elderlyID, rule.ScheduleTime, rule.DoseCount, rule.PillType, daysJSON, rule.Active)
 	return err
 }
 
@@ -204,7 +208,7 @@ func (s *SqliteStore) UpdateMedicationRule(ctx context.Context, elderlyID, ruleI
 		args = append(args, v)
 	}
 	args = append(args, elderlyID, ruleID)
-	query := fmt.Sprintf("UPDATE medication_rules SET %s WHERE person_id=? AND id=?",
+	query := fmt.Sprintf("UPDATE medication_rules SET %s WHERE elderly_id=? AND id=?",
 		strings.Join(parts, ", "))
 	_, err := s.db.ExecContext(ctx, query, args...)
 	return err
@@ -212,7 +216,7 @@ func (s *SqliteStore) UpdateMedicationRule(ctx context.Context, elderlyID, ruleI
 
 func (s *SqliteStore) DeleteMedicationRule(ctx context.Context, elderlyID, ruleID string) error {
 	_, err := s.db.ExecContext(ctx,
-		`DELETE FROM medication_rules WHERE person_id=? AND id=?`, elderlyID, ruleID)
+		`DELETE FROM medication_rules WHERE elderly_id=? AND id=?`, elderlyID, ruleID)
 	return err
 }
 
@@ -222,7 +226,7 @@ func (s *SqliteStore) GetElderlyDevices(ctx context.Context, elderlyID string) (
 		       COALESCE(json_extract(d.settings, '$.fw_version'),'v0.1'),
 		       COALESCE(d.last_seen, '0001-01-01')
 		FROM devices d JOIN device_bindings db ON d.id = db.device_id
-		WHERE db.person_id = ? AND db.business_chain = 'self' ORDER BY d.last_seen DESC`, elderlyID)
+		WHERE db.elderly_id = ? AND db.business_chain = 'self' ORDER BY d.last_seen DESC`, elderlyID)
 	if err != nil {
 		return nil, fmt.Errorf("list elderly devices: %w", err)
 	}
@@ -243,8 +247,8 @@ func (s *SqliteStore) GetElderlyDevices(ctx context.Context, elderlyID string) (
 
 func (s *SqliteStore) GetElderlyLocationHistory(ctx context.Context, elderlyID string, limit int) ([]model.LocationPoint, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, person_id, lat, lon, accuracy, timestamp
-		FROM location_history WHERE person_id = ? ORDER BY timestamp DESC LIMIT ?`, elderlyID, limit)
+		SELECT id, elderly_id, lat, lon, accuracy, timestamp
+		FROM location_history WHERE elderly_id = ? ORDER BY timestamp DESC LIMIT ?`, elderlyID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list location history: %w", err)
 	}
@@ -253,9 +257,11 @@ func (s *SqliteStore) GetElderlyLocationHistory(ctx context.Context, elderlyID s
 	var items []model.LocationPoint
 	for rows.Next() {
 		var p model.LocationPoint
-		if err := rows.Scan(&p.ID, &p.ElderlyID, &p.Lat, &p.Lon, &p.Accuracy, &p.Timestamp); err != nil {
+		var timestampStr string
+		if err := rows.Scan(&p.ID, &p.ElderlyID, &p.Lat, &p.Lon, &p.Accuracy, &timestampStr); err != nil {
 			return nil, fmt.Errorf("scan location point: %w", err)
 		}
+		p.Timestamp = parseTimeStrict(timestampStr)
 		items = append(items, p)
 	}
 	return items, rows.Err()
@@ -263,8 +269,8 @@ func (s *SqliteStore) GetElderlyLocationHistory(ctx context.Context, elderlyID s
 
 func (s *SqliteStore) GetElderlyAlertHistory(ctx context.Context, elderlyID string, limit int) ([]model.AlertSummaryRow, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, person_id, alert_type, severity, status, created_at
-		FROM alerts WHERE person_id = ? ORDER BY created_at DESC LIMIT ?`, elderlyID, limit)
+		SELECT id, elderly_id, alert_type, severity, status, created_at
+		FROM alerts WHERE elderly_id = ? ORDER BY created_at DESC LIMIT ?`, elderlyID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list elderly alerts: %w", err)
 	}
@@ -273,9 +279,11 @@ func (s *SqliteStore) GetElderlyAlertHistory(ctx context.Context, elderlyID stri
 	var items []model.AlertSummaryRow
 	for rows.Next() {
 		var a model.AlertSummaryRow
-		if err := rows.Scan(&a.ID, &a.ElderlyID, &a.AlertType, &a.Severity, &a.Status, &a.CreatedAt); err != nil {
+		var createdAtStr string
+		if err := rows.Scan(&a.ID, &a.ElderlyID, &a.AlertType, &a.Severity, &a.Status, &createdAtStr); err != nil {
 			return nil, fmt.Errorf("scan elderly alert: %w", err)
 		}
+		a.CreatedAt = parseTimeStrict(createdAtStr)
 		items = append(items, a)
 	}
 	return items, rows.Err()
@@ -287,9 +295,9 @@ func (s *SqliteStore) CreateHealthRecord(ctx context.Context, r *model.HealthRec
 		r.Timestamp = time.Now()
 	}
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO health_records (id, person_id, business_chain, timestamp, hr, spo2, steps, sleep_hours)
-		 VALUES (?, ?, 'self', ?, ?, ?, ?, ?)`,
-		r.ID, r.ElderlyID, r.Timestamp, r.HR, r.SpO2, r.Steps, r.SleepHours)
+		`INSERT INTO health_records (id, elderly_id, timestamp, hr, spo2, steps, sleep_hours)
+		 VALUES (?, ?, datetime('now'), ?, ?, ?, ?)`,
+		r.ID, r.ElderlyID, r.HR, r.SpO2, r.Steps, r.SleepHours)
 	return err
 }
 
@@ -299,7 +307,7 @@ func (s *SqliteStore) CreateLocation(ctx context.Context, loc *model.LocationPoi
 		loc.Timestamp = time.Now()
 	}
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO location_history (id, person_id, lat, lon, accuracy, timestamp)
+		`INSERT INTO location_history (id, elderly_id, lat, lon, accuracy, timestamp)
 		 VALUES (?, ?, ?, ?, ?, ?)`,
 		loc.ID, loc.ElderlyID, loc.Lat, loc.Lon, loc.Accuracy, loc.Timestamp)
 	return err

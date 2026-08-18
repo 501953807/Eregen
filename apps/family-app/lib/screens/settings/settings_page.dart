@@ -20,9 +20,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // Firmware version check
   List<Map<String, dynamic>> _devices = [];
-  Map<String, String?> _latestVersions = {}; // device_id -> latest version
   bool _checkingFirmware = false;
-  String? _otaJobId;
 
   @override
   void initState() {
@@ -144,7 +142,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   _SettingsRow(
                     icon: Icons.system_update,
                     title: '固件版本',
-                    subtitle: _checkingFirmware ? '检查中...' : (_latestVersions.isEmpty ? '未绑定设备' : '已是最新'),
+                    subtitle: _checkingFirmware ? '检查中...' : '已加载',
                     trailing: _checkingFirmware
                         ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC)),
@@ -218,35 +216,15 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() => _checkingFirmware = true);
     try {
       // Fetch bound devices
-      final devicesResp = await ApiClient.instance.get('/devices');
+      final devicesResp = await ApiClient.instance.listDevices();
       final devicesList = (devicesResp.data as List)?.map((d) => {
         'id': d['device_id'] as String? ?? '',
         'type': d['device_type'] as String? ?? '',
         'tier': d['tier'] as String? ?? '',
         'fw_version': d['fw_version'] as String? ?? '',
       }).toList() ?? [];
-      setState(() => _devices = devicesList);
-
-      // Check latest firmware for each device type+tier combo
-      final versions = <String, String?>{};
-      for (final dev in devicesList) {
-        final key = '${dev['type']}/${dev['tier']}';
-        if (versions.containsKey(key)) continue;
-        try {
-          final fwResp = await ApiClient.instance.listFirmware(
-            deviceType: dev['type'] as String?,
-            tier: dev['tier'] as String?,
-          );
-          final items = (fwResp.data as Map<String, dynamic>)['data'] as List?;
-          if (items != null && items.isNotEmpty) {
-            versions[key] = items.first['version'] as String?;
-          }
-        } catch (_) {
-          // skip
-        }
-      }
       setState(() {
-        _latestVersions = versions;
+        _devices = devicesList;
         _checkingFirmware = false;
       });
     } catch (_) {

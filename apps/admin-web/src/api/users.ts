@@ -18,21 +18,21 @@ export interface UpdateUserBody {
 
 export const usersApi = {
   list(params?: { page?: number; page_size?: number; role?: string }) {
-    return apiClient.get('/users', { params })
+    return apiClient.get('/admin/users', { params })
   },
   create(data: CreateUserBody) {
-    return apiClient.post('/users', data)
+    return apiClient.post('/admin/users', data)
   },
   update(id: string, data: UpdateUserBody) {
-    return apiClient.put(`/users/${id}`, data)
+    return apiClient.put(`/admin/users/${id}`, data)
   },
   delete(id: string) {
-    return apiClient.delete(`/users/${id}`)
+    return apiClient.delete(`/admin/users/${id}`)
   },
   updateRole(id: string, role: string) {
     return apiClient.post(`/admin/users/${id}/role`, { role })
   },
   listElderly(params?: Record<string, any>) {
-    return apiClient.get('/elderly', { params })
+    return apiClient.get('/admin/elderly', { params })
   },
 }

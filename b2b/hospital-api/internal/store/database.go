@@ -14,6 +14,8 @@ type Database interface {
 	MedicationStore
 	PatientLinkStore
 	ElderlyLinkStore
+	ExportStore
+	RulesStore
 }
 
 // InstitutionStore handles institution and API key operations.
@@ -57,4 +59,18 @@ type ElderlyLinkStore interface {
 	LinkElderlyToInstitution(ctx context.Context, link *model.ElderlyInstitutionLink) error
 	GetActiveLinksForInstitution(ctx context.Context, instID string) ([]model.ElderlyInstitutionLink, error)
 	GetActiveLinksForElderly(ctx context.Context, elderlyID string) ([]model.ElderlyInstitutionLink, error)
+}
+
+// ExportStore handles health data export requests.
+type ExportStore interface {
+	CreateExport(ctx context.Context, export *model.ExportRequest) error
+	GetExportByID(ctx context.Context, exportID string) (*model.ExportRequest, error)
+	ListExportsByInstitution(ctx context.Context, instID string, elderlyID string) ([]model.ExportRequest, error)
+}
+
+// RulesStore handles hospital medication rules.
+type RulesStore interface {
+	CreateMedicationRule(ctx context.Context, rule *model.MedicationRuleV2) error
+	GetMedicationRulesByPerson(ctx context.Context, personID string) ([]model.MedicationRuleV2, error)
+	GetMedicationRulesByInstitution(ctx context.Context, instID string) ([]model.MedicationRuleV2, error)
 }

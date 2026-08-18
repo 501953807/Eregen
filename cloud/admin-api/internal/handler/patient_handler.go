@@ -23,11 +23,12 @@ func NewPatientHandler(s store.Store) *PatientHandler {
 
 // ListPatients returns paginated patient list.
 func (h *PatientHandler) ListPatients(c *gin.Context) {
+	var err error
 	page, _ := strconv.Atoi(c.Query("page"))
 	pageSize, _ := strconv.Atoi(c.Query("page_size"))
-	page, pageSize, err := validation.ValidatePagination(page, pageSize, 100)
+	page, pageSize, err = validation.ValidatePagination(page, pageSize, 100)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "System internal error"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 

@@ -48,40 +48,55 @@ export const selfApi = {
 
 export const hospitalApi = {
   listPatients(params?: any) {
-    return apiClient.get('/hospital/patients', { params })
+    return apiClient.get('/admin/hospital/patients', { params })
+  },
+  getPatient(id: string) {
+    return apiClient.get(`/admin/hospital/patients/${id}`)
   },
   admitPatient(data: any) {
-    return apiClient.post('/hospital/admissions', data)
+    return apiClient.post('/admin/hospital/admissions', data)
   },
   dischargePatient(id: string, data: any) {
-    return apiClient.post(`/hospital/admissions/${id}/discharge`, data)
+    return apiClient.post(`/admin/hospital/admissions/${id}/discharge`, data)
   },
   getDailyEntries(personId: string, date?: string) {
-    return apiClient.get(`/hospital/patients/${personId}/daily`, { params: { date } })
+    return apiClient.get(`/admin/hospital/patients/${personId}/daily`, { params: { date } })
   },
   verifyPatient(personId: string, data: any) {
-    return apiClient.post(`/hospital/patients/${personId}/verify`, data)
+    return apiClient.post(`/admin/hospital/patients/${personId}/verify`, data)
+  },
+  listAdmissions(params?: any) {
+    return apiClient.get('/admin/medical/admissions', { params })
+  },
+  getWardRounds(personId: string) {
+    return apiClient.get(`/admin/medical/patients/${personId}/ward-round`)
+  },
+  completeWardRound(personId: string, data: any) {
+    return apiClient.post(`/admin/medical/patients/${personId}/ward-round`, data)
   },
 }
 
 export const communityApi = {
   listElders(params?: any) {
-    return apiClient.get('/community/elders', { params })
+    return apiClient.get('/admin/community/elders', { params })
   },
   createElder(data: any) {
-    return apiClient.post('/community/elders', data)
+    return apiClient.post('/admin/community/elders', data)
   },
   updateElder(id: string, data: any) {
-    return apiClient.put(`/community/elders/${id}`, data)
+    return apiClient.put(`/admin/community/elders/${id}`, data)
   },
   signin(personId: string, data: any) {
-    return apiClient.post(`/community/elders/${personId}/signin`, data)
+    return apiClient.post(`/admin/community/elders/${personId}/signin`, data)
   },
   assignWelfare(personId: string, data: any) {
-    return apiClient.post(`/community/elders/${personId}/welfare`, data)
+    return apiClient.post(`/admin/community/elders/${personId}/welfare`, data)
   },
   getStats(personId: string) {
-    return apiClient.get(`/community/elders/${personId}/stats`)
+    return apiClient.get(`/admin/community/elders/${personId}/stats`)
+  },
+  revokeWelfareTag(elderId: string, tagCode: string) {
+    return apiClient.delete(`/admin/community-wb/elders/${elderId}/welfare/${tagCode}`)
   },
 }
 
@@ -93,7 +108,7 @@ export const regulatoryApi = {
     return apiClient.post('/regulatory/compliance/run', params)
   },
   getAudit(personId: string) {
-    return apiClient.get(`/regulatory/audit/${personId}`)
+    return apiClient.get(`/regulatory/audit/patient/${personId}`)
   },
   getReports(params?: any) {
     return apiClient.get('/regulatory/reports', { params })

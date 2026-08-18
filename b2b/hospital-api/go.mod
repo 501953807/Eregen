@@ -1,6 +1,6 @@
 module eregen.dev/b2b-hospital-api
 
-go 1.25.0
+replace eregen.dev/shared/response => ../../../shared/response
 
 require (
 	github.com/gin-gonic/gin v1.10.0

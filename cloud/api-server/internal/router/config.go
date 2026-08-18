@@ -11,7 +11,7 @@ import (
 
 // Config holds the dependencies needed to wire the router.
 type Config struct {
-	PG           store.Backend
+	PG           store.Store
 	Redis        *store.Redis
 	Nats         *service.NatsClient
 	JWTSecret    string

@@ -77,9 +77,21 @@ func (h *FirmwareHandler) PushOTA(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
-	if err := h.store.PushOTAJob(c.Request.Context(), body.FirmwareID, body.DeviceIDs); err != nil {
+	jobID, err := h.store.PushOTAJob(c.Request.Context(), body.FirmwareID, body.DeviceIDs)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "OTA push scheduled"})
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "message": "OTA push scheduled", "job_id": jobID})
+}
+
+// GetOTAJob retrieves an OTA push job by ID.
+func (h *FirmwareHandler) GetOTAJob(c *gin.Context) {
+	jobID := c.Param("id")
+	job, err := h.store.GetOTAJob(c.Request.Context(), jobID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "OTA job not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "OK", "data": job})
 }

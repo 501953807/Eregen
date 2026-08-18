@@ -22,7 +22,7 @@ func NewMedicationHandler(s store.MedicationRuleStore) *MedicationHandler {
 
 // ListRules returns medication rules for a person in a given chain.
 func (h *MedicationHandler) ListRules(c *gin.Context) {
-	personID := c.Param("personId")
+	personID := c.Param("id")
 	chain := c.Query("chain")
 	rules, err := h.store.ListMedicationRules(c.Request.Context(), personID, model.BusinessChain(chain))
 	if err != nil {
@@ -90,7 +90,7 @@ func (h *MedicationHandler) CreateExecution(c *gin.Context) {
 
 // ListExecutions returns recent medication executions.
 func (h *MedicationHandler) ListExecutions(c *gin.Context) {
-	personID := c.Param("personId")
+	personID := c.Param("id")
 	chain := c.Query("chain")
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
 	if limit > 200 {

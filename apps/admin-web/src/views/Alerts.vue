@@ -251,7 +251,7 @@ async function fetchAlerts() {
     if (filters.value.severity) params.severity = filters.value.severity
     if (filters.value.status) params.status = filters.value.status
     const res = await alertsApi.list(params)
-    allAlerts.value = (res.data?.alerts || []) as Alert[]
+    allAlerts.value = (res.data?.alerts || res.data || []) as Alert[]
   } catch {
     ElMessage.warning('加载失败，使用模拟数据')
   } finally {

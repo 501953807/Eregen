@@ -844,13 +844,18 @@ func (s *SqliteStore) ListDeviceBindings(ctx context.Context, personID string, c
 	for rows.Next() {
 		var b model.DeviceBinding
 		var unboundRaw sql.NullString
-		if err := rows.Scan(&b.ID, &b.DeviceID, &b.PersonID, &b.BusinessChain, &b.BoundAt,
-			&unboundRaw, &b.BindingType, &b.CreatedAt); err != nil {
+		var boundAtStr, createdAtStr string
+		if err := rows.Scan(&b.ID, &b.DeviceID, &b.PersonID, &b.BusinessChain, &boundAtStr,
+			&unboundRaw, &b.BindingType, &createdAtStr); err != nil {
 			return nil, fmt.Errorf("scan device binding: %w", err)
 		}
 		if unboundRaw.Valid {
 			t, _ := time.Parse("2006-01-02 15:04:05", unboundRaw.String)
 			b.UnboundAt = &t
+		}
+		b.CreatedAt = parseTimeStrict(createdAtStr)
+		if t, err := time.Parse("2006-01-02 15:04:05", boundAtStr); err == nil {
+			b.BoundAt = t
 		}
 		bindings = append(bindings, b)
 	}

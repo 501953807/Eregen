@@ -2,13 +2,13 @@ import apiClient from './client'
 import type { Alert } from '@/types'
 
 export const alertsApi = {
-  list(params: { severity?: string; status?: string; limit?: number }) {
-    return apiClient.get('/alerts', { params })
+  list(params: { severity?: string; status?: string; page?: number; page_size?: number }) {
+    return apiClient.get('/admin/alerts', { params })
   },
   markResolved(id: string) {
-    return apiClient.put(`/alerts/${id}/resolve`, {})
+    return apiClient.post(`/admin/alerts/${id}/resolve`, {})
   },
   acknowledge(id: string) {
-    return apiClient.put(`/alerts/${id}`, { status: 'acknowledged' })
+    return apiClient.post(`/admin/alerts/${id}/acknowledge`, {})
   },
 }

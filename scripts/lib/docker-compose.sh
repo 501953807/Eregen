@@ -33,7 +33,7 @@ docker_compose_up() {
       ;;
     cloud)
       docker compose -f docker-compose.yml up -d postgres redis influxdb emqx nats
-      docker compose -f docker-compose.yml up -d gateway api-server push-service data-pipeline admin-api
+      docker compose -f docker-compose.yml up -d gateway api-server push-service data-pipeline
       ;;
     b2b)
       docker compose -f docker-compose.yml up -d postgres

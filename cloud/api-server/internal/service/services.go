@@ -254,12 +254,11 @@ func (p *PushProvider) getOAuthToken(ctx context.Context) (string, error) {
 
 // AlertService manages alert creation and resolution.
 type AlertService struct {
-	store     alertStore
-	push      *PushProvider
+	store    alertStore
+	push     *PushProvider
 	tokenStore TokenStore
-	nats      *NatsClient
-	log       *zap.Logger
-	emergency *EmergencyResponseWorkflow
+	nats     *NatsClient
+	log      *zap.Logger
 }
 
 type alertStore interface {
@@ -272,11 +271,6 @@ type alertStore interface {
 // NewAlertService creates a new alert service.
 func NewAlertService(store alertStore, push *PushProvider, tokenStore TokenStore, nats *NatsClient, log *zap.Logger) *AlertService {
 	return &AlertService{store: store, push: push, tokenStore: tokenStore, nats: nats, log: log}
-}
-
-// SetEmergencyWorkflow attaches the emergency response workflow to this alert service.
-func (s *AlertService) SetEmergencyWorkflow(wf *EmergencyResponseWorkflow) {
-	s.emergency = wf
 }
 
 // CreateSOSAlert creates an SOS alert and triggers immediate push notification.
@@ -294,9 +288,6 @@ func (s *AlertService) CreateSOSAlert(ctx context.Context, elderlyID, deviceID s
 	}
 	if err := s.store.CreateAlert(ctx, a); err != nil {
 		return err
-	}
-	if s.emergency != nil {
-		return s.emergency.ProcessAlert(ctx, a)
 	}
 	_ = s.push.SendToUser(ctx, elderlyID, "SOS 紧急告警", "老人触发了SOS按钮，请立即查看", s.tokenStore)
 	return nil
@@ -318,9 +309,6 @@ func (s *AlertService) CreateFallAlert(ctx context.Context, elderlyID, deviceID 
 	}
 	if err := s.store.CreateAlert(ctx, a); err != nil {
 		return err
-	}
-	if s.emergency != nil {
-		return s.emergency.ProcessAlert(ctx, a)
 	}
 	_ = s.push.SendToUser(ctx, elderlyID, "跌倒检测告警", "检测到老人可能跌倒，请立即确认", s.tokenStore)
 	return nil

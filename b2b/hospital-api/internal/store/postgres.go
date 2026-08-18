@@ -367,6 +367,131 @@ func (s *PostgresStore) GetMedicationsForElderly(ctx context.Context, elderlyID 
 	return records, rows.Err()
 }
 
+// ---------- Export Store ----------
+
+func (s *PostgresStore) CreateExport(ctx context.Context, export *model.ExportRequest) error {
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO b2b_health_exports (id, elderly_id, institution_id, export_type,
+		 period_start, period_end, status, generated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+		export.ID, export.ElderlyID, export.InstitutionID, export.ExportType,
+		export.PeriodStart, export.PeriodEnd, export.Status,
+	)
+	return err
+}
+
+func (s *PostgresStore) GetExportByID(ctx context.Context, exportID string) (*model.ExportRequest, error) {
+	export := &model.ExportRequest{}
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, elderly_id, institution_id, export_type, period_start, period_end,
+		 file_url, status, created_at
+		 FROM b2b_health_exports WHERE id = $1`, exportID).Scan(
+		&export.ID, &export.ElderlyID, &export.InstitutionID, &export.ExportType,
+		&export.PeriodStart, &export.PeriodEnd, &export.FileURL,
+		&export.Status, &export.CreatedAt,
+	)
+	return export, err
+}
+
+func (s *PostgresStore) ListExportsByInstitution(ctx context.Context, instID, elderlyID string) ([]model.ExportRequest, error) {
+	query := `SELECT id, elderly_id, institution_id, export_type, period_start, period_end, file_url, status, created_at FROM b2b_health_exports WHERE institution_id = $1`
+	args := []interface{}{instID}
+	if elderlyID != "" {
+		query += " AND elderly_id = $2"
+		args = append(args, elderlyID)
+	}
+	query += " ORDER BY created_at DESC"
+
+	rows, err := s.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var exports []model.ExportRequest
+	for rows.Next() {
+		var e model.ExportRequest
+		if err := rows.Scan(&e.ID, &e.ElderlyID, &e.InstitutionID, &e.ExportType,
+			&e.PeriodStart, &e.PeriodEnd, &e.FileURL, &e.Status, &e.CreatedAt); err != nil {
+			return nil, err
+		}
+		exports = append(exports, e)
+	}
+	return exports, rows.Err()
+}
+
+// ---------- Rules Store ----------
+
+func (s *PostgresStore) CreateMedicationRule(ctx context.Context, rule *model.MedicationRuleV2) error {
+	daysJSON, _ := json.Marshal(rule.DaysOfWeek)
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO medication_rules_v2 (id, person_id, business_chain, source_type, source_id,
+		 drug_name, dosage, frequency, route, schedule_time1, days_of_week, active,
+		 prescribed_by, created_at, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())`,
+		rule.ID, rule.PersonID, rule.BusinessChain, rule.SourceType, rule.SourceID,
+		rule.DrugName, rule.Dosage, rule.Frequency, rule.Route,
+		rule.ScheduleTime, daysJSON, rule.Active, rule.PrescribedBy,
+	)
+	return err
+}
+
+func (s *PostgresStore) GetMedicationRulesByPerson(ctx context.Context, personID string) ([]model.MedicationRuleV2, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, person_id, business_chain, source_type, source_id,
+		 drug_name, dosage, frequency, route, schedule_time1, days_of_week, active, prescribed_by, created_at, updated_at
+		 FROM medication_rules_v2 WHERE person_id = $1 ORDER BY schedule_time1`,
+		personID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var rules []model.MedicationRuleV2
+	for rows.Next() {
+		var r model.MedicationRuleV2
+		var daysRaw string
+		if err := rows.Scan(&r.ID, &r.PersonID, &r.BusinessChain, &r.SourceType, &r.SourceID,
+			&r.DrugName, &r.Dosage, &r.Frequency, &r.Route, &r.ScheduleTime, &daysRaw,
+			&r.Active, &r.PrescribedBy, &r.CreatedAt, &r.UpdatedAt); err != nil {
+			return nil, err
+		}
+		json.Unmarshal([]byte(daysRaw), &r.DaysOfWeek)
+		rules = append(rules, r)
+	}
+	return rules, rows.Err()
+}
+
+func (s *PostgresStore) GetMedicationRulesByInstitution(ctx context.Context, instID string) ([]model.MedicationRuleV2, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT DISTINCT mr.id, mr.person_id, mr.business_chain, mr.source_type, mr.source_id,
+		 mr.drug_name, mr.dosage, mr.frequency, mr.route, mr.schedule_time1, mr.days_of_week,
+		 mr.active, mr.prescribed_by, mr.created_at, mr.updated_at
+		 FROM medication_rules_v2 mr
+		 JOIN b2b_elderly_links el ON mr.person_id = el.elderly_id
+		 WHERE el.institution_id = $1 AND el.active = true
+		 ORDER BY mr.schedule_time1`,
+		instID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var rules []model.MedicationRuleV2
+	for rows.Next() {
+		var r model.MedicationRuleV2
+		var daysRaw string
+		if err := rows.Scan(&r.ID, &r.PersonID, &r.BusinessChain, &r.SourceType, &r.SourceID,
+			&r.DrugName, &r.Dosage, &r.Frequency, &r.Route, &r.ScheduleTime, &daysRaw,
+			&r.Active, &r.PrescribedBy, &r.CreatedAt, &r.UpdatedAt); err != nil {
+			return nil, err
+		}
+		json.Unmarshal([]byte(daysRaw), &r.DaysOfWeek)
+		rules = append(rules, r)
+	}
+	return rules, rows.Err()
+}
+
 // Compile-time assertions
 var _ Database = (*PostgresStore)(nil)
 var _ Database = (*SqliteStore)(nil)

@@ -74,9 +74,9 @@ Page({
           wx.setStorageSync('token', res.token)
           wx.showToast({ title: '登录成功', icon: 'success' })
           // Check if user has elderly list
-          return request('/elderly?owner_user_id=self', {}, 'GET')
+          return request('/elderly', {}, 'GET')
             .then((res2) => {
-              const hasElderly = Array.isArray(res2.data) && res2.data.length > 0
+              const hasElderly = (res2.data?.profiles || []).length > 0
               return hasElderly ? '/pages/home/index' : '/pages/add-elderly/index'
             })
         }
@@ -96,7 +96,6 @@ Page({
   },
 
   onReady() {
-    // Pre-fill phone if stored
     const savedPhone = storageGet('phone')
     if (savedPhone) {
       this.setData({ phone: savedPhone })

@@ -476,10 +476,28 @@ func (s *Store) DeleteFirmwareVersion(ctx context.Context, id string) error {
 	return s.db.WithContext(ctx).Model(&models.FirmwareRelease{}).Where("id = ?", id).Delete(&models.FirmwareRelease{}).Error
 }
 
-func (s *Store) PushOTAJob(ctx context.Context, firmwareID string, deviceIDs []string) error {
+func (s *Store) PushOTAJob(ctx context.Context, firmwareID string, deviceIDs []string) (string, error) {
 	devicesJSON, _ := json.Marshal(deviceIDs)
 	job := &models.OTAJob{FirmwareID: firmwareID, TargetDevices: string(devicesJSON), Progress: "{}"}
-	return s.db.WithContext(ctx).Create(job).Error
+	if err := s.db.WithContext(ctx).Create(job).Error; err != nil {
+		return "", err
+	}
+	return job.ID, nil
+}
+
+func (s *Store) GetOTAJob(ctx context.Context, jobID string) (*model.OTAJob, error) {
+	var gormJob models.OTAJob
+	if err := s.db.WithContext(ctx).Where("id = ?", jobID).First(&gormJob).Error; err != nil {
+		return nil, err
+	}
+	return &model.OTAJob{
+		ID:            gormJob.ID,
+		FirmwareID:    gormJob.FirmwareID,
+		TargetDevices: json.RawMessage(gormJob.TargetDevices),
+		Progress:      json.RawMessage(gormJob.Progress),
+		CreatedAt:     gormJob.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:     gormJob.UpdatedAt.Format(time.RFC3339),
+	}, nil
 }
 
 func (s *Store) GetNotificationSettings(ctx context.Context) (map[string]any, error) {

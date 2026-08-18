@@ -88,13 +88,13 @@ func HMACSign(signKey []byte, token string) string {
 
 // DeviceAuth provides middleware for device-to-cloud mutual authentication.
 type DeviceAuth struct {
-	store      store.Backend
+	store      store.Store
 	log        *zap.Logger
 	deviceKey  []byte // HMAC key for device JWT signing
 }
 
 // NewDeviceAuth creates a device auth handler.
-func NewDeviceAuth(pg store.Backend, log *zap.Logger, deviceSecret string) *DeviceAuth {
+func NewDeviceAuth(pg store.Store, log *zap.Logger, deviceSecret string) *DeviceAuth {
 	if len(deviceSecret) == 0 {
 		log.Fatal("DEVICE_SECRET environment variable is required for device authentication")
 	}
@@ -172,12 +172,12 @@ type JWTAuth struct {
 	tokenTTL   time.Duration
 	refreshTTL time.Duration
 	log        *zap.Logger
-	store      store.Backend
+	store      store.Store
 	csrf       *CSRFToken
 }
 
 // NewJWTAuth creates an auth middleware with the given secret.
-func NewJWTAuth(secret string, tokenTTL, refreshTTL time.Duration, log *zap.Logger, pg store.Backend, redisClient *redis.Client, csrfSecret string, csrfTTL time.Duration) *JWTAuth {
+func NewJWTAuth(secret string, tokenTTL, refreshTTL time.Duration, log *zap.Logger, pg store.Store, redisClient *redis.Client, csrfSecret string, csrfTTL time.Duration) *JWTAuth {
 csrf := NewCSRFToken([]byte(csrfSecret), redisClient, csrfTTL)
 	return &JWTAuth{
 		secret:     secret,
@@ -446,8 +446,8 @@ func (a *JWTAuth) CSRFCheck() gin.HandlerFunc {
 		// Check if we have an authenticated user - get user ID from context correctly
 		var userID string
 		if rawVal, exists := c.Get(string(ContextUserID)); exists {
-			if userID, ok := rawVal.(string); ok && userID != "" {
-				userID = userID
+			if v, ok := rawVal.(string); ok && v != "" {
+				userID = v
 			} else {
 				userID = ""
 			}

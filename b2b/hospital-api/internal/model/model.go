@@ -187,3 +187,36 @@ type MedicationRecord struct {
 	Duration       string    `json:"duration"`
 	PrescribedAt   time.Time `json:"prescribed_at"`
 }
+
+// ExportRequest represents a health data export request.
+type ExportRequest struct {
+	ID            string    `json:"id"`
+	ElderlyID     string    `json:"elderly_id"`
+	InstitutionID string    `json:"institution_id"`
+	ExportType    string    `json:"export_type"`
+	PeriodStart   string    `json:"period_start"`
+	PeriodEnd     string    `json:"period_end"`
+	FileURL       string    `json:"file_url,omitempty"`
+	Status        string    `json:"status"` // generating, ready, expired
+	CreatedAt     time.Time `json:"created_at"`
+	GeneratedAt   string    `json:"generated_at,omitempty"`
+}
+
+// MedicationRuleV2 is a hospital medication rule.
+type MedicationRuleV2 struct {
+	ID           string   `json:"id"`
+	PersonID     string   `json:"person_id"`
+	BusinessChain string  `json:"business_chain"`
+	SourceType   string   `json:"source_type"`
+	SourceID     string   `json:"source_id,omitempty"`
+	DrugName     string   `json:"drug_name"`
+	Dosage       string   `json:"dosage"`
+	Frequency    string   `json:"frequency"`
+	Route        string   `json:"route"`
+	ScheduleTime string   `json:"schedule_time"`
+	DaysOfWeek   []string `json:"days_of_week,omitempty"`
+	Active       bool     `json:"active"`
+	PrescribedBy string   `json:"prescribed_by,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}

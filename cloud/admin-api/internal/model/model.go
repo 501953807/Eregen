@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // Role represents an admin user role.
 type Role string
@@ -1050,4 +1053,14 @@ type MedicationExecution struct {
 	VerificationMethod string `json:"verification_method"`
 	Notes              string `json:"notes"`
 	CreatedAt          string `json:"created_at"`
+}
+
+// OTAJob tracks firmware push progress across devices.
+type OTAJob struct {
+	ID            string          `json:"id"`
+	FirmwareID    string          `json:"firmware_id"`
+	TargetDevices json.RawMessage `json:"target_devices"`
+	Progress      json.RawMessage `json:"progress"`
+	CreatedAt     string          `json:"created_at"`
+	UpdatedAt     string          `json:"updated_at"`
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
 import '../services/api_client.dart';
 import '../services/verification_service.dart';
 import '../services/medical_wristband_ble_service.dart';
@@ -22,7 +21,7 @@ class VerificationScreen extends StatefulWidget {
 }
 
 class _VerificationScreenState extends State<VerificationScreen> {
-  final HospitalApiClient _api = HospitalApiClient();
+  final ApiClient _api = ApiClient();
   late final VerificationService _verificationService;
   final MedicalWristbandService _nfcService = MedicalWristbandService();
 
@@ -81,9 +80,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
       // Check if tag patient matches the selected patient
       final isMatch = tagPatientId == widget.patientId;
 
-      final requestId = const Uuid().v4();
       _result = VerificationResult(
-        requestId: requestId,
+        requestId: DateTime.now().millisecondsSinceEpoch.toString(),
         patientId: tagPatientId,
         deviceDeviceId: patientInfo.admissionNo,
         scanType: 'nurse_scan',

@@ -151,6 +151,16 @@ class ApiClient {
 
   // ========== Family App Specific Endpoints ========== //
 
+  /// GET /api/v1/elderly — list elderly profiles for current user
+  Future<Response> listElderly() async {
+    return _dio.get('/api/v1/elderly');
+  }
+
+  /// POST /api/v1/elderly — create elderly profile
+  Future<Response> createElderly(Map<String, dynamic> data) async {
+    return _dio.post('/api/v1/elderly', data: data);
+  }
+
   /// GET /api/v1/users/me — get current user profile
   Future<Response> getUserProfile() async {
     return _dio.get('/api/v1/users/me');
@@ -250,5 +260,13 @@ class ApiClient {
   /// ALIAS: acknowledgeAlert — handle/resolve an alert
   Future<Response> handleAlert(String alertId) async {
     return acknowledgeAlert(alertId);
+  }
+
+  /// POST /auth/refresh — refresh access token using refresh token
+  Future<Map<String, dynamic>> refreshToken({required String refreshToken}) async {
+    final resp = await _dio.post('/auth/refresh', data: {
+      'refresh_token': refreshToken,
+    });
+    return resp.data as Map<String, dynamic>;
   }
 }

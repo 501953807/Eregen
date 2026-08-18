@@ -58,7 +58,8 @@ type AdminDomain interface {
 	CreateFirmwareVersion(ctx context.Context, v *model.FirmwareVersion) error
 	ListFirmwareVersions(ctx context.Context) ([]model.FirmwareVersion, error)
 	DeleteFirmwareVersion(ctx context.Context, id string) error
-	PushOTAJob(ctx context.Context, firmwareID string, deviceIDs []string) error
+	PushOTAJob(ctx context.Context, firmwareID string, deviceIDs []string) (string, error)
+	GetOTAJob(ctx context.Context, jobID string) (*model.OTAJob, error)
 	GetNotificationSettings(ctx context.Context) (map[string]any, error)
 	UpdateNotificationSettings(ctx context.Context, data map[string]any) error
 	ListAPIKeys(ctx context.Context) ([]model.APIKeySummary, error)

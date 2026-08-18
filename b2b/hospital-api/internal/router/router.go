@@ -15,6 +15,8 @@ func Register(r *gin.Engine, st store.Database, log *zap.Logger) {
 	healthH := handler.NewHealthDataHandler(st, log)
 	linkH := handler.NewLinkHandler(st, log)
 	alertH := handler.NewAlertHandler(st, log)
+	exportH := handler.NewExportHandler(st, log)
+	rulesH := handler.NewRulesHandler(st, log)
 
 	// Public: institution registration (no auth required)
 	r.POST("/api/v2/b2b/institutions", instH.Create)
@@ -52,6 +54,20 @@ func Register(r *gin.Engine, st store.Database, log *zap.Logger) {
 		alerts := b2b.Group("/alerts")
 		{
 			alerts.POST("/forward", alertH.Forward)
+		}
+
+		// Health data exports
+		exports := b2b.Group("/institutions/:id/export")
+		{
+			exports.POST("", exportH.Create)
+			exports.GET("/:export_id", exportH.Get)
+		}
+
+		// Medication rules
+		rules := b2b.Group("/institutions/:id/rules")
+		{
+			rules.POST("", rulesH.Create)
+			rules.GET("", rulesH.List)
 		}
 	}
 }

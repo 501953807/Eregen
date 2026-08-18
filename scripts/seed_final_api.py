@@ -9,7 +9,7 @@ import json
 import time
 from datetime import datetime, timedelta
 
-BASE_URL = "http://localhost:8089/api/v1"
+BASE_URL = "http://localhost:8085/api/v1"
 AUTH_URL = f"{BASE_URL}/auth/login"
 
 ROLES = {

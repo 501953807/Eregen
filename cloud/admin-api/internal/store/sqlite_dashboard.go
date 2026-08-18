@@ -62,12 +62,12 @@ func (s *SqliteStore) GetSubscriptionStats(ctx context.Context) ([]model.Subscri
 
 // GetAlertTrend returns alert counts grouped by date and device type.
 func (s *SqliteStore) GetAlertTrend(ctx context.Context, days int) ([]model.AlertTrendPoint, error) {
-	query := `SELECT DATE(a.created_at) AS alert_date,
+	query := `SELECT SUBSTR(a.created_at, 1, 10) AS alert_date,
 		   SUM(CASE WHEN a.business_chain = 'self' THEN 1 ELSE 0 END) AS bracelet_count,
 		   SUM(CASE WHEN a.business_chain = 'hospital' THEN 1 ELSE 0 END) AS pillbox_count
 		FROM alerts a
 		WHERE a.created_at >= datetime('now', '-' || ? || ' days')
-		GROUP BY DATE(a.created_at) ORDER BY alert_date`
+		GROUP BY SUBSTR(a.created_at, 1, 10) ORDER BY alert_date`
 	rows, err := s.db.QueryContext(ctx, query, days)
 	if err != nil {
 		return nil, fmt.Errorf("alert trend: %w", err)

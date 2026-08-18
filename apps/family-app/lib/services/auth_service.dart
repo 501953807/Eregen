@@ -1,5 +1,4 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:dio/dio.dart';
 import '../api/client.dart' as api;
 
 /// AuthService handles token management, login/logout, and auth state.
@@ -66,9 +65,10 @@ class AuthService {
     await _apiClient.sendOtp(phone);
   }
 
-  /// Refresh token if using refresh endpoint (stub for future use).
+  /// Refresh token using refresh_token endpoint.
   Future<Map<String, dynamic>> refreshToken() async {
-    // Placeholder: implement if backend supports token refresh
-    throw UnimplementedError('Token refresh not implemented yet');
+    final token = await getToken();
+    if (token == null) throw Exception('No token to refresh');
+    return await _apiClient.refreshToken(refreshToken: token);
   }
 }

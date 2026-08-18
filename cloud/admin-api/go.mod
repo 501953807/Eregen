@@ -6,6 +6,9 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
+	gorm.io/driver/postgres v1.6.2
+	gorm.io/driver/sqlite v1.6.0
+	gorm.io/gorm v1.31.2
 	modernc.org/sqlite v1.54.0
 )
 
@@ -21,9 +24,6 @@ require (
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	golang.org/x/sync v0.21.0 // indirect
-	gorm.io/driver/postgres v1.6.2 // indirect
-	gorm.io/driver/sqlite v1.6.0 // indirect
-	gorm.io/gorm v1.31.2 // indirect
 	modernc.org/libc v1.74.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
@@ -72,3 +72,4 @@ replace eregen.dev/shared/crypto => ../../shared/crypto
 replace eregen.dev/shared/sanitize => ../../shared/sanitize
 
 replace eregen.dev/shared/ratelimit => ../../shared/ratelimit
+replace eregen.dev/shared/response => ../../shared/response

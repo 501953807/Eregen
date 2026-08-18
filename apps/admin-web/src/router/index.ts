@@ -23,6 +23,7 @@ const router = createRouter({
     { path: '/regulatory', component: () => import('@/views/RegulatoryDashboard.vue') },
     { path: '/medication', component: () => import('@/views/Medication.vue'), name: 'Medication' },
     { path: '/medical', component: () => import('@/views/MedicalWristband.vue') },
+    { path: '/medical/workstation', redirect: '/medical' },
     { path: '/audit/:patientId', name: 'AuditDetail', component: () => import('@/views/AuditDetail.vue') },
     { path: '/community-wb', component: () => import('@/views/CommunityWristband.vue') },
     // Login route

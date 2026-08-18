@@ -55,11 +55,13 @@ func (s *SqliteStore) CreatePerson(ctx context.Context, p *model.Person) error {
 func (s *SqliteStore) GetPerson(ctx context.Context, id string) (*model.Person, error) {
 	var p model.Person
 	var birthRaw, avatarRaw sql.NullString
+	var phoneRaw, emergencyRaw, addressRaw sql.NullString
+	var createdAtStr, updatedAtStr string
 	err := s.db.QueryRowContext(ctx,
 		`SELECT id, id_card, name, gender, birth_date, phone, emergency_contact, address, avatar_url, status, created_at, updated_at
 		 FROM persons WHERE id = ?`, id).Scan(
-		&p.ID, &p.IDCard, &p.Name, &p.Gender, &birthRaw, &p.Phone, &p.EmergencyContact,
-		&p.Address, &avatarRaw, &p.Status, &p.CreatedAt, &p.UpdatedAt)
+		&p.ID, &p.IDCard, &p.Name, &p.Gender, &birthRaw, &phoneRaw, &emergencyRaw,
+		&addressRaw, &avatarRaw, &p.Status, &createdAtStr, &updatedAtStr)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("person not found")
 	}
@@ -67,8 +69,26 @@ func (s *SqliteStore) GetPerson(ctx context.Context, id string) (*model.Person, 
 		return nil, fmt.Errorf("get person: %w", err)
 	}
 	p.BirthDate = parseDateOrNil(birthRaw.String)
+	if phoneRaw.Valid && phoneRaw.String != "" {
+		s := phoneRaw.String
+		p.Phone = &s
+	}
+	if emergencyRaw.Valid && emergencyRaw.String != "" {
+		s := emergencyRaw.String
+		p.EmergencyContact = &s
+	}
+	if addressRaw.Valid && addressRaw.String != "" {
+		s := addressRaw.String
+		p.Address = &s
+	}
 	if avatarRaw.Valid && avatarRaw.String != "" {
 		p.AvatarURL = &avatarRaw.String
+	}
+	if t, err := time.Parse(time.RFC3339, createdAtStr); err == nil {
+		p.CreatedAt = t
+	}
+	if t, err := time.Parse(time.RFC3339, updatedAtStr); err == nil {
+		p.UpdatedAt = t
 	}
 	return &p, nil
 }
@@ -76,11 +96,13 @@ func (s *SqliteStore) GetPerson(ctx context.Context, id string) (*model.Person, 
 func (s *SqliteStore) GetPersonByIDCard(ctx context.Context, idCard string) (*model.Person, error) {
 	var p model.Person
 	var birthRaw, avatarRaw sql.NullString
+	var phoneRaw, emergencyRaw, addressRaw sql.NullString
+	var createdAtStr, updatedAtStr string
 	err := s.db.QueryRowContext(ctx,
 		`SELECT id, id_card, name, gender, birth_date, phone, emergency_contact, address, avatar_url, status, created_at, updated_at
 		 FROM persons WHERE id_card = ?`, idCard).Scan(
-		&p.ID, &p.IDCard, &p.Name, &p.Gender, &birthRaw, &p.Phone, &p.EmergencyContact,
-		&p.Address, &avatarRaw, &p.Status, &p.CreatedAt, &p.UpdatedAt)
+		&p.ID, &p.IDCard, &p.Name, &p.Gender, &birthRaw, &phoneRaw, &emergencyRaw,
+		&addressRaw, &avatarRaw, &p.Status, &createdAtStr, &updatedAtStr)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -88,8 +110,26 @@ func (s *SqliteStore) GetPersonByIDCard(ctx context.Context, idCard string) (*mo
 		return nil, fmt.Errorf("get person by id_card: %w", err)
 	}
 	p.BirthDate = parseDateOrNil(birthRaw.String)
+	if phoneRaw.Valid && phoneRaw.String != "" {
+		s := phoneRaw.String
+		p.Phone = &s
+	}
+	if emergencyRaw.Valid && emergencyRaw.String != "" {
+		s := emergencyRaw.String
+		p.EmergencyContact = &s
+	}
+	if addressRaw.Valid && addressRaw.String != "" {
+		s := addressRaw.String
+		p.Address = &s
+	}
 	if avatarRaw.Valid && avatarRaw.String != "" {
 		p.AvatarURL = &avatarRaw.String
+	}
+	if t, err := time.Parse(time.RFC3339, createdAtStr); err == nil {
+		p.CreatedAt = t
+	}
+	if t, err := time.Parse(time.RFC3339, updatedAtStr); err == nil {
+		p.UpdatedAt = t
 	}
 	return &p, nil
 }
@@ -118,14 +158,37 @@ func (s *SqliteStore) ListPersons(ctx context.Context, page, pageSize int, busin
 	var persons []model.Person
 	for rows.Next() {
 		var p model.Person
-		var birthRaw, avatarRaw sql.NullString
-		if err := rows.Scan(&p.ID, &p.IDCard, &p.Name, &p.Gender, &birthRaw, &p.Phone, &p.EmergencyContact,
-			&p.Address, &avatarRaw, &p.Status, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		var birthRaw, avatarRaw, phoneRaw, emergencyRaw, addressRaw sql.NullString
+		var genderRaw sql.NullInt64
+		var createdAtStr, updatedAtStr string
+		if err := rows.Scan(&p.ID, &p.IDCard, &p.Name, &genderRaw,
+			&birthRaw, &phoneRaw, &emergencyRaw, &addressRaw, &avatarRaw,
+			&p.Status, &createdAtStr, &updatedAtStr); err != nil {
 			return nil, fmt.Errorf("scan person: %w", err)
 		}
+		p.Gender = int(genderRaw.Int64)
 		p.BirthDate = parseDateOrNil(birthRaw.String)
+		if phoneRaw.Valid && phoneRaw.String != "" {
+			s := phoneRaw.String
+			p.Phone = &s
+		}
+		if emergencyRaw.Valid && emergencyRaw.String != "" {
+			s := emergencyRaw.String
+			p.EmergencyContact = &s
+		}
+		if addressRaw.Valid && addressRaw.String != "" {
+			s := addressRaw.String
+			p.Address = &s
+		}
 		if avatarRaw.Valid && avatarRaw.String != "" {
-			p.AvatarURL = &avatarRaw.String
+			s := avatarRaw.String
+			p.AvatarURL = &s
+		}
+		if t, err := time.Parse(time.RFC3339, createdAtStr); err == nil {
+			p.CreatedAt = t
+		}
+		if t, err := time.Parse(time.RFC3339, updatedAtStr); err == nil {
+			p.UpdatedAt = t
 		}
 		persons = append(persons, p)
 	}

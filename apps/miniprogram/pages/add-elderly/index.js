@@ -1,5 +1,4 @@
-const { request } = require('../../utils/api')
-const { set: storageSet } = require('../../utils/storage')
+const { ApiClient } = require('../../utils/api')
 
 Page({
   data: {
@@ -28,13 +27,13 @@ Page({
       return
     }
     this.setData({ loading: true })
-    const token = wx.getStorageSync('token')
-    request('/users/elderly', {
+    const api = new ApiClient()
+    api.post('/elderly', {
       name: name.trim(),
       birth_date: birthDate,
-    }, 'POST')
+    })
       .then((res) => {
-        storageSet('last_elderly', res.data || {})
+        wx.setStorageSync('last_elderly', res || {})
         wx.showToast({ title: '添加成功', icon: 'success' })
         setTimeout(() => {
           wx.switchTab({ url: '/pages/home/index' })

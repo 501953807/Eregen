@@ -18,11 +18,11 @@ USER eregen
 
 COPY --from=builder /push-service /usr/local/bin/push-service
 
-EXPOSE 8085
+EXPOSE 8086
 
 # Use HTTPS in health check (ensure service supports it)
 HEALTHCHECK --interval=30s --timeout=3s \
-  CMD wget -qO- https://localhost:8085/health || exit 1
+  CMD wget -qO- https://localhost:8086/health || exit 1
 
 ENTRYPOINT ["push-service"]
 

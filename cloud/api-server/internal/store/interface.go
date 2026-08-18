@@ -14,6 +14,7 @@ import (
 type Store interface {
 	// Database interface
 	Raw() RawDB
+	Pool() *PgPoolLike
 	Health(ctx context.Context) error
 
 	// UserDomain

@@ -196,6 +196,7 @@ patient := handler.NewPatientHandler(s)
 			fw.DELETE("/:id", firmware.Delete)
 		}
 		api.POST("/ota/push", firmware.PushOTA)
+		api.GET("/ota/jobs/:id", firmware.GetOTAJob)
 
 		// System settings
 		setting := api.Group("/settings")
@@ -208,25 +209,46 @@ patient := handler.NewPatientHandler(s)
 			setting.POST("/password", settings.ChangePassword)
 		}
 
-		// Person unified management (self/hospital/community chains)
+		// Unified person management routes (all /persons/* in one group for Gin radix tree)
 		persons := api.Group("/persons")
 		{
 			persons.GET("", person.List)
-			persons.GET("/:id", person.Get)
 			persons.POST("", person.Create)
-			persons.PUT("/:id", person.Update)
-			persons.DELETE("/:id", person.Delete)
-			persons.POST("/profile", person.CreateProfile)
-			persons.GET("/:id/profile", person.GetProfile)
-			persons.POST("/welfare-tags", person.AssignWelfareTag)
-			persons.DELETE("/:id/welfare-tags/:tag_code", person.RevokeWelfareTag)
-			persons.GET("/:id/welfare-tags", person.ListWelfareTags)
+			// Person lifecycle / cross-chain transitions
+			persons.PUT("/:id/status", lifecycle.TransitionStatus)
+			persons.POST("/link", lifecycle.LinkPerson)
+			// Person detail and sub-resources
+			personDetail := persons.Group("/:id")
+			{
+				personDetail.GET("", person.Get)
+				personDetail.PUT("", person.Update)
+				personDetail.DELETE("", person.Delete)
+				personDetail.GET("/profile", person.GetProfile)
+				personDetail.POST("/welfare-tags", person.AssignWelfareTag)
+				personDetail.DELETE("/welfare-tags/:tag_code", person.RevokeWelfareTag)
+				personDetail.GET("/welfare-tags", person.ListWelfareTags)
+				// Medication rules & executions per person
+				medR := personDetail.Group("/medications")
+				{
+					medR.GET("", medication.ListRules)
+					medR.POST("", medication.CreateRule)
+					medR.PUT("/:ruleId", medication.UpdateRule)
+					medR.DELETE("/:ruleId", medication.DeleteRule)
+					medR.POST("/executions", medication.CreateExecution)
+					medR.GET("/executions", medication.ListExecutions)
+				}
+				// Health records per person
+				healthR := personDetail.Group("/health")
+				{
+					healthR.POST("", healthRecord.Create)
+					healthR.GET("", healthRecord.List)
+					healthR.GET("/summary", healthRecord.GetSummary)
+					healthR.PUT("/summary", healthRecord.UpdateSummary)
+				}
+			}
 		}
-		// Person lifecycle / cross-chain transitions
-		api.PUT("/persons/:id/status", lifecycle.TransitionStatus)
-		api.POST("/persons/link", lifecycle.LinkPerson)
-		// Medical wristband management
 		med := api.Group("/medical")
+		med.Use(adminJWT.RequireChain("hospital"))
 		{
 			// Patient endpoints
 			med.GET("/patients", patient.ListPatients)
@@ -284,6 +306,7 @@ patient := handler.NewPatientHandler(s)
 
 		// Regulatory closure
 		reg := api.Group("/regulatory")
+		reg.Use(adminJWT.RequireChain("regulatory"))
 		{
 			reg.GET("/dashboard/patient-overview", regulatory.GetDashboardOverview)
 			reg.GET("/dashboard/patient-list", regulatory.ListRegulatoryPatients)
@@ -297,11 +320,16 @@ patient := handler.NewPatientHandler(s)
 			reg.PUT("/rules/:code/config", regulatory.UpdateRuleConfig)
 			reg.POST("/fence/config", regulatory.ConfigureFence)
 			reg.GET("/fence/config", regulatory.GetFenceConfig)
-			reg.GET("/compliance/report", regulatory.GetComplianceReport)
+			reg.GET("/compliance", regulatory.GetComplianceReport)
+		reg.POST("/compliance/run", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"code": "OK", "data": gin.H{"message": "compliance check queued"}})
+		})
+		reg.GET("/reports", regulatory.GetComplianceReport)
 		}
 
 		// Community elderly wristband
 		cwb := api.Group("/community-wb")
+		cwb.Use(adminJWT.RequireChain("community"))
 		{
 			// Elders
 			cwb.GET("/elders", communityWB.ListElders)
@@ -331,63 +359,92 @@ patient := handler.NewPatientHandler(s)
 			// Batch payments
 			cwb.POST("/batch-pay/execute", communityWB.ExecuteBatchPayment)
 			cwb.GET("/batch-payments", communityWB.ListBatchPayments)
+			// NFC authentication
+			cwb.POST("/nfc-auth", communityWB.NfcAuth)
 		}
 
 		// ========== Business chain route groups with RequireChain middleware ==========
 
-		// Self chain: elderly profiles, health reports, guidance
-		selfGroup := api.Group("/self")
-		selfGroup.Use(adminJWT.RequireChain("self"))
-		{
-			selfGroup.GET("/elderly", elderly.List)
-			selfGroup.GET("/elderly/:id", elderly.Detail)
-			selfGroup.POST("/elderly", elderly.Create)
-			selfGroup.PUT("/elderly/:id", elderly.Update)
-			selfGroup.DELETE("/elderly/:id", elderly.Delete)
-			selfGroup.GET("/elderly/:id/health-report", elderly.HealthStats)
-			selfGroup.POST("/elderly/:id/guidance", func(c *gin.Context) {
-				// Guidance evaluation uses the same store; inline for now
-				c.JSON(http.StatusOK, gin.H{"code": "OK", "data": []interface{}{}})
-			})
-		}
+		// Self chain alias: elderly detail views (no RequireChain — accessible to all roles)
+		api.GET("/self/elderly", elderly.List)
+		api.GET("/self/elderly/:id", elderly.Detail)
+		api.POST("/self/elderly", elderly.Create)
+		api.PUT("/self/elderly/:id", elderly.Update)
+		api.DELETE("/self/elderly/:id", elderly.Delete)
+		api.GET("/self/elderly/:id/health-report", elderly.HealthStats)
+		api.POST("/self/elderly/:id/guidance", healthGuidance.Evaluate)
 
-		// Hospital chain: patients, admissions, daily entries, verify
-		hospitalGroup := api.Group("/hospital")
-		hospitalGroup.Use(adminJWT.RequireChain("hospital"))
+		// Hospital chain alias: /hospital/* → same handlers as /medical/*
+		hospitalAlias := api.Group("/hospital")
+		hospitalAlias.Use(adminJWT.RequireChain("hospital"))
 		{
-			hospitalGroup.GET("/patients", patient.ListPatients)
-			hospitalGroup.POST("/patients", patient.CreatePatient)
-			hospitalGroup.POST("/admissions", admission.AdmitPatient)
-			hospitalGroup.POST("/admissions/:id/discharge", admission.DischargePatient)
-			hospitalGroup.GET("/patients/:id/daily", clinical.ListDailyEntries)
-			hospitalGroup.POST("/patients/:id/verify", func(c *gin.Context) {
-				// Verification is handled via clinical handler
+			hospitalAlias.GET("/patients", patient.ListPatients)
+			hospitalAlias.GET("/patients/:id", patient.GetPatient)
+			hospitalAlias.POST("/patients", patient.CreatePatient)
+			hospitalAlias.PUT("/patients/:id", patient.UpdatePatient)
+			hospitalAlias.DELETE("/patients/:id", patient.DeletePatient)
+			hospitalAlias.GET("/patients/by-admission", patient.GetByAdmissionNo)
+			hospitalAlias.POST("/patients/batch-import", patient.BatchImport)
+			hospitalAlias.GET("/patients/:id/history", patient.GetPatientHistory)
+			hospitalAlias.GET("/wristbands", _wristband.ListWristbands)
+			hospitalAlias.POST("/wristbands", _wristband.CreateWristband)
+			hospitalAlias.POST("/wristbands/bind", _wristband.BindWristband)
+			hospitalAlias.POST("/wristbands/:id/unbind", _wristband.UnbindWristband)
+			hospitalAlias.POST("/wristbands/:id/clear", _wristband.ClearWristband)
+			hospitalAlias.POST("/wristbands/:id/write", _wristband.WriteToWristband)
+			hospitalAlias.GET("/wristbands/:id/firmware", _wristband.GetFirmware)
+			hospitalAlias.GET("/patients/:id/expenses", clinical.ListExpenses)
+			hospitalAlias.POST("/expenses", clinical.CreateExpense)
+			hospitalAlias.GET("/patients/:id/medications", clinical.ListMedications)
+			hospitalAlias.POST("/medications", clinical.CreateMedication)
+			hospitalAlias.GET("/patients/:id/test-results", clinical.ListTestResults)
+			hospitalAlias.POST("/test-results", clinical.CreateTestResult)
+			hospitalAlias.GET("/patients/:id/daily", clinical.ListDailyEntries)
+			hospitalAlias.POST("/daily-entries", clinical.CreateDailyEntry)
+			hospitalAlias.GET("/verifications", clinical.ListVerifications)
+			hospitalAlias.POST("/verifications", clinical.CreateVerification)
+			hospitalAlias.PUT("/verifications/:id/status", clinical.UpdateVerificationStatus)
+			hospitalAlias.GET("/verifications/stats/today", clinical.GetTodayVerificationStats)
+			hospitalAlias.GET("/stats/overview", clinical.GetStatsOverview)
+			hospitalAlias.GET("/alert-tags", clinical.ListAlertTagConfigs)
+			hospitalAlias.POST("/alert-tags", clinical.CreateAlertTagConfig)
+			hospitalAlias.POST("/admissions", admission.AdmitPatient)
+			hospitalAlias.GET("/admissions", admission.ListAdmissions)
+			hospitalAlias.POST("/admissions/:id/discharge", admission.DischargePatient)
+			hospitalAlias.GET("/patients/:id/ward-round", admission.GetWardRound)
+			hospitalAlias.POST("/patients/:id/ward-round", admission.CompleteWardRound)
+			hospitalAlias.POST("/patients/:id/verify", func(c *gin.Context) {
 				c.JSON(http.StatusOK, gin.H{"code": "OK"})
 			})
 		}
 
-		// Community chain: elders, signin, welfare, stats
-		communityGroup := api.Group("/community")
-		communityGroup.Use(adminJWT.RequireChain("community"))
+		// Community chain alias: /community/* → same handlers as /community-wb/*
+		communityAlias := api.Group("/community")
+		communityAlias.Use(adminJWT.RequireChain("community"))
 		{
-			communityGroup.GET("/elders", communityWB.ListElders)
-			communityGroup.POST("/elders", communityWB.CreateElder)
-			communityGroup.PUT("/elders/:id", communityWB.UpdateElder)
-			communityGroup.POST("/elders/:id/signin", communityWB.TriggerSignin)
-			communityGroup.POST("/elders/:id/welfare", communityWB.AssignWelfareTag)
-			communityGroup.GET("/elders/:id/stats", communityWB.GetElderStats)
-		}
-
-		// Regulatory chain: compliance, audit, reports
-		regulatoryGroup := api.Group("/regulatory")
-		regulatoryGroup.Use(adminJWT.RequireChain("regulatory"))
-		{
-			regulatoryGroup.GET("/compliance", regulatory.GetComplianceReport)
-			regulatoryGroup.POST("/compliance/run", func(c *gin.Context) {
-				c.JSON(http.StatusOK, gin.H{"code": "OK", "data": "compliance check queued"})
-			})
-			regulatoryGroup.GET("/audit/:patientId", regulatory.GetAuditTrail)
-			regulatoryGroup.GET("/reports", regulatory.GetComplianceReport)
+			communityAlias.GET("/elders", communityWB.ListElders)
+			communityAlias.GET("/elders/:id", communityWB.GetElder)
+			communityAlias.POST("/elders", communityWB.CreateElder)
+			communityAlias.PUT("/elders/:id", communityWB.UpdateElder)
+			communityAlias.DELETE("/elders/:id", communityWB.DeleteElder)
+			communityAlias.GET("/elders/:id/welfare", communityWB.GetElderWelfareTags)
+			communityAlias.POST("/elders/:id/welfare/:tag_code", communityWB.AssignWelfareTag)
+			communityAlias.DELETE("/elders/:id/welfare/:tag_code", communityWB.RevokeWelfareTag)
+			communityAlias.GET("/elders/stats", communityWB.GetElderStats)
+			communityAlias.GET("/devices", communityWB.ListDevices)
+			communityAlias.POST("/devices", communityWB.CreateCommunityDevice)
+			communityAlias.POST("/devices/bind", communityWB.BindElderDevice)
+			communityAlias.GET("/welfare-tags", communityWB.ListWelfareTags)
+			communityAlias.POST("/signin/trigger", communityWB.TriggerSignin)
+			communityAlias.POST("/elders/:id/signin", communityWB.TriggerSignin)
+			communityAlias.GET("/signin/records", communityWB.ListSigninRecords)
+			communityAlias.POST("/pharmacy/dispense", communityWB.DispenseMedicine)
+			communityAlias.GET("/pharmacy/logs", communityWB.ListPharmacyLogs)
+			communityAlias.POST("/minzheng/import", communityWB.ImportMinzhengData)
+			communityAlias.GET("/minzheng/sync", communityWB.ListMinzhengSync)
+			communityAlias.POST("/batch-pay/execute", communityWB.ExecuteBatchPayment)
+			communityAlias.GET("/batch-payments", communityWB.ListBatchPayments)
+			communityAlias.POST("/nfc-auth", communityWB.NfcAuth)
 		}
 	}
 
@@ -410,24 +467,6 @@ patient := handler.NewPatientHandler(s)
 		alertRules.POST("", alertRule.Create)
 		alertRules.PUT("/:id", alertRule.Update)
 		alertRules.DELETE("/:id", alertRule.Delete)
-	}
-	// Medication rules & executions per person
-	medR := api.Group("/medications")
-	{
-		medR.GET("", medication.ListRules)
-		medR.POST("", medication.CreateRule)
-		medR.PUT("/:ruleId", medication.UpdateRule)
-		medR.DELETE("/:ruleId", medication.DeleteRule)
-		medR.POST("/executions", medication.CreateExecution)
-		medR.GET("/executions", medication.ListExecutions)
-	}
-	// Health records per person
-	healthR := api.Group("/health-records")
-	{
-		healthR.POST("", healthRecord.Create)
-		healthR.GET("", healthRecord.List)
-		healthR.GET("/summary", healthRecord.GetSummary)
-		healthR.PUT("/summary", healthRecord.UpdateSummary)
 	}
 	// Health guidance per person
 	guidanceR := api.Group("/guidance")
