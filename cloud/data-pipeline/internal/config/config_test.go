@@ -31,8 +31,8 @@ func TestLoad_DefaultValues(t *testing.T) {
 	if cfg.RiskVitalsWeight != 0.40 {
 		t.Errorf("RiskVitalsWeight = %f, want 0.40", cfg.RiskVitalsWeight)
 	}
-	if cfg.Port != 8086 {
-		t.Errorf("Port = %d, want 8086", cfg.Port)
+	if cfg.Port != 8087 {
+		t.Errorf("Port = %d, want 8087", cfg.Port)
 	}
 }
 
