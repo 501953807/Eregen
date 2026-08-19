@@ -407,7 +407,7 @@ onMounted(() => {
   padding: 5px 11px !important;
 }
 :deep(.hope-filter-select .el-input__wrapper:hover) {
-  box-shadow: 0 0 0 2px rgba(58,87,232,0.15) !important;
+  box-shadow: var(--hope-shadow-input-focus) !important;
 }
 :deep(.hope-filter-select .el-input__wrapper.is-focus) {
   box-shadow: var(--hope-shadow-input-focus) !important;
@@ -419,7 +419,7 @@ onMounted(() => {
   border: 1px solid var(--hope-border) !important;
 }
 :deep(.hope-filter-input .el-input__wrapper:hover) {
-  box-shadow: 0 0 0 2px rgba(58,87,232,0.15) !important;
+  box-shadow: var(--hope-shadow-input-focus) !important;
 }
 :deep(.hope-filter-input .el-input__wrapper.is-focus) {
   box-shadow: var(--hope-shadow-input-focus) !important;

@@ -35,7 +35,7 @@
 | 用户数据库 | SQLite | — | MVP阶段全项目统一，零部署单文件存储 |
 | 推送 | FCM + 阿里云SMS + 微信订阅消息 | — |
 
-> **架构说明（2026-08-18）**：api-server (port 8180) 专司 IoT/设备层（NATS消费、WebSocket、OTA、设备管理），admin-api (port 8085) 负责所有业务 API（persons/hospital/community/regulatory/chronic/health/alerts...）。两服务共用单一 SQLite 数据库。gateway 收窄为纯 MQTT→NATS 消息网关，不再写数据库。
+> **架构说明（2026-08-18）**：api-server (port 8180) 专司 IoT/设备层（NATS消费、WebSocket、OTA、设备管理），admin-api (port 8085) 负责所有业务 API（persons/hospital/community/regulatory/chronic/health/alerts...）。两服务共用单一 SQLite 数据库。gateway 收窄为纯 MQTT→NATS 消息网关，不再写数据库。data-pipeline (port 8087) 仅订阅 health/location/med_status 进行 AI 分析，不重复写 DB。push-service (port 8086) 订阅 eregen.event.> 处理 SOS/fall 告警推送。
 
 **为什么不用Java/Spring Boot：** Spring Boot太重，IoT网关需要高并发低延迟，Go goroutine天然适合。
 **SQLite 迁移说明：** MVP 阶段采用 SQLite 替代 PostgreSQL/InfluxDB/Redis，实现单文件零部署、免运维的轻量方案。所有数据库操作封装在 `store/` 层，未来切换至 PostgreSQL 时只需替换存储实现代码，业务逻辑无需改动。

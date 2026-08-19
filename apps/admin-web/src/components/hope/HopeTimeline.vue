@@ -64,12 +64,12 @@ defineProps<{
   height: 12px;
   border-radius: 50%;
   background: var(--hope-primary);
-  box-shadow: 0 0 0 3px rgba(58,87,232,0.15);
+  box-shadow: 0 0 0 3px rgba(var(--hope-primary-rgb), 0.15);
   z-index: 1;
 }
-.hope-timeline-dot--success { background: #1aa053; box-shadow: 0 0 0 3px rgba(26,160,83,0.15); }
-.hope-timeline-dot--warning { background: var(--hope-warning); box-shadow: 0 0 0 3px rgba(250,169,56,0.15); }
-.hope-timeline-dot--error   { background: var(--hope-error); box-shadow: 0 0 0 3px rgba(192,50,33,0.15); }
+.hope-timeline-dot--success { background: var(--hope-success); box-shadow: 0 0 0 3px rgba(var(--hope-success-rgb), 0.15); }
+.hope-timeline-dot--warning { background: var(--hope-warning); box-shadow: 0 0 0 3px rgba(var(--hope-warning-rgb), 0.15); }
+.hope-timeline-dot--error   { background: var(--hope-error); box-shadow: 0 0 0 3px rgba(var(--hope-error-rgb), 0.15); }
 .hope-timeline-dot--info    { background: #079aa2; box-shadow: 0 0 0 3px rgba(7,154,162,0.15); }
 
 /* Connector line */

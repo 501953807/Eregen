@@ -102,9 +102,9 @@ const deptColumns = [
   letter-spacing: -0.02em;
   line-height: 1.1;
 }
-.summary-value.is-high  { color: #1aa053; }
-.summary-value.is-mid   { color: #FAA938; }
-.summary-value.is-danger { color: #c03221; }
+.summary-value.is-high  { color: var(--hope-success); }
+.summary-value.is-mid   { color: var(--hope-warning); }
+.summary-value.is-danger { color: var(--hope-error); }
 .summary-label {
   font-size: 12px;
   color: var(--hope-text-muted);
@@ -133,9 +133,9 @@ const deptColumns = [
   border-radius: 4px;
   transition: width 0.4s ease;
 }
-.progress-ok   { background: #1aa053; }
-.progress-warn { background: #FAA938; }
-.progress-bad  { background: #c03221; }
+.progress-ok   { background: var(--hope-success); }
+.progress-warn { background: var(--hope-warning); }
+.progress-bad  { background: var(--hope-error); }
 .progress-text {
   position: absolute;
   right: 6px;

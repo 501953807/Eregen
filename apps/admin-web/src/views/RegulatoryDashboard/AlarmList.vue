@@ -122,14 +122,14 @@ function alertBadgeColor(type?: string): 'error' | 'warning' | 'info' | 'primary
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 600; flex-shrink: 0;
 }
-.avatar-blue  { background: rgba(7,154,162,0.12); color: #079aa2; }
-.avatar-pink  { background: rgba(140,87,255,0.12); color: #8C57FF; }
+.avatar-blue  { background: rgba(var(--hope-info-rgb, 7,154,162), 0.12); color: var(--hope-info, #079aa2); }
+.avatar-pink  { background: rgba(var(--hope-accent-rgb, 140,87,255), 0.12); color: var(--hope-accent, #8C57FF); }
 .patient-name { font-weight: 600; font-size: 13px; color: var(--hope-text); }
 .patient-id   { font-size: 11px; color: var(--hope-text-muted); }
 .detail-cell  { font-size: 13px; color: var(--hope-text-secondary); }
 .sev-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: var(--hope-radius-pill); font-size: 12px; font-weight: 700; letter-spacing: 0.02em; }
-.sev-high   { background: rgba(192,50,33,0.10); color: #c03221; }
-.sev-medium { background: rgba(250,169,56,0.12); color: #b8860b; }
-.sev-low    { background: rgba(26,160,83,0.10); color: #1aa053; }
+.sev-high   { background: rgba(var(--hope-error-rgb), 0.10); color: var(--hope-error); }
+.sev-medium { background: rgba(var(--hope-warning-rgb), 0.12); color: var(--hope-warning); }
+.sev-low    { background: rgba(var(--hope-success-rgb), 0.10); color: var(--hope-success); }
 .action-btns { display: flex; gap: 4px; flex-wrap: wrap; }
 </style>

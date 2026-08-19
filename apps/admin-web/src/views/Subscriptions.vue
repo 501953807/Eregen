@@ -600,8 +600,8 @@ onMounted(async () => {
   top: -10px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, #3a57e8, #8C57FF);
-  color: white;
+  background: var(--hope-primary-gradient);
+  color: var(--hope-white);
   font-size: 11px;
   font-weight: 700;
   padding: 3px 14px;
@@ -653,15 +653,15 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 .tier-feature:not(.disabled) .feature-icon {
-  background: rgba(26,160,83,0.12);
-  color: #1aa053;
+  background: rgba(var(--hope-success-rgb), 0.12);
+  color: var(--hope-success);
 }
 .tier-feature.disabled {
   color: var(--hope-text-muted);
 }
 .tier-feature.disabled .feature-icon {
-  background: rgba(148,169,162,0.12);
-  color: #94a9a2;
+  background: rgba(var(--hope-text-muted-rgb, 148,169,162), 0.12);
+  color: var(--hope-gray-400);
 }
 
 /* Filter Bar */
@@ -808,7 +808,7 @@ onMounted(async () => {
   width: 52px;
   height: 52px;
   border-radius: 26px;
-  background: linear-gradient(135deg, #3a57e8, #8C57FF);
+  background: var(--hope-primary-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -844,7 +844,7 @@ onMounted(async () => {
   justify-content: space-between;
   padding: 8px 0;
   font-size: 13px;
-  border-bottom: 1px solid rgba(26,46,38,0.04);
+  border-bottom: 1px solid var(--hope-border);
 }
 .panel-row:last-child {
   border-bottom: none;

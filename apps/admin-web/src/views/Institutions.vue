@@ -506,7 +506,7 @@ onMounted(() => {
   cursor: pointer;
 }
 .inst-table :deep(.el-table__row:hover) {
-  background-color: rgba(58,87,232,0.04) !important;
+  background-color: rgba(var(--hope-primary-rgb), 0.04) !important;
 }
 
 /* Institution cell with icon */
@@ -575,7 +575,7 @@ onMounted(() => {
   z-index: 201;
   transition: right 0.3s ease;
   overflow-y: auto;
-  box-shadow: -10px 0 40px rgba(58,87,232,0.10);
+  box-shadow: -10px 0 40px rgba(var(--hope-primary-rgb), 0.10);
 }
 .side-panel.open {
   right: 0;

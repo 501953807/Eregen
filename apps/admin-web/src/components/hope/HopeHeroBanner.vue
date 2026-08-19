@@ -25,7 +25,7 @@
 .hero-banner {
   position: relative;
   height: 264px;
-  background: linear-gradient(135deg, #3a57e8 0%, #6f42c1 50%, #8C57FF 100%);
+  background: var(--hope-primary-gradient);
   overflow: hidden;
   border-radius: 20px 20px 0 0;
   margin: 1.5rem;

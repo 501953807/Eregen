@@ -158,17 +158,17 @@ func seedFull(t *testing.T, db *sql.DB) {
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		"alert-2", "per-1", "self", "fall", "medium", "resolved", "跌倒检测确认", "dev-1", now)
 
-	// health_records_v2
+	// health_records
 	mustInsert(t, db,
-		`INSERT INTO health_records_v2 (id, person_id, business_chain, record_type, source, heart_rate, spo2, recorded_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		"hr-1", "per-1", "self", "vital", "device", 72, 98, now)
-
-	// medication_rules_v2
-	mustInsert(t, db,
-		`INSERT INTO medication_rules_v2 (id, person_id, business_chain, source_type, drug_name, dosage, frequency, active, created_at)
+		`INSERT INTO health_records (id, elderly_id, person_id, business_chain, record_type, source, hr, spo2, timestamp)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		"med-1", "per-1", "self", "custom", "降压药A", "1片", "每日1次", 1, now)
+		"hr-1", "", "per-1", "self", "vital", "device", 72, 98, now)
+
+	// medication_rules
+	mustInsert(t, db,
+		`INSERT INTO medication_rules (id, elderly_id, person_id, business_chain, drug_name, dosage, frequency, active, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		"med-1", "", "per-1", "self", "降压药A", "1片", "每日1次", 1, now)
 
 	// subscription
 	mustInsert(t, db,

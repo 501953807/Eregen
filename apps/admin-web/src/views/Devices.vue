@@ -79,6 +79,7 @@
       <el-select v-model="filters.status" placeholder="全部状态" clearable class="filter-select">
         <el-option label="在线" value="online" />
         <el-option label="离线" value="offline" />
+        <el-option label="故障" value="fault" />
       </el-select>
       <el-select v-model="filters.mode" placeholder="全部模式" clearable class="filter-select">
         <el-option label="家属APP" value="family" />
@@ -674,7 +675,7 @@ onMounted(() => {
 .version-tag.outdated {
   background: var(--hope-warning-light);
   color: #926C0E;
-  border: 1px solid rgba(250,169,56,0.3);
+  border: 1px solid rgba(var(--hope-warning-rgb), 0.3);
 }
 
 /* Action Links */

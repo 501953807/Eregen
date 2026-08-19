@@ -64,6 +64,16 @@
           <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></el-icon>
         </template>
       </HopeStatCard>
+      <HopeStatCard
+        :value="stats.institutionUsers"
+        label="机构用户"
+        icon-color="info"
+        gradient="linear-gradient(135deg, #079aa2 0%, #14b8a6 100%)"
+      >
+        <template #icon>
+          <el-icon :size="24"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg></el-icon>
+        </template>
+      </HopeStatCard>
     </div>
 
     <!-- Filter Bar — HopeCard -->
@@ -392,6 +402,7 @@ const stats = computed(() => ({
   monthlyActive: Math.round(usersStore.familyUsers.length * 0.75),
   paidSubscriptions: usersStore.familyUsers.filter(u => u.tier === 'pro' || u.tier === 'plus').length,
   todayNew: 3,
+  institutionUsers: 12,
 }))
 
 // Filters
@@ -711,7 +722,7 @@ onMounted(async () => {
   padding: 5px 11px !important;
 }
 :deep(.hope-select .el-input__wrapper:hover) {
-  box-shadow: 0 0 0 2px rgba(58,87,232,0.15) !important;
+  box-shadow: var(--hope-shadow-input-focus) !important;
 }
 :deep(.hope-select .el-input__wrapper.is-focus) {
   box-shadow: var(--hope-shadow-input-focus) !important;
@@ -723,7 +734,7 @@ onMounted(async () => {
   border: 1px solid var(--hope-border) !important;
 }
 :deep(.hope-input .el-input__wrapper:hover) {
-  box-shadow: 0 0 0 2px rgba(58,87,232,0.15) !important;
+  box-shadow: var(--hope-shadow-input-focus) !important;
 }
 :deep(.hope-input .el-input__wrapper.is-focus) {
   box-shadow: var(--hope-shadow-input-focus) !important;
@@ -904,7 +915,7 @@ onMounted(async () => {
   max-width: 90vw;
   background: var(--hope-surface);
   overflow-y: auto;
-  box-shadow: -10px 0 40px rgba(58,87,232,0.15);
+  box-shadow: -10px 0 40px rgba(var(--hope-primary-rgb), 0.15);
   display: flex;
   flex-direction: column;
   animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);

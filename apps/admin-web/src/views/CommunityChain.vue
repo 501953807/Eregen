@@ -369,18 +369,18 @@ onMounted(() => {
   padding: 14px 18px !important;
 }
 .hope-table-custom :deep(.el-table__body-wrapper) td {
-  border-bottom: 1px solid rgba(26,46,38,0.06) !important;
+  border-bottom: 1px solid var(--hope-border) !important;
   padding: 14px 18px !important;
   color: var(--hope-text);
 }
 .hope-table-custom :deep(.el-table__row:hover) td {
-  background: rgba(58,87,232,0.04) !important;
+  background: rgba(var(--hope-primary-rgb), 0.04) !important;
 }
 .hope-table-custom :deep(.el-table__row:nth-child(even)) td {
-  background: rgba(26,46,38,0.02);
+  background: rgba(var(--hope-text-muted-rgb, 26,46,38), 0.02);
 }
 .hope-table-custom :deep(.el-table__row:nth-child(even):hover) td {
-  background: rgba(58,87,232,0.06);
+  background: rgba(var(--hope-primary-rgb), 0.06);
 }
 
 /* Pagination */

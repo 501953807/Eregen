@@ -35,7 +35,7 @@ func Load() (*Config, error) {
 		InfluxDBOrg:      getEnv("INFLUXDB_ORG", "eregen"),
 		InfluxDBBucket:   getEnv("INFLUXDB_BUCKET", "health_data"),
 		LogLevel:         getEnv("LOG_LEVEL", "info"),
-		Port:             getIntEnv("PIPELINE_PORT", 8086),
+		Port:             getIntEnv("PIPELINE_PORT", 8087),
 		BaselineDays:     getIntEnv("BASELINE_DAYS", 7),
 		RiskVitalsWeight: parseFloatEnv("RISK_VITALS_WEIGHT", 0.40),
 		RiskMedWeight:    parseFloatEnv("RISK_MED_WEIGHT", 0.30),

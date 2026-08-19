@@ -67,7 +67,7 @@ const shortName = computed(() => {
 .hope-avatar--xl { width: 64px; height: 64px; font-size: 20px; }
 
 /* Status indicators */
-.hope-avatar[data-status="online"] .hope-avatar__status { background: #1aa053; }
-.hope-avatar[data-status="busy"] .hope-avatar__status { background: #c03221; }
-.hope-avatar[data-status="away"] .hope-avatar__status { background: #FAA938; }
+.hope-avatar[data-status="online"] .hope-avatar__status { background: var(--hope-success); }
+.hope-avatar[data-status="busy"] .hope-avatar__status { background: var(--hope-error); }
+.hope-avatar[data-status="away"] .hope-avatar__status { background: var(--hope-warning); }
 </style>

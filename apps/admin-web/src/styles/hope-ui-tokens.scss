@@ -48,6 +48,19 @@
   --hope-surface:       #ffffff;
   --hope-surface-light: #f8f9fc;
   --hope-surface-raised:#ffffff;
+  --hope-white:         #ffffff;
+
+  // ── Gray Scale (10-step neutral system) ──
+  --hope-gray-50:   #f9fafb;
+  --hope-gray-100:  #f3f4f6;
+  --hope-gray-200:  #e5e7eb;
+  --hope-gray-300:  #d1d5db;
+  --hope-gray-400:  #9ca3af;
+  --hope-gray-500:  #6b7280;
+  --hope-gray-600:  #4b5563;
+  --hope-gray-700:  #374151;
+  --hope-gray-800:  #1f2937;
+  --hope-gray-900:  #111827;
 
   // ── Text ──
   --hope-text:          #232d42;        // Hope UI heading color
@@ -59,7 +72,7 @@
   --hope-border:        #eef0f5;        // Hope UI border color
   --hope-border-strong: #c8ced8;
 
-  // ── Shadows (Hope UI 风格 — subtle blue tint) ──
+  // ── Shadows ──
   --hope-shadow-sm:   0 1px 4px rgba(17, 38, 146, 0.06);
   --hope-shadow-md:   0 4px 14px rgba(17, 38, 146, 0.09);
   --hope-shadow-lg:   0 10px 30px rgba(17, 38, 146, 0.08);
@@ -69,6 +82,7 @@
   --hope-shadow-active: 0 10px 20px -10px rgba(58, 87, 232, 0.38);
   --hope-shadow-input-focus: 0 0 0 0.25rem rgba(58, 87, 232, 0.25);
   --hope-shadow-elevated: 0 16px 48px rgba(17, 38, 146, 0.12);
+  --hope-shadow-primary: 0 4px 16px rgba(var(--hope-primary-rgb), 0.25);
 
   // ── Sidebar ──
   --hope-sidebar-width:       16.2rem;
@@ -130,12 +144,24 @@
   --hope-border:        #30384f;
   --hope-border-strong: #3a4560;
 
+  --hope-gray-50:   #1e2540;
+  --hope-gray-100:  #262f4a;
+  --hope-gray-200:  #2e3855;
+  --hope-gray-300:  #3a4560;
+  --hope-gray-400:  #4a5570;
+  --hope-gray-500:  #6b7280;
+  --hope-gray-600:  #8a92a6;
+  --hope-gray-700:  #a1aef4;
+  --hope-gray-800:  #c0caff;
+  --hope-gray-900:  #e0eaff;
+
   --hope-shadow-sm:   0 1px 4px rgba(0, 0, 0, 0.3);
   --hope-shadow-md:   0 4px 14px rgba(0, 0, 0, 0.4);
   --hope-shadow-lg:   0 10px 30px rgba(0, 0, 0, 0.5);
   --hope-shadow-xl:   0 20px 50px rgba(0, 0, 0, 0.6);
   --hope-shadow-card: 0 10px 30px rgba(0, 0, 0, 0.3);
   --hope-shadow-card-hover: 0 16px 48px rgba(0, 0, 0, 0.4);
+  --hope-shadow-primary: 0 4px 16px rgba(var(--hope-primary-rgb), 0.35);
 
   --hope-sidebar-bg:     #1a2035;
   --hope-sidebar-border: #30384f;

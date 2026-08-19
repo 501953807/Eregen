@@ -276,7 +276,7 @@ function handleCommand(command: string) {
 }
 .search-input:focus {
   border-color: var(--hope-primary);
-  box-shadow: 0 0 0 3px rgba(58,87,232,0.12);
+  box-shadow: 0 0 0 3px rgba(var(--hope-primary-rgb), 0.12);
   width: 260px;
   background: var(--hope-surface);
 }
@@ -339,7 +339,7 @@ function handleCommand(command: string) {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3a57e8 0%, #6f42c1 100%);
+  background: var(--hope-primary-gradient);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -498,8 +498,36 @@ html, body, #app {
   pointer-events: none;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   DARK THEME OVERRIDES
+   ═══════════════════════════════════════════════════════════ */
 [data-theme="dark"] .kpi-card::before {
   background: radial-gradient(ellipse at top left, rgba(255,255,255,0.03) 0%, transparent 60%);
+}
+
+/* Dark: El-button primary / default text remains white-on-color regardless of theme */
+[data-theme="dark"] .el-button--primary,
+[data-theme="dark"] .el-button--success {
+  color: #fff !important;
+}
+[data-theme="dark"] .progress-step.done .step-dot,
+[data-theme="dark"] .progress-step.active .step-dot,
+[data-theme="dark"] .tab-item.active,
+[data-theme="dark"] .hope-btn--filled,
+[data-theme="dark"] .el-pagination button.is-active {
+  color: #fff !important;
+}
+
+[data-theme="dark"] .logout-btn:hover {
+  border-color: var(--hope-error) !important;
+  color: var(--hope-error) !important;
+  background: var(--hope-error-light) !important;
+}
+
+/* Dark: badge color for error/danger */
+[data-theme="dark"] .el-badge__content {
+  background: var(--hope-error) !important;
+  border-color: var(--hope-surface) !important;
 }
 
 .kpi-card:hover {

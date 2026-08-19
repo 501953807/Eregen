@@ -117,9 +117,9 @@ defineExpose({ editRuleConfig })
   padding: 12px 14px; border-radius: var(--hope-radius-md);
   font-size: 13px; transition: background 0.15s;
 }
-.risk-high { background: rgba(192,50,33,0.06); }
-.risk-med  { background: rgba(250,169,56,0.06); }
-.risk-low  { background: rgba(26,160,83,0.06); }
+.risk-high { background: rgba(var(--hope-error-rgb), 0.06); }
+.risk-med  { background: rgba(var(--hope-warning-rgb), 0.06); }
+.risk-low  { background: rgba(var(--hope-success-rgb), 0.06); }
 .rule-info { display: flex; flex-direction: column; gap: 2px; }
 .rule-name { font-weight: 600; color: var(--hope-text); }
 .rule-desc { font-size: 12px; color: var(--hope-text-muted); }

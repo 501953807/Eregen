@@ -22,10 +22,10 @@ withDefaults(defineProps<{
   font-weight: 500;
   gap: 6px;
 }
-.hope-chip--primary   { background: rgba(58,87,232,0.1); color: var(--hope-primary); }
-.hope-chip--success   { background: rgba(26,160,83,0.1); color: #1aa053; }
-.hope-chip--warning   { background: rgba(250,169,56,0.1); color: var(--hope-warning); }
-.hope-chip--error     { background: rgba(192,50,33,0.1); color: #c03221; }
-.hope-chip--info      { background: rgba(7,154,162,0.1); color: #079aa2; }
-.hope-chip--accent    { background: rgba(140,87,255,0.1); color: var(--hope-accent); }
+.hope-chip--primary   { background: rgba(var(--hope-primary-rgb), 0.1); color: var(--hope-primary); }
+.hope-chip--success   { background: rgba(var(--hope-success-rgb), 0.1); color: var(--hope-success); }
+.hope-chip--warning   { background: rgba(var(--hope-warning-rgb), 0.1); color: var(--hope-warning); }
+.hope-chip--error     { background: rgba(var(--hope-error-rgb), 0.1); color: var(--hope-error); }
+.hope-chip--info      { background: rgba(var(--hope-info-rgb, 7,154,162), 0.1); color: var(--hope-info, #079aa2); }
+.hope-chip--accent    { background: rgba(var(--hope-accent-rgb, 140,87,255), 0.1); color: var(--hope-accent, #8C57FF); }
 </style>

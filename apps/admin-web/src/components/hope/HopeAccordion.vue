@@ -42,7 +42,7 @@ defineProps<{
 }
 .hope-accordion-item.active {
   border-color: var(--hope-primary);
-  box-shadow: 0 0 0 3px rgba(58,87,232,0.08);
+  box-shadow: 0 0 0 3px rgba(var(--hope-primary-rgb), 0.08);
 }
 .hope-accordion-header {
   width: 100%;

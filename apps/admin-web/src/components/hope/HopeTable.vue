@@ -103,10 +103,10 @@ function sort(prop: string) {
 .hope-table th.sort-desc .sort-icon { opacity: 1; color: var(--hope-primary); }
 .hope-table td { padding: 14px 18px; border-bottom: 1px solid var(--hope-border); color: var(--hope-text); vertical-align: middle; }
 .hope-table tbody tr { transition: background 0.12s; }
-.hope-table tbody tr:hover { background: rgba(58,87,232,0.04); }
+.hope-table tbody tr:hover { background: rgba(var(--hope-primary-rgb), 0.04); }
 .hope-table tbody tr:last-child td { border-bottom: none; }
-.hope-table--striped tbody tr:nth-child(even) { background: rgba(26,46,38,0.02); }
-.hope-table--striped tbody tr:nth-child(even):hover { background: rgba(58,87,232,0.06); }
+.hope-table--striped tbody tr:nth-child(even) { background: rgba(var(--hope-text-muted-rgb, 26,46,38), 0.02); }
+.hope-table--striped tbody tr:nth-child(even):hover { background: rgba(var(--hope-primary-rgb), 0.06); }
 .hope-table--compact td, .hope-table--compact th { padding: 10px 14px; }
-.hope-row-selected { background: rgba(58,87,232,0.06) !important; }
+.hope-row-selected { background: rgba(var(--hope-primary-rgb), 0.06) !important; }
 </style>

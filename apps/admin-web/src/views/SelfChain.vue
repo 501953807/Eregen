@@ -84,12 +84,14 @@
       </template>
 
       <el-table :data="elderlyList" v-loading="loading" stripe class="hope-table-custom">
-        <el-table-column prop="id_card" label="身份证号" width="180" />
         <el-table-column prop="name" label="姓名" width="100" />
-        <el-table-column prop="birth_date" label="出生日期" width="110">
-          <template #default="{ row }">{{ row.birth_date || '—' }}</template>
+        <el-table-column prop="gender" label="性别" width="70">
+          <template #default="{ row }">{{ genderLabel(row.gender) }}</template>
         </el-table-column>
-        <el-table-column prop="phone" label="电话" width="130" />
+        <el-table-column label="年龄" width="70">
+          <template #default="{ row }">{{ calcAge(row.birth_date) }}</template>
+        </el-table-column>
+        <el-table-column prop="id_card" label="身份证号" width="180" />
         <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
             <el-tag :type="row.status === 'active' ? 'success' : row.status === 'suspended' ? 'warning' : 'danger'" size="small">
@@ -97,7 +99,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="health_risk_level" label="健康风险" width="100">
+        <el-table-column prop="health_risk_level" label="风险等级" width="100">
           <template #default="{ row }">
             <el-tag v-if="row.health_risk_level" :type="riskTagType(row.health_risk_level)" size="small">
               {{ riskLabel(row.health_risk_level) }}
@@ -105,13 +107,14 @@
             <span v-else class="text-muted">—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="subscription_tier" label="订阅层级" width="100">
+        <el-table-column label="绑定设备" width="160">
           <template #default="{ row }">
-            <el-tag v-if="row.subscription_tier" type="info" size="small">{{ row.subscription_tier }}</el-tag>
+            <span v-if="row.devices && row.devices.length" style="display:flex;flex-wrap:wrap;gap:4px;">
+              <el-tag v-for="d in row.devices" :key="d.id" type="info" size="small" class="device-tag">{{ d.device_id }}</el-tag>
+            </span>
             <span v-else class="text-muted">—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="160" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="viewDetail(row)">详情</el-button>
@@ -226,6 +229,11 @@ const guidanceLoading = ref(false)
 const riskLabel = (level: string) => ({ low: '低', medium: '中', high: '高', critical: '危' }[level] || level)
 const riskTagType = (level: string) => ({ low: 'success', medium: 'warning', high: 'danger', critical: 'danger' }[level] || 'info')
 const genderLabel = (g: number) => g === 1 ? '男' : g === 2 ? '女' : '—'
+const calcAge = (birthDate: string) => {
+  if (!birthDate) return '—'
+  const diff = Date.now() - new Date(birthDate).getTime()
+  return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000))
+}
 const statusLabel = (s: string) => ({ active: '活跃', suspended: '暂停', deceased: '已故' }[s] || s)
 
 const fetchElderly = async () => {
@@ -380,18 +388,18 @@ onMounted(() => {
   padding: 14px 18px !important;
 }
 .hope-table-custom :deep(.el-table__body-wrapper) td {
-  border-bottom: 1px solid rgba(26,46,38,0.06) !important;
+  border-bottom: 1px solid var(--hope-border) !important;
   padding: 14px 18px !important;
   color: var(--hope-text);
 }
 .hope-table-custom :deep(.el-table__row:hover) td {
-  background: rgba(58,87,232,0.04) !important;
+  background: rgba(var(--hope-primary-rgb), 0.04) !important;
 }
 .hope-table-custom :deep(.el-table__row:nth-child(even)) td {
-  background: rgba(26,46,38,0.02);
+  background: rgba(var(--hope-text-muted-rgb, 26,46,38), 0.02);
 }
 .hope-table-custom :deep(.el-table__row:nth-child(even):hover) td {
-  background: rgba(58,87,232,0.06);
+  background: rgba(var(--hope-primary-rgb), 0.06);
 }
 
 /* Pagination */

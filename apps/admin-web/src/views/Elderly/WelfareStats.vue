@@ -405,7 +405,7 @@ const ruleAlerts = [
 .badge-success { background: var(--hope-success-light); color: var(--hope-success); }
 .badge-danger { background: var(--hope-error-light); color: var(--hope-error); }
 .badge-warning { background: var(--hope-warning-light); color: #926C0E; }
-.badge-primary { background: rgba(58,87,232,0.12); color: var(--hope-primary); }
+.badge-primary { background: rgba(var(--hope-primary-rgb), 0.12); color: var(--hope-primary); }
 .badge-gray { background: var(--hope-surface-light); color: var(--hope-text-muted); }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
 .dot-success { background: var(--hope-success); }

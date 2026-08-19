@@ -84,13 +84,13 @@ const patientColumns = [
 .verify-cell { font-size: 13px; color: var(--hope-text-secondary); }
 .empty-hint { color: var(--hope-text-muted); font-style: italic; }
 .verify-tag { font-size: 12px; font-weight: 600; }
-.tag-danger { color: #c03221; }
-.tag-warning { color: #b8860b; }
+.tag-danger { color: var(--hope-error); }
+.tag-warning { color: var(--hope-warning); }
 .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: var(--hope-radius-pill); font-size: 12px; font-weight: 600; }
-.badge-success { background: rgba(26,160,83,0.10); color: #1aa053; }
-.badge-danger  { background: rgba(192,50,33,0.10); color: #c03221; }
+.badge-success { background: rgba(var(--hope-success-rgb), 0.10); color: var(--hope-success); }
+.badge-danger  { background: rgba(var(--hope-error-rgb), 0.10); color: var(--hope-error); }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-.dot-success { background: #1aa053; }
-.dot-danger  { background: #c03221; }
+.dot-success { background: var(--hope-success); }
+.dot-danger  { background: var(--hope-error); }
 .action-btns { display: flex; gap: 4px; }
 </style>

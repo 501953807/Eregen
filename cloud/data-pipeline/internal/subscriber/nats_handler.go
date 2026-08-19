@@ -35,12 +35,17 @@ func NewHandler(js nats.JetStreamContext, hAnalyzer *analyzer.HealthAnalyzer,
 	}
 }
 
-// Start subscribes to the DEVICE_EVENTS JetStream and processes health data.
+// Start subscribes to analysis-relevant device event subjects and processes them.
+// Only subscribes to health/location/med_status — SOS/fall are handled by api-server (DB) and push-service (notification).
 func (h *Handler) Start() error {
-	_, err := h.js.Subscribe("eregen.event.>", h.onMessage,
-		nats.Durable("pipeline-service"),
-	)
-	return err
+	for _, subject := range []string{"eregen.event.health", "eregen.event.location", "eregen.event.med_status"} {
+		_, err := h.js.Subscribe(subject, h.onMessage,
+			nats.Durable("pipeline-service"))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (h *Handler) onMessage(msg *nats.Msg) {

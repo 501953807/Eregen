@@ -138,7 +138,7 @@ func (s *SqliteStore) GetElderlyHealthStats(ctx context.Context, elderlyID strin
 	err := s.db.QueryRowContext(ctx, `
 		SELECT COALESCE(AVG(heart_rate), ''), COALESCE(MAX(heart_rate), ''),
 		       COALESCE(AVG(spo2), ''), COALESCE(SUM(steps), ''), COALESCE(MAX(recorded_at), '')
-		FROM health_records_v2 WHERE person_id = ?`, elderlyID).Scan(
+		FROM health_records WHERE elderly_id = ?`, elderlyID).Scan(
 		&hrRaw, &spo2Raw, &stepsStr, &stepsStr, &lastSeenStr)
 	if err != nil {
 		return nil, fmt.Errorf("get health stats: %w", err)
@@ -149,8 +149,8 @@ func (s *SqliteStore) GetElderlyHealthStats(ctx context.Context, elderlyID strin
 
 func (s *SqliteStore) GetElderlyHealthRecords(ctx context.Context, elderlyID string, limit int) ([]model.HealthRecordRow, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, person_id, recorded_at, heart_rate, spo2, steps, sleep_hours
-		FROM health_records_v2 WHERE person_id = ? ORDER BY recorded_at DESC LIMIT ?`, elderlyID, limit)
+		SELECT id, elderly_id, timestamp, hr, spo2, steps, sleep_hours
+		FROM health_records WHERE elderly_id = ? ORDER BY timestamp DESC LIMIT ?`, elderlyID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list health records: %w", err)
 	}
@@ -304,13 +304,7 @@ func (s *SqliteStore) CreateHealthRecord(ctx context.Context, r *model.HealthRec
 		r.ID, r.ElderlyID, r.HR, r.SpO2, r.Steps, r.SleepHours); err != nil {
 		return err
 	}
-	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO health_records_v2 (id, person_id, business_chain, record_type, source,
-		 device_id, recorded_at, heart_rate, spo2, steps, sleep_hours)
-		 VALUES (?, ?, 'self', 'vital', 'manual', '', ?, ?, ?, ?, ?)`,
-		r.ID, r.ElderlyID, r.Timestamp.Format("2006-01-02 15:04:05"),
-		r.HR, r.SpO2, r.Steps, r.SleepHours)
-	return err
+	return nil
 }
 
 func (s *SqliteStore) CreateLocation(ctx context.Context, loc *model.LocationPoint) error {

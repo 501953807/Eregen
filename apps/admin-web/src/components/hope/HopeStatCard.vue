@@ -63,12 +63,12 @@ withDefaults(defineProps<{
   position: relative;
   z-index: 1;
 }
-.hope-stat-card__icon-wrap--primary   { background: rgba(58,87,232,0.12); color: #3a57e8; }
-.hope-stat-card__icon-wrap--success  { background: rgba(26,160,83,0.12); color: #1aa053; }
-.hope-stat-card__icon-wrap--warning  { background: rgba(250,169,56,0.12); color: #FAA938; }
-.hope-stat-card__icon-wrap--error    { background: rgba(192,50,33,0.12); color: #c03221; }
-.hope-stat-card__icon-wrap--info     { background: rgba(7,154,162,0.12); color: #079aa2; }
-.hope-stat-card__icon-wrap--accent   { background: rgba(140,87,255,0.12); color: #8C57FF; }
+.hope-stat-card__icon-wrap--primary   { background: rgba(var(--hope-primary-rgb), 0.12); color: var(--hope-primary); }
+.hope-stat-card__icon-wrap--success  { background: rgba(var(--hope-success-rgb), 0.12); color: var(--hope-success); }
+.hope-stat-card__icon-wrap--warning  { background: rgba(var(--hope-warning-rgb), 0.12); color: var(--hope-warning); }
+.hope-stat-card__icon-wrap--error    { background: rgba(var(--hope-error-rgb), 0.12); color: var(--hope-error); }
+.hope-stat-card__icon-wrap--info     { background: rgba(var(--hope-info-rgb, 7,154,162), 0.12); color: var(--hope-info, #079aa2); }
+.hope-stat-card__icon-wrap--accent   { background: rgba(var(--hope-accent-rgb, 140,87,255), 0.12); color: var(--hope-accent, #8C57FF); }
 .hope-stat-card__icon {
   font-size: 24px;
   width: 24px;
@@ -101,9 +101,9 @@ withDefaults(defineProps<{
   padding: 3px 8px;
   border-radius: 50px;
 }
-.hope-stat-card__trend-up   { background: rgba(26,160,83,0.10); color: #1aa053; }
-.hope-stat-card__trend-down { background: rgba(192,74,66,0.10); color: #c03221; }
-.hope-stat-card__trend-neutral { background: rgba(148,169,162,0.10); color: #6b7280; }
+.hope-stat-card__trend-up   { background: rgba(var(--hope-success-rgb), 0.10); color: var(--hope-success); }
+.hope-stat-card__trend-down { background: rgba(var(--hope-error-rgb), 0.10); color: var(--hope-error); }
+.hope-stat-card__trend-neutral { background: rgba(var(--hope-text-muted-rgb, 148,169,162), 0.10); color: var(--hope-text-muted); }
 .hope-stat-card__progress {
   margin-top: 14px;
   display: flex;

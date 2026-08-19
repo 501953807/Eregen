@@ -1,12 +1,28 @@
 <template>
   <div class="dashboard">
+    <!-- Top bar: title + controls -->
+    <div class="dash-topbar">
+      <h1 class="dash-title">健康仪表盘</h1>
+      <div class="dash-controls">
+        <el-radio-group v-model="timeRange" size="small" @change="onTimeRangeChange">
+          <el-radio-button value="today">今日</el-radio-button>
+          <el-radio-button value="week">本周</el-radio-button>
+          <el-radio-button value="month">本月</el-radio-button>
+        </el-radio-group>
+        <HopeBtn variant="text" size="sm" @click="handleRefresh" :loading="store.loading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          刷新
+        </HopeBtn>
+      </div>
+    </div>
+
     <!-- KPI Cards Row — Hope UI style with circle progress -->
     <div class="kpi-grid">
       <HopeStatCard
-        value="560K"
+        :value="String(store.stats.total_devices)"
         label="Total Devices"
         :icon-color="'primary'"
-        :gradient="'linear-gradient(135deg, #3a57e8, #6f42c1)'"
+        gradient="var(--hope-primary-gradient)"
       >
         <template #icon>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -17,14 +33,14 @@
           <span class="hope-stat-card__trend hope-stat-card__trend-up">+2.3%</span>
         </template>
         <template #progress>
-          <CircleProgress :value="78" :color="'#3a57e8'" :bg-color="'rgba(58,87,232,0.12)'"/>
+          <CircleProgress :value="88" :color="'var(--hope-primary)'" :bg-color="'rgba(58,87,232,0.12)'"/>
         </template>
       </HopeStatCard>
       <HopeStatCard
-        value="312"
-        label="Active Families"
+        :value="String(store.stats.online_devices)"
+        label="Online"
         icon-color="success"
-        :gradient="'linear-gradient(135deg, #22c55e, #16a34a)'"
+        gradient="linear-gradient(135deg, #22c55e, #16a34a)"
       >
         <template #icon>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -36,14 +52,14 @@
           <span class="hope-stat-card__trend hope-stat-card__trend-up">+5.1%</span>
         </template>
         <template #progress>
-          <CircleProgress :value="92" :color="'#22c55e'" :bg-color="'rgba(34,197,94,0.12)'"/>
+          <CircleProgress :value="92" color="#22c55e" bg-color="rgba(34,197,94,0.12)"/>
         </template>
       </HopeStatCard>
       <HopeStatCard
-        value="12"
-        label="P0 Alerts"
+        :value="String(store.stats.active_alerts)"
+        label="Active Alerts"
         icon-color="error"
-        :gradient="'linear-gradient(135deg, #c03221, #e74c3c)'"
+        gradient="linear-gradient(135deg, #c03221, #e74c3c)"
       >
         <template #icon>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -55,25 +71,43 @@
           <span class="hope-stat-card__trend hope-stat-card__trend-down">-12.5%</span>
         </template>
         <template #progress>
-          <CircleProgress :value="15" :color="'#c03221'" :bg-color="'rgba(192,50,33,0.12)'"/>
+          <CircleProgress :value="15" color="#c03221" bg-color="rgba(192,50,33,0.12)"/>
         </template>
       </HopeStatCard>
       <HopeStatCard
-        :value="deviceOnlineRate"
-        label="Online Rate"
-        icon-color="info"
-        :gradient="'linear-gradient(135deg, #079aa2, #0ea5e9)'"
+        :value="String(store.stats.active_subscriptions)"
+        label="Subscriptions"
+        icon-color="accent"
+        gradient="linear-gradient(135deg, #8C57FF, #c084fc)"
       >
         <template #icon>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 12V7H5a2 2 0 010-4h14v4M3 5v14a2 2 0 002 2h16v-5M18 14v6"/>
+            <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
           </svg>
         </template>
         <template #trend>
-          <span class="hope-stat-card__trend hope-stat-card__trend-up">+1.2%</span>
+          <span class="hope-stat-card__trend hope-stat-card__trend-up">+3.2%</span>
         </template>
         <template #progress>
-          <CircleProgress :value="88" :color="'#079aa2'" :bg-color="'rgba(7,154,162,0.12)'"/>
+          <CircleProgress :value="74" :color="'#8C57FF'" :bg-color="'rgba(140,87,255,0.12)'"/>
+        </template>
+      </HopeStatCard>
+      <HopeStatCard
+        :value="'¥' + String(store.stats.total_devices || '—')"
+        label="Revenue MRR"
+        icon-color="info"
+        gradient="linear-gradient(135deg, #079aa2, #0ea5e9)"
+      >
+        <template #icon>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+          </svg>
+        </template>
+        <template #trend>
+          <span class="hope-stat-card__trend hope-stat-card__trend-up">+5.8%</span>
+        </template>
+        <template #progress>
+          <CircleProgress :value="74" color="#079aa2" bg-color="rgba(7,154,162,0.12)"/>
         </template>
       </HopeStatCard>
     </div>
@@ -166,7 +200,7 @@
     <div class="bottom-row">
       <HopeCard title="Recent Alerts" class="alert-card">
         <template #header>
-          <HopeBtn variant="text" size="sm">View All →</HopeBtn>
+          <router-link to="/alerts" class="view-all-link">查看全部 →</router-link>
         </template>
         <HopeTable :columns="alertColumns" :data="alertTableData" :loading="false" class="alert-table">
           <template #col-alert_type="{ row }">
@@ -196,10 +230,12 @@ import { useTheme } from '@/composables/useTheme'
 import type { Alert } from '@/types'
 import { HopeCard, HopeBtn, HopeTable, HopeBadge, HopeStatCard } from '@/components/hope'
 import CircleProgress from '@/components/common/CircleProgress.vue'
+import { ElRadioGroup, ElRadioButton } from 'element-plus'
 
 const store = useDashboardStore()
 const authStore = useAuthStore()
 const { isDark } = useTheme()
+const timeRange = ref('week')
 const lineChartRef = ref<HTMLElement>()
 const pieChartRef = ref<HTMLElement>()
 const barChartRef = ref<HTMLElement>()
@@ -255,6 +291,14 @@ const deviceOnlineRate = computed(() => {
   if (!store.stats.total_devices) return '—'
   return Math.round((store.stats.online_devices / store.stats.total_devices) * 100) + '%'
 })
+
+function handleRefresh() {
+  initCharts()
+}
+
+function onTimeRangeChange() {
+  initCharts()
+}
 
 /** Hope UI ECharts theme */
 const hopeUIEChartsTheme = {
@@ -409,6 +453,33 @@ onMounted(() => { initCharts(); window.addEventListener('resize', handleResize) 
 <style scoped>
 .dashboard { padding: 0; }
 
+/* Top bar */
+.dash-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1.5rem 0;
+}
+.dash-title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--hope-text);
+}
+.dash-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.view-all-link {
+  font-size: 0.875rem;
+  color: var(--hope-primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+.view-all-link:hover { color: var(--hope-primary-hover); }
+
 /* KPI Grid */
 .kpi-grid {
   display: grid;
@@ -480,7 +551,7 @@ onMounted(() => { initCharts(); window.addEventListener('resize', handleResize) 
   padding: 20px;
   color: #fff;
   min-height: 140px;
-  background: linear-gradient(135deg, #3a57e8 0%, #6f42c1 50%, #8C57FF 100%);
+  background: var(--hope-primary-gradient);
 }
 .vip-card-bg {
   position: absolute;

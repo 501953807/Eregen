@@ -4,11 +4,14 @@
     <div class="hope-page-header">
       <div>
         <h1 class="hope-page-header__title">
-          用药管理{{ currentElder?.name ? ` — ${currentElder.name}` : '' }}
+          用药管理{{ currentElderName ? ` — ${currentElderName}` : '' }}
         </h1>
         <p class="hope-page-header__subtitle">管理老人用药规则、服药提醒与依从性统计</p>
       </div>
       <div class="hope-page-header__actions">
+        <el-select v-model="currentElderId" placeholder="选择老人" size="default" style="width: 200px; margin-right: 8px;" @change="handleElderChange">
+          <el-option v-for="e in elderlyList" :key="e.id" :label="e.name" :value="e.id" />
+        </el-select>
         <HopeBtn variant="filled" @click="openCreateDialog">
           <template #icon>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -21,7 +24,7 @@
     <!-- KPI Cards -->
     <div class="hope-grid-4" style="margin-bottom: 24px;">
       <HopeStatCard
-        value="stats.activeRules"
+        :value="stats.activeRules"
         label="今日规则数"
         icon-color="success"
         gradient="linear-gradient(135deg, #1aa053, #22c55e)"
@@ -111,6 +114,9 @@
             <span v-if="!row.daysOfWeek?.length" style="color: var(--hope-text-muted); font-size: 13px;">—</span>
           </div>
         </template>
+        <template #col-pillForm="{ row }">
+          <HopeBadge :color="pillFormBadgeColor((row as any).pillForm)">{{ pillFormLabel((row as any).pillForm) }}</HopeBadge>
+        </template>
         <template #col-active="{ row }">
           <HopeBadge :color="row.active ? 'success' : 'error'">
             {{ row.active ? '启用' : '停用' }}
@@ -140,42 +146,42 @@
       @update:model-value="showDialog = $event"
     >
       <div style="display: flex; flex-direction: column; gap: 18px;">
-        <div class="hope-field" :class="{ 'focused': formFocused === 'pillType', 'has-value': form.pillType }">
+        <div class="hope-field" :class="{ 'focused': formFocused === 'pill_type', 'has-value': form.pill_type }">
           <label class="hope-label">药品名称</label>
           <HopeInput
-            v-model="form.pillType"
+            v-model="form.pill_type"
             placeholder="如：降压药"
             size="lg"
           />
         </div>
-        <div class="hope-field" :class="{ 'focused': formFocused === 'doseCount', 'has-value': form.doseCount && form.doseCount > 0 }">
+        <div class="hope-field" :class="{ 'focused': formFocused === 'dose_count', 'has-value': form.dose_count && form.dose_count > 0 }">
           <label class="hope-label">剂量</label>
           <HopeInput
-            :model-value="String(form.doseCount ?? 1)"
+            :model-value="String(form.dose_count ?? 1)"
             type="number"
             placeholder="如：1"
             size="lg"
-            @update:model-value="form.doseCount = parseInt($event) || 1"
+            @update:model-value="form.dose_count = parseInt($event) || 1"
           >
             <template #suffix><span style="color: var(--hope-text-muted); font-size: 13px;">粒</span></template>
           </HopeInput>
         </div>
-        <div class="hope-field" :class="{ 'focused': formFocused === 'scheduleTime', 'has-value': form.scheduleTime }">
+        <div class="hope-field" :class="{ 'focused': formFocused === 'schedule_time', 'has-value': form.schedule_time }">
           <label class="hope-label">服用时间</label>
           <el-time-picker
-            v-model="form.scheduleTime"
+            v-model="form.schedule_time"
             format="HH:mm"
             placeholder="选择时间"
             value-format="HH:mm"
             style="width: 100%;"
-            @focus="formFocused = 'scheduleTime'"
+            @focus="formFocused = 'schedule_time'"
             @blur="formFocused = ''"
           />
         </div>
-        <div class="hope-field" :class="{ 'has-value': form.daysOfWeek?.length }">
+        <div class="hope-field" :class="{ 'has-value': form.days_of_week?.length }">
           <label class="hope-label">执行周期</label>
           <el-select
-            v-model="form.daysOfWeek"
+            v-model="form.days_of_week"
             multiple
             placeholder="请选择执行周期"
             style="width: 100%;"
@@ -230,7 +236,15 @@ const form = ref<Omit<MedicationRule, 'id' | 'elderly_id' | 'created_at'> & { id
 const rules = ref<MedicationRule[]>([])
 
 // Selected elderly (from route or store)
-const currentElder = ref<any>({ name: '张大爷', id: 'elderly_123' })
+const currentElderId = ref('')
+const elderlyList = ref<Array<{ id: string; name: string }>>([])
+const currentElderName = ref('')
+
+function handleElderChange() {
+  const elder = elderlyList.value.find(e => e.id === currentElderId.value)
+  if (elder) currentElderName.value = elder.name
+  loadRules()
+}
 
 // Statistics
 const stats = computed(() => {
@@ -272,6 +286,7 @@ const tableColumns = [
   { prop: 'scheduleTime', label: '服用时间', sortable: false },
   { prop: 'doseCount', label: '剂量', sortable: false },
   { prop: 'daysOfWeek', label: '执行周期', sortable: false },
+  { prop: 'pillForm', label: '剂型', sortable: false },
   { prop: 'active', label: '状态', sortable: false },
   { prop: '__actions', label: '操作', sortable: false },
 ]
@@ -283,14 +298,15 @@ const filteredRules = computed(() => {
 })
 
 // Load data on mount
-onMounted(async () => {
+async function loadRules() {
   loading.value.rules = true
   try {
-    const res = await medicationApi.listRules(currentElder.value.id as string)
+    const res = await medicationApi.listRules(currentElderId.value)
     if (res.data && Array.isArray(res.data)) {
       rules.value = res.data.map((r: any) => ({
         ...r,
-        daysOfWeek: r.daysOfWeek || []
+        daysOfWeek: r.daysOfWeek || [],
+        pillForm: r.pill_form || r.pillType,
       }))
     }
   } catch (error) {
@@ -299,7 +315,9 @@ onMounted(async () => {
   } finally {
     loading.value.rules = false
   }
-})
+}
+
+onMounted(loadRules)
 
 // Open create dialog
 function openCreateDialog() {
@@ -336,7 +354,7 @@ async function handleDelete(id: string) {
   if (confirmText === 'cancel') return
 
   try {
-    await medicationApi.deleteRule(currentElder.value.id as string, id)
+    await medicationApi.deleteRule(currentElderId.value, id)
     rules.value = rules.value.filter(r => r.id !== id)
     ElMessage.success('删除成功')
   } catch (error) {
@@ -346,7 +364,7 @@ async function handleDelete(id: string) {
 
 // Save rule (create or update)
 async function saveRule() {
-  if (!form.value.pillType || !form.value.scheduleTime) {
+  if (!form.value.pill_type || !form.value.schedule_time) {
     ElNotification({
       title: '必填项缺失',
       message: '药品名称和服用时间为必填字段',
@@ -358,13 +376,13 @@ async function saveRule() {
   loading.value.rules = true
   try {
     if (form.value.id) {
-      await medicationApi.updateRule(currentElder.value.id as string, form.value.id!, form.value)
+      await medicationApi.updateRule(currentElderId.value, form.value.id!, form.value)
       ElMessage.success('更新成功')
     } else {
-      await medicationApi.createRule(currentElder.value.id as string, form.value)
+      await medicationApi.createRule(currentElderId.value, form.value)
       ElMessage.success('创建成功')
     }
-    const res = await medicationApi.listRules(currentElder.value.id as string)
+    const res = await medicationApi.listRules(currentElderId.value)
     if (res.data && Array.isArray(res.data)) {
       rules.value = res.data.map((r: any) => ({
         ...r,
@@ -383,6 +401,19 @@ async function saveRule() {
 // Handle search
 function handleSearch() {
   // Filtering handled by computed property
+}
+
+function pillFormLabel(form: string): string {
+  const map: Record<string, string> = { tablet: '片剂', capsule: '胶囊', liquid: '液体', powder: '粉剂' }
+  return map[form] || form || '—'
+}
+
+function pillFormBadgeColor(form: string): 'primary' | 'success' | 'warning' | 'info' {
+  if (form === 'tablet') return 'primary'
+  if (form === 'capsule') return 'success'
+  if (form === 'liquid') return 'warning'
+  if (form === 'powder') return 'info'
+  return 'primary'
 }
 </script>
 

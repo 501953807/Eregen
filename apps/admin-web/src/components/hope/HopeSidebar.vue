@@ -144,6 +144,7 @@ const openGroups = ref<Record<string, boolean>>({
   medication: false,
   user: false,
   medical: false,
+  chain: false,
   operation: false,
   system: false,
 })
@@ -286,6 +287,10 @@ const iconMap: Record<string, string> = {
   medical: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
   regulatory_medical: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
   community_medical: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>`,
+  chain_self: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  chain_hospital: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 7v14M21 7v14M6 11h4M14 11h4M6 15h4M14 15h4"/><path d="M9 7V3h6v4"/></svg>`,
+  chain_community: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>`,
+  persons_chain: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>`,
   operation: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>`,
   alerts_operation: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>`,
   subscriptions_operation: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
@@ -360,6 +365,22 @@ const menuConfig: MenuCategory[] = [
           { path: '/medical', label: '医疗腕带' },
           { path: '/regulatory', label: '监管看板' },
           { path: '/community-wb', label: '社区老人' },
+        ],
+      },
+    ],
+  },
+  {
+    key: 'chain',
+    label: '业务链',
+    groups: [
+      {
+        key: 'chain',
+        label: '业务链',
+        items: [
+          { path: '/persons', label: '人员档案' },
+          { path: '/self', label: '自营链' },
+          { path: '/hospital', label: '医院链' },
+          { path: '/community', label: '社区链' },
         ],
       },
     ],
@@ -546,15 +567,15 @@ const menuConfig: MenuCategory[] = [
 }
 
 .nav-link.active {
-  background: linear-gradient(135deg, #3a57e8 0%, #6f42c1 100%);
+  background: var(--hope-primary-gradient);
   color: #ffffff;
-  box-shadow: 0 6px 16px rgba(58, 87, 232, 0.32), 0 2px 6px rgba(58, 87, 232, 0.18);
+  box-shadow: var(--hope-shadow-primary), 0 2px 6px rgba(58, 87, 232, 0.18);
   font-weight: 500;
 }
 
 .nav-link.active:hover {
   color: #ffffff;
-  background: linear-gradient(135deg, #3a57e8 0%, #6f42c1 100%);
+  background: var(--hope-primary-gradient-hover);
 }
 
 /* ─── Collapsed state: center icons ─── */
@@ -678,7 +699,7 @@ const menuConfig: MenuCategory[] = [
 }
 
 .float-item.active {
-  background: linear-gradient(135deg, #3a57e8 0%, #6f42c1 100%);
+  background: var(--hope-primary-gradient);
   color: #ffffff;
 }
 

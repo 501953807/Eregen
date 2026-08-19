@@ -65,9 +65,9 @@ withDefaults(defineProps<{
 
 /* Variants */
 .hope-progress--primary .hope-progress__bar   { background: var(--hope-primary); }
-.hope-progress--success .hope-progress__bar   { background: #1aa053; }
+.hope-progress--success .hope-progress__bar   { background: var(--hope-success); }
 .hope-progress--warning .hope-progress__bar   { background: var(--hope-warning); }
 .hope-progress--error .hope-progress__bar     { background: var(--hope-error); }
-.hope-progress--info .hope-progress__bar      { background: #079aa2; }
+.hope-progress--info .hope-progress__bar      { background: var(--hope-info, #079aa2); }
 .hope-progress--accent .hope-progress__bar    { background: var(--hope-accent); }
 </style>

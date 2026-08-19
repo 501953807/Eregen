@@ -350,7 +350,7 @@ onBeforeUnmount(() => {
 .login-brand {
   flex: 1;
   min-height: 100vh;
-  background: linear-gradient(135deg, #3a57e8 0%, #6f42c1 100%);
+  background: var(--hope-primary-gradient);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -543,7 +543,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(58,87,232,0.25);
+  box-shadow: 0 4px 12px rgba(var(--hope-primary-rgb), 0.25);
 }
 .login-header-brand {
   font-size: 17px;
@@ -653,7 +653,7 @@ onBeforeUnmount(() => {
   width: 100%;
   box-sizing: border-box;
 }
-.input:hover { border-color: rgba(58,87,232,0.4); }
+.input:hover { border-color: rgba(var(--hope-primary-rgb), 0.4); }
 .input:focus {
   border-color: var(--hope-primary);
   box-shadow: 0 0 0 3px rgba(58, 87, 232, 0.12);
@@ -759,7 +759,7 @@ onBeforeUnmount(() => {
   font-family: inherit;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(58,87,232,0.25);
+  box-shadow: 0 2px 8px rgba(var(--hope-primary-rgb), 0.25);
   margin-top: 4px;
   display: flex;
   align-items: center;
@@ -768,7 +768,7 @@ onBeforeUnmount(() => {
 }
 .btn-login:hover:not(:disabled) {
   background: var(--hope-primary-gradient-hover);
-  box-shadow: 0 4px 16px rgba(58,87,232,0.35);
+  box-shadow: 0 4px 16px rgba(var(--hope-primary-rgb), 0.35);
   transform: translateY(-1px);
 }
 .btn-login:active:not(:disabled) { transform: translateY(0); }

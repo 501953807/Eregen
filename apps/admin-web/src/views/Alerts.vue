@@ -42,6 +42,7 @@
         <el-form-item label="状态">
           <el-select v-model="filters.status" placeholder="全部" clearable style="width: 120px;">
             <el-option label="待处理" value="pending" />
+            <el-option label="已确认" value="acknowledged" />
             <el-option label="已处理" value="resolved" />
           </el-select>
         </el-form-item>
@@ -49,9 +50,9 @@
           <el-select v-model="filters.type" placeholder="全部" clearable style="width: 140px;">
             <el-option label="SOS" value="sos" />
             <el-option label="跌倒" value="fall" />
-            <el-option label="心率" value="heart" />
-            <el-option label="用药" value="medication" />
-            <el-option label="电子围栏" value="geofence" />
+            <el-option label="越界" value="geofence" />
+            <el-option label="健康异常" value="heart" />
+            <el-option label="设备离线" value="offline" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -226,7 +227,7 @@ function statusBadgeColor(status: string): 'error' | 'success' | 'warning' {
 
 function alertTypeLabel(type: string): string {
   const map: Record<string, string> = {
-    sos: 'SOS', fall: '跌倒', heart: '心率', medication: '用药', geofence: '电子围栏',
+    sos: 'SOS', fall: '跌倒', heart: '健康异常', medication: '用药', geofence: '越界', offline: '设备离线',
   }
   return map[type] || type
 }
@@ -251,7 +252,7 @@ async function fetchAlerts() {
     if (filters.value.severity) params.severity = filters.value.severity
     if (filters.value.status) params.status = filters.value.status
     const res = await alertsApi.list(params)
-    allAlerts.value = (res.data?.alerts || res.data || []) as Alert[]
+    allAlerts.value = (res.data || []) as Alert[]
   } catch {
     ElMessage.warning('加载失败，使用模拟数据')
   } finally {
