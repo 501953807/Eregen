@@ -32,8 +32,9 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _loading = true);
     try {
       final result = await _api.post('/api/v1/auth/login', {
-        'username': _usernameController.text,
-        'password': _passwordController.text,
+        'method': 'email',
+        'credential': _usernameController.text,
+        'secret': _passwordController.text,
       });
       final token = result['data']?['token'] ?? result['token'] ?? '';
       if (token.toString().isNotEmpty) {

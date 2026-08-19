@@ -93,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () async {
               await _api.logout();
               if (mounted) {
-                Navigator.of(context).pushReplacementNamed('/');
+                Navigator.of(context).pushReplacementNamed('/login');
               }
             },
           ),
