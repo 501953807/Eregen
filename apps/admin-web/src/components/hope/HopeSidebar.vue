@@ -165,7 +165,7 @@ const menuItemChains: Record<string, BusinessChain[]> = {
   '/regulatory': ['hospital', 'community', 'regulatory'],
   '/community-wb': ['community'],
   '/medication': ['self', 'hospital', 'community'],
-  '/medical': ['hospital'],
+  '/medical': ['hospital', 'regulatory'],
 }
 
 // Filtered menu config based on user role
@@ -411,11 +411,11 @@ const menuConfig: MenuCategory[] = [
     key: 'medical',
     label: '医疗管理',
     groups: [
+      { key: 'medical_workstation', label: '医护工作站', items: [{ path: '/medical', label: '医护工作站' }] },
       {
-        key: 'medical',
+        key: 'medical_app',
         label: '医疗应用',
         items: [
-          { path: '/medical', label: '医疗腕带' },
           { path: '/regulatory', label: '监管看板' },
           { path: '/community-wb', label: '社区老人' },
         ],

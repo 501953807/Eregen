@@ -18,20 +18,40 @@ export interface UserGrowthPoint {
   new_users: number
 }
 
+export interface SubscriptionStat {
+  tier: string
+  count: number
+  pct: number
+}
+
+export interface DashboardOverview {
+  online_devices: number
+  total_devices: number
+  active_alerts: number
+  total_users: number
+  active_subscriptions: number
+  p0: number
+  p1: number
+  p2: number
+}
+
 export const dashboardApi = {
-  overview() {
+  overview(): Promise<any> {
     return apiClient.get('/admin/stats/overview')
   },
-  alertTrend(params?: Record<string, any>) {
-    return apiClient.get('/admin/stats/alert-trend', { params })
+  subscriptionStats(): Promise<any> {
+    return apiClient.get('/admin/stats/subscriptions')
   },
-  alertDistribution() {
-    return apiClient.get('/admin/stats/alert-distribution')
-  },
-  userGrowth(params?: Record<string, any>) {
+  userGrowth(params?: Record<string, any>): Promise<any> {
     return apiClient.get('/admin/stats/user-growth', { params })
   },
-  recentAlerts(params?: Record<string, any>) {
+  alertTrend(params?: Record<string, any>): Promise<any> {
+    return apiClient.get('/admin/stats/alert-trend', { params })
+  },
+  alertDistribution(): Promise<any> {
+    return apiClient.get('/admin/stats/alert-distribution')
+  },
+  recentAlerts(params?: Record<string, any>): Promise<any> {
     return apiClient.get('/admin/alerts', { params: { ...params, page: 1, page_size: 10 } })
   },
 }

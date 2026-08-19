@@ -180,7 +180,7 @@ function handleCommand(command: string) {
   } else if (command === 'settings') {
     router.push('/settings')
   } else if (command === 'profile') {
-    ElMessage.info('个人资料页面开发中...')
+    router.push('/settings')
   }
 }
 </script>

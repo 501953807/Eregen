@@ -272,7 +272,7 @@
       <HopeCard subtitle="入院与出院管理">
         <template #header>
           <div class="filter-title-row">
-            <span class="filter-title">入院登记</span>
+          <span class="filter-title">出入院管理</span>
             <div class="filter-title-actions">
               <HopeBtn variant="filled" size="sm" @click="showAdmitDialog = true; admitForm = { bed_no: '', department: '', patient_id: '', expected_stay_days: 7 }">
                 <template #icon>
@@ -477,7 +477,7 @@ const tabItems = [
   { label: '腕带管理', value: 'wristbands' },
   { label: '核验记录', value: 'verifications' },
   { label: '每日录入', value: 'daily' },
-  { label: '入院登记', value: 'admissions' },
+  { label: '出入院管理', value: 'admissions' },
   { label: '巡房记录', value: 'ward-rounds' },
   { label: '规则告警', value: 'regulatory-alerts' },
 ]
@@ -671,14 +671,14 @@ function resultHopeColor(result: string): 'success' | 'error' {
 }
 
 function alertSeverityColor(severity: string): 'error' | 'warning' | 'primary' {
-  if (severity === 'high' || severity === 'P0') return 'error'
-  if (severity === 'medium' || severity === 'P1') return 'warning'
+  if (severity === 'p0') return 'error'
+  if (severity === 'p1') return 'warning'
   return 'primary'
 }
 
 function alertSeverityDotClass(severity: string): string {
-  if (severity === 'high' || severity === 'P0') return 'dot-danger'
-  if (severity === 'medium' || severity === 'P1') return 'dot-warning'
+  if (severity === 'p0') return 'dot-danger'
+  if (severity === 'p1') return 'dot-warning'
   return 'dot-primary'
 }
 

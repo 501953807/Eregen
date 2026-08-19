@@ -306,7 +306,70 @@ function contactNurseStation() {
 }
 
 function exportReport() {
-  ElMessage.info('导出功能开发中...')
+  if (!auditTrail.value?.patient) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+  const p = auditTrail.value.patient
+  const rows: string[] = []
+  const now = new Date().toISOString().slice(0, 10)
+  rows.push('颐贞·穿透审计报表')
+  rows.push(`导出时间,${new Date().toLocaleString('zh-CN')}`)
+  rows.push(`患者ID,${p.id || '—'}`)
+  rows.push(`姓名,${p.name || '—'}`)
+  rows.push(`入院号,${p.admission_no || '—'}`)
+  rows.push(`科室,${p.department || '—'}`)
+  rows.push(`床位,${p.bed_number || '—'}`)
+  rows.push('')
+  rows.push('【腕带绑定】')
+  if (auditTrail.value.binding) {
+    const b = auditTrail.value.binding
+    rows.push('腕带ID,绑定时间,设备ID,操作人')
+    rows.push(`${b.id || '—'},${b.bind_time ? new Date(b.bind_time).toLocaleString() : '—'},${b.device_id || '—'},${b.bound_by || '—'}`)
+  } else {
+    rows.push('无腕带绑定记录')
+  }
+  rows.push('')
+  rows.push('【身份核验记录】')
+  if (auditTrail.value.verifications?.length) {
+    rows.push('时间,方式,结果,核验人员')
+    auditTrail.value.verifications.forEach((v: any) => {
+      rows.push(`${v.verified_at ? new Date(v.verified_at).toLocaleString() : '—'},${v.verification_type || '—'},${v.matched ? '成功' : v.result || '—'},${v.verified_by || '—'}`)
+    })
+  } else { rows.push('无') }
+  rows.push('')
+  rows.push('【用药记录】')
+  if (auditTrail.value.medications?.length) {
+    rows.push('时间,药物名称,剂量,操作人')
+    auditTrail.value.medications.forEach((m: any) => {
+      rows.push(`${m.administered_time ? new Date(m.administered_time).toLocaleString() : '—'},${m.medication_name || '—'},${m.dosage || '—'},${m.operator_id || '—'}`)
+    })
+  } else { rows.push('无') }
+  rows.push('')
+  rows.push('【围栏记录】')
+  if (auditTrail.value.fence_logs?.length) {
+    rows.push('时间,事件类型,位置')
+    auditTrail.value.fence_logs.forEach((f: any) => {
+      rows.push(`${f.created_at ? new Date(f.created_at).toLocaleString() : '—'},${f.event_type || '—'},${f.location || '—'}`)
+    })
+  } else { rows.push('无') }
+  rows.push('')
+  rows.push('【告警记录】')
+  if (auditTrail.value.alerts_generated?.length) {
+    rows.push('时间,类型,严重级别,状态,详情')
+    auditTrail.value.alerts_generated.forEach((a: any) => {
+      rows.push(`${a.triggered_at ? new Date(a.triggered_at).toLocaleString() : '—'},${a.alert_type || '—'},${a.severity || '—'},${a.status || '—'},${a.detail || '—'}`)
+    })
+  } else { rows.push('无') }
+  const csv = '﻿' + rows.join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `eregen_audit_${p.id || 'patient'}_${now}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
+  ElMessage.success('导出成功')
 }
 
 onMounted(() => {

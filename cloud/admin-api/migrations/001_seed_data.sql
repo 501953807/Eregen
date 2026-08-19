@@ -39,9 +39,9 @@ INSERT OR IGNORE INTO elderly_devices (id, elderly_id, device_id) VALUES
 -- 3. Insert sample alerts
 -- ============================================
 INSERT OR IGNORE INTO alerts (id, elderly_id, alert_type, severity, status, message, device_id) VALUES
-('alert-sos-001', 'elderly-001', 'sos', 'high', 'pending', '老人按下SOS按钮', 'device-br-001'),
-('alert-fall-001', 'elderly-001', 'fall', 'medium', 'resolved', '检测到跌倒，已处理', 'device-br-001'),
-('alert-med-001', 'elderly-001', 'med_dose_missed', 'low', 'pending', '漏服降压药提醒', 'device-px-001');
+('alert-sos-001', 'elderly-001', 'sos', 'p0', 'pending', '老人按下SOS按钮', 'device-br-001'),
+('alert-fall-001', 'elderly-001', 'fall', 'p0', 'resolved', '检测到跌倒，已处理', 'device-br-001'),
+('alert-med-001', 'elderly-001', 'med_dose_missed', 'p1', 'pending', '漏服降压药提醒', 'device-px-001');
 
 -- ============================================
 -- 4. Insert sample health records

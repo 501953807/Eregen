@@ -163,6 +163,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import dayjs from 'dayjs'
+import { communityApi } from '@/api/community'
 
 const props = defineProps<{ activeTab: string; elders: any[]; loading: Record<string, boolean> }>()
 const emit = defineEmits<{ 'view-tag-elders': [code: string, name: string]; 'execute-payment': []; 'file-upload': [file: File]; 'add-tag': [] }>()
@@ -224,8 +225,12 @@ function handleFileUpload(event: Event) {
   if (file) { emit('file-upload', file); target.value = '' }
 }
 async function loadSigninRecords() {
-  // Placeholder: would fetch from API
-  signinRecords.value = []
+  try {
+    const res: any = await communityApi.listSigninRecords({ period: signinPeriod.value })
+    signinRecords.value = res?.data?.data || []
+  } catch {
+    signinRecords.value = []
+  }
 }
 
 onMounted(() => { generateWeekData() })

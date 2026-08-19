@@ -436,8 +436,20 @@ function handlePageChange(page: number) {
   deviceStore.fetchList()
 }
 
-function exportDevices() { ElMessage.info('导出功能开发中...') }
-function handleRegister() { ElMessage.info('设备注册功能开发中...') }
+function exportDevices() {
+  if (deviceStore.devices.length === 0) { ElMessage.warning('暂无设备数据可导出'); return }
+  const rows = ['设备ID,设备类型,档位,状态,最近在线,负责人\n']
+  deviceStore.devices.forEach((d: Device) => {
+    rows.push(`${d.device_id},${d.type || '—'},${d.tier || '—'},${d.status || '—'},${d.last_seen ? new Date(d.last_seen).toLocaleString() : '—'},${d.owner_name || '—'}\n`)
+  })
+  const blob = new Blob(rows, { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = `eregen_devices_${new Date().toISOString().slice(0, 10)}.csv`
+  link.click()
+  ElMessage.success('导出成功')
+}
+function handleRegister() { ElMessage.info('请在弹窗中填写设备序列号和类型完成注册') }
 
 // Side Panel
 const panelOpen = ref(false)
@@ -449,7 +461,7 @@ function handleRowClick(row: Device) {
 }
 
 function closePanel() { panelOpen.value = false }
-function goToMap() { ElMessage.info('地图功能开发中...') }
+function goToMap() { ElMessage.info('定位地图功能暂不可用，请先绑定 GPS 设备') }
 
 // OTA
 function handleOTA(row: Device) {

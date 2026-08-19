@@ -80,7 +80,7 @@ func (h *AlertHandler) List(c *gin.Context) {
 	var sev, status string
 
 	if sev = c.Query("severity"); sev != "" {
-		if err := validation.ValidateEnum(sev, []string{"low", "medium", "high"}); err != nil {
+		if err := validation.ValidateEnum(sev, []string{"p0", "p1", "p2"}); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"code": "OK", "msg": "invalid severity"})
 			return
 		}

@@ -19,7 +19,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/community', component: () => import('@/views/CommunityChain.vue'), meta: { chains: ['community'] } },
   { path: '/regulatory', component: () => import('@/views/RegulatoryDashboard.vue'), meta: { chains: ['hospital', 'community', 'regulatory'] } },
   { path: '/medication', component: () => import('@/views/Medication.vue'), name: 'Medication', meta: { chains: ['self', 'hospital', 'community'] } },
-  { path: '/medical', component: () => import('@/views/MedicalWristband.vue'), meta: { chains: ['hospital'] } },
+  { path: '/medical', component: () => import('@/views/MedicalWristband.vue'), meta: { chains: ['hospital', 'regulatory'] } },
   { path: '/medical/workstation', redirect: '/medical' },
   { path: '/audit/:patientId', name: 'AuditDetail', component: () => import('@/views/AuditDetail.vue'), meta: { chains: ['hospital', 'community', 'regulatory'] } },
   { path: '/community-wb', component: () => import('@/views/CommunityWristband.vue'), meta: { chains: ['community'] } },
@@ -52,7 +52,7 @@ const routeChainMap: Record<string, string[]> = {
   '/audit': ['hospital', 'community', 'regulatory'],
   '/community-wb': ['community'],
   '/medication': ['self', 'hospital', 'community'],
-  '/medical': ['hospital'],
+  '/medical': ['hospital', 'regulatory'],
 }
 
 // Role → allowed business chains (mirrors backend ChainPermissions)

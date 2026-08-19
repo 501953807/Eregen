@@ -91,7 +91,7 @@ async function saveElderly(form: typeof editForm.value) {
 }
 
 function addWelfareTag() {
-  ElNotification.info({ title: '提示', message: '添加福利标签功能正在开发中', duration: 3000 })
+  ElNotification.info({ title: '提示', message: '福利标签功能请在福利标签管理 Tab 页操作', duration: 3000 })
 }
 
 async function toggleWelfare(row: any, enabled: boolean) {

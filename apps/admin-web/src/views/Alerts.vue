@@ -42,9 +42,9 @@
       <el-form :inline="true" class="filter-form">
         <el-form-item label="严重程度">
           <el-select v-model="filters.severity" placeholder="全部" clearable style="width: 140px;" popper-class="wellness-popper">
-            <el-option label="高 (P0)" value="high" />
-            <el-option label="中 (P1)" value="medium" />
-            <el-option label="低 (P2)" value="low" />
+            <el-option label="高 (P0)" value="p0" />
+            <el-option label="中 (P1)" value="p1" />
+            <el-option label="低 (P2)" value="p2" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
@@ -230,8 +230,8 @@ function alertBadgeColor(type: string): 'error' | 'warning' | 'primary' {
 }
 
 function severityBadgeColor(sev: string): 'error' | 'warning' | 'primary' {
-  if (sev === 'high') return 'error'
-  if (sev === 'medium') return 'warning'
+  if (sev === 'p0') return 'error'
+  if (sev === 'p1') return 'warning'
   return 'primary'
 }
 

@@ -423,7 +423,7 @@ function stopPolling() {
 }
 
 function cancelJob() {
-  ElMessage.info('取消任务功能开发中...')
+  ElMessage.warning('OTA 任务暂不可取消，请等待其自然完成或刷新页面')
 }
 
 function refreshJob() {

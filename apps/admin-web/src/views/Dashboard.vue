@@ -20,7 +20,7 @@
     <div class="kpi-grid">
       <HopeStatCard
         :value="String(store.stats.total_devices)"
-        label="Total Devices"
+        label="设备总数"
         :icon-color="'primary'"
         gradient="var(--hope-primary-gradient)"
       >
@@ -38,7 +38,7 @@
       </HopeStatCard>
       <HopeStatCard
         :value="String(store.stats.online_devices)"
-        label="Online"
+        label="在线"
         icon-color="success"
         gradient="linear-gradient(135deg, #22c55e, #16a34a)"
       >
@@ -57,7 +57,7 @@
       </HopeStatCard>
       <HopeStatCard
         :value="String(store.stats.active_alerts)"
-        label="Active Alerts"
+        label="活跃告警"
         icon-color="error"
         gradient="linear-gradient(135deg, #c03221, #e74c3c)"
       >
@@ -76,7 +76,7 @@
       </HopeStatCard>
       <HopeStatCard
         :value="String(store.stats.active_subscriptions)"
-        label="Subscriptions"
+        label="订阅数"
         icon-color="accent"
         gradient="linear-gradient(135deg, #8C57FF, #c084fc)"
       >
@@ -94,7 +94,7 @@
       </HopeStatCard>
       <HopeStatCard
         :value="'¥' + String(store.stats.total_devices || '—')"
-        label="Revenue MRR"
+        label="月收 MRR"
         icon-color="info"
         gradient="linear-gradient(135deg, #079aa2, #0ea5e9)"
       >
@@ -114,45 +114,45 @@
 
     <!-- Charts Row 1: Line chart + 2 donut charts -->
     <div class="charts-row">
-      <HopeCard title="Device Trend" class="chart-card-wide">
+      <HopeCard title="设备趋势" class="chart-card-wide">
         <template #header>
           <div class="chart-header-right">
             <select class="chart-period-select">
-              <option>This Week</option>
-              <option>Last Week</option>
-              <option>This Month</option>
+              <option>本周</option>
+              <option>上周</option>
+              <option>本月</option>
             </select>
           </div>
         </template>
         <div ref="lineChartRef" class="chart-container"></div>
       </HopeCard>
-      <HopeCard title="Device Distribution" class="chart-card">
+      <HopeCard title="设备分布" class="chart-card">
         <div ref="donutChartRef" class="chart-container chart-medium"></div>
       </HopeCard>
-      <HopeCard title="Alert Priority" class="chart-card">
+      <HopeCard title="告警优先级" class="chart-card">
         <div ref="alertPriorityChartRef" class="chart-container chart-medium"></div>
       </HopeCard>
     </div>
 
     <!-- Charts Row 2: Earnings + Conversions -->
     <div class="charts-row-row2">
-      <HopeCard title="Earnings Overview">
+      <HopeCard title="收入概览">
         <template #header>
           <div class="chart-header-right">
             <select class="chart-period-select">
-              <option>This Week</option>
-              <option>Last Week</option>
+              <option>本周</option>
+              <option>上周</option>
             </select>
           </div>
         </template>
         <div ref="pieChartRef" class="chart-container chart-wide"></div>
       </HopeCard>
-      <HopeCard title="Alert Distribution">
+      <HopeCard title="告警分布">
         <template #header>
           <div class="chart-header-right">
             <select class="chart-period-select">
-              <option>This Week</option>
-              <option>Last Week</option>
+              <option>本周</option>
+              <option>上周</option>
             </select>
           </div>
         </template>
@@ -164,7 +164,7 @@
           <div class="vip-card-bg"></div>
           <div class="vip-card-content">
             <div class="vip-card-top">
-              <span class="vip-card-label">PREMIUM ACCOUNT</span>
+              <span class="vip-card-label">会员账户</span>
               <div class="vip-card-chips">
                 <div class="chip"></div>
                 <div class="chip chip-alt"></div>
@@ -173,11 +173,11 @@
             <div class="vip-card-number">5789 **** **** 2847</div>
             <div class="vip-card-bottom">
               <div class="vip-card-holder">
-                <span class="vip-card-holder-label">Card holder</span>
+                <span class="vip-card-holder-label">持卡人</span>
                 <span class="vip-card-holder-name">{{ authStore.user?.name || 'Admin' }}</span>
               </div>
               <div class="vip-card-expiry">
-                <span class="vip-card-holder-label">Expires</span>
+                <span class="vip-card-expiry-label">有效期至</span>
                 <span class="vip-card-expiry-val">06/28</span>
               </div>
             </div>
@@ -186,11 +186,11 @@
         <div class="stat-pair">
           <div class="stat-pair-item">
             <div class="stat-pair-value">{{ store.stats.online_devices || '—' }}</div>
-            <div class="stat-pair-label">Online Devices</div>
+            <div class="stat-pair-label">在线设备</div>
           </div>
           <div class="stat-pair-item">
             <div class="stat-pair-value">{{ store.stats.total_users || '—' }}</div>
-            <div class="stat-pair-label">Total Users</div>
+            <div class="stat-pair-label">总用户</div>
           </div>
         </div>
       </div>
@@ -198,7 +198,7 @@
 
     <!-- Bottom Row: Alerts table + User growth -->
     <div class="bottom-row">
-      <HopeCard title="Recent Alerts" class="alert-card">
+      <HopeCard title="最近告警" class="alert-card">
         <template #header>
           <router-link to="/alerts" class="view-all-link">查看全部 →</router-link>
         </template>
@@ -211,7 +211,7 @@
           </template>
         </HopeTable>
       </HopeCard>
-      <HopeCard title="User Growth" class="chart-card">
+      <HopeCard title="用户增长" class="chart-card">
         <template #header>
           <HopeBtn variant="text" size="sm">Details →</HopeBtn>
         </template>
@@ -261,10 +261,10 @@ watch(
 )
 
 const alertColumns = [
-  { prop: 'created_at', label: 'Time', sortable: false },
-  { prop: 'alert_type', label: 'Type', sortable: false },
-  { prop: 'dev_id', label: 'Device', sortable: false },
-  { prop: 'status', label: 'Status', sortable: false },
+  { prop: 'created_at', label: '时间', sortable: false },
+  { prop: 'alert_type', label: '类型', sortable: false },
+  { prop: 'dev_id', label: '设备', sortable: false },
+  { prop: 'status', label: '状态', sortable: false },
 ]
 
 function formatTime(dateStr?: string): string {
@@ -284,7 +284,7 @@ function statusBadgeColor(status: string): 'error' | 'success' | 'warning' {
 }
 
 function statusLabel(status: string): string {
-  return status === 'pending' ? 'Pending' : status === 'resolved' ? 'Resolved' : 'Processing'
+  return status === 'pending' ? '待处理' : status === 'resolved' ? '已解决' : '处理中'
 }
 
 const deviceOnlineRate = computed(() => {
@@ -321,13 +321,13 @@ function renderLineChart() {
   const trend = store.chartData.alertTrend
   lineChart.setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['Bracelet', 'Pillbox'], bottom: 0 },
+    legend: { data: ['手环', '药盒'], bottom: 0 },
     grid: { left: '3%', right: '4%', bottom: '12%', containLabel: true },
     xAxis: { type: 'category', boundaryGap: false, data: trend.length ? trend.map(d => d.date) : ['暂无数据'] },
     yAxis: { type: 'value' },
     series: [
-      { name: 'Bracelet', type: 'line', smooth: true, data: trend.length ? trend.map(d => d.bracelet_count) : [0], itemStyle: { color: '#3a57e8' }, areaStyle: { opacity: 0.08 } },
-      { name: 'Pillbox', type: 'line', smooth: true, data: trend.length ? trend.map(d => d.pillbox_count) : [0], itemStyle: { color: '#8C57FF' }, areaStyle: { opacity: 0.08 } },
+      { name: '手环', type: 'line', smooth: true, data: trend.length ? trend.map(d => d.bracelet_count) : [0], itemStyle: { color: '#3a57e8' }, areaStyle: { opacity: 0.08 } },
+      { name: '药盒', type: 'line', smooth: true, data: trend.length ? trend.map(d => d.pillbox_count) : [0], itemStyle: { color: '#8C57FF' }, areaStyle: { opacity: 0.08 } },
     ],
   })
 }
@@ -340,7 +340,7 @@ function renderPieChart() {
     tooltip: { trigger: 'item' },
     legend: { orient: 'vertical', right: '5%', top: 'center' },
     series: [{
-      name: 'Alert Type', type: 'pie', radius: ['0%', '65%'], center: ['35%', '50%'],
+      name: '告警类型', type: 'pie', radius: ['0%', '65%'], center: ['35%', '50%'],
       data: items.length
         ? items.map(i => ({ value: i.value, name: i.name, itemStyle: { color: i.color } }))
         : [
@@ -363,7 +363,7 @@ function renderBarChart() {
     xAxis: { type: 'category', data: dist.length ? dist.map(d => d.name) : ['SOS', 'Fall', 'Heart', 'Med'] },
     yAxis: { type: 'value' },
     series: [{
-      name: 'Alerts', type: 'bar', barWidth: '40%',
+      name: '告警数', type: 'bar', barWidth: '40%',
       data: dist.length ? dist.map(d => d.value) : [35, 28, 22, 15],
       itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#c04a42' }, { offset: 1, color: '#8C57FF' }]), borderRadius: [4, 4, 0, 0] },
     }],
@@ -377,10 +377,10 @@ function renderGrowthChart() {
   growthChart.setOption({
     tooltip: { trigger: 'axis' },
     grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-    xAxis: { type: 'category', data: growth.length ? growth.map(g => g.month) : ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'] },
+    xAxis: { type: 'category', data: growth.length ? growth.map(g => g.month) : ['2月', '3月', '4月', '5月', '6月', '7月'] },
     yAxis: { type: 'value' },
     series: [{
-      name: 'New Users', type: 'bar', barWidth: '40%',
+      name: '新增用户', type: 'bar', barWidth: '40%',
       data: growth.length ? growth.map(g => g.new_users) : [120, 180, 250, 320, 410, 520],
       itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#3a57e8' }, { offset: 1, color: '#8C57FF' }]), borderRadius: [4, 4, 0, 0] },
     }],
@@ -393,13 +393,13 @@ function renderDonutChart() {
   donutChart.setOption({
     tooltip: { trigger: 'item' },
     series: [{
-      name: 'Device Type', type: 'pie', radius: ['42%', '72%'], center: ['50%', '50%'],
+      name: '设备类型', type: 'pie', radius: ['42%', '72%'], center: ['50%', '50%'],
       data: [
-        { value: 480, name: 'Bracelet-Entry', itemStyle: { color: '#3a57e8' } },
-        { value: 312, name: 'Bracelet-Plus', itemStyle: { color: '#8C57FF' } },
-        { value: 148, name: 'Bracelet-Pro', itemStyle: { color: '#6366f1' } },
-        { value: 220, name: 'Pillbox-Smart', itemStyle: { color: '#22c55e' } },
-        { value: 85, name: 'Pillbox-Auto', itemStyle: { color: '#f59e0b' } },
+        { value: 480, name: '手环-入门', itemStyle: { color: '#3a57e8' } },
+        { value: 312, name: '手环-中端', itemStyle: { color: '#8C57FF' } },
+        { value: 148, name: '手环-高端', itemStyle: { color: '#6366f1' } },
+        { value: 220, name: '药盒-智能', itemStyle: { color: '#22c55e' } },
+        { value: 85, name: '药盒-自动', itemStyle: { color: '#f59e0b' } },
       ],
       label: { fontSize: 11, formatter: '{b}\n{c}' },
     }],
@@ -412,11 +412,11 @@ function renderAlertPriorityChart() {
   alertPriorityChart.setOption({
     tooltip: { trigger: 'item' },
     series: [{
-      name: 'Alert Priority', type: 'pie', radius: ['42%', '72%'], center: ['50%', '50%'],
+      name: '告警优先级', type: 'pie', radius: ['42%', '72%'], center: ['50%', '50%'],
       data: [
-        { value: 12, name: 'P0 Urgent', itemStyle: { color: '#c04a42' } },
-        { value: 38, name: 'P1 Important', itemStyle: { color: '#f59e0b' } },
-        { value: 156, name: 'P2 Normal', itemStyle: { color: '#8a8d93' } },
+        { value: 12, name: 'P0 紧急', itemStyle: { color: '#c04a42' } },
+        { value: 38, name: 'P1 重要', itemStyle: { color: '#f59e0b' } },
+        { value: 156, name: 'P2 一般', itemStyle: { color: '#8a8d93' } },
       ],
       label: { fontSize: 11, formatter: '{b}\n{c} items' },
     }],

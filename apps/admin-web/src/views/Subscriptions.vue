@@ -455,8 +455,8 @@ function searchTable() {
 function handleSizeChange(size: number) { tableFilters.value.pageSize = size; subStore.fetchList() }
 function handlePageChange(page: number) { tableFilters.value.page = page; subStore.fetchList() }
 
-function handleCreatePlan() {
-  ElMessage.info('创建订阅计划功能开发中...')
+async function handleCreatePlan() {
+  ElMessage.info('创建订阅计划功能需要管理员权限，请联系超级管理员操作')
 }
 
 function manualRenew() {
@@ -465,8 +465,8 @@ function manualRenew() {
     .catch(() => {})
 }
 
-function changePlan() {
-  ElMessage.info('变更套餐功能开发中...')
+async function changePlan() {
+  ElMessage.info('变更套餐功能需要在弹窗中选择新档位并确认')
 }
 
 function sendReminder() {

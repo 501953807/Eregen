@@ -114,7 +114,7 @@ export interface Alert {
   dev_id?: string;
   elderly_id?: string;
   alert_type: 'sos' | 'fall' | 'heart' | 'medication' | 'geofence' | 'battery';
-  severity: 'p0' | 'p1' | 'p2' | 'high' | 'medium' | 'low';
+  severity: 'p0' | 'p1' | 'p2';
   status: 'pending' | 'acknowledged' | 'resolved';
   location?: { lat: number; lon: number };
   created_at: string;

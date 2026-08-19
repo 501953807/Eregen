@@ -169,7 +169,82 @@ async function loadComplianceReport() {
   } catch { ElMessage.info('报表生成中（模拟）') }
 }
 
-function exportReport() { ElMessage.info('导出功能开发中...') }
+async function exportReport() {
+  try {
+    const params: Record<string, any> = {}
+    if (reportDateRange.value) {
+      params.start_date = reportDateRange.value[0]?.toISOString().slice(0, 10)
+      params.end_date = reportDateRange.value[1]?.toISOString().slice(0, 10)
+    }
+
+    const [complianceRes, patientRes] = await Promise.all([
+      regulatoryApi.getComplianceReport(params),
+      regulatoryApi.getPatientList(),
+    ])
+
+    const report: any = (complianceRes as any).data?.data || null
+    const patients: any[] = (patientRes as any).data?.data || patientList.value
+
+    const rows: string[] = []
+    const now = new Date().toISOString().slice(0, 10)
+
+    // Header
+    rows.push('颐贞监管合规报表')
+    rows.push(`导出时间,${new Date().toLocaleString('zh-CN')}`)
+    if (reportDateRange.value) {
+      rows.push(`报告周期,${reportDateRange.value[0]?.toISOString().slice(0, 10)} ~ ${reportDateRange.value[1]?.toISOString().slice(0, 10)}`)
+    }
+    rows.push('')
+
+    // Summary section
+    if (report?.summary) {
+      rows.push('【汇总数据】')
+      rows.push('指标,数值')
+      rows.push(`总患者数,${report.summary.total_patients_period ?? '—'}`)
+      rows.push(`平均住院天数,${report.summary.avg_stay_days?.toFixed(1) ?? '—'}`)
+      rows.push(`围栏违规次数,${report.summary.fence_violations ?? '—'}`)
+      rows.push(`未核验告警数,${report.summary.no_verify_alerts ?? '—'}`)
+      rows.push(`合规率(%),${report.summary.compliance_rate ?? '—'}`)
+      rows.push('')
+    }
+
+    // Patient table
+    rows.push('【在院患者列表】')
+    if (patients.length === 0) {
+      rows.push('暂无患者数据')
+    } else {
+      rows.push('ID,姓名,入院号,科室,床号,绑定时间,最后核验,核验间隔(小时),围栏状态,围栏越界(秒),告警标签')
+      patients.forEach((p: any) => {
+        const tags = Array.isArray(p.alert_tags) ? p.alert_tags.join(';') : ''
+        rows.push([
+          p.id,
+          p.name ?? '',
+          p.admission_no ?? '',
+          p.department ?? '',
+          p.bed_number ?? '',
+          p.bound_at ? new Date(p.bound_at).toLocaleDateString() : '',
+          p.last_verify ? new Date(p.last_verify).toLocaleString() : '',
+          p.verify_gap_hours ?? 0,
+          p.fence_status ?? '',
+          p.fence_exit_duration_sec ?? 0,
+          tags,
+        ].map(v => `"${v}"`).join(','))
+      })
+    }
+
+    const csv = '﻿' + rows.join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `eregen_regulatory_report_${now}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch {
+    ElMessage.error('导出失败，请重试')
+  }
+}
 
 let patientList = ref<any[]>([])
 
@@ -225,9 +300,9 @@ onMounted(async () => {
             <el-option v-for="d in departments" :key="d" :label="d" :value="d" />
           </el-select>
           <el-select v-model="filters.severity" placeholder="告警等级" clearable style="width: 140px;">
-            <el-option label="P0 - 紧急" value="high" />
-            <el-option label="P1 - 重要" value="medium" />
-            <el-option label="P2 - 一般" value="low" />
+            <el-option label="紧急 (high)" value="high" />
+            <el-option label="重要 (medium)" value="medium" />
+            <el-option label="一般 (low)" value="low" />
           </el-select>
           <el-input v-model="filters.search" placeholder="搜索患者姓名/ID..." clearable style="width: 220px;" />
           <div class="filter-actions">

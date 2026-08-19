@@ -21,8 +21,8 @@
         </div>
         <template #footer>
           <div class="form-actions">
-            <HopeBtn variant="filled" @click="saveNotificationSettings">保存设置</HopeBtn>
-            <HopeBtn variant="plain" @click="loadNotificationSettings">重置</HopeBtn>
+            <HopeBtn variant="filled" @click="saveNotificationSettings" :loading="saving">保存设置</HopeBtn>
+            <HopeBtn variant="plain" @click="resetNotificationSettings">重置</HopeBtn>
           </div>
         </template>
       </HopeCard>
@@ -36,12 +36,22 @@
             + 创建新密钥
           </HopeBtn>
         </template>
-        <HopeTable :columns="apiKeyColumns" :data="apiKeys" :loading="false" striped>
+        <HopeTable
+          v-loading="loadingKeys"
+          :columns="apiKeyColumns"
+          :data="apiKeys"
+          striped
+        >
           <template #col-key_prefix="{ row }">
             <span class="mono">{{ row.key_prefix }}{{ '•'.repeat(24) }}</span>
           </template>
           <template #col-created_at="{ row }">
             {{ row.created_at ? new Date(row.created_at).toLocaleDateString() : '—' }}
+          </template>
+          <template #col-expires_at="{ row }">
+            <span :class="{ 'text-muted': !row.expires_at }">
+              {{ row.expires_at ? new Date(row.expires_at).toLocaleDateString() : '永久' }}
+            </span>
           </template>
           <template #col-active="{ row }">
             <HopeBadge :color="row.active ? 'success' : 'info'">
@@ -50,7 +60,24 @@
             </HopeBadge>
           </template>
           <template #col-action="{ row }">
-            <HopeBtn variant="text" size="sm" @click="handleRevokeApiKey(row)" class="btn-revoke">吊销</HopeBtn>
+            <HopeBtn
+              v-if="row.active"
+              variant="text"
+              size="sm"
+              color="warning"
+              @click="toggleKey(row)"
+            >
+              {{ row.active ? '禁用' : '启用' }}
+            </HopeBtn>
+            <HopeBtn
+              v-else
+              variant="text"
+              size="sm"
+              color="danger"
+              @click="handleRevokeApiKey(row)"
+            >
+              吊销
+            </HopeBtn>
           </template>
         </HopeTable>
       </HopeCard>
@@ -91,7 +118,7 @@
           </div>
         </div>
         <template #footer>
-          <HopeBtn variant="filled" @click="handleChangePassword">修改密码</HopeBtn>
+          <HopeBtn variant="filled" @click="handleChangePassword" :loading="savingPassword">修改密码</HopeBtn>
         </template>
       </HopeCard>
     </div>
@@ -111,18 +138,20 @@
           />
         </div>
         <div class="form-row">
-          <label class="form-label">过期时间</label>
-          <HopeInput
+          <label class="form-label">过期时间（可选）</label>
+          <el-date-picker
             v-model="newKeyForm.expires_at"
-            type="text"
+            type="date"
             placeholder="选择过期日期（YYYY-MM-DD）"
+            value-format="YYYY-MM-DD"
+            style="width: 100%"
           />
         </div>
       </div>
       <template #footer>
         <div class="form-actions">
           <HopeBtn variant="plain" @click="showCreateKeyDialog = false">取消</HopeBtn>
-          <HopeBtn variant="filled" @click="handleCreateApiKey">创建</HopeBtn>
+          <HopeBtn variant="filled" @click="handleCreateApiKey" :loading="creating">创建</HopeBtn>
         </div>
       </template>
     </HopeModal>
@@ -134,6 +163,7 @@ import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { settingsApi } from '@/api/settings'
 import { HopeTabs, HopeCard, HopeBtn, HopeInput, HopeBadge, HopeTable, HopeModal } from '@/components/hope'
+import { ElDatePicker } from 'element-plus'
 
 const activeTab = ref('notification')
 
@@ -143,7 +173,7 @@ const tabItems = [
   { label: '安全设置', value: 'security' },
 ]
 
-// Notification settings
+// ── Notification Settings ─────────────────────────────────────────────
 const notifSettings = ref({
   sos_push: true,
   fall_alerts: true,
@@ -153,6 +183,7 @@ const notifSettings = ref({
 })
 
 const originalNotifSettings = ref<typeof notifSettings.value>({ ...notifSettings.value })
+const saving = ref(false)
 
 const notifFields = [
   { prop: 'sos_push', label: 'SOS 推送', desc: '开启后家属 APP 将实时收到 SOS 告警推送' },
@@ -164,11 +195,33 @@ const notifFields = [
 
 async function loadNotificationSettings() {
   try {
-    ElMessage.warning('设置功能暂不可用（后端未实现）')
-    Object.assign(notifSettings.value, { sms_alerts: true, push_alerts: true, voice_reminders: true, geofence_alerts: true })
+    const res = await settingsApi.getNotificationSettings()
+    const data = (res as any).data || {}
+    Object.assign(notifSettings.value, data)
     originalNotifSettings.value = { ...notifSettings.value }
   } catch {
-    ElMessage.warning('使用默认设置（后端未连接）')
+    // fallback to defaults
+    Object.assign(notifSettings.value, {
+      sos_push: true,
+      fall_alerts: true,
+      medication_reminders: true,
+      geofence_alerts: true,
+      health_alerts: true,
+    })
+    originalNotifSettings.value = { ...notifSettings.value }
+  }
+}
+
+async function saveNotificationSettings() {
+  saving.value = true
+  try {
+    await settingsApi.updateNotificationSettings(notifSettings.value)
+    originalNotifSettings.value = { ...notifSettings.value }
+    ElMessage.success('通知设置已保存')
+  } catch {
+    ElMessage.error('保存失败，请重试')
+  } finally {
+    saving.value = false
   }
 }
 
@@ -176,44 +229,93 @@ function resetNotificationSettings() {
   Object.assign(notifSettings.value, originalNotifSettings.value)
 }
 
-async function saveNotificationSettings() {
-  ElMessage.warning('设置功能暂不可用（后端未实现）')
+// ── API Key Management ────────────────────────────────────────────────
+interface ApiKey {
+  id: string
+  name: string
+  key_prefix: string
+  expires_at: string | null
+  active: boolean
+  created_at: string
 }
 
-// API Keys
-const apiKeys = ref<Array<any>>([])
+const apiKeys = ref<ApiKey[]>([])
+const loadingKeys = ref(false)
 const showCreateKeyDialog = ref(false)
 const newKeyForm = ref({ name: '', expires_at: '' })
+const creating = ref(false)
 
 const apiKeyColumns = [
   { prop: 'name', label: '名称', width: 150 },
   { prop: 'key_prefix', label: '密钥前缀', width: 180 },
-  { prop: 'created_at', label: '创建时间', width: 160 },
-  { prop: 'active', label: '状态', width: 100 },
+  { prop: 'expires_at', label: '过期时间', width: 140 },
+  { prop: 'created_at', label: '创建时间', width: 140 },
+  { prop: 'active', label: '状态', width: 90 },
   { prop: 'action', label: '操作', width: 100 },
 ]
 
-async function handleRevokeApiKey(row: any) {
+async function loadApiKeys() {
+  loadingKeys.value = true
   try {
-    await ElMessageBox.confirm(`确定要吊销密钥 "${row.name}" 吗？`, '确认', { type: 'warning' })
-    ElMessage.warning('API密钥管理功能暂不可用（后端未实现）')
+    const res = await settingsApi.getApiKeyList()
+    apiKeys.value = (res as any).data || []
   } catch {
-    // cancelled
+    apiKeys.value = []
+  } finally {
+    loadingKeys.value = false
+  }
+}
+
+async function handleRevokeApiKey(row: ApiKey) {
+  try {
+    await ElMessageBox.confirm(`确定要吊销密钥「${row.name}」吗？吊销后该密钥将永久失效。`, '确认吊销', { type: 'warning' })
+    await settingsApi.revokeApiKey(row.id)
+    ElMessage.success('密钥已吊销')
+    await loadApiKeys()
+  } catch (e: any) {
+    if (e?.msg !== 'cancel') {
+      ElMessage.error('吊销失败，请重试')
+    }
+  }
+}
+
+async function toggleKey(row: ApiKey) {
+  try {
+    // revoke the key, then it will appear as disabled; user can create a new one
+    await settingsApi.revokeApiKey(row.id)
+    ElMessage.success('密钥已禁用')
+    await loadApiKeys()
+  } catch {
+    ElMessage.error('操作失败，请重试')
   }
 }
 
 async function handleCreateApiKey() {
-  if (!newKeyForm.value.name) {
+  if (!newKeyForm.value.name.trim()) {
     ElMessage.warning('请输入密钥名称')
     return
   }
-  ElMessage.warning('API密钥管理功能暂不可用（后端未实现）')
-  showCreateKeyDialog.value = false
-  newKeyForm.value = { name: '', expires_at: '' }
+  creating.value = true
+  try {
+    const body: any = { name: newKeyForm.value.name.trim() }
+    if (newKeyForm.value.expires_at) {
+      body.expires_at = newKeyForm.value.expires_at
+    }
+    const res = await settingsApi.createApiKey(body)
+    ElMessage.success('密钥创建成功')
+    showCreateKeyDialog.value = false
+    newKeyForm.value = { name: '', expires_at: '' }
+    await loadApiKeys()
+  } catch {
+    ElMessage.error('创建失败，请重试')
+  } finally {
+    creating.value = false
+  }
 }
 
-// Password change
+// ── Password Change ───────────────────────────────────────────────────
 const passwordForm = ref({ old_password: '', new_password: '', confirm_password: '' })
+const savingPassword = ref(false)
 
 async function handleChangePassword() {
   if (!passwordForm.value.old_password || !passwordForm.value.new_password) {
@@ -228,17 +330,22 @@ async function handleChangePassword() {
     ElMessage.warning('两次密码不一致')
     return
   }
+  savingPassword.value = true
   try {
     await settingsApi.changePassword(passwordForm.value)
     ElMessage.success('密码修改成功')
     passwordForm.value = { old_password: '', new_password: '', confirm_password: '' }
   } catch {
-    ElMessage.success('密码修改成功（模拟）')
-    passwordForm.value = { old_password: '', new_password: '', confirm_password: '' }
+    ElMessage.error('修改失败，请检查当前密码是否正确')
+  } finally {
+    savingPassword.value = false
   }
 }
 
-onMounted(loadNotificationSettings)
+onMounted(() => {
+  loadNotificationSettings()
+  loadApiKeys()
+})
 </script>
 
 <style scoped>
@@ -318,12 +425,16 @@ onMounted(loadNotificationSettings)
   letter-spacing: 0.04em;
 }
 
-/* Revoke button — red tint */
+/* Revoke / disable button */
 .btn-revoke {
   color: var(--hope-error) !important;
 }
 .btn-revoke:hover {
   background: rgba(192, 74, 66, 0.08) !important;
+}
+
+.text-muted {
+  color: var(--hope-text-muted);
 }
 
 /* HopeModal footer padding */
