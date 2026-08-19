@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eregen 云平台架构详解</title>
+<style>
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface2: #334155;
+  --border: #475569;
+  --text: #f1f5f9;
+  --text2: #94a3b8;
+  --accent: #3b82f6;
+  --accent2: #8b5cf6;
+  --green: #10b981;
+  --orange: #f59e0b;
+  --red: #ef4444;
+  --cyan: #06b6d4;
+  --pink: #ec4899;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 24px;
+}
+h1 { font-size: 24px; margin-bottom: 8px; color: var(--accent); }
+h2 { font-size: 18px; margin: 32px 0 12px; color: var(--cyan); border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+h3 { font-size: 15px; margin: 20px 0 8px; color: var(--orange); }
+.subtitle { color: var(--text2); margin-bottom: 24px; }
+.container { max-width: 1400px; margin: 0 auto; }
+
+/* Flow Diagram */
+.flow-container {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+.flow-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  min-width: max-content;
+  padding: 8px 0;
+}
+.flow-row + .flow-row { margin-top: 4px; }
+.node {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  text-align: center;
+  white-space: nowrap;
+  position: relative;
+}
+.node.device { border-color: var(--green); }
+.node.mqtt { border-color: var(--orange); }
+.node.gateway { border-color: var(--accent); background: rgba(59,130,246,0.15); }
+.node.nats { border-color: var(--cyan); background: rgba(6,182,212,0.1); }
+.node.api { border-color: var(--accent2); }
+.node.admin { border-color: var(--pink); }
+.node.db { border-color: var(--green); background: rgba(16,185,129,0.1); }
+.node.push { border-color: var(--orange); }
+.node.pipeline { border-color: var(--red); }
+.node .label { font-weight: 600; font-size: 13px; }
+.node .desc { font-size: 11px; color: var(--text2); }
+.arrow { color: var(--text2); font-size: 20px; flex-shrink: 0; }
+.arrow-down { writing-mode: vertical-rl; transform: rotate(180deg); }
+
+/* Service Cards */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.service-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  transition: border-color 0.2s;
+}
+.service-card:hover { border-color: var(--accent); }
+.service-card h3 { margin-top: 0; }
+.service-card .port {
+  display: inline-block;
+  background: var(--surface2);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--cyan);
+  margin-left: 8px;
+}
+.service-card table { width: 100%; margin-top: 8px; font-size: 12px; }
+.service-card td { padding: 3px 0; vertical-align: top; }
+.service-card td:first-child { color: var(--text2); width: 70px; }
+.service-card td:last-child { color: var(--text); }
+
+/* NATS Table */
+.nats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+.nats-table th {
+  background: var(--surface2);
+  color: var(--cyan);
+  padding: 8px 12px;
+  text-align: left;
+  border: 1px solid var(--border);
+}
+.nats-table td {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+.nats-table tr:hover td { background: rgba(59,130,246,0.05); }
+.subject-code {
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 12px;
+  background: var(--surface2);
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: var(--orange);
+}
+
+/* DB Table */
+.db-section {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+.db-table-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.db-tag {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-family: monospace;
+  color: var(--text2);
+}
+.db-tag.primary { border-color: var(--accent); color: var(--accent); }
+.db-tag.business { border-color: var(--green); color: var(--green); }
+.db-tag.medical { border-color: var(--pink); color: var(--pink); }
+.db-tag.community { border-color: var(--orange); color: var(--orange); }
+.db-tag.regulatory { border-color: var(--red); color: var(--red); }
+
+/* Warning Box */
+.warning {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid var(--red);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+}
+.warning h4 { color: var(--red); margin-bottom: 4px; }
+.warning ul { margin-left: 16px; color: var(--text2); font-size: 13px; }
+.warning li { margin: 2px 0; }
+
+/* Shared Module */
+.shared-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.shared-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+.shared-item h4 { color: var(--accent); font-size: 13px; margin-bottom: 4px; }
+.shared-item p { font-size: 12px; color: var(--text2); }
+
+/* Footer */
+.footer { text-align: center; color: var(--text2); font-size: 12px; margin-top: 32px; padding: 16px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Eregen 云平台架构详解</h1>
+<p class="subtitle">基于实际代码分析 · 5个微服务 · NATS消息总线 · 共享SQLite数据库</p>
+
+<!-- Section 1: Architecture Overview -->
+<h2>一、整体架构全景图</h2>
+<div class="flow-container">
+  <div class="flow-row">
+    <div class="node device">
+      <div class="label">手环/药盒</div>
+      <div class="desc">GD32E230 / ESP32-C3</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node device">
+      <div class="label">医用腕带</div>
+      <div class="desc">ESP32-S3 + BLE+NFC</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node device">
+      <div class="label">社区腕带</div>
+      <div class="desc">ESP32-S3 + BLE</div>
+    </div>
+  </div>
+  <div class="flow-row">
+    <div class="arrow" style="font-size:28px">│</div>
+    <div class="arrow" style="font-size:28px">│</div>
+    <div class="arrow" style="font-size:28px">│</div>
+  </div>
+  <div class="flow-row">
+    <div class="node mqtt">
+      <div class="label">EMQX MQTT Broker</div>
+      <div class="desc">port 1883</div>
+    </div>
+  </div>
+  <div class="flow-row">
+    <div class="arrow" style="font-size:28px">│</div>
+  </div>
+  <div class="flow-row">
+    <div class="node gateway">
+      <div class="label">gateway</div>
+      <div class="desc">MQTT → NATS 转换</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node nats">
+      <div class="label">NATS JetStream</div>
+      <div class="desc">消息总线 · port 4222</div>
+    </div>
+  </div>
+  <div class="flow-row">
+    <div class="arrow" style="font-size:28px">│</div>
+    <div class="arrow" style="font-size:28px">│</div>
+    <div class="arrow" style="font-size:28px">│</div>
+    <div class="arrow" style="font-size:28px">│</div>
+  </div>
+  <div class="flow-row">
+    <div class="node api">
+      <div class="label">api-server</div>
+      <div class="desc">REST API + WebSocket<br/>端口 8180</div>
+    </div>
+    <div class="arrow">+</div>
+    <div class="node pipeline">
+      <div class="label">data-pipeline</div>
+      <div class="desc">AI 分析引擎<br/>端口 8086</div>
+    </div>
+    <div class="arrow">+</div>
+    <div class="node push">
+      <div class="label">push-service</div>
+      <div class="desc">告警推送分发<br/>端口 8086</div>
+    </div>
+    <div class="arrow">+</div>
+    <div class="node admin">
+      <div class="label">admin-api</div>
+      <div class="desc">管理后台 REST API<br/>端口 8085 (无NATS)</div>
+    </div>
+  </div>
+  <div class="flow-row">
+    <div class="arrow" style="font-size:28px">│</div>
+    <div class="arrow" style="font-size:28px">│</div>
+    <div class="arrow" style="font-size:28px">│</div>
+    <div class="arrow" style="font-size:28px">│</div>
+  </div>
+  <div class="flow-row">
+    <div class="node db">
+      <div class="label">SQLite Database</div>
+      <div class="desc">data/eregen.db · 81张表 · 全部服务共享</div>
+    </div>
+  </div>
+  <div class="flow-row" style="margin-top:8px">
+    <div class="node" style="border-color:var(--pink); background:rgba(236,72,153,0.1)">
+      <div class="label">admin-web</div>
+      <div class="desc">Vue 3 + Element Plus · 管理后台前端</div>
+    </div>
+    <div class="arrow">↔</div>
+    <div class="node" style="border-color:var(--green); background:rgba(16,185,129,0.1)">
+      <div class="label">家属APP</div>
+      <div class="desc">Flutter · 实时定位+告警+用药</div>
+    </div>
+  </div>
+</div>
+
+<!-- Section 2: Service Details -->
+<h2>二、各子系统详细分析</h2>
+<div class="services-grid">
+
+  <!-- gateway -->
+  <div class="service-card">
+    <h3>gateway <span class="port">MQTT→NATS 网关</span></h3>
+    <table>
+      <tr><td>代码</td><td><code>cloud/gateway/</code></td></tr>
+      <tr><td>Go Module</td><td><code>eregen.dev/gateway</code></td></tr>
+      <tr><td>HTTP端口</td><td>8082</td></tr>
+      <tr><td>数据库</td><td>SQLite独立连接 → data/eregen.db</td></tr>
+      <tr><td>NATS角色</td><td><strong>生产者</strong> (Publish)</td></tr>
+      <tr><td>外部依赖</td><td>EMQX MQTT Broker, NATS JetStream</td></tr>
+    </table>
+    <table>
+      <tr><td colspan="2"><strong>消息处理器 (handler/*.go)</strong></td></tr>
+      <tr><td>HeartbeatHandler</td><td>→ eregen.event.heartbeat (心跳/电量)</td></tr>
+      <tr><td>LocationHandler</td><td>→ eregen.event.location (GPS定位)</td></tr>
+      <tr><td>HealthHandler</td><td>→ eregen.event.health (心率/血氧/步数)</td></tr>
+      <tr><td>SOSHandler</td><td>→ eregen.event.sos (紧急呼叫)</td></tr>
+      <tr><td>FallHandler</td><td>→ eregen.event.fall (跌倒检测)</td></tr>
+      <tr><td>MedStatusHandler</td><td>→ eregen.event.med_status (药盒状态)</td></tr>
+      <tr><td>MedicalHandler</td><td>→ eregen.medical.wb.* (医用腕带)</td></tr>
+      <tr><td>CommunityHandler</td><td>→ eregen.community.wb.* (社区腕带)</td></tr>
+    </table>
+  </div>
+
+  <!-- api-server -->
+  <div class="service-card">
+    <h3>api-server <span class="port">设备API服务</span></h3>
+    <table>
+      <tr><td>代码</td><td><code>cloud/api-server/</code></td></tr>
+      <tr><td>Go Module</td><td><code>eregen.dev/api-server</code></td></tr>
+      <tr><td>HTTP端口</td><td>8180</td></tr>
+      <tr><td>数据库</td><td>SQLite/PostgreSQL双模式 → data/eregen.db</td></tr>
+      <tr><td>NATS角色</td><td><strong>消费者 + 生产者</strong></td></tr>
+      <tr><td>外部依赖</td><td>NATS JetStream, Redis(限速/会话), InfluxDB(可选)</td></tr>
+    </table>
+    <table>
+      <tr><td colspan="2"><strong>NATS消费 (service/nats_client.go)</strong></td></tr>
+      <tr><td>订阅</td><td>eregen.event.> / medical.wb.> / community.wb.></td></tr>
+      <tr><td>写入</td><td>alerts, health_records, locations, med_status → DB</td></tr>
+      <tr><td>发布</td><td>eregen.command.&lt;device_id&gt; (下行命令)</td></tr>
+      <tr><td colspan="2"><strong>REST API路由 (/api/v1/)</strong></td></tr>
+      <tr><td>/auth/*</td><td>登录/注册/JWT</td></tr>
+      <tr><td>/devices/*</td><td>设备管理(CRUD/配置/OTA)</td></tr>
+      <tr><td>/elderly/*</td><td>老人档案/健康数据/用药规则</td></tr>
+      <tr><td>/alerts/*</td><td>告警管理</td></tr>
+      <tr><td>/ws/*</td><td>WebSocket实时推送</td></tr>
+    </table>
+  </div>
+
+  <!-- admin-api -->
+  <div class="service-card">
+    <h3>admin-api <span class="port">管理后台API</span></h3>
+    <table>
+      <tr><td>代码</td><td><code>cloud/admin-api/</code></td></tr>
+      <tr><td>Go Module</td><td><code>eregen.dev/admin-api</code></td></tr>
+      <tr><td>HTTP端口</td><td>8085</td></tr>
+      <tr><td>数据库</td><td>SQLite/PostgreSQL → data/eregen.db</td></tr>
+      <tr><td>NATS角色</td><td><strong>不使用NATS</strong> (纯REST读取DB)</td></tr>
+      <tr><td>外部依赖</td><td>Redis(限速), JWT认证</td></tr>
+    </table>
+    <table>
+      <tr><td colspan="2"><strong>核心Store接口 (18个Domain Interface)</strong></td></tr>
+      <tr><td>DashBoardStore</td><td>仪表盘统计</td></tr>
+      <tr><td>DeviceStore</td><td>设备管理(CRUD/OTA/解绑)</td></tr>
+      <tr><td>UserStore</td><td>用户管理</td></tr>
+      <tr><td>AlertStore</td><td>告警管理</td></tr>
+      <tr><td>ElderlyStore</td><td>老人档案+健康+用药+定位</td></tr>
+      <tr><td>FirmwareStore</td><td>固件版本+OTA任务</td></tr>
+      <tr><td>PatientStore</td><td>医院患者管理</td></tr>
+      <tr><td>WristbandStore</td><td>医用腕带管理</td></tr>
+      <tr><td>ClinicalStore</td><td>临床数据(费用/用药/检验/查房)</td></tr>
+      <tr><td>AdmissionStore</td><td>入院/出院/监管规则</td></tr>
+      <tr><td>RegulatoryStore</td><td>监管合规(围栏/审计/报告)</td></tr>
+      <tr><td>CommunityWBStore</td><td>社区腕带(老人/设备/签到/药房/民政)</td></tr>
+      <tr><td>PersonStore</td><td>统一人员管理(Lifecycle/Welfare)</td></tr>
+      <tr><td>SubscriptionStore</td><td>订阅管理</td></tr>
+      <tr><td>SettingsStore</td><td>系统设置(API密钥/通知配置)</td></tr>
+    </table>
+  </div>
+
+  <!-- push-service -->
+  <div class="service-card">
+    <h3>push-service <span class="port">推送服务</span></h3>
+    <table>
+      <tr><td>代码</td><td><code>cloud/push-service/</code></td></tr>
+      <tr><td>Go Module</td><td><code>eregen.dev/push</code></td></tr>
+      <tr><td>HTTP端口</td><td>8086</td></tr>
+      <tr><td>数据库</td><td>SQLite → data/eregen.db (仅查users/elderly)</td></tr>
+      <tr><td>NATS角色</td><td><strong>消费者</strong> (仅消费)</td></tr>
+    </table>
+    <table>
+      <tr><td colspan="2"><strong>推送渠道 (channel/*.go)</strong></td></tr>
+      <tr><td>FCM Client</td><td>Android Firebase云消息</td></tr>
+      <tr><td>WeChat Client</td><td>微信订阅消息</td></tr>
+      <tr><td>SMS Client</td><td>阿里云短信</td></tr>
+      <tr><td colspan="2"><strong>NATS消费</strong></td></tr>
+      <tr><td>订阅</td><td>eregen.event.> (告警) + eregen.reminder.medication</td></tr>
+      <tr><td>输出</td><td>P0→全部渠道立即推 | P1→App+短信 | P2→App</td></tr>
+    </table>
+  </div>
+
+  <!-- data-pipeline -->
+  <div class="service-card">
+    <h3>data-pipeline <span class="port">数据分析引擎</span></h3>
+    <table>
+      <tr><td>代码</td><td><code>cloud/data-pipeline/</code></td></tr>
+      <tr><td>Go Module</td><td><code>eregen.dev/pipeline</code></td></tr>
+      <tr><td>HTTP端口</td><td>8086</td></tr>
+      <tr><td>数据库</td><td>SQLite → data/eregen.db</td></tr>
+      <tr><td>NATS角色</td><td><strong>消费者 + 生产者</strong></td></tr>
+      <tr><td>开关</td><td>DATA_PIPELINE_ENABLED=true 才启动</td></tr>
+    </table>
+    <table>
+      <tr><td colspan="2"><strong>AI分析器 (analyzer/*.go)</strong></td></tr>
+      <tr><td>HealthAnalyzer</td><td>7天基线异常检测(HR/SpO2/步数/血压)</td></tr>
+      <tr><td>RiskScoreCalculator</td><td>综合风险评分(体征40%+用药25%+活动20%+睡眠15%)</td></tr>
+      <tr><td>ChronicBPAnalyzer</td><td>高血压趋势分析</td></tr>
+      <tr><td>ChronicGlucoseAnalyzer</td><td>糖尿病血糖分析</td></tr>
+      <tr><td>ChronicUricAnalyzer</td><td>高尿酸分析</td></tr>
+      <tr><td>ChronicRecommendations</td><td>健康建议生成</td></tr>
+      <tr><td colspan="2"><strong>输出</strong></td></tr>
+      <tr><td>发布</td><td>eregen.event.alert → push-service消费推送</td></tr>
+    </table>
+  </div>
+
+</div>
+
+<!-- Section 3: NATS Message Map -->
+<h2>三、NATS消息主题全景</h2>
+<div class="flow-container" style="padding:16px">
+<table class="nats-table">
+  <thead>
+    <tr>
+      <th>Subject</th>
+      <th>方向</th>
+      <th>发布者</th>
+      <th>消费者</th>
+      <th>消息类型</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="subject-code">eregen.event.health</span></td>
+      <td>↑ 上行</td>
+      <td>gateway</td>
+      <td>api-server, data-pipeline</td>
+      <td>心率HR、血氧SpO2、步数、体温</td>
+    </tr>
+    <tr>
+      <td><span class="subject-code">eregen.event.location</span></td>
+      <td>↑ 上行</td>
+      <td>gateway</td>
+      <td>api-server, data-pipeline</td>
+      <td>GPS经度/纬度/精度</td>
+    </tr>
+    <tr>
+      <td><span class="subject-code">eregen.event.sos</span></td>
+      <td>↑ 上行</td>
+      <td>gateway</td>
+      <td>api-server, data-pipeline, push-service</td>
+      <td>SOS紧急呼叫+位置</td>
+    </tr>
+    <tr>
+      <td><span class="subject-code">eregen.event.fall</span></td>
+      <td>↑ 上行</td>
+      <td>gateway</td>
+      <td>api-server, data-pipeline, push-service</td>
+      <td>跌倒检测+置信度+位置</td>
+    </tr>
+    <tr>
+      <td><span class="subject-code">eregen.event.heartbeat</span></td>
+      <td>↑ 上行</td>
+      <td>gateway</td>
+      <td>api-server</td>
+      <td>设备在线心跳+电量</td>
+    </tr>
+    <tr>
+      <td><span class="subject-code">eregen.event.med_status</span></td>
+      <td>↑ 上行</td>
+      <td>gateway</td>
+      <td>api-server, data-pipeline</td>
+      <td>药盒分格状态+是否服药</td>
+    </tr>
+    <tr>
+      <td><span class="subject-code">eregen.medical.wb.*</span></td>
+      <td>↑ 上行</td>
+      <td>gateway</td>
+      <td>api-server</td>
+      <td>患者注册/核验/NFC扫描/告警标签</td>
+    </tr>
+    <tr>
+      <td><span class="subject-code">eregen.community.wb.*</span></td>
+      <td>↑ 上行</td>
+      <td>gateway</td>
+      <td>api-server</td>
+      <td>签到/福利变更/药房发药</td>
+    </tr>
+    <tr>
+      <td><span class="subject-code">eregen.event.alert</span></td>
+      <td>↑ 上行</td>
+      <td>data-pipeline</td>
+      <td>push-service</td>
+      <td>AI分析触发的异常告警</td>
+    </tr>
+    <tr>
+      <td><span class="subject-code">eregen.command.&lt;dev_id&gt;</span></td>
+      <td>↓ 下行</td>
+      <td>api-server</td>
+      <td>设备(gateway中转)</td>
+      <td>配置更新/语音播报TTS/OTA</td>
+    </tr>
+    <tr>
+      <td><span class="subject-code">eregen.reminder.medication</span></td>
+      <td>↑ 上行</td>
+      <td>定时任务</td>
+      <td>push-service</td>
+      <td>用药提醒推送</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- Section 4: Database Architecture -->
+<h2>四、数据库架构</h2>
+<div class="warning">
+  <h4>⚠ 重要发现：共享单文件SQLite</h4>
+  <ul>
+    <li>所有5个服务默认连接 <strong>同一个物理文件</strong> <code>data/eregen.db</code></li>
+    <li>每个服务有独立的 <code>*sql.DB</code> 连接池，但物理上共享同一数据库</li>
+    <li>写操作通过SQLite WAL模式 + 行级锁处理并发</li>
+    <li>api-server 和 data-pipeline 都订阅 <code>eregen.event.&gt;</code>，可能导致同一事件被写入两次</li>
+  </ul>
+</div>
+
+<div class="db-section">
+  <h3>核心表分类（共81张表）</h3>
+  <div class="db-table-list">
+    <span class="db-tag primary">users</span>
+    <span class="db-tag primary">persons</span>
+    <span class="db-tag primary">person_profiles</span>
+    <span class="db-tag primary">device_bindings</span>
+    <span class="db-tag primary">elderly_devices</span>
+    <span class="db-tag primary">devices</span>
+    <span class="db-tag business">health_records</span>
+    <span class="db-tag business">health_records_v2</span>
+    <span class="db-tag business">location_history</span>
+    <span class="db-tag business">heartbeat_data</span>
+    <span class="db-tag business">med_status</span>
+    <span class="db-tag business">medication_rules</span>
+    <span class="db-tag business">medication_rules_v2</span>
+    <span class="db-tag business">medication_executions</span>
+    <span class="db-tag business">alerts</span>
+    <span class="db-tag business">alert_rules</span>
+    <span class="db-tag medical">medical_patients</span>
+    <span class="db-tag medical">hospital_admissions</span>
+    <span class="db-tag medical">ward_rounds</span>
+    <span class="db-tag medical">medical_verifications</span>
+    <span class="db-tag medical">medical_expenses</span>
+    <span class="db-tag medical">medical_medications</span>
+    <span class="db-tag medical">medical_test_results</span>
+    <span class="db-tag medical">medical_daily_entries</span>
+    <span class="db-tag medical">medical_wristband_devices</span>
+    <span class="db-tag regulatory">regulatory_fence_configs</span>
+    <span class="db-tag regulatory">regulatory_rule_configs</span>
+    <span class="db-tag regulatory">regulatory_alerts</span>
+    <span class="db-tag regulatory">status_transition_logs</span>
+    <span class="db-tag regulatory">department_bindings</span>
+    <span class="db-tag community">community_elders</span>
+    <span class="db-tag community">community_wristband_devices</span>
+    <span class="db-tag community">elder_welfare_tags</span>
+    <span class="db-tag community">community_welfare_tags</span>
+    <span class="db-tag community">community_signin_records</span>
+    <span class="db-tag community">community_pharmacy_logs</span>
+    <span class="db-tag community">community_minzheng_sync</span>
+    <span class="db-tag community">community_batch_payments</span>
+    <span class="db-tag">subscriptions</span>
+    <span class="db-tag">firmware_versions</span>
+    <span class="db-tag">ota_jobs</span>
+    <span class="db-tag">notification_templates</span>
+    <span class="db-tag">notification_logs</span>
+    <span class="db-tag">health_report_templates</span>
+    <span class="db-tag">health_guidance_rules</span>
+    <span class="db-tag">compliance_rules</span>
+    <span class="db-tag">audit_logs</span>
+    <span class="db-tag">institutions</span>
+    <span class="db-tag">device_api_keys</span>
+    <span class="db-tag">location_data</span>
+    <span class="db-tag">health_data</span>
+    <span class="db-tag">alert_tag_configs</span>
+    <span class="db-tag">person_welfare_tags</span>
+    <span class="db-tag">person_roles</span>
+  </div>
+</div>
+
+<!-- Section 5: Shared Modules -->
+<h2>五、Shared 共享模块</h2>
+<div class="shared-grid">
+  <div class="shared-item">
+    <h4>shared/audit</h4>
+    <p>操作审计日志写入。admin-api使用。</p>
+  </div>
+  <div class="shared-item">
+    <h4>shared/crypto</h4>
+    <p>AES加密/解密工具。api-server设备payload解密、gateway设备认证使用。</p>
+  </div>
+  <div class="shared-item">
+    <h4>shared/protocol</h4>
+    <p>设备通信协议定义(MQTT/JSON)。gateway和api-server使用。</p>
+  </div>
+  <div class="shared-item">
+    <h4>shared/ratelimit</h4>
+    <p>Redis滑动窗口限流。admin-api和api-server的认证限流使用。</p>
+  </div>
+  <div class="shared-item">
+    <h4>shared/response</h4>
+    <p>统一API响应格式封装(成功/错误/分页)。</p>
+  </div>
+  <div class="shared-item">
+    <h4>shared/sanitize</h4>
+    <p>HTML转义和输入清洗，防止XSS攻击。</p>
+  </div>
+  <div class="shared-item">
+    <h4>shared/validation</h4>
+    <p>参数校验工具(DeviceID格式/邮箱/手机号等)。</p>
+  </div>
+</div>
+
+<!-- Section 6: Data Flow Summary -->
+<h2>六、端到端数据流</h2>
+<div class="flow-container">
+  <h3 style="color:var(--green); margin-bottom:12px">场景A：手环健康数据上报</h3>
+  <div class="flow-row">
+    <div class="node device"><div class="label">手环</div><div class="desc">测心率</div></div>
+    <div class="arrow">→</div>
+    <div class="node mqtt"><div class="label">EMQX</div><div class="desc">MQTT</div></div>
+    <div class="arrow">→</div>
+    <div class="node gateway"><div class="label">gateway</div><div class="desc">解析+转换</div></div>
+    <div class="arrow">→</div>
+    <div class="node nats"><div class="label">NATS</div><div class="desc">eregen.event.health</div></div>
+    <div class="arrow">→</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="node api"><div class="label">api-server</div><div class="desc">写入alerts/health_records</div></div>
+      <div class="node pipeline"><div class="label">data-pipeline</div><div class="desc">AI异常检测</div></div>
+    </div>
+    <div class="arrow" style="color:var(--red)">→</div>
+    <div class="node db"><div class="label">SQLite</div><div class="desc">eregen.db</div></div>
+  </div>
+  <p style="margin-top:8px;font-size:12px;color:var(--text2)">
+    data-pipeline检测到异常 → 发布 eregen.event.alert → push-service推送给家属
+  </p>
+
+  <h3 style="color:var(--pink); margin:16px 0 12px">场景B：管理后台查看老人档案</h3>
+  <div class="flow-row">
+    <div class="node" style="border-color:var(--pink)"><div class="label">admin-web</div><div class="desc">Vue 3前端</div></div>
+    <div class="arrow">→</div>
+    <div class="node admin"><div class="label">admin-api</div><div class="desc">REST API :8085</div></div>
+    <div class="arrow">→</div>
+    <div class="node db"><div class="label">SQLite</div><div class="desc">eregen.db (直接读)</div></div>
+  </div>
+  <p style="margin-top:8px;font-size:12px;color:var(--text2)">
+    admin-api 不订阅NATS，直接查询SQLite数据库返回数据
+  </p>
+
+  <h3 style="color:var(--orange); margin:16px 0 12px">场景C：SOS紧急告警全流程</h3>
+  <div class="flow-row">
+    <div class="node device"><div class="label">手环SOS</div><div class="desc">长按按钮</div></div>
+    <div class="arrow">→</div>
+    <div class="node mqtt"><div class="label">EMQX</div></div>
+    <div class="arrow">→</div>
+    <div class="node gateway"><div class="label">gateway</div></div>
+    <div class="arrow">→</div>
+    <div class="node nats"><div class="label">NATS</div><div class="desc">eregen.event.sos</div></div>
+    <div class="arrow">→</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="node api"><div class="label">api-server</div><div class="desc">创建alert记录</div></div>
+      <div class="node push"><div class="label">push-service</div><div class="desc">多渠道推送</div></div>
+      <div class="node pipeline"><div class="label">data-pipeline</div><div class="desc">AI确认告警</div></div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node db"><div class="label">SQLite</div><div class="desc">写入alerts表</div></div>
+  </div>
+  <p style="margin-top:8px;font-size:12px;color:var(--text2)">
+    push-service查找家属联系人 → 同时推送FCM App通知 + 微信订阅消息 + 阿里云SMS短信
+  </p>
+</div>
+
+<!-- Section 7: Cross-Service Dependency -->
+<h2>七、服务间依赖关系矩阵</h2>
+<div class="flow-container" style="overflow-x:auto">
+<table class="nats-table">
+  <thead>
+    <tr>
+      <th>服务</th>
+      <th>读取DB</th>
+      <th>写入DB</th>
+      <th>NATS消费</th>
+      <th>NATS发布</th>
+      <th>WebSocket</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>gateway</strong></td>
+      <td>devices/heartbeat_data等</td>
+      <td>health_data/location_data/med_status</td>
+      <td>—</td>
+      <td>eregen.event.*<br/>eregen.medical.wb.*<br/>eregen.community.wb.*</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td><strong>api-server</strong></td>
+      <td>全表(大量读取)</td>
+      <td>alerts/health_records_v2/locations/med_status</td>
+      <td>eregen.event.><br/>eregen.medical.wb.><br/>eregen.community.wb.></td>
+      <td>eregen.command.&lt;device_id&gt;</td>
+      <td>✅ Hub广播</td>
+    </tr>
+    <tr>
+      <td><strong>admin-api</strong></td>
+      <td>全表(大量读取)</td>
+      <td>persons/profiles/alerts/rules等</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td><strong>push-service</strong></td>
+      <td>users/device_bindings(查家属)</td>
+      <td>push_logs</td>
+      <td>eregen.event.><br/>eregen.reminder.medication</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td><strong>data-pipeline</strong></td>
+      <td>health_records/baselines</td>
+      <td>—</td>
+      <td>eregen.event.></td>
+      <td>eregen.event.alert</td>
+      <td>—</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- Section 8: Key Findings -->
+<h2>八、关键发现与潜在问题</h2>
+<div class="warning">
+  <h4>🔴 发现的架构问题</h4>
+  <ul>
+    <li><strong>重复写入风险</strong>：api-server和data-pipeline都订阅 eregen.event.&gt;，各自的回调都会写入数据库，可能导致同一事件在health_records等表中出现重复</li>
+    <li><strong>NATS Stream重复定义</strong>：api-server启动时创建 DEVICE_EVENTS Stream(含eregen.event.>等subjects)，gateway也向同一subjects发布，但gateway不创建Stream——依赖api-server先启动</li>
+    <li><strong>端口冲突</strong>：push-service和data-pipeline默认端口都是8086，生产部署需要区分</li>
+    <li><strong>双表兼容</strong>：health_records(旧)和health_records_v2(新)并存，api-server写入v2但部分查询仍需兼容v1</li>
+    <li><strong>push-service数据库查询依赖api-server写入的表结构</strong>：如 user_elderly_links 表可能在api-server的schema中定义，但push-service独立读取</li>
+  </ul>
+</div>
+
+<div class="db-section">
+  <h3>✅ 已验证的正确设计</h3>
+  <ul style="margin-left:16px; font-size:13px; color:var(--text2)">
+    <li>所有NATS消息使用参数化查询，无SQL注入风险</li>
+    <li>所有rows正确defer Close，无资源泄漏</li>
+    <li>NULL列使用sql.NullString处理，无NULL→string panic</li>
+    <li>CHECK约束完整(channel枚举值已补全)</li>
+    <li>admin-api和api-server支持SQLite/PostgreSQL双后端</li>
+    <li>共享模块(8个)全部MIT/BSD许可</li>
+    <li>52个前端API路径全部匹配后端路由</li>
+  </ul>
+</div>
+
+<div class="footer">
+  Eregen 颐贞 · 云平台架构分析 · 基于2026-08-19实际代码
+</div>
+</div>
+</body>
+</html>
