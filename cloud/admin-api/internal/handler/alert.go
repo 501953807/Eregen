@@ -60,6 +60,10 @@ func (h *AlertHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
+	if err := validation.ValidateEnum(body.Severity, []string{"p0", "p1", "p2"}); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "OK", "msg": "invalid severity"})
+		return
+	}
 	alert := &model.AlertSummary{
 		ElderlyID: body.ElderlyID,
 		AlertType: body.AlertType,

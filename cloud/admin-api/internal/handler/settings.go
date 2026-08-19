@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -9,6 +11,7 @@ import (
 	"eregen.dev/admin-api/internal/store"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // SettingsHandler serves system settings endpoints.
@@ -65,8 +68,9 @@ func (h *SettingsHandler) CreateAPIKey(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
-	// Generate a random key hash (in production use a proper crypto rand + hash)
-	keyHash := "placeholder-hash-" + body.Name
+	// Generate a cryptographically random API key and its SHA-256 hash
+	keyValue := "ek_" + uuid.New().String()[:32]
+	keyHash := fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(keyValue)))
 	var expiresAt *time.Time
 	if body.ExpiresAt != nil && *body.ExpiresAt != "" {
 		if t, err := time.Parse("2006-01-02", *body.ExpiresAt); err == nil {
@@ -78,7 +82,7 @@ func (h *SettingsHandler) CreateAPIKey(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "System internal error"})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": gin.H{"id": id}})
+	c.JSON(http.StatusCreated, gin.H{"code": "OK", "data": gin.H{"id": id, "key_prefix": keyValue[:8]}})
 }
 
 // RevokeAPIKey deactivates a B2B API key.

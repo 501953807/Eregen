@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"eregen.dev/admin-api/internal/model"
 	"fmt"
 	"time"
@@ -10,37 +11,33 @@ import (
 
 
 func (s *PostgresStore) GetNotificationSettings(ctx context.Context) (map[string]any, error) {
-
 	var jsonb string
-
 	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(setting_value, '{}') FROM system_settings WHERE key = 'notification'`).Scan(&jsonb)
-
 	if err != nil && err != sql.ErrNoRows {
-
 		return nil, fmt.Errorf("get notification settings: %w", err)
-
 	}
-
-	return map[string]any{}, nil // default empty
-
+	var result map[string]any
+	if err := json.Unmarshal([]byte(jsonb), &result); err != nil {
+		return nil, fmt.Errorf("parse notification settings: %w", err)
+	}
+	if result == nil {
+		result = map[string]any{}
+	}
+	return result, nil
 }
 
 
-
 // UpdateNotificationSettings persists notification config.
-
 func (s *PostgresStore) UpdateNotificationSettings(ctx context.Context, data map[string]any) error {
-
-	_, err := s.db.ExecContext(ctx,
-
+	value, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("marshal notification settings: %w", err)
+	}
+	_, err = s.db.ExecContext(ctx,
 		`INSERT INTO system_settings (key, setting_value) VALUES ('notification', $1)
-
 		 ON CONFLICT (key) DO UPDATE SET setting_value = $1`,
-
-		`{}`) // placeholder — use json.Marshal in real impl
-
+		string(value))
 	return err
-
 }
 
 

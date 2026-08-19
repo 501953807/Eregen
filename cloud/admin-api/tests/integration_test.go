@@ -152,11 +152,11 @@ func seedFull(t *testing.T, db *sql.DB) {
 	mustInsert(t, db,
 		`INSERT INTO alerts (id, elderly_id, business_chain, alert_type, severity, status, message, device_id, created_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		"alert-1", "per-1", "self", "sos", "high", "pending", "SOS按钮触发", "dev-1", now)
+		"alert-1", "per-1", "self", "sos", "p0", "pending", "SOS按钮触发", "dev-1", now)
 	mustInsert(t, db,
 		`INSERT INTO alerts (id, elderly_id, business_chain, alert_type, severity, status, message, device_id, created_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		"alert-2", "per-1", "self", "fall", "medium", "resolved", "跌倒检测确认", "dev-1", now)
+		"alert-2", "per-1", "self", "fall", "p0", "resolved", "跌倒检测确认", "dev-1", now)
 
 	// health_records
 	mustInsert(t, db,
@@ -553,7 +553,7 @@ func TestAlertsCRUD(t *testing.T) {
 	expectStatus(t, rec, http.StatusOK)
 
 	// Filter by severity
-	rec = req(t, engine, http.MethodGet, "/api/v1/admin/alerts?severity=high", token, "")
+	rec = req(t, engine, http.MethodGet, "/api/v1/admin/alerts?severity=p0", token, "")
 	expectStatus(t, rec, http.StatusOK)
 
 	// Filter by invalid severity — should return 400
@@ -561,7 +561,7 @@ func TestAlertsCRUD(t *testing.T) {
 	expectStatus(t, rec, http.StatusBadRequest)
 
 	// Create alert
-	createBody := `{"elderly_id":"per-1","alert_type":"geofence_breach","severity":"high","device_id":"dev-1"}`
+	createBody := `{"elderly_id":"per-1","alert_type":"geofence_breach","severity":"p0","device_id":"dev-1"}`
 	rec = req(t, engine, http.MethodPost, "/api/v1/admin/alerts", token, createBody)
 	expectStatus(t, rec, http.StatusCreated)
 
@@ -1110,9 +1110,9 @@ func TestEdgeCases(t *testing.T) {
 		t.Logf("health-stats for nonexistent: status=%d (acceptable)", rec.Code)
 	}
 
-	// Create alert with invalid severity
-	rec = req(t, engine, http.MethodPost, "/api/v1/admin/alerts", token, `{"elderly_id":"per-1","alert_type":"test","severity":"medium","device_id":"dev-1"}`)
-	expectStatus(t, rec, http.StatusCreated)
+	// Create alert with invalid severity — should return 400
+	rec = req(t, engine, http.MethodPost, "/api/v1/admin/alerts", token, `{"elderly_id":"per-1","alert_type":"test","severity":"urgent","device_id":"dev-1"}`)
+	expectStatus(t, rec, http.StatusBadRequest)
 
 	// Empty body on update — no-op is valid (returns 200)
 	rec = req(t, engine, http.MethodPut, "/api/v1/admin/persons/per-1", token, `{}`)

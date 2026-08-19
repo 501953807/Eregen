@@ -321,7 +321,7 @@ func seedTestData(db *sql.DB) {
 		log.Printf("failed to insert device dev-px-001: %v", err)
 	}
 	if err := dbExec(`INSERT OR REPLACE INTO alerts (id, elderly_id, business_chain, alert_type, severity, status, message, device_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		"alert-001", "eld-1", "self", "sos", "high", "pending", "老人按下SOS按钮", "dev-br-001"); err != nil {
+		"alert-001", "eld-1", "self", "sos", "p0", "pending", "老人按下SOS按钮", "dev-br-001"); err != nil {
 		log.Printf("failed to insert alert alert-001: %v", err)
 	}
 }

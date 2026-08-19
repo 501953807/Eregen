@@ -243,12 +243,12 @@ func (s *SqliteStore) CreateAlertRule(ctx context.Context, r *model.AlertRule) e
 	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO alert_rules (id, name, business_chain, alert_type, severity, condition_field,
 		 condition_operator, condition_threshold, condition_duration_min, notify_roles, notify_channels,
-		 notify_institution_ids, escalation_timeout_min, escalation_roles, auto_action, active, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 notify_institution_ids, escalation_timeout_min, escalation_roles, auto_action, active, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		r.ID, r.Name, r.BusinessChain, r.AlertType, r.Severity, r.ConditionField,
 		r.ConditionOperator, nullableInt(r.ConditionThreshold), nullableInt(r.ConditionDurationMin),
 		r.NotifyRoles, r.NotifyChannels, r.NotifyInstitutionIDs, r.EscalationTimeoutMin,
-		r.EscalationRoles, r.AutoAction, r.Active)
+		r.EscalationRoles, r.AutoAction, r.Active, r.CreatedAt, r.UpdatedAt)
 	return err
 }
 

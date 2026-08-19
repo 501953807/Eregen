@@ -158,7 +158,7 @@ func TestAlertStore_CreateAlert(t *testing.T) {
 	alert := &model.AlertSummary{
 		ElderlyID: "elderly-001",
 		AlertType: "sos",
-		Severity:  "high",
+		Severity:  "p0",
 		Status:    "pending",
 		DeviceID:  "device-001",
 	}
@@ -176,7 +176,7 @@ func TestAlertStore_ListAlerts(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		s.CreateAlert(context.Background(), &model.AlertSummary{
-			ElderlyID: "elderly-001", AlertType: "fall", Severity: "high", Status: "pending", DeviceID: "device-001",
+			ElderlyID: "elderly-001", AlertType: "fall", Severity: "p0", Status: "pending", DeviceID: "device-001",
 		})
 	}
 	alerts, err := s.ListAlerts(context.Background(), "", "", 10)
@@ -192,16 +192,16 @@ func TestAlertStore_ListAlerts_SeverityFilter(t *testing.T) {
 	s, cleanup := setupTestStore(t)
 	defer cleanup()
 
-	s.CreateAlert(context.Background(), &model.AlertSummary{ElderlyID: "e1", AlertType: "sos", Severity: "high", Status: "pending", DeviceID: "d1"})
-	s.CreateAlert(context.Background(), &model.AlertSummary{ElderlyID: "e1", AlertType: "fall", Severity: "medium", Status: "pending", DeviceID: "d1"})
-	s.CreateAlert(context.Background(), &model.AlertSummary{ElderlyID: "e1", AlertType: "low_blood", Severity: "low", Status: "pending", DeviceID: "d1"})
+	s.CreateAlert(context.Background(), &model.AlertSummary{ElderlyID: "e1", AlertType: "sos", Severity: "p0", Status: "pending", DeviceID: "d1"})
+	s.CreateAlert(context.Background(), &model.AlertSummary{ElderlyID: "e1", AlertType: "fall", Severity: "p1", Status: "pending", DeviceID: "d1"})
+	s.CreateAlert(context.Background(), &model.AlertSummary{ElderlyID: "e1", AlertType: "low_blood", Severity: "p2", Status: "pending", DeviceID: "d1"})
 
-	alerts, err := s.ListAlerts(context.Background(), "high", "", 10)
+	alerts, err := s.ListAlerts(context.Background(), "p0", "", 10)
 	if err != nil {
 		t.Fatalf("ListAlerts failed: %v", err)
 	}
 	if len(alerts) != 1 {
-		t.Errorf("expected 1 high severity alert, got %d", len(alerts))
+		t.Errorf("expected 1 p0 severity alert, got %d", len(alerts))
 	}
 }
 
@@ -209,7 +209,7 @@ func TestAlertStore_ResolveAlert(t *testing.T) {
 	s, cleanup := setupTestStore(t)
 	defer cleanup()
 
-	alert := &model.AlertSummary{ElderlyID: "e1", AlertType: "sos", Severity: "high", Status: "pending", DeviceID: "d1"}
+	alert := &model.AlertSummary{ElderlyID: "e1", AlertType: "sos", Severity: "p0", Status: "pending", DeviceID: "d1"}
 	s.CreateAlert(context.Background(), alert)
 	if err := s.ResolveAlert(context.Background(), alert.ID); err != nil {
 		t.Fatalf("ResolveAlert failed: %v", err)
@@ -224,7 +224,7 @@ func TestAlertStore_UpdateAlertStatus(t *testing.T) {
 	s, cleanup := setupTestStore(t)
 	defer cleanup()
 
-	alert := &model.AlertSummary{ElderlyID: "e1", AlertType: "sos", Severity: "high", Status: "pending", DeviceID: "d1"}
+	alert := &model.AlertSummary{ElderlyID: "e1", AlertType: "sos", Severity: "p0", Status: "pending", DeviceID: "d1"}
 	s.CreateAlert(context.Background(), alert)
 	if err := s.UpdateAlertStatus(context.Background(), alert.ID, "acknowledged"); err != nil {
 		t.Fatalf("UpdateAlertStatus failed: %v", err)
