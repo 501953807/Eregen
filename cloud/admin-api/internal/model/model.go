@@ -717,7 +717,7 @@ type RegulatoryRuleConfigDB struct {
 	RuleName   string `json:"name"`
 	Enabled    bool   `json:"enabled"`
 	ConfigJSON string `json:"config_json"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	UpdatedAt  string `json:"updated_at"`
 }
 
 

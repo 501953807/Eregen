@@ -143,6 +143,18 @@ func (h *PersonHandler) CreateProfile(c *gin.Context) {
 	if pp.SubscriptionTier == "" {
 		pp.SubscriptionTier = "starter"
 	}
+	if pp.SubscriptionStatus == "" {
+		pp.SubscriptionStatus = "active"
+	}
+	if pp.SubscriptionStatus != "trial" && pp.SubscriptionStatus != "active" && pp.SubscriptionStatus != "expired" && pp.SubscriptionStatus != "cancelled" {
+		pp.SubscriptionStatus = "active"
+	}
+	if pp.HealthRiskLevel == "" {
+		pp.HealthRiskLevel = "low"
+	}
+	if pp.HealthRiskLevel != "low" && pp.HealthRiskLevel != "medium" && pp.HealthRiskLevel != "high" && pp.HealthRiskLevel != "critical" {
+		pp.HealthRiskLevel = "low"
+	}
 	if pp.Status == "" {
 		pp.Status = "pending"
 	}
@@ -169,6 +181,10 @@ func (h *PersonHandler) GetProfile(c *gin.Context) {
 	chain := c.Query("chain")
 	pp, err := h.store.GetProfile(c.Request.Context(), personID, model.BusinessChain(chain))
 	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if pp == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "profile not found"})
 		return
 	}

@@ -61,14 +61,14 @@ func (s *SqliteStore) ListElderly(ctx context.Context, page, pageSize int) ([]mo
 
 func (s *SqliteStore) GetElderly(ctx context.Context, id string) (*model.ElderlyProfile, error) {
 	var p model.ElderlyProfile
-	var birthRaw, avatarRaw, statusRaw, riskLevel, subTier string
-	var phoneNull sql.NullString
+	var birthRaw, statusRaw, riskLevel, subTier string
+	var phoneNull, avatarNull sql.NullString
 	err := s.db.QueryRowContext(ctx, `
 		SELECT p.id, p.name, p.phone, p.birth_date, p.avatar_url, p.status, pp.health_risk_level, pp.subscription_tier
 		FROM persons p
 		JOIN person_profiles pp ON p.id = pp.person_id AND pp.business_chain = 'self'
 		WHERE p.id = ?`, id).Scan(
-		&p.ID, &p.Name, &phoneNull, &birthRaw, &avatarRaw, &statusRaw, &riskLevel, &subTier)
+		&p.ID, &p.Name, &phoneNull, &birthRaw, &avatarNull, &statusRaw, &riskLevel, &subTier)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("elderly not found")
@@ -84,8 +84,8 @@ func (s *SqliteStore) GetElderly(ctx context.Context, id string) (*model.Elderly
 			p.BirthDate = &t
 		}
 	}
-	if avatarRaw != "" {
-		p.AvatarURL = &avatarRaw
+	if avatarNull.Valid {
+		p.AvatarURL = &avatarNull.String
 	}
 	if riskLevel != "" {
 		p.HealthTiers = []string{riskLevel}
@@ -134,20 +134,23 @@ func (s *SqliteStore) DeleteElderly(ctx context.Context, id string) error {
 func (s *SqliteStore) GetElderlyHealthStats(ctx context.Context, elderlyID string) (*model.HealthStats, error) {
 	var stats model.HealthStats
 	stats.ElderlyID = elderlyID
+	var hrRaw, spo2Raw, stepsStr, lastSeenStr string
 	err := s.db.QueryRowContext(ctx, `
-		SELECT AVG(hr), MAX(hr), AVG(spo2), SUM(steps), MAX(timestamp)
-		FROM health_records WHERE elderly_id = ?`, elderlyID).Scan(
-		&stats.AvgHR, &stats.MaxHR, &stats.AvgSpO2, &stats.TotalSteps, &stats.LastSeen)
+		SELECT COALESCE(AVG(heart_rate), ''), COALESCE(MAX(heart_rate), ''),
+		       COALESCE(AVG(spo2), ''), COALESCE(SUM(steps), ''), COALESCE(MAX(recorded_at), '')
+		FROM health_records_v2 WHERE person_id = ?`, elderlyID).Scan(
+		&hrRaw, &spo2Raw, &stepsStr, &stepsStr, &lastSeenStr)
 	if err != nil {
 		return nil, fmt.Errorf("get health stats: %w", err)
 	}
+	stats.LastSeen = parseTimeStrict(lastSeenStr)
 	return &stats, nil
 }
 
 func (s *SqliteStore) GetElderlyHealthRecords(ctx context.Context, elderlyID string, limit int) ([]model.HealthRecordRow, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, elderly_id, timestamp, hr, spo2, steps, sleep_hours
-		FROM health_records WHERE elderly_id = ? ORDER BY timestamp DESC LIMIT ?`, elderlyID, limit)
+		SELECT id, person_id, recorded_at, heart_rate, spo2, steps, sleep_hours
+		FROM health_records_v2 WHERE person_id = ? ORDER BY recorded_at DESC LIMIT ?`, elderlyID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list health records: %w", err)
 	}
@@ -225,8 +228,9 @@ func (s *SqliteStore) GetElderlyDevices(ctx context.Context, elderlyID string) (
 		SELECT d.id, d.device_id, d.device_type, d.tier, d.status,
 		       COALESCE(json_extract(d.settings, '$.fw_version'),'v0.1'),
 		       COALESCE(d.last_seen, '0001-01-01')
-		FROM devices d JOIN device_bindings db ON d.id = db.device_id
-		WHERE db.elderly_id = ? AND db.business_chain = 'self' ORDER BY d.last_seen DESC`, elderlyID)
+		FROM elderly_devices ed
+		JOIN devices d ON ed.device_id = d.device_id
+		WHERE ed.elderly_id = ? ORDER BY d.last_seen DESC`, elderlyID)
 	if err != nil {
 		return nil, fmt.Errorf("list elderly devices: %w", err)
 	}
@@ -294,10 +298,18 @@ func (s *SqliteStore) CreateHealthRecord(ctx context.Context, r *model.HealthRec
 	if r.Timestamp.IsZero() {
 		r.Timestamp = time.Now()
 	}
-	_, err := s.db.ExecContext(ctx,
+	if _, err := s.db.ExecContext(ctx,
 		`INSERT INTO health_records (id, elderly_id, timestamp, hr, spo2, steps, sleep_hours)
 		 VALUES (?, ?, datetime('now'), ?, ?, ?, ?)`,
-		r.ID, r.ElderlyID, r.HR, r.SpO2, r.Steps, r.SleepHours)
+		r.ID, r.ElderlyID, r.HR, r.SpO2, r.Steps, r.SleepHours); err != nil {
+		return err
+	}
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO health_records_v2 (id, person_id, business_chain, record_type, source,
+		 device_id, recorded_at, heart_rate, spo2, steps, sleep_hours)
+		 VALUES (?, ?, 'self', 'vital', 'manual', '', ?, ?, ?, ?, ?)`,
+		r.ID, r.ElderlyID, r.Timestamp.Format("2006-01-02 15:04:05"),
+		r.HR, r.SpO2, r.Steps, r.SleepHours)
 	return err
 }
 

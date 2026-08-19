@@ -218,6 +218,7 @@ patient := handler.NewPatientHandler(s)
 			persons.POST("", person.Create)
 			// Person lifecycle / cross-chain transitions
 			persons.PUT("/:id/status", lifecycle.TransitionStatus)
+			persons.GET("/:id/status", lifecycle.GetPersonStatus)
 			persons.GET("/:id/status/history", lifecycle.GetStatusHistory)
 			persons.POST("/link", lifecycle.LinkPerson)
 			// Person detail and sub-resources
@@ -227,9 +228,10 @@ patient := handler.NewPatientHandler(s)
 				personDetail.PUT("", person.Update)
 				personDetail.DELETE("", person.Delete)
 				personDetail.GET("/profile", person.GetProfile)
+				personDetail.POST("/profile", person.CreateProfile)
+				personDetail.GET("/welfare-tags", person.ListWelfareTags)
 				personDetail.POST("/welfare-tags", person.AssignWelfareTag)
 				personDetail.DELETE("/welfare-tags/:tag_code", person.RevokeWelfareTag)
-				personDetail.GET("/welfare-tags", person.ListWelfareTags)
 				// Medication rules & executions per person
 				medR := personDetail.Group("/medications")
 				{
@@ -324,6 +326,7 @@ patient := handler.NewPatientHandler(s)
 			reg.POST("/fence/config", regulatory.ConfigureFence)
 			reg.GET("/fence/config", regulatory.GetFenceConfig)
 			reg.GET("/compliance", regulatory.GetComplianceReport)
+		reg.GET("/compliance/report", regulatory.GetComplianceReport)
 		reg.POST("/compliance/run", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"code": "OK", "data": gin.H{"message": "compliance check queued"}})
 		})

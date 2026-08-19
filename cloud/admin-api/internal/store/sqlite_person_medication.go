@@ -18,7 +18,7 @@ func (s *SqliteStore) ListMedicationRules(ctx context.Context, personID string, 
 				drug_category, dosage, frequency, route, schedule_time1, schedule_time2, schedule_time3,
 				days_of_week, duration, pre_meal, post_meal, special_instructions, prescribed_by,
 				prescribed_at, active, created_at
-			  FROM medication_rules WHERE person_id = ?`
+			  FROM medication_rules_v2 WHERE person_id = ?`
 	args := []any{personID}
 	if chain != "" {
 		query += ` AND business_chain = ?`
@@ -35,13 +35,26 @@ func (s *SqliteStore) ListMedicationRules(ctx context.Context, personID string, 
 	var rules []model.MedicationRuleRow
 	for rows.Next() {
 		var r model.MedicationRuleRow
-		if err := rows.Scan(&r.ID, &r.PersonID, &r.BusinessChain, &r.SourceType, &r.SourceID,
-			&r.DrugName, &r.GenericName, &r.DrugCategory, &r.Dosage, &r.Frequency, &r.Route,
-			&r.ScheduleTime1, &r.ScheduleTime2, &r.ScheduleTime3, &r.DaysOfWeek, &r.Duration,
-			&r.PreMeal, &r.PostMeal, &r.SpecialInstructions, &r.PrescribedBy, &r.PrescribedAt,
+		var sourceIDRaw, genericNameRaw, drugCatRaw, sch1Raw, sch2Raw, sch3Raw sql.NullString
+		var daysOfWeekRaw, durationRaw, specialInstrRaw, prescribedByRaw, prescribedAtRaw sql.NullString
+		if err := rows.Scan(&r.ID, &r.PersonID, &r.BusinessChain, &r.SourceType, &sourceIDRaw,
+			&r.DrugName, &genericNameRaw, &drugCatRaw, &r.Dosage, &r.Frequency, &r.Route,
+			&sch1Raw, &sch2Raw, &sch3Raw, &daysOfWeekRaw, &durationRaw,
+			&r.PreMeal, &r.PostMeal, &specialInstrRaw, &prescribedByRaw, &prescribedAtRaw,
 			&r.Active, &r.CreatedAt); err != nil {
 			return nil, fmt.Errorf("scan medication rule: %w", err)
 		}
+		r.SourceID = sourceIDRaw.String
+		r.GenericName = genericNameRaw.String
+		r.DrugCategory = drugCatRaw.String
+		r.ScheduleTime1 = sch1Raw.String
+		r.ScheduleTime2 = sch2Raw.String
+		r.ScheduleTime3 = sch3Raw.String
+		r.DaysOfWeek = daysOfWeekRaw.String
+		r.Duration = durationRaw.String
+		r.SpecialInstructions = specialInstrRaw.String
+		r.PrescribedBy = prescribedByRaw.String
+		r.PrescribedAt = prescribedAtRaw.String
 		rules = append(rules, r)
 	}
 	return rules, rows.Err()
@@ -52,7 +65,7 @@ func (s *SqliteStore) CreateMedicationRuleV2(ctx context.Context, r *model.Medic
 	r.CreatedAt = time.Now().Format("2006-01-02 15:04:05")
 	r.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO medication_rules (id, person_id, business_chain, source_type, source_id,
+		`INSERT INTO medication_rules_v2 (id, person_id, business_chain, source_type, source_id,
 		 drug_name, generic_name, drug_category, dosage, frequency, route, schedule_time1,
 		 schedule_time2, schedule_time3, days_of_week, duration, pre_meal, post_meal,
 		 special_instructions, prescribed_by, prescribed_at, active)
@@ -76,13 +89,13 @@ func (s *SqliteStore) UpdateMedicationRuleV2(ctx context.Context, id string, upd
 	}
 	args = append(args, id)
 	_, err := s.db.ExecContext(ctx,
-		fmt.Sprintf("UPDATE medication_rules SET %s, updated_at = datetime('now') WHERE id = ?",
+		fmt.Sprintf("UPDATE medication_rules_v2 SET %s, updated_at = datetime('now') WHERE id = ?",
 			strings.Join(setClauses, ", ")), args...)
 	return err
 }
 
 func (s *SqliteStore) DeleteMedicationRuleV2(ctx context.Context, id string) error {
-	_, err := s.db.ExecContext(ctx, `DELETE FROM medication_rules WHERE id = ?`, id)
+	_, err := s.db.ExecContext(ctx, `DELETE FROM medication_rules_v2 WHERE id = ?`, id)
 	return err
 }
 
@@ -247,6 +260,7 @@ func nullableInt(i *int) interface{} {
 func (s *SqliteStore) GetAlertRule(ctx context.Context, id string) (*model.AlertRule, error) {
 	var r model.AlertRule
 	var threshold, durationMin *int
+	var createdAtRaw, updatedAtRaw string
 	err := s.db.QueryRowContext(ctx,
 		`SELECT id, name, business_chain, alert_type, severity, condition_field, condition_operator,
 		 condition_threshold, condition_duration_min, notify_roles, notify_channels,
@@ -256,7 +270,7 @@ func (s *SqliteStore) GetAlertRule(ctx context.Context, id string) (*model.Alert
 		&r.ID, &r.Name, &r.BusinessChain, &r.AlertType, &r.Severity, &r.ConditionField,
 		&r.ConditionOperator, &threshold, &durationMin, &r.NotifyRoles, &r.NotifyChannels,
 		&r.NotifyInstitutionIDs, &r.EscalationTimeoutMin, &r.EscalationRoles, &r.AutoAction,
-		&r.Active, &r.CreatedAt, &r.UpdatedAt)
+		&r.Active, &createdAtRaw, &updatedAtRaw)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -265,33 +279,49 @@ func (s *SqliteStore) GetAlertRule(ctx context.Context, id string) (*model.Alert
 	}
 	r.ConditionThreshold = threshold
 	r.ConditionDurationMin = durationMin
+	r.CreatedAt, _ = time.Parse(time.RFC3339, createdAtRaw)
+	r.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAtRaw)
 	return &r, nil
 }
 
 func (s *SqliteStore) ListAlertRules(ctx context.Context, chain model.BusinessChain) ([]model.AlertRule, error) {
-	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, name, business_chain, alert_type, severity, condition_field, condition_operator,
-		 condition_threshold, condition_duration_min, notify_roles, notify_channels,
-		 notify_institution_ids, escalation_timeout_min, escalation_roles, auto_action, active,
-		 created_at, updated_at
-		 FROM alert_rules WHERE business_chain = ? ORDER BY created_at DESC`, chain)
+	rules := make([]model.AlertRule, 0)
+	var err error
+	var rows *sql.Rows
+	if chain != "" {
+		rows, err = s.db.QueryContext(ctx,
+			`SELECT id, name, business_chain, alert_type, severity, condition_field, condition_operator,
+			 condition_threshold, condition_duration_min, notify_roles, notify_channels,
+			 notify_institution_ids, escalation_timeout_min, escalation_roles, auto_action, active,
+			 created_at, updated_at
+			 FROM alert_rules WHERE business_chain = ? ORDER BY created_at DESC`, chain)
+	} else {
+		rows, err = s.db.QueryContext(ctx,
+			`SELECT id, name, business_chain, alert_type, severity, condition_field, condition_operator,
+			 condition_threshold, condition_duration_min, notify_roles, notify_channels,
+			 notify_institution_ids, escalation_timeout_min, escalation_roles, auto_action, active,
+			 created_at, updated_at
+			 FROM alert_rules ORDER BY created_at DESC`)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("list alert rules: %w", err)
 	}
 	defer rows.Close()
 
-	var rules []model.AlertRule
 	for rows.Next() {
 		var r model.AlertRule
 		var threshold, durationMin *int
+		var createdAtRaw, updatedAtRaw string
 		if err := rows.Scan(&r.ID, &r.Name, &r.BusinessChain, &r.AlertType, &r.Severity,
 			&r.ConditionField, &r.ConditionOperator, &threshold, &durationMin, &r.NotifyRoles,
 			&r.NotifyChannels, &r.NotifyInstitutionIDs, &r.EscalationTimeoutMin, &r.EscalationRoles,
-			&r.AutoAction, &r.Active, &r.CreatedAt, &r.UpdatedAt); err != nil {
+			&r.AutoAction, &r.Active, &createdAtRaw, &updatedAtRaw); err != nil {
 			return nil, fmt.Errorf("scan alert rule: %w", err)
 		}
 		r.ConditionThreshold = threshold
 		r.ConditionDurationMin = durationMin
+		r.CreatedAt, _ = time.Parse(time.RFC3339, createdAtRaw)
+		r.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAtRaw)
 		rules = append(rules, r)
 	}
 	return rules, rows.Err()
@@ -310,7 +340,7 @@ func (s *SqliteStore) UpdateAlertRule(ctx context.Context, id string, updates ma
 	args = append(args, id)
 	_, err := s.db.ExecContext(ctx,
 		fmt.Sprintf("UPDATE alert_rules SET %s, updated_at = datetime('now') WHERE id = ?",
-			fmt.Sprintf("%s", setClauses[0])), args...)
+			strings.Join(setClauses, ", ")), args...)
 	return err
 }
 
@@ -325,7 +355,7 @@ func (s *SqliteStore) CreateHealthRecordV2(ctx context.Context, r *model.HealthR
 	r.ID = uuid.New().String()
 	r.CreatedAt = time.Now()
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO health_records (id, person_id, business_chain, record_type, source,
+		`INSERT INTO health_records_v2 (id, person_id, business_chain, record_type, source,
 		 device_id, recorded_at, heart_rate, blood_pressure_sys, blood_pressure_dia, spo2,
 		 temperature, respiratory_rate, pulse_rate, blood_glucose_fasting, blood_glucose_postprandial,
 		 uric_acid, creatinine, hemoglobin_a1c, weight, height, bmi, steps, sleep_hours,
@@ -364,11 +394,11 @@ func nullableInt64Ptr(i *int64) interface{} {
 func (s *SqliteStore) ListHealthRecordsV2(ctx context.Context, personID string, chain model.BusinessChain, recordType string, limit int) ([]model.HealthRecordV2, error) {
 	query := `SELECT id, person_id, business_chain, COALESCE(record_type, ''), COALESCE(source, ''), device_id,
 				COALESCE(recorded_at, '1970-01-01 00:00:00'),
-				COALESCE(heart_rate, hr), blood_pressure_sys, blood_pressure_dia, spo2, temperature,
+				heart_rate, blood_pressure_sys, blood_pressure_dia, spo2, temperature,
 				respiratory_rate, pulse_rate, blood_glucose_fasting, blood_glucose_postprandial,
 				uric_acid, creatinine, hemoglobin_a1c, weight, height, bmi, steps, sleep_hours,
 				exercise_minutes, COALESCE(notes, ''), COALESCE(created_at, '1970-01-01 00:00:00')
-			  FROM health_records WHERE person_id = ?`
+			  FROM health_records_v2 WHERE person_id = ?`
 	args := []any{personID}
 	if chain != "" {
 		query += ` AND business_chain = ?`
@@ -390,13 +420,16 @@ func (s *SqliteStore) ListHealthRecordsV2(ctx context.Context, personID string, 
 	var records []model.HealthRecordV2
 	for rows.Next() {
 		var r model.HealthRecordV2
-		var recordedAtRaw, createdAtRaw sql.NullString
+		var recordedAtRaw, createdAtRaw, deviceIDRaw sql.NullString
 		if err := rows.Scan(&r.ID, &r.PersonID, &r.BusinessChain, &r.RecordType, &r.Source,
-			&r.DeviceID, &recordedAtRaw, &r.HeartRate, &r.BloodPressureSys, &r.BloodPressureDia,
+			&deviceIDRaw, &recordedAtRaw, &r.HeartRate, &r.BloodPressureSys, &r.BloodPressureDia,
 			&r.SpO2, &r.Temperature, &r.RespiratoryRate, &r.PulseRate, &r.GlucoseFasting,
 			&r.GlucosePost, &r.UricAcid, &r.Creatinine, &r.HbA1c, &r.Weight, &r.Height,
 			&r.BMI, &r.Steps, &r.SleepHours, &r.ExerciseMinutes, &r.Notes, &createdAtRaw); err != nil {
 			return nil, fmt.Errorf("scan health record: %w", err)
+		}
+		if deviceIDRaw.Valid {
+			r.DeviceID = deviceIDRaw.String
 		}
 		if recordedAtRaw.Valid {
 			if t, err := time.Parse("2006-01-02 15:04:05", recordedAtRaw.String); err == nil {
@@ -564,10 +597,12 @@ func (s *SqliteStore) ListGuidanceDeliveries(ctx context.Context, personID strin
 	var deliveries []model.HealthGuidanceDelivery
 	for rows.Next() {
 		var d model.HealthGuidanceDelivery
+		var deliveredAtStr string
 		if err := rows.Scan(&d.ID, &d.PersonID, &d.BusinessChain, &d.RuleID, &d.GuidanceType,
-			&d.Title, &d.Content, &d.Channel, &d.DeliveredAt, &d.ReadStatus, &d.Feedback); err != nil {
+			&d.Title, &d.Content, &d.Channel, &deliveredAtStr, &d.ReadStatus, &d.Feedback); err != nil {
 			return nil, fmt.Errorf("scan guidance delivery: %w", err)
 		}
+		d.DeliveredAt, _ = time.Parse(time.RFC3339, deliveredAtStr)
 		deliveries = append(deliveries, d)
 	}
 	return deliveries, rows.Err()
@@ -865,7 +900,7 @@ func (s *SqliteStore) ListDeviceBindings(ctx context.Context, personID string, c
 func (s *SqliteStore) ListDevicesByPerson(ctx context.Context, personID string) ([]model.DeviceSummary, error) {
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT d.id, d.device_id, d.device_type, d.tier, d.status, d.last_seen,
-				d.firmware_version, e.name as owner_name
+				'' as firmware_version, e.name as owner_name
 			 FROM devices d
 			 JOIN device_bindings db ON d.id = db.device_id
 			 LEFT JOIN elderly_profiles e ON db.person_id = e.id
@@ -912,10 +947,12 @@ func (s *SqliteStore) ListNotificationTemplates(ctx context.Context, chain model
 	var templates []model.NotificationTemplate
 	for rows.Next() {
 		var t model.NotificationTemplate
+		var createdAtStr string
 		if err := rows.Scan(&t.ID, &t.Name, &t.BusinessChain, &t.Channel, &t.Subject,
-			&t.BodyTemplate, &t.Enabled, &t.CreatedAt); err != nil {
+			&t.BodyTemplate, &t.Enabled, &createdAtStr); err != nil {
 			return nil, fmt.Errorf("scan notification template: %w", err)
 		}
+		t.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAtStr)
 		templates = append(templates, t)
 	}
 	return templates, rows.Err()

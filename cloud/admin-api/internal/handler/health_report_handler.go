@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
+	"time"
 
 	"eregen.dev/admin-api/internal/model"
 	"eregen.dev/admin-api/internal/store"
@@ -47,16 +49,50 @@ func (h *HealthReportHandler) ListTemplates(c *gin.Context) {
 
 // CreateReport generates a health report.
 func (h *HealthReportHandler) CreateReport(c *gin.Context) {
-	var r model.HealthReport
-	if err := c.ShouldBindJSON(&r); err != nil {
+	var raw map[string]interface{}
+	if err := c.ShouldBindJSON(&raw); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
+
+	r := model.HealthReport{
+		PersonID:      asString(raw, "person_id"),
+		BusinessChain: asString(raw, "business_chain"),
+		Status:        asString(raw, "status"),
+		TemplateID:    asString(raw, "template_id"),
+	}
+	if r.ReportPeriodStart, _ = parseDate(asString(raw, "report_period_start")); r.ReportPeriodStart.IsZero() {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "report_period_start is required"})
+		return
+	}
+	if r.ReportPeriodEnd, _ = parseDate(asString(raw, "report_period_end")); r.ReportPeriodEnd.IsZero() {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "report_period_end is required"})
+		return
+	}
+
 	if err := h.store.CreateReport(c.Request.Context(), &r); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"code": "OK"})
+}
+
+func asString(m map[string]interface{}, key string) string {
+	if v, ok := m[key]; ok {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+func parseDate(s string) (time.Time, error) {
+	for _, layout := range []string{time.RFC3339, "2006-01-02T15:04:05", "2006-01-02"} {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("invalid date: %s", s)
 }
 
 // ListReports returns reports for a person.

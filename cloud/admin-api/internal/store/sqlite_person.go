@@ -240,32 +240,53 @@ func (s *SqliteStore) CreateProfile(ctx context.Context, pp *model.PersonProfile
 
 func (s *SqliteStore) GetProfile(ctx context.Context, personID string, chain model.BusinessChain) (*model.PersonProfile, error) {
 	var pp model.PersonProfile
-	var subStartRaw, subEndRaw, admDateRaw, expDischRaw, dischDateRaw, certDateRaw, nextRevRaw string
+	var subStatusRaw, subStartRaw, subEndRaw, admNoRaw, deptRaw, bedRaw, bloodRaw, doctorRaw, diagRaw sql.NullString
+	var admDateRaw, expDischRaw, dischDateRaw, dischTypeRaw, hospRaw, commRaw, subsidyRaw, certDateRaw, certDocRaw sql.NullString
+	var nextRevRaw, linkedRaw, statusRaw, reasonRaw sql.NullString
+	var createdAtRaw, updatedAtRaw string
 	err := s.db.QueryRowContext(ctx,
 		`SELECT person_id, business_chain, subscription_tier, subscription_status, subscription_start, subscription_end,
 		 health_risk_level, admission_no, department, bed_number, blood_type, attending_doctor, diagnosis,
 		 admission_date, expected_discharge_date, discharge_date, discharge_type, hospital_id, hospital_id_community,
 		 minzheng_certified, subsidy_type, certification_date, certification_doc, next_review_date, linked_person_id,
-		 created_at, updated_at
+		 status, reason, created_at, updated_at
 		 FROM person_profiles WHERE person_id = ? AND business_chain = ?`, personID, chain).Scan(
-		&pp.PersonID, &pp.BusinessChain, &pp.SubscriptionTier, &pp.SubscriptionStatus, &subStartRaw, &subEndRaw,
-		&pp.HealthRiskLevel, &pp.AdmissionNo, &pp.Department, &pp.BedNumber, &pp.BloodType, &pp.AttendingDoctor,
-		&pp.Diagnosis, &admDateRaw, &expDischRaw, &dischDateRaw, &pp.DischargeType, &pp.HospitalID,
-		&pp.HospitalIDCommunity, &pp.MinzhengCertified, &pp.SubsidyType, &certDateRaw, &pp.CertificationDoc,
-		&nextRevRaw, &pp.CreatedAt, &pp.UpdatedAt)
+		&pp.PersonID, &pp.BusinessChain, &pp.SubscriptionTier, &subStatusRaw,
+		&subStartRaw, &subEndRaw,
+		&pp.HealthRiskLevel, &admNoRaw, &deptRaw, &bedRaw, &bloodRaw, &doctorRaw, &diagRaw,
+		&admDateRaw, &expDischRaw, &dischDateRaw, &dischTypeRaw, &hospRaw, &commRaw,
+		&pp.MinzhengCertified, &subsidyRaw, &certDateRaw, &certDocRaw, &nextRevRaw, &linkedRaw,
+		&statusRaw, &reasonRaw, &createdAtRaw, &updatedAtRaw)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get profile: %w", err)
 	}
-	pp.SubscriptionStart = parseDateOrNil(subStartRaw)
-	pp.SubscriptionEnd = parseDateOrNil(subEndRaw)
-	pp.AdmissionDate = parseDateOrNil(admDateRaw)
-	pp.ExpectedDischarge = parseDateOrNil(expDischRaw)
-	pp.DischargeDate = parseDateOrNil(dischDateRaw)
-	pp.CertificationDate = parseDateOrNil(certDateRaw)
-	pp.NextReviewDate = parseDateOrNil(nextRevRaw)
+	pp.SubscriptionStatus = subStatusRaw.String
+	pp.AdmissionNo = admNoRaw.String
+	pp.Department = deptRaw.String
+	pp.BedNumber = bedRaw.String
+	pp.BloodType = bloodRaw.String
+	pp.AttendingDoctor = doctorRaw.String
+	pp.Diagnosis = diagRaw.String
+	pp.DischargeType = dischTypeRaw.String
+	pp.HospitalID = hospRaw.String
+	pp.HospitalIDCommunity = commRaw.String
+	pp.SubsidyType = subsidyRaw.String
+	pp.CertificationDoc = certDocRaw.String
+	pp.LinkedPersonID = linkedRaw.String
+	pp.Status = statusRaw.String
+	pp.Reason = reasonRaw.String
+	pp.CreatedAt, _ = time.Parse(time.RFC3339, createdAtRaw)
+	pp.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAtRaw)
+	pp.SubscriptionStart = parseDateOrNil(subStartRaw.String)
+	pp.SubscriptionEnd = parseDateOrNil(subEndRaw.String)
+	pp.AdmissionDate = parseDateOrNil(admDateRaw.String)
+	pp.ExpectedDischarge = parseDateOrNil(expDischRaw.String)
+	pp.DischargeDate = parseDateOrNil(dischDateRaw.String)
+	pp.CertificationDate = parseDateOrNil(certDateRaw.String)
+	pp.NextReviewDate = parseDateOrNil(nextRevRaw.String)
 	return &pp, nil
 }
 
@@ -285,21 +306,22 @@ func (s *SqliteStore) ListProfiles(ctx context.Context, chain model.BusinessChai
 	var profiles []model.PersonProfile
 	for rows.Next() {
 		var pp model.PersonProfile
-		var subStartRaw, subEndRaw, admDateRaw, expDischRaw, dischDateRaw, certDateRaw, nextRevRaw string
+		var subStartRaw, subEndRaw, admDateRaw, expDischRaw, dischDateRaw, certDateRaw, nextRevRaw sql.NullString
 		if err := rows.Scan(&pp.PersonID, &pp.BusinessChain, &pp.SubscriptionTier, &pp.SubscriptionStatus,
 			&subStartRaw, &subEndRaw, &pp.HealthRiskLevel, &pp.AdmissionNo, &pp.Department, &pp.BedNumber,
 			&pp.BloodType, &pp.AttendingDoctor, &pp.Diagnosis, &admDateRaw, &expDischRaw, &dischDateRaw,
 			&pp.DischargeType, &pp.HospitalID, &pp.HospitalIDCommunity, &pp.MinzhengCertified, &pp.SubsidyType,
-			&certDateRaw, &pp.CertificationDoc, &nextRevRaw, &pp.CreatedAt, &pp.UpdatedAt); err != nil {
+			&certDateRaw, &pp.CertificationDoc, &nextRevRaw, &pp.LinkedPersonID, &pp.Status, &pp.Reason,
+			&pp.CreatedAt, &pp.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("scan profile: %w", err)
 		}
-		pp.SubscriptionStart = parseDateOrNil(subStartRaw)
-		pp.SubscriptionEnd = parseDateOrNil(subEndRaw)
-		pp.AdmissionDate = parseDateOrNil(admDateRaw)
-		pp.ExpectedDischarge = parseDateOrNil(expDischRaw)
-		pp.DischargeDate = parseDateOrNil(dischDateRaw)
-		pp.CertificationDate = parseDateOrNil(certDateRaw)
-		pp.NextReviewDate = parseDateOrNil(nextRevRaw)
+		pp.SubscriptionStart = parseDateOrNil(subStartRaw.String)
+		pp.SubscriptionEnd = parseDateOrNil(subEndRaw.String)
+		pp.AdmissionDate = parseDateOrNil(admDateRaw.String)
+		pp.ExpectedDischarge = parseDateOrNil(expDischRaw.String)
+		pp.DischargeDate = parseDateOrNil(dischDateRaw.String)
+		pp.CertificationDate = parseDateOrNil(certDateRaw.String)
+		pp.NextReviewDate = parseDateOrNil(nextRevRaw.String)
 		profiles = append(profiles, pp)
 	}
 	return profiles, rows.Err()
@@ -349,8 +371,15 @@ func (s *SqliteStore) ListPersonWelfareTags(ctx context.Context, personID string
 	var tags []model.PersonWelfareTag
 	for rows.Next() {
 		var wt model.PersonWelfareTag
-		if err := rows.Scan(&wt.PersonID, &wt.TagCode, &wt.ValidFrom, &wt.ValidTo); err != nil {
+		var fromRaw, toRaw sql.NullString
+		if err := rows.Scan(&wt.PersonID, &wt.TagCode, &fromRaw, &toRaw); err != nil {
 			return nil, fmt.Errorf("scan welfare tag: %w", err)
+		}
+		if fromRaw.Valid {
+			wt.ValidFrom, _ = time.Parse("2006-01-02", fromRaw.String)
+		}
+		if toRaw.Valid {
+			wt.ValidTo, _ = time.Parse("2006-01-02", toRaw.String)
 		}
 		tags = append(tags, wt)
 	}

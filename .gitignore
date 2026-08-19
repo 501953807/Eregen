@@ -165,6 +165,6 @@ apps/ui-prototypes/*/screenshots/*.jpg
 apps/ui-prototypes/*/screenshots/*.webp
 
 # Binary build artifacts
-cloud/admin-api/
+cloud/admin-api/admin-api
 cloud/api-server/admin-api
 cloud/api-server/api-server

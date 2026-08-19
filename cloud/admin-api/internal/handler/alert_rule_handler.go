@@ -42,10 +42,13 @@ func (h *AlertRuleHandler) Create(c *gin.Context) {
 		return
 	}
 	alertRule := &model.AlertRule{
-		Name:          r.Name,
-		BusinessChain: r.BusinessChain,
-		AlertType:     r.AlertType,
-		Severity:      r.Severity,
+		Name:            r.Name,
+		BusinessChain:   r.BusinessChain,
+		AlertType:       r.AlertType,
+		Severity:        r.Severity,
+		ConditionField:  "generic",
+		ConditionOperator: ">",
+		Active:          1,
 	}
 	if err := h.store.CreateAlertRule(c.Request.Context(), alertRule); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"eregen.dev/admin-api/internal/model"
 	"github.com/google/uuid"
@@ -53,16 +54,31 @@ func (s *SqliteStore) ListSubscriptions(ctx context.Context, page, pageSize int,
 	for rows.Next() {
 		var item model.SubscriptionItem
 		var totalSpent *float64
-		err := rows.Scan(&item.ID, &item.UserID, &item.UserName, &item.UserPhone,
+		var nameRaw, cancelReasonRaw, startDateRaw, endDateRaw sql.NullString
+		var createdAtStr string
+		err := rows.Scan(&item.ID, &item.UserID, &nameRaw, &item.UserPhone,
 			&item.PlanTier, &item.Status, &item.BillingCycle,
-			&item.StartDate, &item.EndDate, &item.CancellationReason,
-			&totalSpent, &item.CreatedAt)
+			&startDateRaw, &endDateRaw, &cancelReasonRaw,
+			&totalSpent, &createdAtStr)
 		if err != nil {
 			return nil, fmt.Errorf("scan subscription: %w", err)
+		}
+		if nameRaw.Valid {
+			item.UserName = nameRaw.String
+		}
+		if cancelReasonRaw.Valid {
+			item.CancellationReason = cancelReasonRaw.String
+		}
+		if startDateRaw.Valid {
+			item.StartDate = startDateRaw.String
+		}
+		if endDateRaw.Valid {
+			item.EndDate = endDateRaw.String
 		}
 		if totalSpent != nil {
 			item.TotalSpent = *totalSpent
 		}
+		item.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAtStr)
 		items = append(items, item)
 	}
 	return items, rows.Err()
@@ -71,25 +87,40 @@ func (s *SqliteStore) ListSubscriptions(ctx context.Context, page, pageSize int,
 func (s *SqliteStore) GetSubscription(ctx context.Context, id string) (*model.SubscriptionItem, error) {
 	var item model.SubscriptionItem
 	var totalSpent *float64
+	var nameRaw, cancelReasonRaw, startDateRaw, endDateRaw sql.NullString
+	var createdAtStr string
 	err := s.db.QueryRowContext(ctx, `
 		SELECT s.id, s.user_id, u.name, u.phone, s.plan_tier, s.status,
 		       s.billing_cycle, s.starts_at, s.expires_at, s.cancellation_reason,
 		       COALESCE(s.total_spent, 0), s.created_at
 		FROM subscriptions s LEFT JOIN users u ON s.user_id = u.id
 		WHERE s.id = ?`, id).Scan(
-		&item.ID, &item.UserID, &item.UserName, &item.UserPhone,
+		&item.ID, &item.UserID, &nameRaw, &item.UserPhone,
 		&item.PlanTier, &item.Status, &item.BillingCycle,
-		&item.StartDate, &item.EndDate, &item.CancellationReason,
-		&totalSpent, &item.CreatedAt)
+		&startDateRaw, &endDateRaw, &cancelReasonRaw,
+		&totalSpent, &createdAtStr)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("get subscription: %w", err)
 	}
+	if nameRaw.Valid {
+		item.UserName = nameRaw.String
+	}
+	if cancelReasonRaw.Valid {
+		item.CancellationReason = cancelReasonRaw.String
+	}
+	if startDateRaw.Valid {
+		item.StartDate = startDateRaw.String
+	}
+	if endDateRaw.Valid {
+		item.EndDate = endDateRaw.String
+	}
 	if totalSpent != nil {
 		item.TotalSpent = *totalSpent
 	}
+	item.CreatedAt, _ = time.Parse(time.RFC3339, createdAtStr)
 	return &item, nil
 }
 
@@ -122,7 +153,7 @@ func (s *SqliteStore) RenewSubscription(ctx context.Context, id string, endDate 
 func (s *SqliteStore) ListInstitutions(ctx context.Context, page, pageSize int, name, typ, status string) ([]model.InstitutionSummary, error) {
 	query := `SELECT i.id, i.name, i.type, i.code, i.contact_name, i.contact_phone,
 			  i.access_level, i.status, i.created_at, i.updated_at,
-			  (SELECT COUNT(*) FROM b2b_api_keys WHERE institution_id = i.id AND active = 1) as api_key_count
+			  0 as api_key_count
 			  FROM b2b_institutions i`
 	args := []interface{}{}
 	conditions := []string{}
@@ -160,12 +191,24 @@ func (s *SqliteStore) ListInstitutions(ctx context.Context, page, pageSize int, 
 	var items []model.InstitutionSummary
 	for rows.Next() {
 		var item model.InstitutionSummary
-		err := rows.Scan(&item.ID, &item.Name, &item.Type, &item.Code,
-			&item.ContactName, &item.ContactPhone, &item.AccessLevel,
-			&item.Status, &item.CreatedAt, &item.UpdatedAt, &item.APIKeyCount)
+		var codeRaw, contactNameRaw, contactPhoneRaw sql.NullString
+		var createdAtStr, updatedAtStr string
+		err := rows.Scan(&item.ID, &item.Name, &item.Type, &codeRaw, &contactNameRaw, &contactPhoneRaw,
+			&item.AccessLevel, &item.Status, &createdAtStr, &updatedAtStr, &item.APIKeyCount)
 		if err != nil {
 			return nil, fmt.Errorf("scan institution: %w", err)
 		}
+		if codeRaw.Valid {
+			item.Code = codeRaw.String
+		}
+		if contactNameRaw.Valid {
+			item.ContactName = contactNameRaw.String
+		}
+		if contactPhoneRaw.Valid {
+			item.ContactPhone = contactPhoneRaw.String
+		}
+		item.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAtStr)
+		item.UpdatedAt, _ = time.Parse("2006-01-02 15:04:05", updatedAtStr)
 		items = append(items, item)
 	}
 	return items, rows.Err()
@@ -173,20 +216,32 @@ func (s *SqliteStore) ListInstitutions(ctx context.Context, page, pageSize int, 
 
 func (s *SqliteStore) GetInstitution(ctx context.Context, id string) (*model.InstitutionSummary, error) {
 	var item model.InstitutionSummary
+	var createdAtStr, updatedAtStr string
+	var codeRaw, contactNameRaw, contactPhoneRaw sql.NullString
 	err := s.db.QueryRowContext(ctx, `
 		SELECT i.id, i.name, i.type, i.code, i.contact_name, i.contact_phone,
 		       i.access_level, i.status, i.created_at, i.updated_at,
-		       (SELECT COUNT(*) FROM b2b_api_keys WHERE institution_id = i.id AND active = 1)
+		       0
 		FROM b2b_institutions i WHERE i.id = ?`, id).Scan(
-		&item.ID, &item.Name, &item.Type, &item.Code,
-		&item.ContactName, &item.ContactPhone, &item.AccessLevel,
-		&item.Status, &item.CreatedAt, &item.UpdatedAt, &item.APIKeyCount)
+		&item.ID, &item.Name, &item.Type, &codeRaw, &contactNameRaw, &contactPhoneRaw,
+		&item.AccessLevel, &item.Status, &createdAtStr, &updatedAtStr, &item.APIKeyCount)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("get institution: %w", err)
 	}
+	if codeRaw.Valid {
+		item.Code = codeRaw.String
+	}
+	if contactNameRaw.Valid {
+		item.ContactName = contactNameRaw.String
+	}
+	if contactPhoneRaw.Valid {
+		item.ContactPhone = contactPhoneRaw.String
+	}
+	item.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAtStr)
+	item.UpdatedAt, _ = time.Parse("2006-01-02 15:04:05", updatedAtStr)
 	return &item, nil
 }
 
