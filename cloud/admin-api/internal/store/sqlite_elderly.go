@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -134,16 +135,21 @@ func (s *SqliteStore) DeleteElderly(ctx context.Context, id string) error {
 func (s *SqliteStore) GetElderlyHealthStats(ctx context.Context, elderlyID string) (*model.HealthStats, error) {
 	var stats model.HealthStats
 	stats.ElderlyID = elderlyID
-	var hrRaw, spo2Raw, stepsStr, lastSeenStr string
+	var avgHrRaw, maxHrRaw, avgSpo2Raw, stepsRaw, lastSeenStr string
 	err := s.db.QueryRowContext(ctx, `
-		SELECT COALESCE(AVG(heart_rate), ''), COALESCE(MAX(heart_rate), ''),
-		       COALESCE(AVG(spo2), ''), COALESCE(SUM(steps), ''), COALESCE(MAX(recorded_at), '')
+		SELECT COALESCE(AVG(hr), ''), COALESCE(MAX(hr), ''),
+		       COALESCE(AVG(spo2), ''), COALESCE(SUM(steps), ''), COALESCE(MAX(timestamp), '')
 		FROM health_records WHERE elderly_id = ?`, elderlyID).Scan(
-		&hrRaw, &spo2Raw, &stepsStr, &stepsStr, &lastSeenStr)
-	if err != nil {
+		&avgHrRaw, &maxHrRaw, &avgSpo2Raw, &stepsRaw, &lastSeenStr)
+	if err != nil && err != sql.ErrNoRows {
 		return nil, fmt.Errorf("get health stats: %w", err)
 	}
 	stats.LastSeen = parseTimeStrict(lastSeenStr)
+	if avgHrRaw != "" {
+		if v, e := strconv.ParseFloat(avgHrRaw, 64); e == nil {
+			stats.AvgHR = &v
+		}
+	}
 	return &stats, nil
 }
 

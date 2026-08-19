@@ -2,6 +2,7 @@ package gormstore
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -359,7 +360,31 @@ func (s *Store) GetElderlyLocationHistory(ctx context.Context, elderlyID string,
 func (s *Store) GetElderlyHealthStats(ctx context.Context, elderlyID string) (*model.HealthStats, error) {
 	var stats model.HealthStats
 	stats.ElderlyID = elderlyID
-	// TODO: Use Raw SQL for aggregate query (GORM has limited aggregate support)
+	rows := s.db.Raw(`
+		SELECT COALESCE(AVG(hr), 0), COALESCE(MAX(hr), 0),
+		       COALESCE(AVG(spo2), 0), COALESCE(SUM(steps), 0), COALESCE(MAX(timestamp), '')
+		FROM health_records WHERE elderly_id = ?`, elderlyID).Row()
+	var avgHR, maxHR, avgSpo2 sql.NullFloat64
+	var totalSteps sql.NullInt64
+	var lastSeenStr string
+	if err := rows.Scan(&avgHR, &maxHR, &avgSpo2, &totalSteps, &lastSeenStr); err != nil {
+		return &stats, nil
+	}
+	stats.LastSeen = optionalTime(parseTime(lastSeenStr))
+	if avgHR.Valid {
+		stats.AvgHR = &avgHR.Float64
+	}
+	if maxHR.Valid {
+		v := int(maxHR.Float64)
+		stats.MaxHR = &v
+	}
+	if avgSpo2.Valid {
+		stats.AvgSpO2 = &avgSpo2.Float64
+	}
+	if totalSteps.Valid {
+		v := totalSteps.Int64
+		stats.TotalSteps = &v
+	}
 	return &stats, nil
 }
 
