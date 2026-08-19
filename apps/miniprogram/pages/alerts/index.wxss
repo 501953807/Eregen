@@ -65,9 +65,9 @@
   border-radius: 8rpx;
   font-weight: 600;
 }
-.alert-priority.P0 { background: #fee2e2; color: #dc2626; }
-.alert-priority.P1 { background: #fef3c7; color: #d97706; }
-.alert-priority.P2 { background: #e0f2fe; color: #0284c7; }
+.alert-priority.high { background: #fee2e2; color: #dc2626; }
+.alert-priority.medium { background: #fef3c7; color: #d97706; }
+.alert-priority.low { background: #e0f2fe; color: #0284c7; }
 .alert-device {
   font-size: 22rpx;
   color: #999;

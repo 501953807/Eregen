@@ -189,7 +189,7 @@ export const medicalApi = {
   },
 
   resolveRegulatoryAlert(alertId: string, data: { user_id: string; notes?: string }) {
-    return apiClient.put(`/admin/regulatory/alerts/${alertId}/resolve`, data)
+    return apiClient.post(`/admin/regulatory/alerts/${alertId}/resolve`, data)
   },
 
   getAuditTrail(patientId: string) {

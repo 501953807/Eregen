@@ -113,10 +113,10 @@ class _AlertsPageState extends State<AlertsPage> {
   void _seedMockAlerts() {
     setState(() {
       _allAlerts = [
-        Alert(id: 'a1', elderlyId: '', alertType: 'sos', severity: 'P0', status: 'pending', metadata: {'location': '陆家嘴环路1000号'}, createdAt: DateTime.now().subtract(const Duration(minutes: 2))),
-        Alert(id: 'a2', elderlyId: '', alertType: 'fall', severity: 'P1', status: 'pending', metadata: {'location': '人民广场'}, createdAt: DateTime.now().subtract(const Duration(hours: 3))),
-        Alert(id: 'a3', elderlyId: '', alertType: 'medication_missed', severity: 'P2', status: 'resolved', metadata: {'description': '降压药漏服'}, createdAt: DateTime.now().subtract(const Duration(hours: 8)), resolvedAt: DateTime.now().subtract(const Duration(hours: 7))),
-        Alert(id: 'a4', elderlyId: '', alertType: 'geofence_exit', severity: 'P1', status: 'resolved', metadata: {'location': '外滩'}, createdAt: DateTime.now().subtract(const Duration(days: 1)), resolvedAt: DateTime.now().subtract(const Duration(days: 1, hours: 2))),
+        Alert(id: 'a1', elderlyId: '', alertType: 'sos', severity: 'high', status: 'pending', metadata: {'location': '陆家嘴环路1000号'}, createdAt: DateTime.now().subtract(const Duration(minutes: 2))),
+        Alert(id: 'a2', elderlyId: '', alertType: 'fall', severity: 'high', status: 'pending', metadata: {'location': '人民广场'}, createdAt: DateTime.now().subtract(const Duration(hours: 3))),
+        Alert(id: 'a3', elderlyId: '', alertType: 'medication_missed', severity: 'medium', status: 'resolved', metadata: {'description': '降压药漏服'}, createdAt: DateTime.now().subtract(const Duration(hours: 8)), resolvedAt: DateTime.now().subtract(const Duration(hours: 7))),
+        Alert(id: 'a4', elderlyId: '', alertType: 'geofence_exit', severity: 'medium', status: 'resolved', metadata: {'location': '外滩'}, createdAt: DateTime.now().subtract(const Duration(days: 1)), resolvedAt: DateTime.now().subtract(const Duration(days: 1, hours: 2))),
       ];
     });
   }
@@ -154,9 +154,9 @@ class _AlertsPageState extends State<AlertsPage> {
     return list;
   }
 
-  int get _p0Count => _allAlerts.where((a) => a.severity == 'P0' && a.status == 'pending').length;
-  int get _p1Count => _allAlerts.where((a) => a.severity == 'P1' && a.status == 'pending').length;
-  int get _p2Count => _allAlerts.where((a) => a.severity == 'P2' && a.status == 'pending').length;
+  int get _highCount => _allAlerts.where((a) => a.severity == 'high' && a.status == 'pending').length;
+  int get _mediumCount => _allAlerts.where((a) => a.severity == 'medium' && a.status == 'pending').length;
+  int get _lowCount => _allAlerts.where((a) => a.severity == 'low' && a.status == 'pending').length;
 
   Future<void> _handleAllAlerts() async {
     final pendingAlerts = _allAlerts.where((a) => a.status == 'pending').toList();
@@ -321,11 +321,11 @@ class _AlertsPageState extends State<AlertsPage> {
   Widget _buildStatsRow() {
     return Row(
       children: [
-        _statCard('$_p0Count', 'SOS 紧急', AppTheme.statusDanger),
+        _statCard('$_highCount', 'SOS 紧急', AppTheme.statusDanger),
         const SizedBox(width: 10),
-        _statCard('$_p1Count', '跌倒检测', AppTheme.statusWarning),
+        _statCard('$_mediumCount', '跌倒检测', AppTheme.statusWarning),
         const SizedBox(width: 10),
-        _statCard('$_p2Count', '健康异常', AppTheme.primary),
+        _statCard('$_lowCount', '健康异常', AppTheme.primary),
       ],
     );
   }
@@ -397,11 +397,11 @@ class _AlertsPageState extends State<AlertsPage> {
         children: [
           _prioTab('全部', true),
           const SizedBox(width: 4),
-          _prioTab('P0', false, color: AppTheme.statusDanger),
+          _prioTab('高', false, color: AppTheme.statusDanger),
           const SizedBox(width: 4),
-          _prioTab('P1', false, color: AppTheme.statusWarning),
+          _prioTab('中', false, color: AppTheme.statusWarning),
           const SizedBox(width: 4),
-          _prioTab('P2', false, color: AppTheme.primary),
+          _prioTab('低', false, color: AppTheme.primary),
         ],
       ),
     );
@@ -455,8 +455,7 @@ class _AlertsPageState extends State<AlertsPage> {
   // ===== Alert Item =====
   Widget _buildAlertItem(Alert alert, bool isRead) {
     final isPending = alert.status == 'pending';
-    final isCritical = alert.severity == 'P0';
-    final borderColor = isCritical ? AppTheme.statusDanger : (alert.severity == 'P1' ? AppTheme.statusWarning : AppTheme.primary);
+    final isCritical = alert.severity == 'high';
     final typeLabel = _alertTypeLabel(alert);
 
     return Container(
@@ -497,7 +496,7 @@ class _AlertsPageState extends State<AlertsPage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: (isCritical ? const Color(0xFFFFEBEE) : (alert.severity == 'P1' ? const Color(0xFFFFFBEB) : AppTheme.primaryBg)),
+                      color: (isCritical ? const Color(0xFFFFEBEE) : (alert.severity == 'medium' ? const Color(0xFFFFFBEB) : AppTheme.primaryBg)),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -505,7 +504,7 @@ class _AlertsPageState extends State<AlertsPage> {
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: isCritical ? const Color(0xFFDC2626) : (alert.severity == 'P1' ? const Color(0xFFD97706) : AppTheme.primary),
+                        color: isCritical ? const Color(0xFFDC2626) : (alert.severity == 'medium' ? const Color(0xFFD97706) : AppTheme.primary),
                       ),
                     ),
                   ),

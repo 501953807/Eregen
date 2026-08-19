@@ -207,6 +207,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import type { MedicationRule } from '@/types'
 import { medicationApi } from '@/api/medication'
+import { elderlyApi } from '@/api/elderly'
 import {
   HopeCard,
   HopeBtn,
@@ -218,7 +219,7 @@ import {
 } from '@/components/hope'
 
 // State
-const loading = ref({ rules: true })
+const loading = ref({ rules: true, elderly: false })
 const showDialog = ref(false)
 const searchQuery = ref('')
 const formFocused = ref('')
@@ -240,6 +241,44 @@ const currentElderId = ref('')
 const elderlyList = ref<Array<{ id: string; name: string }>>([])
 const currentElderName = ref('')
 
+async function loadElderlyList() {
+  loading.value.elderly = true
+  try {
+    const res = await elderlyApi.list({ page_size: 200 })
+    const list = (res as any)?.data || []
+    elderlyList.value = list.map((e: any) => ({ id: e.id, name: e.name || e.user_name || '未命名' }))
+    if (elderlyList.value.length > 0 && !currentElderId.value) {
+      currentElderId.value = elderlyList.value[0].id
+      currentElderName.value = elderlyList.value[0].name
+    }
+  } catch (error) {
+    console.error('Failed to load elderly list:', error)
+  } finally {
+    loading.value.elderly = false
+  }
+}
+
+// 将CSV字符串转换为数字数组（0=周日, 1=周一...6=周六）
+function csvToDaysOfWeek(csv: string): number[] {
+  if (!csv) return []
+  const dayMap: Record<string, number> = {
+    'sun': 0, 'mon': 1, 'tue': 2, 'wed': 3,
+    'thu': 4, 'fri': 5, 'sat': 6,
+    'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3,
+    'Thu': 4, 'Fri': 5, 'Sat': 6,
+  }
+  return csv.split(',').map(s => s.trim()).filter(Boolean)
+    .map(s => dayMap[s] ?? -1)
+    .filter(n => n >= 0)
+}
+
+// 将数字数组转换为CSV字符串
+function daysOfWeekToCSV(days: number[]): string {
+  if (!days || days.length === 0) return ''
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  return days.map(d => dayNames[d] || '').filter(Boolean).join(',')
+}
+
 function handleElderChange() {
   const elder = elderlyList.value.find(e => e.id === currentElderId.value)
   if (elder) currentElderName.value = elder.name
@@ -255,11 +294,13 @@ const stats = computed(() => {
     const scheduleTime = (r as any).scheduleTime || r.schedule_time
     return scheduleTime && parseInt(scheduleTime.split(':')[0]) < currentHour
   }).length
+  const total = rules.value.length
+  const adherenceRate = total > 0 ? Math.round(((total - missed) / total) * 100) : 0
   return {
     activeRules: active,
     missedCount: missed,
-    adherenceRate: 85,
-    pendingActions: 3
+    adherenceRate,
+    pendingActions: missed
   }
 })
 
@@ -276,8 +317,9 @@ const dayOptions = [
 
 // Period labels helper
 function periodLabels(days: string[]): string {
+  if (!days || days.length === 0) return '—'
   if (days.length === 7) return '每天'
-  return days.map(d => ({ mon: '一', tue: '二', wed: '三', thu: '四', fri: '五', sat: '六', sun: '日' })[d]).join('、')
+  return days.map(d => ({ mon: '一', tue: '二', wed: '三', thu: '四', fri: '五', sat: '六', sun: '日' })[d] || d).join('、')
 }
 
 // Table columns definition for HopeTable
@@ -299,13 +341,14 @@ const filteredRules = computed(() => {
 
 // Load data on mount
 async function loadRules() {
+  if (!currentElderId.value) return
   loading.value.rules = true
   try {
     const res = await medicationApi.listRules(currentElderId.value)
     if (res.data && Array.isArray(res.data)) {
       rules.value = res.data.map((r: any) => ({
         ...r,
-        daysOfWeek: r.daysOfWeek || [],
+        daysOfWeek: r.daysOfWeek || csvToDaysOfWeek(r.days_of_week || ''),
         pillForm: r.pill_form || r.pillType,
       }))
     }
@@ -317,7 +360,10 @@ async function loadRules() {
   }
 }
 
-onMounted(loadRules)
+onMounted(async () => {
+  await loadElderlyList()
+  if (currentElderId.value) await loadRules()
+})
 
 // Open create dialog
 function openCreateDialog() {
@@ -345,11 +391,12 @@ function handleEdit(rule: MedicationRule) {
 
 // Handle delete
 async function handleDelete(id: string) {
-  const confirmText = await ElMessageBox.confirm(`确定要删除用药规则 "${id}" 吗？`, '警告', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).catch(() => 'cancel')
+  const rule = rules.value.find(r => r.id === id)
+  const confirmText = await ElMessageBox.confirm(
+    `确定要删除用药规则 "${rule?.pillType || id}" 吗？`,
+    '警告',
+    { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+  ).catch(() => 'cancel')
 
   if (confirmText === 'cancel') return
 
@@ -375,20 +422,21 @@ async function saveRule() {
 
   loading.value.rules = true
   try {
+    const payload: Record<string, any> = {
+      pill_type: form.value.pill_type,
+      dose_count: form.value.dose_count,
+      schedule_time: form.value.schedule_time,
+      days_of_week: daysOfWeekToCSV(form.value.days_of_week),
+      active: form.value.active,
+    }
     if (form.value.id) {
-      await medicationApi.updateRule(currentElderId.value, form.value.id!, form.value)
+      await medicationApi.updateRule(currentElderId.value, form.value.id!, payload)
       ElMessage.success('更新成功')
     } else {
-      await medicationApi.createRule(currentElderId.value, form.value)
+      await medicationApi.createRule(currentElderId.value, payload as any)
       ElMessage.success('创建成功')
     }
-    const res = await medicationApi.listRules(currentElderId.value)
-    if (res.data && Array.isArray(res.data)) {
-      rules.value = res.data.map((r: any) => ({
-        ...r,
-        daysOfWeek: r.daysOfWeek || []
-      }))
-    }
+    await loadRules()
   } catch (error) {
     console.error('Failed to save medication rule:', error)
     ElMessage.error('保存失败，请检查输入')

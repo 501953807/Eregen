@@ -3,13 +3,9 @@ import '../../common/theme.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/elderly_selector.dart';
 import '../../widgets/map_section.dart';
-import '../../widgets/sos_button.dart';
 import '../../api/client.dart';
 import '../../models/health.dart';
 import '../../models/alert.dart';
-import '../alerts/alerts_page.dart';
-import '../../screens/settings/settings_page.dart';
-import '../../screens/welfare_page.dart';
 
 /// Home page — v2 design: brand header, elder selector cards, SOS banner,
 /// map with geofence/pin/tooltips, collapsible bottom-sheet status card, health tips.
@@ -99,7 +95,10 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: BottomNavBar(
+        selectedTab: _selectedIndex,
+        onTabSelected: (i) => setState(() => _selectedIndex = i),
+      ),
     );
   }
 
@@ -487,61 +486,6 @@ class _HomePageState extends State<HomePage> {
       onPressed: () {},
       style: ElevatedButton.styleFrom(backgroundColor: bg, foregroundColor: fg, padding: const EdgeInsets.symmetric(vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
       child: Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-    );
-  }
-
-  // ===== Bottom Nav =====
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(color: _darkMode ? const Color(0xFF111827) : Colors.white, border: Border(top: BorderSide(color: const Color(0xFFE5E7EB)))),
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        children: [
-          _navItem('\u{1F3E0}', '首页', 0),
-          _navItem('\u{1F7EA}', '健康', 1),
-          _navItem('\u{26A0}', '告警', 2, badge: _recentAlerts.where((a) => a.status == 'pending').length),
-          _navItem('\u{1F48A}', '用药', 3),
-          _navItem('\u{1F464}', '我的', 4),
-        ],
-      ),
-    );
-  }
-
-  Widget _navItem(String icon, String label, int index, {int? badge}) {
-    final isActive = index == _selectedIndex;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() => _selectedIndex = index);
-          if (index == 4) {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsPage()));
-          } else if (index == 5) {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const WelfarePage()));
-          }
-        },
-        child: Stack(
-          alignment: Alignment.topCenter,
-          children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(icon, style: TextStyle(fontSize: 22, color: isActive ? AppTheme.primary : const Color(0xFF9CA3AF))),
-                Text(label, style: TextStyle(fontSize: 10, fontWeight: isActive ? FontWeight.w600 : FontWeight.w400, color: isActive ? AppTheme.primary : const Color(0xFF9CA3AF))),
-              ],
-            ),
-            if (badge != null && badge > 0)
-              Positioned(
-                top: 0,
-                right: 24,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  decoration: const BoxDecoration(color: AppTheme.statusDanger, shape: BoxShape.circle),
-                  child: Text('$badge', style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w700)),
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 }

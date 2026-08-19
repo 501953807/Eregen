@@ -25,7 +25,7 @@ Page({
         return
       }
 
-      const res = await api.get(`/elderly/${elderlyId}/medication/today`)
+      const res = await api.get(`/api/v1/admin/persons/${elderlyId}/medications`)
       const items = Array.isArray(res?.data) ? res.data : []
 
       const meds = items.slice(0, 8).map(m => ({
@@ -59,7 +59,10 @@ Page({
   markTaken(e) {
     const ruleId = e.currentTarget.dataset.id
     const api = new ApiClient()
-    api.post(`/medication/${ruleId}/take`)
+    api.post(`/api/v1/admin/persons/${elderlyId}/medications/executions`, {
+        rule_id: ruleId,
+        taken_at: new Date().toISOString(),
+      })
       .then(() => {
         const meds = this.data.medications.map(m =>
           m.id == ruleId ? { ...m, status: 'taken', takenTime: this._formatTime(new Date()) } : m

@@ -2,27 +2,35 @@
   <div class="alerts-page">
     <!-- Stats Row -->
     <el-row :gutter="12" style="margin-bottom: 16px;">
-      <el-col :span="8">
-        <el-card shadow="never" class="stat-card kpi-danger">
+      <el-col :span="6">
+        <el-card shadow="never" class="stat-card kpi-primary">
           <div class="stat-content">
-            <div class="stat-value">{{ stats.p0 }}</div>
-            <div class="stat-label">P0 紧急</div>
+            <div class="stat-value">{{ stats.total }}</div>
+            <div class="stat-label">总告警数</div>
           </div>
         </el-card>
       </el-col>
-      <el-col :span="8">
+      <el-col :span="6">
         <el-card shadow="never" class="stat-card kpi-warning">
           <div class="stat-content">
-            <div class="stat-value">{{ stats.p1 }}</div>
-            <div class="stat-label">P1 重要</div>
+            <div class="stat-value">{{ stats.pending }}</div>
+            <div class="stat-label">待处理</div>
           </div>
         </el-card>
       </el-col>
-      <el-col :span="8">
-        <el-card shadow="never" class="stat-card kpi-info">
+      <el-col :span="6">
+        <el-card shadow="never" class="stat-card kpi-success">
           <div class="stat-content">
-            <div class="stat-value">{{ stats.p2 }}</div>
-            <div class="stat-label">P2 通知</div>
+            <div class="stat-value">{{ stats.resolved }}</div>
+            <div class="stat-label">已处理</div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="never" class="stat-card kpi-danger">
+          <div class="stat-content">
+            <div class="stat-value">{{ stats.sos }}</div>
+            <div class="stat-label">SOS 紧急</div>
           </div>
         </el-card>
       </el-col>
@@ -34,9 +42,9 @@
       <el-form :inline="true" class="filter-form">
         <el-form-item label="严重程度">
           <el-select v-model="filters.severity" placeholder="全部" clearable style="width: 140px;" popper-class="wellness-popper">
-            <el-option label="P0 紧急" value="P0" />
-            <el-option label="P1 重要" value="P1" />
-            <el-option label="P2 通知" value="P2" />
+            <el-option label="高 (P0)" value="high" />
+            <el-option label="中 (P1)" value="medium" />
+            <el-option label="低 (P2)" value="low" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
@@ -90,6 +98,11 @@
         <el-table-column label="老人ID" width="120">
           <template #default="{ row }">
             {{ row.elderly_id || '—' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="设备ID" width="120">
+          <template #default="{ row }">
+            <span class="mono">{{ row.device_id || '—' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="created_at" label="时间" width="180">
@@ -204,9 +217,10 @@ const filteredAlerts = computed(() => {
 })
 
 const stats = computed(() => ({
-  p0: allAlerts.value.filter(a => (a.severity === 'p0' || a.severity === 'high') && a.status === 'pending').length,
-  p1: allAlerts.value.filter(a => (a.severity === 'p1' || a.severity === 'medium') && a.status === 'pending').length,
-  p2: allAlerts.value.filter(a => (a.severity === 'p2' || a.severity === 'low') && a.status === 'pending').length,
+  total: allAlerts.value.length,
+  pending: allAlerts.value.filter(a => a.status === 'pending').length,
+  resolved: allAlerts.value.filter(a => a.status === 'resolved').length,
+  sos: allAlerts.value.filter(a => a.alert_type === 'sos' && a.status === 'pending').length,
 }))
 
 function alertBadgeColor(type: string): 'error' | 'warning' | 'primary' {
@@ -216,8 +230,8 @@ function alertBadgeColor(type: string): 'error' | 'warning' | 'primary' {
 }
 
 function severityBadgeColor(sev: string): 'error' | 'warning' | 'primary' {
-  if (sev === 'P0' || sev === 'high') return 'error'
-  if (sev === 'P1' || sev === 'medium') return 'warning'
+  if (sev === 'high') return 'error'
+  if (sev === 'medium') return 'warning'
   return 'primary'
 }
 

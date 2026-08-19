@@ -166,11 +166,11 @@ const timeline = computed(() => {
       type: 'inbound',
       icon: '📋',
       title: '入院登记',
-      time: at.patient.admission_date || '',
+      time: at.patient.created_at ? new Date(at.patient.created_at).toLocaleString('zh-CN') : '',
       lines: [
+        { label: '入院编号', value: at.patient.admission_no || '—' },
         { label: '入院科室', value: at.patient.department || '—' },
-        { label: '主治医生', value: at.patient.doctor || '—' },
-        { label: '诊断结果', value: at.patient.diagnosis || '—' },
+        { label: '床位号', value: at.patient.bed_number || '—' },
         { label: '腕带绑定', value: at.binding ? `设备 ID ${at.binding.device_id || '—'} 已绑定` : '未绑定腕带' },
       ],
     })
@@ -183,10 +183,10 @@ const timeline = computed(() => {
       type: 'verify',
       icon: '✅',
       title: '身份核验记录',
-      time: latest.timestamp || '',
+      time: latest.verified_at ? new Date(latest.verified_at).toLocaleString('zh-CN') : '',
       lines: [
-        { label: '核验方式', value: latest.scan_type || '—' },
-        { label: '核验结果', value: latest.result === 'matched' ? '匹配成功' : latest.result === 'unmatched' ? '不匹配' : '未找到' },
+        { label: '核验方式', value: latest.verification_type || '—' },
+        { label: '核验结果', value: latest.matched ? '匹配成功' : latest.result === 'unmatched' ? '不匹配' : '未找到' },
         { label: '核验人员', value: latest.verified_by || '—' },
       ],
     })
@@ -198,15 +198,15 @@ const timeline = computed(() => {
       type: 'medication',
       icon: '💊',
       title: '用药记录',
-      time: at.medications[0]?.time || '',
+      time: at.medications[0]?.created_at ? new Date(at.medications[0].created_at).toLocaleString('zh-CN') : '',
       table: {
-        headers: ['时间', '药品名称', '剂量', '执行人', '状态'],
+        headers: ['时间', '药品名称', '剂量', '频率', '给药途径'],
         rows: at.medications.slice(0, 5).map((m: any) => [
-          m.time || '—',
-          m.medication_name || '—',
+          m.created_at ? new Date(m.created_at).toLocaleString('zh-CN') : '—',
+          m.name || '—',
           m.dosage || '—',
-          m.administered_by || '—',
-          { text: m.status === 'given' ? '已服用' : '待服用', tagType: m.status === 'given' ? 'success' : 'warning' },
+          m.frequency || '—',
+          m.route || '—',
         ]),
       },
     })
@@ -281,16 +281,15 @@ async function loadAuditTrail() {
   try {
     const res = await regulatoryApi.getAuditTrail(patientId.value)
     auditTrail.value = res.data?.data || null
-    // Update patient info from trail
     if (auditTrail.value?.patient) {
       patientName.value = auditTrail.value.patient.name || patientName.value
+      const p = auditTrail.value.patient
       patientData.value = {
         ...patientData.value,
-        gender: auditTrail.value.patient.gender || patientData.value.gender,
-        age: auditTrail.value.patient.age || patientData.value.age,
-        department: auditTrail.value.patient.department || patientData.value.department,
-        admissionDate: auditTrail.value.patient.admission_date || patientData.value.admissionDate,
-        doctor: auditTrail.value.patient.doctor || patientData.value.doctor,
+        gender: p.gender || patientData.value.gender,
+        age: p.age || patientData.value.age,
+        department: p.department || patientData.value.department,
+        admissionDate: p.created_at || patientData.value.admissionDate,
       }
     }
   } catch (e: any) {

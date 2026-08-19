@@ -105,6 +105,7 @@
 }
 .alert-mini-item.critical { border-left-color: #EF4444; }
 .alert-mini-item.warning { border-left-color: #F59E0B; }
+.alert-mini-item.info { border-left-color: #4A90D9; }
 .alert-mini-title { font-size: 26rpx; font-weight: 600; color: #1F2937; }
 .alert-mini-desc { font-size: 22rpx; color: #6B7280; margin-top: 8rpx; line-height: 1.5; }
 .alert-mini-time { font-size: 20rpx; color: #9CA3AF; margin-top: 12rpx; }

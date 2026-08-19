@@ -437,7 +437,7 @@ const filteredUsers = computed<UserCard[]>(() => {
         name: e.name,
         phone: '',
         email: '',
-        role: 'elderly',
+        role: 'operator' as any,
         created_at: (e as any).created_at || '',
         gender: 'female',
         elderlyCount: 1,

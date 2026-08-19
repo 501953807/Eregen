@@ -46,9 +46,9 @@
 .alert-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8rpx; }
 .alert-title { font-size: 26rpx; font-weight: 600; color: #1F2937; }
 .alert-priority { font-size: 20rpx; font-weight: 700; padding: 4rpx 12rpx; border-radius: 8rpx; }
-.alert-priority.P0 { background: #FEF2F2; color: #EF4444; }
-.alert-priority.P1 { background: #FFFBEB; color: #F59E0B; }
-.alert-priority.P2 { background: #EFF6FF; color: #4A90D9; }
+.alert-priority.high { background: #FEF2F2; color: #EF4444; }
+.alert-priority.medium { background: #FFFBEB; color: #F59E0B; }
+.alert-priority.low { background: #EFF6FF; color: #4A90D9; }
 .alert-device { font-size: 22rpx; color: #6B7280; display: block; }
 .alert-time { font-size: 20rpx; color: #9CA3AF; margin-top: 4rpx; display: block; }
 .alert-location { margin-top: 12rpx; font-size: 20rpx; color: #4B5563; }

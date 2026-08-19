@@ -68,13 +68,11 @@
     <!-- Filter Bar -->
     <div class="filter-bar">
       <span class="filter-label">筛选：</span>
-      <el-select v-model="filters.type" placeholder="全部类型" clearable filterable class="filter-select">
-        <el-option label="手环 Starter" value="bracelet-starter" />
-        <el-option label="手环 Plus" value="bracelet-plus" />
-        <el-option label="手环 Pro" value="bracelet-pro" />
-        <el-option label="药盒 Basic" value="pillbox-basic" />
-        <el-option label="药盒 Smart" value="pillbox-smart" />
-        <el-option label="药盒 Auto" value="pillbox-auto" />
+      <el-select v-model="filters.type" placeholder="全部类型" clearable class="filter-select">
+        <el-option label="手环" value="bracelet" />
+        <el-option label="药盒" value="pillbox" />
+        <el-option label="医用腕带" value="medical_wristband" />
+        <el-option label="社区腕带" value="community_wristband" />
       </el-select>
       <el-select v-model="filters.status" placeholder="全部状态" clearable class="filter-select">
         <el-option label="在线" value="online" />
@@ -82,10 +80,8 @@
         <el-option label="故障" value="fault" />
       </el-select>
       <el-select v-model="filters.mode" placeholder="全部模式" clearable class="filter-select">
-        <el-option label="家属APP" value="family" />
-        <el-option label="管理后台" value="admin" />
-        <el-option label="社区老人" value="community" />
-        <el-option label="医疗腕带" value="medical" />
+        <el-option label="采集" value="collection" />
+        <el-option label="守护" value="guard" />
       </el-select>
       <span class="filter-spacer"></span>
       <el-input v-model="filters.search" placeholder="搜索设备ID、名称、老人姓名..." clearable class="filter-search" />
@@ -126,35 +122,27 @@
         @row-click="handleRowClick"
         highlight-current-row
       >
-        <el-table-column type="selection" width="40" :selectable="(row: Device) => !(row.type === 'pillbox' && row.tier === 'basic')" />
-        <el-table-column label="设备信息" min-width="160">
-          <template #default="{ row }">
-            <div class="device-cell">
-              <div class="device-thumb" :class="row.type === 'bracelet' ? 'thumb-bracelet' : 'thumb-pillbox'">
-                {{ row.type === 'bracelet' ? '📱' : '💊' }}
-              </div>
-              <div>
-                <div class="device-name">{{ deviceLabel(row) }}</div>
-                <div class="device-model">{{ chipLabel(row) }}</div>
-              </div>
-            </div>
-          </template>
-        </el-table-column>
+        <el-table-column type="selection" width="40" />
         <el-table-column label="设备ID" width="130">
           <template #default="{ row }">
             <span class="mono">{{ row.device_id }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="90">
+        <el-table-column label="类型" width="90">
           <template #default="{ row }">
-            <HopeBadge :color="badgeColor(row.status)">{{ statusLabel(row.status) }}</HopeBadge>
+            <HopeBadge :color="row.type === 'bracelet' ? 'primary' : row.type === 'pillbox' ? 'warning' : 'info'">
+              {{ row.type === 'bracelet' ? '手环' : row.type === 'pillbox' ? '药盒' : row.type || '—' }}
+            </HopeBadge>
           </template>
         </el-table-column>
-        <el-table-column label="固件" width="100">
+        <el-table-column label="档位" width="90">
           <template #default="{ row }">
-            <span class="version-tag" :class="{ outdated: isOutdated(row) }">
-              {{ row.firmware_version || '—' }}
-            </span>
+            <HopeBadge color="success">{{ row.tier || '—' }}</HopeBadge>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="80">
+          <template #default="{ row }">
+            <HopeBadge :color="badgeColor(row.status)">{{ statusLabel(row.status) }}</HopeBadge>
           </template>
         </el-table-column>
         <el-table-column label="绑定老人" width="100">
@@ -162,9 +150,16 @@
             {{ row.owner_name || '—' }}
           </template>
         </el-table-column>
-        <el-table-column label="最后在线" width="110">
+        <el-table-column label="最后上线" width="110">
           <template #default="{ row }">
             {{ formatLastSeen(row.last_seen) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="固件版本" width="100">
+          <template #default="{ row }">
+            <span class="version-tag" :class="{ outdated: isOutdated(row) }">
+              {{ row.firmware_version || '—' }}
+            </span>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="220" fixed="right">
@@ -172,6 +167,7 @@
             <div class="action-links">
               <a class="action-link" @click.stop="handleOTA(row)">OTA升级</a>
               <a class="action-link" @click.stop="handleConfig(row)">配置</a>
+              <a class="action-link" @click.stop="handleReboot(row)">重启</a>
               <a class="action-link danger" @click.stop="handleUnbind(row)">解绑</a>
             </div>
           </template>
@@ -233,6 +229,13 @@
           <div class="panel-row"><span class="panel-row-label">电量</span><span class="panel-row-value">{{ panelDevice.battery_pct ?? '—' }}%</span></div>
           <div class="panel-row"><span class="panel-row-label">最后心跳</span><span class="panel-row-value">{{ formatLastSeen(panelDevice.last_seen) }}</span></div>
           <div class="panel-row"><span class="panel-row-label">最近定位</span><span class="panel-row-value panel-link" @click="goToMap">查看地图 →</span></div>
+        </div>
+
+        <div class="panel-section" v-if="panelDevice.type === 'bracelet'">
+          <div class="panel-section-title">健康数据摘要</div>
+          <div class="panel-row"><span class="panel-row-label">心率</span><span class="panel-row-value">{{ panelDevice.hr ?? '—' }} bpm</span></div>
+          <div class="panel-row"><span class="panel-row-label">血氧</span><span class="panel-row-value">{{ panelDevice.spo2 ?? '—' }}%</span></div>
+          <div class="panel-row"><span class="panel-row-label">步数</span><span class="panel-row-value">{{ panelDevice.steps ?? '—' }}</span></div>
         </div>
 
         <div class="panel-section" v-if="panelDevice.ota_progress != null">
@@ -311,7 +314,7 @@ const { selectedIds, toggleSelectAll: toggleSelectAllFn, toggleRow, clearSelecti
 const filteredDevices = computed(() => {
   let list = deviceStore.devices
   if (filters.value.status) list = list.filter(d => d.status === filters.value.status)
-  if (filters.value.type) list = list.filter(d => `${d.type}-${d.tier}` === filters.value.type)
+  if (filters.value.type) list = list.filter(d => d.type === filters.value.type)
   if (filters.value.mode) list = list.filter(d => d.mode === filters.value.mode)
   if (filters.value.search) {
     const q = filters.value.search.toLowerCase()
@@ -335,7 +338,7 @@ function handleSelectionChange(rows: Device[]) {
   rows.forEach(r => toggleRow(r.id, true))
 }
 function handleToggleSelectAll(val: boolean) {
-  toggleSelectAllFn(val, filteredDevices.value.filter(d => !(d.type === 'pillbox' && d.tier === 'basic')).map(d => d.id))
+  toggleSelectAllFn(val, filteredDevices.value.map(d => d.id))
 }
 function clearSelectionBtn() {
   clearSelection()
@@ -373,7 +376,7 @@ function badgeColor(s: string): 'success' | 'error' | 'info' {
 }
 
 function modeLabel(m?: string): string {
-  const map: Record<string, string> = { family: '家属', admin: '后台', community: '社区', medical: '医疗' }
+  const map: Record<string, string> = { family: '家属', admin: '后台', community: '社区', medical: '医疗', collection: '采集', guard: '守护' }
   return map[m || ''] || m || '—'
 }
 
@@ -514,20 +517,26 @@ async function handleReboot(row: Device) {
 async function handleUnbind(row: Device) {
   try {
     await ElMessageBox.confirm(`确定要解绑设备 ${row.device_id} 吗？`, '确认', { type: 'warning' })
+    await devicesApi.unbind(row.id)
     deviceStore.devices = deviceStore.devices.filter(d => d.id !== row.id)
     ElMessage.success('已解绑')
     closePanel()
-  } catch { /* cancelled */ }
+  } catch (e: any) {
+    if (e?.code !== 'cancel') ElMessage.error('解绑失败')
+  }
 }
 
 async function handleBatchUnbind() {
   if (!selectedIds.value.length) { ElMessage.warning('请先选择设备'); return }
   try {
     await ElMessageBox.confirm(`确定要解绑选中的 ${selectedIds.value.length} 台设备吗？`, '确认', { type: 'warning' })
+    await Promise.all(selectedIds.value.map(id => devicesApi.unbind(id)))
     deviceStore.devices = deviceStore.devices.filter(d => !selectedIds.value.includes(d.id))
     selectedIds.value = []
     ElMessage.success('已批量解绑')
-  } catch { /* cancelled */ }
+  } catch (e: any) {
+    if (e?.code !== 'cancel') ElMessage.error('批量解绑失败')
+  }
 }
 
 onMounted(() => {

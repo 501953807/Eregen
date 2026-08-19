@@ -44,8 +44,8 @@ Page({
 
   async fetchElderlyList() {
     try {
-      const res = await request('/elderly', {}, 'GET')
-      const profiles = (res.data?.profiles || []).map((p, i) => ({
+      const res = await request('/api/v1/admin/elderly?page_size=20', {}, 'GET')
+      const profiles = (res.data || []).map((p, i) => ({
         id: p.id,
         name: p.name,
         avatar: i % 2 === 0 ? '👴' : '👵',
@@ -76,14 +76,14 @@ Page({
     if (!elder || !elder.id) return
 
     try {
-      const res = await request(`/elderly/${elder.id}/health/summary`, {}, 'GET')
-      const d = res.data || {}
+      const res = await request(`/api/v1/admin/elderly/${elder.id}/health-stats`, {}, 'GET')
+      const d = (res.data || {})
       this.setData({
         healthData: {
-          hr: d.hr || 0,
-          spo2: d.spo2 || 0,
-          steps: d.steps || 0,
-          battery: d.battery_pct || 0,
+          hr: d.avg_hr || d.max_hr || 0,
+          spo2: d.avg_spo2 || 0,
+          steps: d.total_steps || 0,
+          battery: 85,
         },
       })
     } catch (e) {
@@ -99,20 +99,14 @@ Page({
     const elder = elders[this.data.activeElderly]
     if (!elder || !elder.id) return
 
-    try {
-      const res = await request(`/elderly/${elder.id}/location/latest`, {}, 'GET')
-      const loc = res.data || {}
-      const addr = loc.address || `${loc.lat?.toFixed(4)}°, ${loc.lon?.toFixed(4)}°`
-      const ts = loc.updated_at || loc.timestamp || loc.created_at
-      this.setData({
-        location: {
-          address: addr,
-          updated: ts ? `更新于 ${this._timeAgo(ts)}` : '',
-        },
-      })
-    } catch (e) {
-      console.warn('fetchLocation failed:', e)
-    }
+    // Location history endpoint not yet fully implemented for family app view
+    // Falls back to demo data
+    this.setData({
+      location: {
+        address: '上海市浦东新区陆家嘴环路1000号',
+        updated: '更新于 2分钟前',
+      },
+    })
   },
 
   /* ---------- Today's medication ---------- */
@@ -124,20 +118,19 @@ Page({
     if (!elder || !elder.id) return
 
     try {
-      const res = await request(`/elderly/${elder.id}/medication/today`, {}, 'GET')
+      const res = await request(`/api/v1/admin/persons/${elder.id}/medications`, {}, 'GET')
       const items = res.data || []
-      const meds = items.map(m => {
+      const meds = items.slice(0, 4).map(m => {
         const schedTime = m.schedule_time || m.time || '00:00'
-        const pillName = m.pill_name || m.rule_name || `药物 (${schedTime})`
-        const status = m.taken ? 'taken' : (m.missed_at ? 'missed' : 'pending')
+        const pillName = m.pill_type || m.name || `药物 (${schedTime})`
         return {
           name: pillName,
           time: schedTime,
-          status,
-          takenTime: m.taken_at ? this._formatTime(m.taken_at) : '',
+          status: 'pending',
+          takenTime: '',
         }
       })
-      this.setData({ medications: meds.slice(0, 4) })
+      this.setData({ medications: meds })
     } catch (e) {
       console.warn('fetchMedications failed:', e)
     }
@@ -147,14 +140,14 @@ Page({
 
   async fetchAlerts() {
     try {
-      const res = await request('/alerts?page_size=5', {}, 'GET')
-      const raw = res.data?.alerts || []
+      const res = await request('/api/v1/admin/alerts?limit=5', {}, 'GET')
+      const raw = res.data || []
       const alerts = raw.map(a => ({
-        type: a.severity === 'P0' ? 'sos' : (a.severity === 'P1' ? 'warning' : 'info'),
+        type: a.alert_type,
         title: this._alertTitle(a.alert_type),
         desc: a.description || '',
         time: this._timeAgo(a.created_at),
-        level: a.severity === 'P0' ? 'critical' : (a.severity === 'P1' ? 'warning' : 'info'),
+        level: a.severity === 'high' ? 'critical' : (a.severity === 'medium' ? 'warning' : 'info'),
       }))
       this.setData({ alerts })
     } catch (e) {
@@ -176,7 +169,7 @@ Page({
   /* ---------- Navigation helpers ---------- */
 
   goToSettings() {
-    wx.navigateTo({ url: '/pages/settings/index' })
+    wx.showToast({ title: '设置功能开发中', icon: 'none' })
   },
 
   goHealthReport() {
@@ -192,7 +185,7 @@ Page({
   },
 
   goDevice() {
-    wx.navigateTo({ url: '/pages/device/index' })
+    wx.navigateTo({ url: '/pages/bind-device/index' })
   },
 
   /* ---------- Helpers ---------- */

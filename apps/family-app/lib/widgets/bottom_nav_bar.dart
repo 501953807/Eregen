@@ -5,7 +5,9 @@ import '../../common/theme.dart';
 class BottomNavBar extends StatelessWidget {
   final int selectedTab;
   final ValueChanged<int> onTabSelected;
-  const BottomNavBar({super.key, required this.selectedTab, required this.onTabSelected});
+  /// Optional callback for special push navigation (e.g. welfare page)
+  final ValueChanged<int>? onSpecialTab;
+  const BottomNavBar({super.key, required this.selectedTab, required this.onTabSelected, this.onSpecialTab});
 
   static const List<_TabItem> tabs = [
     _TabItem('首页', Icons.home_outlined, Icons.home),
@@ -27,7 +29,7 @@ class BottomNavBar extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: tabs.map((tab) => _NavItem(tab)).toList(),
+        children: tabs.map((tab) => _NavItem(tab, onSpecialTab: onSpecialTab)).toList(),
       ),
     );
   }
@@ -42,7 +44,8 @@ class _TabItem {
 
 class _NavItem extends StatelessWidget {
   final _TabItem tab;
-  const _NavItem(this.tab);
+  final ValueChanged<int>? onSpecialTab;
+  const _NavItem(this.tab, {this.onSpecialTab});
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +55,14 @@ class _NavItem extends StatelessWidget {
 
     return Expanded(
       child: GestureDetector(
-        onTap: () => parent?.onTabSelected(idx),
+        onTap: () {
+          final isWelfare = idx == 6;
+          if (isWelfare && onSpecialTab != null) {
+            onSpecialTab!(idx);
+          } else {
+            parent?.onTabSelected(idx);
+          }
+        },
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

@@ -9,6 +9,7 @@ export interface B2BInstitution {
   contact_phone?: string
   access_level: string
   status: 'pending' | 'active' | 'suspended'
+  api_key_count?: number
   created_at: string
   updated_at: string
 }
@@ -20,27 +21,31 @@ export interface APIKeyResult {
 }
 
 export const institutionsApi = {
-  list(_params?: { page?: number; page_size?: number; type?: string; status?: string }) {
-    return Promise.resolve({ data: [] as B2BInstitution[] })
+  list(params?: { page?: number; page_size?: number; name?: string; type?: string; status?: string }) {
+    return apiClient.get('/admin/institutions', { params })
   },
 
-  get(_id: string) {
-    return Promise.resolve({ data: null as B2BInstitution | null })
+  get(id: string) {
+    return apiClient.get(`/admin/institutions/${id}`)
   },
 
-  create(_data: { name: string; code: string; type: string; contact_name?: string; contact_phone?: string; access_level?: string; status?: string }) {
-    return Promise.resolve({ data: null as B2BInstitution | null })
+  create(data: { name: string; code: string; type: string; contact_name?: string; contact_phone?: string; access_level?: string; status?: string }) {
+    return apiClient.post('/admin/institutions', data)
   },
 
-  update(_id: string, _data: Partial<B2BInstitution>) {
-    return Promise.resolve({ data: null as B2BInstitution | null })
+  update(id: string, data: Partial<B2BInstitution>) {
+    return apiClient.put(`/admin/institutions/${id}`, data)
   },
 
-  delete(_id: string) {
-    return Promise.resolve({ message: 'ok' })
+  delete(id: string) {
+    return apiClient.delete(`/admin/institutions/${id}`)
   },
 
-  generateApiKey(_id: string, _name: string, _expiresIn?: number) {
-    return Promise.resolve({ data: null as APIKeyResult | null })
+  generateApiKey(id: string, name: string, expiresIn?: number) {
+    return apiClient.post(`/admin/institutions/${id}/api-keys`, { name })
+  },
+
+  revokeApiKey(id: string, keyId: string) {
+    return apiClient.delete(`/admin/institutions/${id}/api-keys/${keyId}`)
   },
 }

@@ -67,8 +67,10 @@ class _LoginPageState extends State<LoginPage> {
         phone: _phoneCtrl.text.trim(),
         otp: _otpCtrl.text.trim(),
       );
-      // Store user ID in global app state for WebSocket connection
-      final userId = result['user_id'] as String? ?? result['id'] as String?;
+      // Login response: {token, user: {id, name, phone, role}}
+      final userId = (result['user'] as Map<String, dynamic>?)?['id'] as String?
+          ?? result['id'] as String?
+          ?? result['user_id'] as String?;
       if (userId != null && mounted) {
         context.read<AppState>().setAuth(userId: userId);
       }

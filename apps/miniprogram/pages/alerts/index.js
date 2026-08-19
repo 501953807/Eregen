@@ -30,7 +30,7 @@ Page({
         this.setData({ alerts: [], loading: false })
         return
       }
-      const res = await this._request('/alerts?limit=50', {}, token)
+      const res = await this._request('/api/v1/admin/alerts?limit=50', {}, token)
       const raw = Array.isArray(res.data) ? res.data : (res.data?.data || [])
       const alerts = raw.map(a => ({
         id: a.id,
@@ -39,7 +39,7 @@ Page({
         device: a.device_id || '',
         time: a.created_at?.slice(0, 16) || '未知时间',
         status: a.status === 'pending' ? 'unread' : 'read',
-        priority: a.severity || 'P2',
+        priority: a.severity || 'low',
       }))
       this.setData({ alerts, loading: false })
     } catch (e) {
@@ -80,10 +80,10 @@ Page({
     // Mark as read via API
     const token = wx.getStorageSync('token')
     if (token) {
-      this._request(`/alerts/${alertId}/resolve`, {}, token, 'PUT').catch(() => {})
+      this._request(`/api/v1/admin/alerts/${alertId}/resolve`, {}, token, 'POST').catch(() => {})
     }
-    // Navigate to detail
-    wx.navigateTo({ url: `/pages/alert-detail/index?id=${alertId}` })
+    // Navigate to health report instead of non-existent alert-detail page
+    wx.navigateTo({ url: `/pages/health/index` })
   },
 
   _request(url, data, token, method = 'POST') {

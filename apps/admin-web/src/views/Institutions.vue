@@ -261,7 +261,7 @@ async function loadInstitutions() {
       ...(searchForm.value.type ? { type: searchForm.value.type } : {}),
       ...(searchForm.value.status ? { status: searchForm.value.status } : {}),
     })
-    institutions.value = (res.data as B2BInstitution[]) ?? []
+    institutions.value = res.data ?? []
     pagination.value.total = institutions.value.length
   } catch (err: any) {
     console.error('load institutions failed:', err)
@@ -336,7 +336,7 @@ function generateKey(row: B2BInstitution) {
   ElMessage.info('正在生成 API 密钥...')
   institutionsApi.generateApiKey(row.id, row.name, 365)
     .then(res => {
-      ElMessageBox.alert(`密钥值（请妥善保存，仅显示一次）：<br><code style="font-family:monospace;">${res.data?.key_value || ''}</code>`, 'API 密钥', {
+      ElMessageBox.alert(`密钥值（请妥善保存，仅显示一次）：<br><code style="font-family:monospace;">${(res.data as any)?.key_value || ''}</code>`, 'API 密钥', {
         dangerouslyUseHTMLString: true,
         confirmButtonText: '已复制',
         type: 'success'

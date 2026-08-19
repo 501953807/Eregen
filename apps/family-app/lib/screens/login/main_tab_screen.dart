@@ -6,6 +6,7 @@ import '../alerts/alerts_page.dart';
 import '../medication/medication_page.dart';
 import '../chronic/chronic_home_page.dart';
 import '../settings/settings_page.dart';
+import '../welfare_page.dart';
 
 /// Post-login bottom-tab shell — 5 prototype pages + chronic care.
 class MainTabScreen extends StatefulWidget {
@@ -34,6 +35,11 @@ class _MainTabScreenState extends State<MainTabScreen> {
       bottomNavigationBar: BottomNavBar(
         selectedTab: _currentIndex,
         onTabSelected: (i) => setState(() => _currentIndex = i),
+        onSpecialTab: (idx) {
+          if (idx == 6) {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const WelfarePage()));
+          }
+        },
       ),
     );
   }

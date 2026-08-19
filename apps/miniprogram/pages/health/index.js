@@ -52,7 +52,7 @@ Page({
     const elderlyId = wx.getStorageSync('elderly_id') || '';
     if (!elderlyId) return;
 
-    api.get(`/elderly/${elderlyId}/health/history`, { query: { days: 7 } })
+    api.get(`/api/v1/admin/persons/${elderlyId}/health?days=7`)
       .then(res => {
         if (res && res.code === 'OK' && res.data && res.data.length > 0) {
           this._processHealthData(res.data);

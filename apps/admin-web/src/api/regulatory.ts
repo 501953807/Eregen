@@ -93,7 +93,7 @@ export const regulatoryApi = {
   getPatientList(params?: { department?: string; status?: string; page?: number; page_size?: number }) {
     return apiClient.get<{ data: RegulatoryPatientRow[]; page: number; page_size: number }>('/admin/regulatory/dashboard/patient-list', { params })
   },
-  listAlerts(params?: { rule_code?: string; level?: string; status?: string; department?: string; page?: number; page_size?: number }) {
+  listAlerts(params?: { rule_code?: string; level?: string; severity?: string; status?: string; department?: string; page?: number; page_size?: number }) {
     return apiClient.get<{ data: RegulatoryAlert[]; page: number; page_size: number }>('/admin/regulatory/alerts', { params })
   },
   getAlert(id: string) {

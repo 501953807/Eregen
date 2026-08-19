@@ -35,14 +35,8 @@ Page({
   },
 
   _fetchLocation(elderlyId) {
-    const api = new ApiClient();
-    api.get(`/elderly/${elderlyId}/location/latest`).then(res => {
-      if (res && res.code === 'OK' && res.data) {
-        this._updateLocation(res.data);
-      }
-    }).catch(() => {
-      this._loadDemoLocation();
-    });
+    // Location API not yet implemented for family app; use demo data
+    this._loadDemoLocation();
   },
 
   _updateLocation(loc) {

@@ -22,7 +22,7 @@
       <view class="alert-body">
         <view class="alert-header">
           <text class="alert-title">{{item.title}}</text>
-          <text class="alert-priority P{{item.priority.slice(1)}}">{{item.priority}}</text>
+          <text class="alert-priority {{item.priority}}" style="font-size:20rpx;font-weight:700;padding:4rpx 12rpx;border-radius:8rpx;background:{{item.priority==='high'?'#FEF2F2':item.priority==='medium'?'#FFFBEB':'#EFF6FF'}};color:{{item.priority==='high'?'#EF4444':item.priority==='medium'?'#F59E0B':'#4A90D9'}};">{{item.priority==='high'?'高':item.priority==='medium'?'中':'低'}}</text>
         </view>
         <text class="alert-device">{{item.device || '未知设备'}}</text>
         <text class="alert-time">{{item.time}}</text>

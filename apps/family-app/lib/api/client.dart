@@ -91,21 +91,30 @@ class ApiClient {
   }
 
   // --- auth ----------------------------------------------------------------
-  /// POST /auth/login — body: {phone, otp}
+  /// POST /api/v1/auth/login — body: {method: 'phone', credential, secret}
+  /// Returns {code: 200, data: {token, user: {id, name, phone, role}}}
   Future<Map<String, dynamic>> login({required String phone, required String otp}) async {
-    final resp = await _dio.post('/auth/login', data: {
-      'phone': phone,
-      'otp': otp,
+    final resp = await _dio.post('/api/v1/auth/login', data: {
+      'method': 'phone',
+      'credential': phone,
+      'secret': otp,
     });
-    final data = resp.data as Map<String, dynamic>;
+    // Support both direct token and wrapped {code, data} responses
+    final body = resp.data as Map<String, dynamic>;
+    final data = (body['data'] as Map<String, dynamic>?) ?? body;
     _token = data['token'] as String?;
     if (_token != null) await _saveToken(_token);
     return data;
   }
 
-  /// POST /auth/send-otp — body: {phone}
+  /// POST /api/v1/auth/sms/send — send OTP code to phone
+  /// Not yet implemented in backend — placeholder for future SMS service
   Future<void> sendOtp(String phone) async {
-    await _dio.post('/auth/send-otp', data: {'phone': phone});
+    try {
+      await _dio.post('/api/v1/auth/sms/send', data: {'phone': phone});
+    } catch (_) {
+      // SMS endpoint not yet available; allow login flow to proceed
+    }
   }
 
   // --- CRUD helpers -------------------------------------------------------

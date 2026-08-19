@@ -771,7 +771,6 @@ class _StepsBarChartPainter extends CustomPainter {
     final target = 5.0;
     final maxVal = 6.0;
     final barWidth = (w - 80) / days.length;
-    const labelStyle = TextStyle(fontSize: 10, color: Color(0xFF6B7280));
 
     // Target line
     final targetY = h - 30 - (target / maxVal) * (h - 50);

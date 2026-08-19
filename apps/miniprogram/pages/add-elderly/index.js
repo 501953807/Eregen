@@ -28,7 +28,7 @@ Page({
     }
     this.setData({ loading: true })
     const api = new ApiClient()
-    api.post('/elderly', {
+    api.post('/api/v1/admin/elderly', {
       name: name.trim(),
       birth_date: birthDate,
     })

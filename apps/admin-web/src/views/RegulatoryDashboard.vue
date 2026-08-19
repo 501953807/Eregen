@@ -98,7 +98,7 @@ async function loadPatients() {
 async function loadAlerts() {
   try {
     const params: Record<string, any> = {}
-    if (filters.value.severity) params.severity = filters.value.severity
+    if (filters.value.severity) params.level = filters.value.severity
     const res = await regulatoryApi.listAlerts(params)
     alerts.value = res.data?.data || []
   } catch {

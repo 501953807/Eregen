@@ -53,6 +53,9 @@ export const hospitalApi = {
   getPatient(id: string) {
     return apiClient.get(`/admin/hospital/patients/${id}`)
   },
+  listAdmissions(params?: any) {
+    return apiClient.get('/admin/hospital/admissions', { params })
+  },
   admitPatient(data: any) {
     return apiClient.post('/admin/hospital/admissions', data)
   },
@@ -65,38 +68,45 @@ export const hospitalApi = {
   verifyPatient(personId: string, data: any) {
     return apiClient.post(`/admin/hospital/patients/${personId}/verify`, data)
   },
-  listAdmissions(params?: any) {
-    return apiClient.get('/admin/medical/admissions', { params })
-  },
   getWardRounds(personId: string) {
-    return apiClient.get(`/admin/medical/patients/${personId}/ward-round`)
+    return apiClient.get(`/admin/hospital/patients/${personId}/ward-round`)
   },
   completeWardRound(personId: string, data: any) {
-    return apiClient.post(`/admin/medical/patients/${personId}/ward-round`, data)
+    return apiClient.post(`/admin/hospital/patients/${personId}/ward-round`, data)
   },
 }
 
 export const communityApi = {
   listElders(params?: any) {
-    return apiClient.get('/admin/community/elders', { params })
+    return apiClient.get('/admin/community-wb/elders', { params })
   },
   createElder(data: any) {
-    return apiClient.post('/admin/community/elders', data)
+    return apiClient.post('/admin/community-wb/elders', data)
   },
   updateElder(id: string, data: any) {
-    return apiClient.put(`/admin/community/elders/${id}`, data)
+    return apiClient.put(`/admin/community-wb/elders/${id}`, data)
   },
-  signin(personId: string, data: any) {
-    return apiClient.post(`/admin/community/elders/${personId}/signin`, data)
+  signin(elderId: string, data: any) {
+    return apiClient.post('/admin/community-wb/signin/trigger', {
+      elder_id: elderId,
+      device_id: data.device_id || '',
+      hospital_id: data.hospital_id || '',
+      period: data.period || new Date().toISOString().slice(0, 7),
+      is_welfare_signin: data.type === 'welfare' || false,
+      is_medical_signin: data.type === 'medical' || false,
+    })
   },
-  assignWelfare(personId: string, tagCode: string, data: any) {
-    return apiClient.post(`/admin/community/elders/${personId}/welfare/${tagCode}`, data)
+  listElderWelfareTags(elderId: string) {
+    return apiClient.get(`/admin/community-wb/elders/${elderId}/welfare`)
+  },
+  assignWelfare(elderId: string, tagCode: string, data: any) {
+    return apiClient.post(`/admin/community-wb/elders/${elderId}/welfare/${tagCode}`, data)
   },
   getStats() {
-    return apiClient.get('/admin/community/elders/stats')
+    return apiClient.get('/admin/community-wb/elders/stats')
   },
   revokeWelfareTag(elderId: string, tagCode: string) {
-    return apiClient.delete(`/admin/community/elders/${elderId}/welfare/${tagCode}`)
+    return apiClient.delete(`/admin/community-wb/elders/${elderId}/welfare/${tagCode}`)
   },
 }
 

@@ -27,23 +27,9 @@ function request(url, data = {}, method = 'GET') {
   })
 }
 
+// WeChat login endpoint not yet implemented on backend
 function login(code) {
-  return new Promise((resolve, reject) => {
-    wx.request({
-      url: `${API_BASE}/auth/wechat/login`,
-      method: 'POST',
-      data: { code },
-      success: (res) => {
-        if (res.statusCode < 400) {
-          wx.setStorageSync('token', res.data.token)
-          resolve(res.data)
-        } else {
-          reject(new Error(res.data?.message || 'login failed'))
-        }
-      },
-      fail: reject,
-    })
-  })
+  return Promise.reject(new Error('WeChat login not supported'))
 }
 
 function listFirmware(deviceType, tier) {

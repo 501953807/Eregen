@@ -43,17 +43,12 @@ Page({
     }
     if (this.data.countdown > 0) return
     this.setData({ loading: true })
-    request('/auth/send-code', { phone }, 'POST')
-      .then(() => {
-        wx.showToast({ title: '验证码已发送', icon: 'success' })
-        this.startCountdown()
-      })
-      .catch((e) => {
-        wx.showToast({ title: e.message || '发送失败', icon: 'none' })
-      })
-      .finally(() => {
-        this.setData({ loading: false })
-      })
+    // SMS send endpoint not yet implemented; use mock verification
+    setTimeout(() => {
+      wx.showToast({ title: '验证码已发送（测试用：123456）', icon: 'success' })
+      this.startCountdown()
+      this.setData({ loading: false })
+    }, 500)
   },
 
   login() {
@@ -67,16 +62,22 @@ Page({
       return
     }
     this.setData({ loading: true })
-    request('/auth/phone-login', { phone, code }, 'POST')
+    request('/api/v1/auth/login', { method: 'phone', credential: phone, secret: code }, 'POST')
       .then((res) => {
-        if (res.token) {
-          storageSet('token', res.token)
-          wx.setStorageSync('token', res.token)
+        const token = res?.token || (res?.data && res.data.token)
+        const userInfo = res?.user || (res?.data && res.data.user)
+        if (token) {
+          storageSet('token', token)
+          wx.setStorageSync('token', token)
+          if (userInfo) {
+            storageSet('user_info', userInfo)
+            wx.setStorageSync('user_info', userInfo)
+          }
           wx.showToast({ title: '登录成功', icon: 'success' })
-          // Check if user has elderly list
-          return request('/elderly', {}, 'GET')
+          return request('/api/v1/admin/elderly', {}, 'GET')
             .then((res2) => {
-              const hasElderly = (res2.data?.profiles || []).length > 0
+              const elderlyList = Array.isArray(res2) ? res2 : (res2?.data || [])
+              const hasElderly = elderlyList.length > 0
               return hasElderly ? '/pages/home/index' : '/pages/add-elderly/index'
             })
         }

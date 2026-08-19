@@ -16,8 +16,8 @@ export const useDeviceStore = defineStore('device', () => {
     try {
       const res = await devicesApi.list(params || {})
       const d = res as any
-      devices.value = d.devices || []
-      total.value = d.total || devices.value.length
+      devices.value = d.data || []
+      total.value = d.page_size || d.data?.length || 0
     } finally {
       loading.value = false
     }
@@ -27,7 +27,7 @@ export const useDeviceStore = defineStore('device', () => {
     try {
       const res = await devicesApi.list({ page_size: 1 })
       const d = res as any
-      const list = d.devices || []
+      const list = d.data || []
       const bracelets = list.filter((dev: Device) => dev.type === 'bracelet')
       const pillboxes = list.filter((dev: Device) => dev.type === 'pillbox')
       const onlineCount = list.filter((dev: Device) => dev.status === 'online').length

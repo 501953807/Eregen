@@ -13,7 +13,7 @@ Page({
   async loadElderlyList() {
     try {
       const api = new ApiClient()
-      const res = await api.get('/elderly')
+      const res = await api.get('/api/v1/admin/elderly?page_size=20')
       const list = (res?.data || []).map((e, i) => ({
         id: e.id,
         name: e.name,

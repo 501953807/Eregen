@@ -25,9 +25,8 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     try {
       const res = await subscriptionsApi.list({ page: page.value, page_size: pageSize.value, status, plan_tier: planTier })
       const d = res as any
-      subscriptions.value = d.subscriptions || d.data?.subscriptions || []
-      total.value = d.total || subscriptions.value.length
-      if (d.page) page.value = d.page
+      subscriptions.value = d.data || []
+      total.value = d.page_size || d.data?.length || 0
     } catch (error) {
       console.error('Failed to fetch subscriptions:', error)
       subscriptions.value = []

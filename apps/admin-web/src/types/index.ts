@@ -3,7 +3,7 @@ export interface User {
   phone: string;
   email?: string;
   name: string;
-  role: 'elder' | 'family' | 'operator' | 'nurse' | 'admin' | 'super_admin' | 'elderly';
+  role: ChainRole;
   tier?: 'starter' | 'plus' | 'pro';
   verified?: boolean;
   paid?: boolean;
@@ -14,8 +14,8 @@ export interface User {
 export interface Device {
   id: string;
   device_id: string;
-  device_type: 'bracelet' | 'pillbox' | 'medical_wristband';
-  type?: 'bracelet' | 'pillbox' | 'medical_wristband';
+  device_type: 'bracelet' | 'pillbox' | 'medical_wristband' | 'community_wristband';
+  type?: 'bracelet' | 'pillbox' | 'medical_wristband' | 'community_wristband';
   tier: 'starter' | 'plus' | 'pro' | 'basic' | 'smart' | 'auto';
   status: 'online' | 'offline' | 'pending_upgrade' | 'fault' | 'ota_updating';
   firmware_version: string;
@@ -23,9 +23,12 @@ export interface Device {
   elder_id?: string;
   owner_name?: string;
   institution?: string;
-  mode?: 'family' | 'admin' | 'community' | 'medical';
+  mode?: 'family' | 'admin' | 'community' | 'medical' | 'collection' | 'guard';
   battery_pct?: number;
   rssi?: number;
+  hr?: number;
+  spo2?: number;
+  steps?: number;
   ota_progress?: number;
   ota_status?: string;
   ota_speed?: string;

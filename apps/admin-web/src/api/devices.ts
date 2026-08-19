@@ -20,4 +20,7 @@ export const devicesApi = {
   batchOtaPush(deviceIds: string[], firmwareUrl: string, hash: string) {
     return apiClient.post('/admin/devices/batch-ota', { device_ids: deviceIds, url: firmwareUrl, hash })
   },
+  unbind(id: string) {
+    return apiClient.delete(`/admin/devices/${id}/unbind`)
+  },
 }

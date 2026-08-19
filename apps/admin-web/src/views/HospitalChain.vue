@@ -100,26 +100,29 @@
 
       <el-table :data="patients" v-loading="loading" stripe class="hope-table-custom">
         <el-table-column prop="admission_no" label="入院号" width="140">
-          <template #default="{ row }"><span class="mono">{{ row.admission_no }}</span></template>
+          <template #default="{ row }"><span class="mono">{{ row.admission_no || row.id }}</span></template>
         </el-table-column>
-        <el-table-column prop="name" label="姓名" width="100" />
         <el-table-column prop="department" label="科室" width="100" />
-        <el-table-column prop="bed_number" label="床号" width="80" />
+        <el-table-column prop="bed_no" label="床号" width="80" />
         <el-table-column prop="diagnosis" label="诊断" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="admitted_at" label="入院时间" width="160" />
-        <el-table-column prop="status" label="状态" width="90">
+        <el-table-column prop="admitted_at" label="入院时间" width="160">
+          <template #default="{ row }">{{ formatDate(row.admitted_at) }}</template>
+        </el-table-column>
+        <el-table-column prop="discharged_at" label="出院时间" width="160">
+          <template #default="{ row }">{{ row.discharged_at ? formatDate(row.discharged_at) : '—' }}</template>
+        </el-table-column>
+        <el-table-column label="状态" width="90">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'admitted' || row.status === 'in_treatment' ? 'success' : 'info'" size="small">
-              {{ statusLabel(row.status) }}
+            <el-tag :type="row.discharged_at ? 'info' : 'success'" size="small">
+              {{ row.discharged_at ? '已出院' : '在院' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="last_verify" label="最后核验" width="140" />
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="viewAudit(row)">审计穿透</el-button>
             <el-button link type="primary" @click="viewDaily(row)">日常记录</el-button>
-            <el-button link type="danger" @click="dischargePatient(row)">出院</el-button>
+            <el-button link type="danger" :disabled="!!row.discharged_at" @click="dischargePatient(row)">出院</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -225,10 +228,15 @@ const currentPatient = ref<HospitalAdmission | null>(null)
 
 const statusLabel = (s: string) => ({ admitted: '在院', in_treatment: '治疗中', discharged: '已出院', pending: '待入院' }[s] || s)
 
+const formatDate = (ts?: string | null): string => {
+  if (!ts) return '—'
+  return new Date(ts).toLocaleString('zh-CN', { hour12: false })
+}
+
 const fetchPatients = async () => {
   loading.value = true
   try {
-    const res: any = await hospitalApi.listPatients({
+    const res: any = await hospitalApi.listAdmissions({
       page: pagination.page,
       page_size: pagination.pageSize,
       department: filters.department,

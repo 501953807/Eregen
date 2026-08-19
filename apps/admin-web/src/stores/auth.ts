@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import router from '@/router';
-import type { User, LoginResponse, AuthState, LoginRequest } from '@/types';
+import type { User, LoginResponse, AuthState, LoginRequest, BusinessChain, ChainRole } from '@/types';
 import { parseJwt } from '@/utils/auth';
 import apiClient, { setCsrfToken } from '@/api/client';
 
@@ -95,10 +95,64 @@ export const useAuthStore = defineStore('auth', () => {
     router.push({ path: '/login' });
   };
 
-  const hasPermission = (role: string): boolean => {
+  const roleChainMap: Record<ChainRole, BusinessChain[]> = {
+    super_admin: ['self', 'hospital', 'community', 'regulatory'],
+    operator: ['self', 'regulatory'],
+    hospital_doc: ['hospital'],
+    nurse: ['hospital'],
+    community_staff: ['community'],
+    regulator: ['hospital', 'community', 'regulatory'],
+  }
+
+  const hasPermission = (requiredRole?: string): boolean => {
     const u = getUser.value; if (!u) return false;
-    if (role === 'admin') return u.role === 'admin';
-    return true;
+    // Legacy compatibility
+    if (!requiredRole) return true;
+    if (requiredRole === 'admin') return u.role === 'super_admin';
+    return u.role === requiredRole;
+  };
+
+  const getChainRoles = (): BusinessChain[] => {
+    const u = getUser.value; if (!u) return [];
+    return roleChainMap[u.role as ChainRole] ?? [];
+  };
+
+  const checkChainAccess = (chain: BusinessChain): boolean => {
+    return getChainRoles().includes(chain);
+  };
+
+  const getAccessibleRoutes = (): string[] => {
+    const chains = getChainRoles();
+    const routeChainMap: Record<string, BusinessChain[]> = {
+      '/dashboard': ['self'],
+      '/devices': ['self'],
+      '/pillboxes': ['self'],
+      '/ota': ['self'],
+      '/subscriptions': ['self'],
+      '/users': ['self'],
+      '/institutions': ['self'],
+      '/alerts': ['self', 'hospital', 'community'],
+      '/analytics': ['self'],
+      '/elderly': ['self'],
+      '/persons': ['self', 'hospital', 'community'],
+      '/self': ['self'],
+      '/hospital': ['hospital'],
+      '/community': ['community'],
+      '/medical': ['hospital'],
+      '/medical/workstation': ['hospital'],
+      '/regulatory': ['hospital', 'community', 'regulatory'],
+      '/audit': ['hospital', 'community', 'regulatory'],
+      '/community-wb': ['community'],
+      '/medication': ['self', 'hospital', 'community'],
+      '/settings': ['self', 'hospital', 'community', 'regulatory'],
+    };
+    const result: string[] = [];
+    for (const [route, routeChains] of Object.entries(routeChainMap)) {
+      if (routeChains.some(rc => chains.includes(rc))) {
+        result.push(route);
+      }
+    }
+    return result;
   };
 
   const refreshToken = async (): Promise<boolean> => {
@@ -131,5 +185,5 @@ export const useAuthStore = defineStore('auth', () => {
     state.value.user = null;
   }
 
-  return { state, user, isLoggedIn, getUser, getToken, checkLoggedIn, isExpired, loading, error, login, logout, hasPermission, refreshToken, parseJwt };
+  return { state, user, isLoggedIn, getUser, getToken, checkLoggedIn, isExpired, loading, error, login, logout, hasPermission, checkChainAccess, getChainRoles, getAccessibleRoutes, refreshToken, parseJwt };
 });

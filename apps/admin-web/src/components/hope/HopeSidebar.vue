@@ -18,7 +18,7 @@
     <!-- Navigation -->
     <nav class="sidebar-body">
       <ul class="nav-menu">
-        <template v-for="category in menuConfig" :key="category.key">
+        <template v-for="category in filteredMenuConfig" :key="category.key">
           <!-- Category label: icon only when collapsed -->
           <li class="nav-item static-item" :class="{ 'collapsed': collapsed }">
             <span class="nav-link disabled">
@@ -123,11 +123,14 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import type { BusinessChain } from '@/types'
 
 const props = defineProps<{ collapsed: boolean }>()
 const emit = defineEmits<{ (e: 'toggle'): void }>()
 
 const route = useRoute()
+const authStore = useAuthStore()
 
 // Internal reactive collapsed state
 const collapsedInternal = ref(props.collapsed)
@@ -135,6 +138,56 @@ watch(() => props.collapsed, (v) => { collapsedInternal.value = v })
 const collapsed = computed({
   get: () => collapsedInternal.value,
   set: (v) => { collapsedInternal.value = v; emit('toggle') }
+})
+
+// User's allowed business chains
+const userChains = computed<BusinessChain[]>(() => {
+  return authStore.getChainRoles?.() ?? []
+})
+
+// Menu → business chain mapping (mirrors router chain assignments)
+const menuItemChains: Record<string, BusinessChain[]> = {
+  '/dashboard': ['self'],
+  '/devices': ['self'],
+  '/pillboxes': ['self'],
+  '/ota': ['self'],
+  '/subscriptions': ['self'],
+  '/users': ['self'],
+  '/institutions': ['self'],
+  '/alerts': ['self', 'hospital', 'community'],
+  '/analytics': ['self'],
+  '/settings': ['self', 'hospital', 'community', 'regulatory'],
+  '/elderly': ['self'],
+  '/persons': ['self', 'hospital', 'community'],
+  '/self': ['self'],
+  '/hospital': ['hospital'],
+  '/community': ['community'],
+  '/regulatory': ['hospital', 'community', 'regulatory'],
+  '/community-wb': ['community'],
+  '/medication': ['self', 'hospital', 'community'],
+  '/medical': ['hospital'],
+}
+
+// Filtered menu config based on user role
+const filteredMenuConfig = computed(() => {
+  const role = authStore.getUser?.role
+  const chains = userChains.value
+  if (role === 'super_admin') return menuConfig
+
+  return menuConfig
+    .map(cat => ({
+      ...cat,
+      groups: cat.groups
+        .map(group => ({
+          ...group,
+          items: group.items.filter(item => {
+            const itemChains = menuItemChains[item.path] ?? []
+            return itemChains.some(c => chains.includes(c))
+          }),
+        }))
+        .filter(group => group.items.length > 0),
+    }))
+    .filter(cat => cat.groups.length > 0)
 })
 
 // Track which multi-item groups are expanded (click-based)

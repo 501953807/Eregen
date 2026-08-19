@@ -2,7 +2,7 @@
 
 ## 项目愿景
 
-打造一个完整的老年健康生态系统，包含智能手环、智能药盒等硬件产品，以及云端中控系统、家属APP、运营管理后台、品牌官网、微信小程序和医院/社区对接系统。所有软硬件自主开发，申请专利保护。
+打造一个完整的老年健康生态系统，包含智能手环、智能药盒、医用电子腕带、社区腕带等硬件产品，以及云端中控系统、家属APP、护士核验终端、运营管理后台、品牌官网、微信小程序和医院/社区对接系统。所有软硬件自主开发，申请专利保护。
 
 **品牌：** 颐贞 (yí zhēn) / Eregen (Ease + Regen)
 **Slogan：** "颐养正道，贞守安康"
@@ -22,6 +22,7 @@
 |--------|---------|----------|------|
 | 手环(初/中/高端) | GD32E230C8T3 (ARM Cortex-M4) | FreeRTOS | C |
 | 药盒(基础/智能/自动) | ESP32-C3 (RISC-V) | ESP-IDF v5.3 | C |
+| 医用电子腕带(住院) | ESP32-S3 (ESP-IDF) | ESP-IDF v5.3 | C |
 
 **原因：** FreeRTOS是MCU事实标准，90%厂商提供官方port。ESP32原生ESP-IDF生态最成熟。不用Zephyr/RT-Thread增加集成风险。
 
@@ -31,7 +32,7 @@
 |------|------|------|
 | 语言/框架 | Go + Gin | Go 1.22+, Gin 1.9+ |
 | MQTT Broker | EMQX | 5.x (开源版) |
-| 消息总线 | NATS | 2.10+ |
+| 消息总线 | NATS JetStream | 2.10+ |
 | 用户数据库 | SQLite | — | MVP阶段全项目统一，零部署单文件存储 |
 | 推送 | FCM + 阿里云SMS + 微信订阅消息 | — |
 
@@ -48,6 +49,7 @@
 | 管理后台 | Vue 3 + TypeScript + Element Plus | Vue 3.4+, TS 5.4+, Element Plus 2.7+ |
 | 微信小程序 | 原生WXML/WXSS | 基础库 2.44+ |
 | 品牌官网 | Hugo + Tailwind CSS | Hugo 0.128+, Tailwind 3.4+ |
+| 护士核验终端 | Flutter (iOS/Android) | 3.24+ |
 
 **为什么Flutter不用React Native：** RN Bridge长时运行有性能衰减，Flutter AOT编译性能可预测。
 **为什么Vue不用React：** 小团队Vue开发效率更高，管理后台不需要React的虚拟DOM优势。
@@ -101,49 +103,105 @@
 
 ---
 
-## 当前阶段实现状态 (2026-07-28)
+## 当前阶段实现状态 (2026-08-19)
 
-代码审计与专项计划编制完成后，各子系统建设内容与执行方案如下：
+所有四个批次已全部完成。各子系统建设内容与执行方案如下：
 
-### 第一批 → 已完成并进入维护优化阶段
+### 第一批 → 已完成
 
-| # | 子系统 | 建设内容 | 实施策略 | 专项计划文档 |
-|---|--------|---------|----------|-------------|
-| ③-1 | API Server REST API | 用户、设备、健康数据、告警等完整 CRUD 接口，JWT 认证中间件，错误信息统一封装 | Go Gin 微服务架构，分层处理逻辑 (handler/store/model)，依赖注入 | - |
-| ③-2 | Admin API | 管理后台专用 API：老人档案、用药规则、固件版本、监管规则配置 | PostgreSQL/SQLite 双存储抽象层，JWT scope-based 权限控制 | - |
-| ③-3 | Gateway MQTT | EMQX MQTT 客户端接入，设备自动注册，消息路由到 NATS 总线 | 独立服务通过 topic 路由识别设备类型，自动注册未绑定设备 | - |
-| ③-4 | Push Service | FCM/APNs 推送通知通道，短信兜底（阿里云 SMS），微信订阅消息触发 | 基于 NATS 事件驱动架构，按 P0/P1/P2 优先级分发 | - |
-| ③-5 | Data Pipeline | 时序数据存储，AI 分析引擎框架，健康异常检测模型占位符 | SQLite 时序表 + PostgreSQL 降采样 fallback，pgx 驱动预留 | - |
-| ⑧-1 | Hospital API (B2B) | HIS 预留接口框架，入院/出院/护士核验终端绑定，监管规则评估 R_C01-R_C10 | APIKeyAuth 认证 + RequireAccess 访问控制，institution-aware | `shared/auth/middleware/auth.go` |
-| ⑧-2 | Community Platform (B2B) | 社区老人档案管理、福利标签分配、批量支付结算、民政同步 | Same APIKeyAuth pattern, b2b_institutions table seeded via migration | `migrations/001_init_institutions.sql` |
-| ⑧-3 | Insurance Integration (B2B) | 保险provider注册，费用结算对账，医保覆盖额度管理 | Same auth pattern, encrypted policy keys storage | `migrations/001_init_institutions.sql` |
+| # | 子系统 | 建设内容 | 实施策略 |
+|---|--------|---------|----------|
+| ③-1 | API Server REST API | 设备接入、健康数据、定位、OTA、WebSocket实时推送、JWT认证、限流中间件 | Go Gin分层架构 (handler/store/model/service)，依赖注入 |
+| ③-2 | Admin API | 统一人本位 API：persons/hospital/community/regulatory/chronic/health/alerts/lifecycle，五角色权限体系，SQLite/PostgreSQL双存储抽象 | JWT scope-based 权限控制，GORM store 层 |
+| ③-3 | Gateway MQTT | EMQX MQTT 接入，纯消息路由到 NATS JetStream，不写数据库。支持手环/药盒/医用腕带/社区腕带多设备类型 | 按 topic 路由识别设备类型，自动注册未绑定设备 |
+| ③-4 | Push Service | FCM/APNs 推送，阿里云 SMS 短信兜底，微信订阅消息触发。按 P0/P1/P2 优先级分发 | 基于 NATS 事件驱动架构 |
+| ③-5 | Data Pipeline | NATS 消费 health/location/med_status，AI 分析引擎框架，健康异常检测模型占位符 | SQLite 时序表 + pgx 驱动预留 |
+| ⑧-1 | Hospital API (B2B) | HIS 预留接口框架，入院/出院/护士核验终端绑定，监管规则评估 R_C01-R_C10 | APIKeyAuth 认证 + RequireAccess 访问控制 |
+| ⑧-2 | Community Platform (B2B) | 社区老人档案管理、福利标签分配、批量支付结算、民政同步 | APIKeyAuth 认证，b2b_institutions 表 seeded via migration |
+| ⑧-3 | Insurance Integration (B2B) | 保险provider注册，费用结算对账，医保覆盖额度管理 | APIKeyAuth 认证，加密 policy keys storage |
 
 ### 第二批 → 已完成
 
-| # | 子系统 | 建设内容 | 实施策略 | 参考文档 |
-|---|--------|---------|----------|---------|
-| ④ | 家属 App Flutter | 实时定位地图+SOS按钮+用药提醒+健康趋势图+告警中心 | Flutter模块化架构，Provider/Riverpod状态管理，dio API层 | `docs/specs/04-family-app.md` |
-| ⑤ | 管理后台 Vue 3 | 仪表盘总览+设备列表+老人档案+用药管理+告警中心+系统设置 | Vue3 Composition API + Pinia + Element Plus + Axios interceptor | `docs/specs/05-admin-web.md` |
+| # | 子系统 | 建设内容 | 实施策略 |
+|---|--------|---------|----------|
+| ④ | 家属 App Flutter | 实时定位地图+SOS按钮+用药提醒+健康趋势图+告警中心+慢性病管理(7页面) + AI报告 + 父母福利页 | Flutter模块化架构，Provider状态管理，dio API层，WebSocket实时告警 |
+| ⑤ | 管理后台 Vue 3 | 仪表盘总览+人员管理+设备管理+用药管理+告警中心+OTA+订阅管理+机构管理+监管看板+三条业务链+审计详情+系统设置 | Vue3 Composition API + Pinia + Element Plus + Hope UI 24组件系统 |
 
 ### 第三批 → 已完成
 
-| # | 子系统 | 建设内容 | 实施策略 | 参考文档 |
-|---|--------|---------|----------|---------|
-| ⑦ | 微信小程序 | 轻量版家属端(地图定位+用药提醒+紧急呼叫) | 原生 WXML/WXSS, Tencent Map插件, 微信订阅消息 | `docs/specs/07-miniprogram.md` |
-| ⑥ | 品牌官网 Hugo | 产品介绍三档对比页+购买引导+联系表单+关于页面 | Hugo静态生成, Tailwind CSS响应式布局 | `docs/specs/06-website.md` |
-| ⑨ | 医用电子腕带 | NFC身份核验 + Cat1上报双模式，医疗护士终端交互协议 | ESP32-S3 + BLE/NFC双芯片设计，wb_ble.go 协议文档已更新 | — (protocol doc updated) |
-| ⑩ | 护士核验终端 Flutter | PDA手持设备的NFC扫描验证 + 医嘱执行记录 | Flutter移动App，nfc_plus插件，完成wb_ble.go的VerificationReport映射 | `docs/specs/11-nurse-terminal.md` |
+| # | 子系统 | 建设内容 | 实施策略 |
+|---|--------|---------|----------|
+| ⑦ | 微信小程序 | 首页(定位+状态卡片)+用药提醒+健康数据+告警中心+设备绑定+登录+个人资料+医院住院页面 | 原生 WXML/WXSS，Tencent Map插件，微信订阅消息 |
+| ⑥ | 品牌官网 Hugo | 品牌展示+产品三档对比+购买引导+联系表单+关于页面+白皮书+博客+合作伙伴+隐私政策 | Hugo静态生成，Tailwind CSS响应式布局 |
+| ⑨ | 医用电子腕带 | NFC身份核验 + Cat1上报双模式，医疗护士终端交互协议，wb_ble.go 协议文档 | ESP32-S3 + BLE/NFC双芯片设计 |
+| ⑩ | 护士核验终端 Flutter | PDA手持设备的NFC扫描验证 + 医嘱执行记录 + 查房记录 + 出院结算 + 用药核对 | Flutter移动App，nfc_plus插件 |
 
-### 第四批 → 已完成（2026-08-08）
+### 第四批 → 已完成
 
-| # | 子系统 | 建设内容 | 实施策略 | 备注 |
-|---|--------|---------|----------|------|
-| ① | 手环固件 (Entry/Plus/Pro/Pro+) | GD32E230 FreeRTOS C工程，传感器驱动+电化学检测模块(血糖/尿酸试纸)+BLE血压计配件 | 已实现固件框架，需硬件联调 | `firmware/bracelet/pro_plus/` |
-| ④ | 家属APP | 实时定位+用药提醒+告警+慢性病管理(7新页面) | Flutter模块化架构，Provider/Riverpod状态管理 | `docs/specs/04-family-app.md` |
+| # | 子系统 | 建设内容 | 实施策略 |
+|---|--------|---------|----------|
+| ① | 手环固件 (Entry/Plus/Pro/Pro+) | GD32E230 FreeRTOS C工程，传感器驱动+电化学检测模块(血糖/尿酸试纸)+BLE血压计配件 | 已实现固件框架，需硬件联调 |
+| ④ | 家属APP 慢性病扩展 | 7个新页面：慢病主页、血压/血糖/尿酸管理、饮食、运动、AI报告 | Flutter模块化架构 |
 
-> **注**：第10个月开始⑨医用腕带监管闭环与⑩社区老人场景并行推进。
+> **注**：全部批次已完成。固件层（手环/药盒/医用腕带）已实现代码框架，待硬件到货后联调。
 
-> **重要说明**：以上任务顺序严格按 CLAUDE.md 原始实施批次安排。各子系统规格详见 `docs/specs/` 目录。已实施的专项计划文件已归档。
+---
+
+## 业务架构（三条业务链）
+
+### 业务链模型
+
+平台采用统一身份 + 三链并行架构，以身份证号为主键关联，支持一人同时存在于多条业务链：
+
+| 业务链 | 数据来源 | 核心实体 | 状态流转 |
+|--------|---------|---------|---------|
+| **自营链 (self)** | 用户自主注册+设备绑定 | persons + person_profiles | pending→active→suspended→cancelled |
+| **住院链 (hospital)** | 护士入院登记+HIS对接 | persons + person_profiles | pending→admitted→in_treatment→discharged→archived |
+| **社区链 (community)** | 社区工作人员录入+民政认证 | persons + person_profiles | pending→certified→active→suspended→deactivated→archived |
+
+### 五角色权限体系
+
+| 角色 | 自营链 | 住院链 | 社区链 | 监管链 |
+|------|--------|--------|--------|--------|
+| super_admin | 全权限 | 全权限 | 全权限 | 全权限 |
+| operator | 查看+编辑 | 无权限 | 无权限 | 只读 |
+| hospital_doc | 无权限 | 查看+编辑 | 只读 | 无权限 |
+| nurse | 无权限 | 查看+执行 | 无权限 | 无权限 |
+| community_staff | 只读 | 只读 | 查看+编辑 | 无权限 |
+| regulator | 无权限 | 只读 | 只读 | 全权限 |
+
+### 统一人本位 API
+
+```
+# 统一人档案（所有链数据聚合）
+GET    /api/v1/persons                     # 列表（支持business_chain过滤）
+GET    /api/v1/persons/{person_id}         # 详情（含所有业务链信息）
+PUT    /api/v1/persons/{person_id}         # 更新基础信息
+GET    /api/v1/persons/{person_id}/health  # 健康档案（跨链聚合）
+GET    /api/v1/persons/{person_id}/medications  # 用药规则
+GET    /api/v1/persons/{person_id}/alerts      # 告警记录
+GET    /api/v1/persons/{person_id}/devices     # 设备列表
+GET    /api/v1/persons/{person_id}/reports     # 健康报告
+
+# 业务链专用路由
+GET    /api/v1/self/elderly                  # 自营老人
+GET    /api/v1/hospital/patients             # 住院患者
+POST   /api/v1/hospital/admissions           # 入院登记
+POST   /api/v1/hospital/admissions/{id}/discharge  # 出院结算
+GET    /api/v1/community/elders              # 社区老人
+POST   /api/v1/community/elders/{id}/signin  # 签到
+GET    /api/v1/regulatory/compliance         # 合规检测
+```
+
+### 状态机系统
+
+- **人员生命周期**：自营/住院/社区各链独立状态机，支持跨链关联
+- **设备生命周期**：offline→online→fault→decommissioned
+- **订阅生命周期**：trialing→active→expired/cancelled
+- **告警生命周期**：pending→acknowledged→resolved/false_alarm
+- **用药执行**：scheduled→pending→taken/missed/skipped/error
+
+所有状态转换均记录审计日志（`status_transition_logs` 表）。
 
 ---
 
@@ -169,6 +227,15 @@
 
 // 药盒状态
 {"type":"med_status","dev_id":"PX-XXXX","compartment":3,"taken":true,"ts":xxx}
+
+// 医用腕带：患者注册
+{"type":"patient_register","dev_id":"MW-XXXX","patient_id":"P001","ward_id":"W01","ts":xxx}
+
+// 医用腕带：NFC核验
+{"type":"verification_scan","dev_id":"MW-XXXX","patient_id":"P001","nurse_id":"N001","action":"medication","ts":xxx}
+
+// 社区腕带：签到
+{"type":"community_signin","dev_id":"CW-XXXX","person_id":"E001","station_id":"S01","lat":xxx,"lon":xxx,"ts":xxx}
 ```
 
 ### 下行(云端→设备)
@@ -192,27 +259,30 @@
 ## 数据流闭环
 
 ```
-[手环传感器]──Cat1蜂窝──→[EMQX MQTT]──→[Go设备接入]──→[NATS总线]
-                                                        ↓
-[药盒电机]────WiFi────────→[EMQX MQTT]──→[Go设备接入]──→[NATS总线]
+[手环传感器]──Cat1蜂窝──→[EMQX MQTT]──→[gateway](纯消息路由)──→[NATS JetStream]
+[药盒电机]────WiFi────────→[EMQX MQTT]──→[gateway]────────────→[NATS JetStream]
+[住院腕带]────WiFi/BLE────→[EMQX MQTT]──→[gateway]────────────→[NATS JetStream]
+[社区腕带]────Cat1/BLE────→[EMQX MQTT]──→[gateway]────────────→[NATS JetStream]
                                                         ↓
                                             ┌───────────┼───────────┐
                                             ↓           ↓           ↓
-                                      [SQLite]
-                                      用户/设备/订阅  健康时序数据   在线状态
-                                            ↓           ↓           ↓
+                                      [SQLite]    [data-pipeline] [push-service]
+                                      用户/设备/订阅  AI分析引擎    SOS/fall告警
+                                            ↓           ↓
                                             └───────────┼───────────┘
                                                         ↓
-                                            [AI分析引擎]←──[实时数据流]
+                                            [admin-api REST] ←→ [api-server IoT]
                                                 ↓
-                                    跌倒/异常→P0→WebSocket推送
-                                    漏服药物→P1→短信兜底
-                                    电子围栏→P1→APP推送
-                                                ↓
-                                          [推送分发器]
-                                                ↓
-                                    [家属APP] ←→ [管理后台]
+                                    [家属APP] ←→ [管理后台] ←→ [护士核验终端]
 ```
+
+### NATS JetStream 主题说明
+
+| 主题 | 设备类型 | 消息类型 | 消费者 |
+|------|---------|---------|--------|
+| `eregen.event.>` | 手环、药盒 | heartbeat, location, health, sos, fall, med_status | api-server (写DB) + data-pipeline (AI分析) |
+| `eregen.medical.wb.>` | 医用腕带 | patient_register, verification_scan, device_status, alert_tag | api-server |
+| `eregen.community.wb.>` | 社区腕带 | community_signin, community_welfare_update, community_dispense | api-server |
 
 ---
 
@@ -234,7 +304,7 @@
 | OLED屏 | SSD1306 0.96" | 5 | 12 | 60 | 药盒显示验证 |
 | 锂电池 | 350mAh LiPo | 5 | 10 | 50 | 电源验证 |
 | 3D打印外壳 | PLA材料 | 10套 | 20 | 200 | 结构验证 |
-| **硬件采购合计** | | | | **~2075元** | |
+| **硬件采购合计** | | | | **~2,075元** | |
 
 ### 软件基础设施成本
 
@@ -285,7 +355,7 @@ cp scripts/default-ports.env .env
 ./scripts/start.sh start --docker                    # Docker 模式
 ```
 
-**按组启动：** `cloud` (api-server, push-service, data-pipeline, gateway) / `b2b` (hospital-api, community-platform, insurance-integration) / `apps` (family-app, admin-web, website) / `medical` (api-server regulatory/, api-server community_wb/, gateway community handlers)
+**按组启动：** `cloud` (api-server, admin-api, push-service, data-pipeline, gateway) / `b2b` (hospital-api, community-platform, insurance-integration) / `apps` (family-app, nurse-terminal, admin-web, website) / `firmware` (bracelet, pillbox, medical-wristband)
 
 **端口配置：** 编辑根目录 `.env` 中的 `PORT_*` 变量，或命令行 `--port X` 覆盖。
 
@@ -346,6 +416,7 @@ cp scripts/default-ports.env .env
 5. **每个子系统独立开发测试** — 明确的输入/输出边界，可并行推进
 6. **硬件三档策略** — 入门版快速上市验证，高端版建立品牌溢价
 7. **混合ODM起步** — Phase 1A公模快速验证，Phase 1B半定制差异化迭代
+8. **文档即真相** — CLAUDE.md 和 docs/specs/ 是项目唯一权威出口，变更必须同步更新
 
 ---
 
@@ -416,7 +487,7 @@ Single-context layout with `CONTEXT.md` at root and `docs/adr/` for ADRs. See `d
 ```
 docs/
 ├── specs/                          # 设计规格文档（项目真相来源）
-│   ├── 00-global-architecture.md   # 全局架构
+│   ├── 00-global-architecture.md   # 全局架构（含云服务架构统一）
 │   ├── 01-bracelet-firmware.md     # 手环固件规格
 │   ├── 02-pillbox-firmware.md      # 药盒固件规格
 │   ├── 03-cloud-platform.md        # 云平台规格
@@ -428,6 +499,7 @@ docs/
 │   ├── 09-medical-wristband.md     # 医用腕带规格
 │   ├── 10-subsystem-verification.md # 子系统验证方案
 │   ├── 11-nurse-terminal.md        # 护士终端规格
+│   ├── 12-business-architecture.md # 业务架构（统一身份/三链/五角色/状态机）
 │   ├── project_total_construction_scheme_v2.md  # 总建设方案
 │   ├── supply-chain/               # 供应链管理
 │   │   ├── hardware-procurement-list.md  # 硬件采购清单
@@ -436,6 +508,8 @@ docs/
 │   │   └── supplier-evaluation-criteria.md # 供应商评估标准
 │   └── registration/               # 医疗器械注册
 │       └── registration-checklist.md     # 注册资料清单
+├── domain-model/                   # 领域模型
+│   └── CONTEXT.md                  # 领域上下文
 ├── superpowers/                    # AI辅助开发文档
 │   ├── specs/                      # 设计方案（已确认）
 │   └── plans/                      # 实施计划（可执行）
@@ -462,4 +536,3 @@ docs/
 - 重大架构变更
 - 技术选型调整
 - 需求变更确认
-
